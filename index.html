@@ -220,6 +220,26 @@
       0%, 100% { filter: drop-shadow(0 0 8px rgba(52,211,153,0.6)); }
       50% { filter: drop-shadow(0 0 16px rgba(52,211,153,1)); }
     }
+    /* ◆ indicator on nodes that have code / diagrams / tips */
+    .rich-dot { font-size: 7px; color: rgba(56,189,248,0.85); pointer-events: none; animation: rich-pulse 2.8s ease-in-out infinite; }
+    @keyframes rich-pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+    /* Bottom onboarding hint bar */
+    #hint-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: rgba(4,12,28,0.95); border-top: 1px solid rgba(56,189,248,0.22);
+      padding: 11px 24px; display: flex; align-items: center; justify-content: center;
+      gap: 20px; font-size: 13px; color: #94a3b8; backdrop-filter: blur(10px);
+      transition: opacity 0.5s, transform 0.5s;
+    }
+    #hint-bar.hidden { opacity: 0; pointer-events: none; transform: translateY(100%); }
+    #hint-bar strong { color: #38bdf8; }
+    .hint-sep { color: #334155; margin: 0 4px; }
+    #hint-close {
+      background: none; border: 1px solid rgba(255,255,255,0.12); border-radius: 5px;
+      color: #64748b; cursor: pointer; font-size: 12px; padding: 3px 10px;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    #hint-close:hover { color: #94a3b8; border-color: rgba(255,255,255,0.25); }
 
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -259,6 +279,13 @@
     <div class="kb-hint"><strong>Click</strong> = select</div>
     <div class="kb-hint"><strong>Double-click</strong> = expand/collapse</div>
     <div class="kb-hint"><strong>Right-click</strong> = context menu (edit mode)</div>
+  </div>
+  <!-- Onboarding hint bar — must be in DOM before the script runs -->
+  <div id="hint-bar">
+    <span>💡 <strong>Click</strong> any node — nodes marked <span style="color:#38bdf8">◆</span> have code &amp; diagrams
+      <span class="hint-sep">·</span> <strong>Double-click</strong> to expand/collapse
+      <span class="hint-sep">·</span> <strong>Drag</strong> the panel edge to resize it</span>
+    <button id="hint-close">Got it ✓</button>
   </div>
   <div id="panel">
     <div id="panel-resize" title="Drag to resize"></div>
@@ -915,7 +942,7 @@ function hc(cd){
 function bl(){const c=document.getElementById('legend-items');c.innerHTML='';const d=N.filter(n=>n.g===1);d.forEach(n=>{const t=CATS[n.cat]||CATS.custom;const i=document.createElement('div');i.className='legend-item';i.innerHTML=`<div class="legend-dot" style="background:${t.c}"></div><span>${n.label}</span>`;i.addEventListener('click',()=>{N.forEach(o=>{if(o.cat===n.cat)o.expanded=!o.expanded});rg()});c.appendChild(i)})}
 let sim=null,svg,gc,tr=d3.zoomIdentity;
 function ig(){gc=d3.select('#graph-container');svg=d3.select('#graph');const w=window.innerWidth,h=window.innerHeight-60;sim=d3.forceSimulation(N).force('link',d3.forceLink(X.map(l=>({source:N.find(n=>n.id===l.s),target:N.find(n=>n.id===l.t)}))).id(d=>d.id).distance(100).strength(0.3)).force('charge',d3.forceManyBody().strength(-500).distanceMax(500)).force('center',d3.forceCenter(w/2,h/2)).force('collide',d3.forceCollide(d=>SZ[Math.min(d.g,3)].w/2+20)).on('tick',ug);svg.append('defs').html(`<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="rgba(255,255,255,0.15)"/></marker><marker id="arrowhead-x" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="rgba(200,200,200,0.2)"/></marker>`);svg.append('g').attr('class','links');svg.append('g').attr('class','nodes');svg.call(d3.zoom().on('zoom',e=>{tr=e.transform;svg.select('.links').attr('transform',tr);svg.select('.nodes').attr('transform',tr)}));window.addEventListener('resize',()=>{sim.force('center',d3.forceCenter(window.innerWidth/2,(window.innerHeight-60)/2))})}
-function rg(){const vn=N.filter(n=>{if(n.g===0)return true;let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return n.g===1;if(!pn.expanded&&pn.g>0)return false;p=pn.p}return true});const vid=new Set(vn.map(n=>n.id)),vl=X.filter(l=>vid.has(l.s)&&vid.has(l.t)),ld=vl.map(l=>({source:N.find(n=>n.id===l.s),target:N.find(n=>n.id===l.t),xlink:true}));N.filter(n=>n.g>0).forEach(n=>{if(n.p){const pn=N.find(x=>x.id===n.p);if(pn&&vid.has(n.id)&&vid.has(pn.id))ld.push({source:pn,target:n,xlink:false})}});sim.nodes(vn);sim.force('link').links(ld);const lks=svg.select('.links').selectAll('.link').data(ld,(d,i)=>i);lks.exit().remove();lks.enter().append('line').attr('class',d=>`link ${d.xlink?'xlink':''}`).merge(lks);const ns=svg.select('.nodes').selectAll('.node-card').data(vn,d=>d.id);ns.exit().remove();const ne=ns.enter().append('g').attr('class',d=>`node-card ${d.id===s?.id?'selected':''}`).attr('data-id',d=>d.id).on('click',(e,d)=>{e.stopPropagation();sn(d);sp(d)}).on('dblclick',(e,d)=>{e.stopPropagation();d.expanded=!d.expanded;rg()}).on('contextmenu',(e,d)=>{e.preventDefault();if(e)alert(`Context menu for ${d.label}`)}).call(d3.drag().on('start',dgs).on('drag',dg).on('end',dge));const sz=d=>SZ[Math.min(d.g,3)];ne.append('rect').attr('class','node-rect').attr('x',d=>-sz(d).w/2).attr('y',d=>-sz(d).h/2).attr('width',d=>sz(d).w).attr('height',d=>sz(d).h).attr('rx',4).attr('fill',d=>CATS[d.cat].c).attr('stroke',d=>CATS[d.cat].c);ne.append('foreignObject').attr('x',d=>-sz(d).w/2+4).attr('y',d=>-sz(d).h/2+4).attr('width',d=>sz(d).w-8).attr('height',d=>sz(d).h-8).append('xhtml:div').style('padding','4px').style('display','flex').style('flex-direction','column').style('align-items','center').style('justify-content','center').style('height','100%').style('text-align','center').html(d=>{let h=`<div class="node-label">${d.label}</div>`;if(d.g<=2)h+=`<div class="node-category">${CATS[d.cat].n}</div>`;if(N.filter(n=>n.p===d.id&&n.g<4).length>0)h+=`<div class="expand-dot">●</div>`;return h});sim.alpha(1).restart()}
+function rg(){const vn=N.filter(n=>{if(n.g===0)return true;let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return n.g===1;if(!pn.expanded&&pn.g>0)return false;p=pn.p}return true});const vid=new Set(vn.map(n=>n.id)),vl=X.filter(l=>vid.has(l.s)&&vid.has(l.t)),ld=vl.map(l=>({source:N.find(n=>n.id===l.s),target:N.find(n=>n.id===l.t),xlink:true}));N.filter(n=>n.g>0).forEach(n=>{if(n.p){const pn=N.find(x=>x.id===n.p);if(pn&&vid.has(n.id)&&vid.has(pn.id))ld.push({source:pn,target:n,xlink:false})}});sim.nodes(vn);sim.force('link').links(ld);const lks=svg.select('.links').selectAll('.link').data(ld,(d,i)=>i);lks.exit().remove();lks.enter().append('line').attr('class',d=>`link ${d.xlink?'xlink':''}`).merge(lks);const ns=svg.select('.nodes').selectAll('.node-card').data(vn,d=>d.id);ns.exit().remove();const ne=ns.enter().append('g').attr('class',d=>`node-card ${d.id===s?.id?'selected':''}`).attr('data-id',d=>d.id).on('click',(e,d)=>{e.stopPropagation();sn(d);sp(d)}).on('dblclick',(e,d)=>{e.stopPropagation();d.expanded=!d.expanded;rg()}).on('contextmenu',(e,d)=>{e.preventDefault();if(e)alert(`Context menu for ${d.label}`)}).call(d3.drag().on('start',dgs).on('drag',dg).on('end',dge));const sz=d=>SZ[Math.min(d.g,3)];ne.append('rect').attr('class','node-rect').attr('x',d=>-sz(d).w/2).attr('y',d=>-sz(d).h/2).attr('width',d=>sz(d).w).attr('height',d=>sz(d).h).attr('rx',4).attr('fill',d=>CATS[d.cat].c).attr('stroke',d=>CATS[d.cat].c);ne.append('foreignObject').attr('x',d=>-sz(d).w/2+4).attr('y',d=>-sz(d).h/2+4).attr('width',d=>sz(d).w-8).attr('height',d=>sz(d).h-8).append('xhtml:div').style('padding','4px').style('display','flex').style('flex-direction','column').style('align-items','center').style('justify-content','center').style('height','100%').style('text-align','center').html(d=>{let h=`<div class="node-label">${d.label}</div>`;if(d.g<=2)h+=`<div class="node-category">${CATS[d.cat].n}</div>`;if(N.filter(n=>n.p===d.id&&n.g<4).length>0)h+=`<div class="expand-dot">●</div>`;if(d.code||d.diag||d.tip)h+=`<div class="rich-dot" title="Has code &amp; diagrams — click to explore">◆</div>`;return h});sim.alpha(1).restart()}
 function ug(){svg.selectAll('.link').attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);svg.selectAll('.node-card').attr('transform',d=>`translate(${d.x},${d.y})`)}
 function dgs(e,d){if(!e.active)sim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y}
 function dg(e,d){d.fx=e.x;d.fy=e.y}
@@ -1001,7 +1028,7 @@ function sp(d){
     linksEl.querySelectorAll('.panel-pill').forEach(pill=>pill.addEventListener('click',()=>{const t=N.find(n=>n.id===pill.dataset.target);if(t){sn(t);sp(t)}}));
     document.getElementById('ps-links').style.display='block';
   } else document.getElementById('ps-links').style.display='none';
-  p.classList.add('open');document.getElementById('graph-container').style.paddingRight='410px';
+  p.classList.add('open');document.getElementById('graph-container').style.paddingRight=p.offsetWidth+'px';
 }
 document.getElementById('panel-close').addEventListener('click',()=>{document.getElementById('panel').classList.remove('open');document.getElementById('graph-container').style.paddingRight='0';s=null;svg.selectAll('.node-card').classed('selected',false)});
 document.getElementById('btn-domains').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);rg()});
@@ -1041,6 +1068,17 @@ document.getElementById('topbar-search').addEventListener('input',(e)=>{const q=
   });
 })();
 ifs();ig();bl();rg();
+// Onboarding hint bar — dismisses on first node click, after 10s, or on button press
+(function(){
+  const bar=document.getElementById('hint-bar');
+  const dismiss=()=>{bar.classList.add('hidden');try{localStorage.setItem('gmhint','1')}catch(e){}};
+  try{if(localStorage.getItem('gmhint'))bar.classList.add('hidden')}catch(e){}
+  document.getElementById('hint-close').addEventListener('click',dismiss);
+  setTimeout(dismiss,10000);
+  document.addEventListener('click',function onFirst(e){
+    if(e.target.closest('.node-card')){dismiss();document.removeEventListener('click',onFirst,true)}
+  },true);
+})();
   </script>
 </body>
 </html>
