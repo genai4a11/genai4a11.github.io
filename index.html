@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenAI Knowledge Mindmap</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #030a1a;
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+
+    canvas#starfield {
+      position: fixed; top: 0; left: 0; z-index: 1; display: block;
+    }
+
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 20;
+      background: linear-gradient(to bottom, rgba(4,12,28,0.98), rgba(4,12,28,0.9));
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex; align-items: center; gap: 20px; padding: 0 20px;
+    }
+    #topbar-title { font-size: 18px; font-weight: 600; color: #a78bfa; min-width: 200px; }
+    #topbar-search {
+      flex: 1; max-width: 300px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 14px;
+    }
+    #topbar-search::placeholder { color: rgba(255,255,255,0.4); }
+    .topbar-btn-group { display: flex; gap: 8px; }
+    .topbar-btn {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+      color: #e2e8f0; padding: 6px 12px; border-radius: 5px; font-size: 12px; cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .topbar-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+    .topbar-btn.hidden { display: none; }
+    #topbar-right { display: flex; gap: 8px; margin-left: auto; }
+
+    #graph-container {
+      position: fixed; top: 60px; left: 0; right: 0; bottom: 0; z-index: 2; overflow: hidden;
+      transition: padding-right 0.25s ease;
+    }
+    svg#graph {
+      width: 100%; height: 100%; display: block; background: #030a1a;
+    }
+
+    .node-card {
+      cursor: pointer; user-select: none; transition: all 0.15s ease;
+      filter: drop-shadow(0 0 8px rgba(0,0,0,0.3));
+    }
+    .node-card:hover { filter: drop-shadow(0 0 16px rgba(0,0,0,0.5)); }
+    .node-card.selected { filter: drop-shadow(0 0 24px rgba(255,255,255,0.4)); }
+    .node-rect {
+      stroke-width: 2; fill-opacity: 0.05; transition: all 0.15s ease;
+    }
+    .node-card:hover .node-rect { stroke-width: 2.5; fill-opacity: 0.1; }
+    .node-card.selected .node-rect { stroke-width: 3; fill-opacity: 0.15; }
+    .node-label { font-size: 12px; font-weight: 500; pointer-events: none; }
+    .node-category { font-size: 10px; opacity: 0.7; pointer-events: none; }
+    .expand-dot { font-size: 8px; opacity: 0.6; pointer-events: none; }
+
+    .link {
+      stroke: rgba(255,255,255,0.15); stroke-width: 1.5; fill: none; marker-end: url(#arrowhead);
+    }
+    .link.xlink {
+      stroke-dasharray: 4,3; stroke: rgba(200,200,200,0.2); marker-end: url(#arrowhead-x);
+    }
+    #arrowhead { fill: rgba(255,255,255,0.15); }
+    #arrowhead-x { fill: rgba(200,200,200,0.2); }
+
+    #legend {
+      position: fixed; bottom: 20px; left: 20px; z-index: 25;
+      background: rgba(4,12,28,0.95); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 12px; min-width: 160px; max-height: 300px; overflow-y: auto;
+    }
+    .legend-title { font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #a78bfa; }
+    .legend-item {
+      display: flex; align-items: center; gap: 8px; padding: 6px; cursor: pointer;
+      border-radius: 4px; transition: background 0.2s;
+    }
+    .legend-item:hover { background: rgba(255,255,255,0.08); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    #panel {
+      position: fixed; right: 0; top: 0; width: 400px; height: 100%;
+      background: #07111f; border-left: 1px solid rgba(255,255,255,0.08);
+      z-index: 30; overflow-y: auto; padding: 28px 24px 40px;
+      transform: translateX(100%); transition: transform 0.25s ease;
+    }
+    #panel.open { transform: translateX(0); }
+    #panel-close {
+      position: absolute; top: 16px; right: 16px;
+      background: transparent; border: none; color: rgba(255,255,255,0.4);
+      font-size: 18px; cursor: pointer; padding: 4px;
+    }
+    #panel-close:hover { color: #e2e8f0; }
+
+    #panel-depth-label {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      color: #34d399; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .panel-cat-badge {
+      display: inline-block; padding: 3px 9px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; margin-bottom: 10px; border: 1px solid;
+    }
+    .panel-title { font-size: 28px; font-weight: 700; margin-bottom: 14px; color: #f1f5f9; line-height: 1.2; }
+    .panel-desc { font-size: 14px; line-height: 1.6; margin-bottom: 20px; color: #94a3b8; }
+
+    .panel-section {
+      margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .panel-section:last-child { border-bottom: none; }
+    .panel-section-title {
+      font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .copy-btn {
+      background: rgba(255,255,255,0.1); border: none; color: #e2e8f0;
+      padding: 3px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.15); }
+
+    .code-block {
+      background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px; padding: 14px; font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px; line-height: 1.5; overflow-x: auto; color: #cbd5e1;
+    }
+
+    .panel-section p { font-size: 14px; line-height: 1.6; color: #94a3b8; }
+
+    .panel-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .panel-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      padding: 7px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
+      transition: all 0.15s; color: #cbd5e1; white-space: nowrap;
+    }
+    .panel-pill:hover {
+      background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.22);
+      color: #f1f5f9;
+    }
+    .panel-pill.pill-tool {
+      background: rgba(52,211,153,0.07); border-color: rgba(52,211,153,0.2);
+      color: #a7f3d0;
+    }
+    .panel-pill.pill-tool:hover {
+      background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.35);
+    }
+
+    #panel-breadcrumb {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+      margin-bottom: 12px; font-size: 12px;
+    }
+    .bc-item {
+      color: #38bdf8; cursor: pointer; transition: color 0.15s;
+      text-decoration: underline; text-decoration-color: rgba(56,189,248,0.35);
+      text-underline-offset: 2px;
+    }
+    .bc-item:hover { color: #7dd3fc; text-decoration-color: rgba(125,211,252,0.6); }
+    .bc-item.bc-current { color: #64748b; cursor: default; text-decoration: none; }
+    .bc-sep { color: #334155; font-size: 10px; }
+
+    #panel-back {
+      display: none; align-items: center; gap: 6px;
+      background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2);
+      color: #38bdf8; padding: 7px 14px; border-radius: 8px;
+      font-size: 13px; cursor: pointer; transition: all 0.15s;
+      margin-bottom: 18px; width: fit-content;
+    }
+    #panel-back:hover { background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.35); }
+    #panel-back.visible { display: flex; }
+
+    .path-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px; border-radius: 10px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      cursor: pointer; transition: all 0.15s; margin-bottom: 8px;
+    }
+    .path-item:last-child { margin-bottom: 0; }
+    .path-item:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.14); }
+    .path-num {
+      min-width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(52,211,153,0.12); color: #34d399;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+    }
+    .path-node-name { font-size: 14px; font-weight: 600; color: #e2e8f0; margin-bottom: 3px; }
+    .path-note { font-size: 12px; color: #475569; line-height: 1.4; }
+
+    #kb-hints {
+      position: fixed; bottom: 20px; right: 20px; z-index: 25;
+      background: rgba(4,12,28,0.95); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 12px; font-size: 11px; max-width: 200px;
+    }
+    .kb-hint { margin: 4px 0; color: #a78bfa; }
+    .kb-hint strong { color: #34d399; }
+
+    .search-highlight { animation: pulse-glow 0.6s ease-in-out; }
+    @keyframes pulse-glow {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(52,211,153,0.6)); }
+      50% { filter: drop-shadow(0 0 16px rgba(52,211,153,1)); }
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+  </style>
+</head>
+<body>
+  <canvas id="starfield"></canvas>
+  <div id="topbar">
+    <div id="topbar-title">🧠 GenAI Mindmap</div>
+    <input type="text" id="topbar-search" placeholder="Search nodes...">
+    <div class="topbar-btn-group">
+      <button class="topbar-btn" id="btn-domains">[Domains]</button>
+      <button class="topbar-btn" id="btn-topics">[+Topics]</button>
+      <button class="topbar-btn" id="btn-tools">[+Tools]</button>
+      <button class="topbar-btn" id="btn-collapse">[Collapse]</button>
+      <button class="topbar-btn" id="btn-fit">[Fit]</button>
+      <button class="topbar-btn" id="btn-reset">[Reset]</button>
+    </div>
+    <div id="topbar-right">
+      <button class="topbar-btn" id="btn-edit">[✏ Edit]</button>
+      <button class="topbar-btn hidden" id="btn-add">[+ Node]</button>
+      <button class="topbar-btn hidden" id="btn-link">[⟶ Link]</button>
+      <button class="topbar-btn" id="btn-export">[⬇ Export]</button>
+      <button class="topbar-btn" id="btn-import">[⬆ Import]</button>
+    </div>
+  </div>
+  <div id="graph-container">
+    <svg id="graph"></svg>
+  </div>
+  <div id="legend">
+    <div class="legend-title">Domains</div>
+    <div id="legend-items"></div>
+  </div>
+  <div id="kb-hints">
+    <div class="kb-hint"><strong>Click</strong> = select</div>
+    <div class="kb-hint"><strong>Double-click</strong> = expand/collapse</div>
+    <div class="kb-hint"><strong>Right-click</strong> = context menu (edit mode)</div>
+  </div>
+  <div id="panel">
+    <button id="panel-close">✕</button>
+    <div id="panel-breadcrumb"></div>
+    <button id="panel-back">← Back</button>
+    <div id="panel-depth-label">SELECTED NODE</div>
+    <div class="panel-cat-badge" id="panel-cat"></div>
+    <h2 class="panel-title" id="panel-title"></h2>
+    <p class="panel-desc" id="panel-desc"></p>
+    <div class="panel-section" id="ps-why" style="display:none;">
+      <div class="panel-section-title">Why it matters</div>
+      <p id="ps-why-text"></p>
+    </div>
+    <div class="panel-section" id="ps-learn" style="display:none;">
+      <div class="panel-section-title">What to learn</div>
+      <div class="panel-pills" id="ps-learn-pills"></div>
+    </div>
+    <div class="panel-section" id="ps-tools-sec" style="display:none;">
+      <div class="panel-section-title">Key tools</div>
+      <div class="panel-pills" id="ps-tools-pills"></div>
+    </div>
+    <div class="panel-section" id="ps-code" style="display:none;">
+      <div class="panel-section-title">Python Example <button class="copy-btn" id="copy-code-btn">copy</button></div>
+      <pre class="code-block" id="code-block"></pre>
+    </div>
+    <div class="panel-section" id="ps-tip" style="display:none;">
+      <div class="panel-section-title">💡 Pro tip</div>
+      <p id="ps-tip-text"></p>
+    </div>
+    <div class="panel-section" id="ps-links" style="display:none;">
+      <div class="panel-section-title">Connected topics</div>
+      <div class="panel-pills" id="panel-links"></div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+  <script>
+const CATS={root:{n:'Root',c:'#e2e8f0'},foundations:{n:'Foundations',c:'#f472b6'},ml_core:{n:'ML Core',c:'#fb923c'},transformers:{n:'Transformers',c:'#facc15'},llms:{n:'LLMs',c:'#a78bfa'},prompting:{n:'Prompting',c:'#34d399'},rag:{n:'RAG',c:'#22d3ee'},agents:{n:'Agents',c:'#60a5fa'},finetuning:{n:'Fine-tuning',c:'#f87171'},multimodal:{n:'Multimodal',c:'#c084fc'},infra:{n:'Infra',c:'#4ade80'},eval_safety:{n:'Eval & Safety',c:'#fbbf24'},applications:{n:'Applications',c:'#38bdf8'},custom:{n:'Custom',c:'#cbd5e1'}};
+const SZ={0:{w:140,h:64},1:{w:120,h:54},2:{w:106,h:46},3:{w:92,h:40}};
+const DN=[
+{id:'root',label:'GenAI',cat:'root',g:0,p:null,desc:'The complete GenAI ecosystem — from math foundations to production deployment.'},
+{id:'foundations',label:'Foundations',cat:'foundations',g:1,p:'root',desc:'Core math, Python, and ML theory needed before diving into GenAI.'},
+{id:'math_foundations',label:'Math Foundations',cat:'foundations',g:2,p:'foundations',desc:'Linear algebra, calculus, and probability that underpin all of ML.'},
+{id:'python_ecosystem',label:'Python Ecosystem',cat:'foundations',g:2,p:'foundations',desc:'Scientific computing stack: NumPy, Pandas, Matplotlib.'},
+{id:'pytorch_basics',label:'PyTorch Basics',cat:'foundations',g:2,p:'foundations',desc:'Tensors, autograd, datasets, and training loops.'},
+{id:'linear_algebra',label:'Linear Algebra',cat:'foundations',g:3,p:'math_foundations',desc:'Vectors, matrices, eigenvalues, SVD — the backbone of embeddings and attention.'},
+{id:'calculus',label:'Calculus & Autodiff',cat:'foundations',g:3,p:'math_foundations',desc:'Gradients, chain rule, partial derivatives — foundation of backpropagation.'},
+{id:'probability',label:'Probability & Stats',cat:'foundations',g:3,p:'math_foundations',desc:'Distributions, Bayes theorem, MLE — critical for understanding LLM outputs.'},
+{id:'numpy',label:'NumPy',cat:'foundations',g:3,p:'python_ecosystem',desc:'Fast N-dimensional array operations for ML preprocessing and linear algebra.'},
+{id:'pandas',label:'Pandas',cat:'foundations',g:3,p:'python_ecosystem',desc:'DataFrame library for structured data manipulation and EDA.'},
+{id:'matplotlib',label:'Matplotlib / Seaborn',cat:'foundations',g:3,p:'python_ecosystem',desc:'Visualization for EDA, training curves, and attention heatmaps.'},
+{id:'pytorch_t',label:'PyTorch Tensors',cat:'foundations',g:3,p:'pytorch_basics',desc:'Core tensor operations — the lingua franca of deep learning.'},
+{id:'autograd',label:'Autograd',cat:'foundations',g:3,p:'pytorch_basics',desc:'Automatic differentiation engine — computes gradients automatically via tape.'},
+{id:'hf_datasets',label:'HF Datasets',cat:'foundations',g:3,p:'pytorch_basics',desc:'Streaming datasets with Arrow backend for memory-efficient training.'},
+{id:'ml_core_domain',label:'ML Core',cat:'ml_core',g:1,p:'root',desc:'Deep learning fundamentals: architectures, optimizers, training techniques.'},
+{id:'neural_nets',label:'Neural Networks',cat:'ml_core',g:2,p:'ml_core_domain',desc:'Perceptrons, activation functions, backpropagation, batch normalization.'},
+{id:'optimization',label:'Optimization',cat:'ml_core',g:2,p:'ml_core_domain',desc:'Gradient descent variants, learning rate scheduling, weight initialization.'},
+{id:'training_tech',label:'Training Techniques',cat:'ml_core',g:2,p:'ml_core_domain',desc:'Mixed precision, gradient checkpointing, distributed training.'},
+{id:'regularization',label:'Regularization',cat:'ml_core',g:2,p:'ml_core_domain',desc:'Dropout, weight decay, early stopping to prevent overfitting.'},
+{id:'backprop',label:'Backpropagation',cat:'ml_core',g:3,p:'neural_nets',desc:'Compute gradients via chain rule through the computation graph.'},
+{id:'activations',label:'Activations',cat:'ml_core',g:3,p:'neural_nets',desc:'ReLU, GELU, SiLU — non-linearities enabling deep representation learning.'},
+{id:'batch_norm',label:'LayerNorm / BatchNorm',cat:'ml_core',g:3,p:'neural_nets',desc:'Normalizes activations to stabilize and speed up training.'},
+{id:'adam',label:'Adam Optimizer',cat:'ml_core',g:3,p:'optimization',desc:'Adaptive moment estimation — standard optimizer for LLM training.'},
+{id:'lr_schedule',label:'LR Scheduling',cat:'ml_core',g:3,p:'optimization',desc:'Cosine annealing, warmup, cyclical LR to control training dynamics.'},
+{id:'weight_init',label:'Weight Init',cat:'ml_core',g:3,p:'optimization',desc:'Xavier, Kaiming initialization to prevent vanishing/exploding gradients.'},
+{id:'mixed_prec',label:'Mixed Precision',cat:'ml_core',g:3,p:'training_tech',desc:'bf16/fp16 with fp32 master weights via torch.amp — 2× memory savings.'},
+{id:'grad_ckpt',label:'Grad Checkpointing',cat:'ml_core',g:3,p:'training_tech',desc:'Trade compute for memory — recompute activations during backward pass.'},
+{id:'deepspeed',label:'DeepSpeed',cat:'ml_core',g:3,p:'training_tech',desc:'Microsoft ZeRO optimizer for multi-GPU/multi-node distributed training.'},
+{id:'dropout',label:'Dropout',cat:'ml_core',g:3,p:'regularization',desc:'Randomly zero activations during training to prevent co-adaptation.'},
+{id:'weight_decay',label:'Weight Decay',cat:'ml_core',g:3,p:'regularization',desc:'L2 regularization; AdamW decouples it correctly from momentum.'},
+{id:'transformers_domain',label:'Transformers',cat:'transformers',g:1,p:'root',desc:'Attention-based architectures that power all modern LLMs.'},
+{id:'attention',label:'Attention Mechanisms',cat:'transformers',g:2,p:'transformers_domain',desc:'Self-attention, cross-attention, multi-head variants.'},
+{id:'pos_encoding',label:'Positional Encoding',cat:'transformers',g:2,p:'transformers_domain',desc:'Sinusoidal, RoPE, ALiBi — how transformers know token order.'},
+{id:'transformer_arch',label:'Architectures',cat:'transformers',g:2,p:'transformers_domain',desc:'Encoder-only, decoder-only, encoder-decoder variants and use cases.'},
+{id:'kv_cache',label:'KV Cache & Efficiency',cat:'transformers',g:2,p:'transformers_domain',desc:'Key-value caching, grouped-query attention, speculative decoding.'},
+{id:'self_attention',label:'Self-Attention',cat:'transformers',g:3,p:'attention',desc:'Q·Kᵀ/√d scoring mechanism that lets tokens attend to all other tokens.'},
+{id:'multihead_attn',label:'Multi-Head Attention',cat:'transformers',g:3,p:'attention',desc:'Parallel attention heads capture different relationship subtypes.'},
+{id:'flash_attn',label:'Flash Attention 2',cat:'transformers',g:3,p:'attention',desc:'IO-aware recomputation cuts memory and boosts throughput 2–4×.'},
+{id:'cross_attn',label:'Cross-Attention',cat:'transformers',g:3,p:'attention',desc:'Decoder attends to encoder outputs in seq2seq and multimodal models.'},
+{id:'rope',label:'RoPE',cat:'transformers',g:3,p:'pos_encoding',desc:'Rotary position embeddings — used in Llama, Mistral, Qwen, GPT-NeoX.'},
+{id:'alibi',label:'ALiBi',cat:'transformers',g:3,p:'pos_encoding',desc:'Attention with linear biases — enables extrapolation to longer contexts.'},
+{id:'sinusoidal_pe',label:'Sinusoidal PE',cat:'transformers',g:3,p:'pos_encoding',desc:'Original transformer PE using sin/cos functions of position.'},
+{id:'encoder_only',label:'BERT / Encoder-only',cat:'transformers',g:3,p:'transformer_arch',desc:'Bidirectional transformers for classification, NER, and embeddings.'},
+{id:'decoder_only',label:'GPT / Decoder-only',cat:'transformers',g:3,p:'transformer_arch',desc:'Autoregressive generation — basis for all modern LLMs.'},
+{id:'enc_dec',label:'T5 / Enc-Dec',cat:'transformers',g:3,p:'transformer_arch',desc:'Encoder-decoder for seq2seq: translation, summarization.'},
+{id:'paged_attn',label:'Paged Attention',cat:'transformers',g:3,p:'kv_cache',desc:'Non-contiguous KV blocks like OS virtual memory — enables vLLM.'},
+{id:'gqa',label:'Grouped-Query Attn',cat:'transformers',g:3,p:'kv_cache',desc:'Multiple query heads share one KV head — used in Llama 3, Mistral.'},
+{id:'spec_dec',label:'Speculative Decoding',cat:'transformers',g:3,p:'kv_cache',desc:'Small draft model proposes tokens; large model verifies in parallel.'},
+{id:'llms',label:'LLMs',cat:'llms',g:1,p:'root',desc:'Large language models: frontier commercial and open-source alternatives.'},
+{id:'frontier_models',label:'Frontier Models',cat:'llms',g:2,p:'llms',desc:'State-of-the-art commercial LLMs with latest capabilities.'},
+{id:'open_models',label:'Open-Source LLMs',cat:'llms',g:2,p:'llms',desc:'Openly available weights for fine-tuning and local deployment.'},
+{id:'llm_internals',label:'LLM Internals',cat:'llms',g:2,p:'llms',desc:'Tokenization, context window, scaling laws, emergent abilities.'},
+{id:'gpt4o',label:'GPT-4o',cat:'llms',g:3,p:'frontier_models',desc:'OpenAI multimodal flagship — vision, audio, and text natively.'},
+{id:'claude35',label:'Claude 3.5 Sonnet',cat:'llms',g:3,p:'frontier_models',desc:'Anthropic top coding and reasoning model with 200K context.'},
+{id:'gemini15',label:'Gemini 1.5 Pro',cat:'llms',g:3,p:'frontier_models',desc:'Google 1M+ token context window with multimodal capabilities.'},
+{id:'o3',label:'o3 / o4-mini',cat:'llms',g:3,p:'frontier_models',desc:'OpenAI reasoning models with extended thinking and search.'},
+{id:'llama3',label:'Llama 3.1',cat:'llms',g:3,p:'open_models',desc:'Meta 8B/70B/405B — best open-weight foundation models.'},
+{id:'mistral',label:'Mistral 7B',cat:'llms',g:3,p:'open_models',desc:'Sliding window attention, GQA, efficient inference, strong instruct.'},
+{id:'phi3',label:'Phi-3 / Phi-4',cat:'llms',g:3,p:'open_models',desc:'Microsoft small language models punching above their size.'},
+{id:'qwen25',label:'Qwen 2.5',cat:'llms',g:3,p:'open_models',desc:'Alibaba multilingual models with strong code and math skills.'},
+{id:'gemma2',label:'Gemma 2',cat:'llms',g:3,p:'open_models',desc:'Google 2B/9B/27B open models, efficient for fine-tuning.'},
+{id:'deepseek',label:'DeepSeek R1',cat:'llms',g:3,p:'open_models',desc:'Open reasoning model rivaling o1 at a fraction of the cost.'},
+{id:'tokenization',label:'Tokenization',cat:'llms',g:3,p:'llm_internals',desc:'BPE, SentencePiece, tiktoken — converting text to token IDs.'},
+{id:'context_window',label:'Context Window',cat:'llms',g:3,p:'llm_internals',desc:'Max tokens a model attends to; long-context tricks like RoPE scaling.'},
+{id:'scaling_laws',label:'Scaling Laws',cat:'llms',g:3,p:'llm_internals',desc:'Chinchilla: N tokens ≈ 20× parameters for compute-optimal training.'},
+{id:'moe',label:'Mixture of Experts',cat:'llms',g:3,p:'llm_internals',desc:'Sparse activation: only top-k experts run per token (Mixtral, GPT-4).'},
+{id:'prompting',label:'Prompting',cat:'prompting',g:1,p:'root',desc:'Techniques to elicit better outputs from LLMs without weight updates.'},
+{id:'basic_prompting',label:'Basic Techniques',cat:'prompting',g:2,p:'prompting',desc:'Zero-shot, few-shot, system prompts, role prompting.'},
+{id:'advanced_reasoning',label:'Advanced Reasoning',cat:'prompting',g:2,p:'prompting',desc:'Chain-of-thought variants to improve multi-step reasoning.'},
+{id:'programmatic_prompting',label:'Programmatic',cat:'prompting',g:2,p:'prompting',desc:'Code-driven prompt optimization and generation.'},
+{id:'output_control',label:'Output Control',cat:'prompting',g:2,p:'prompting',desc:'Constraining model outputs to match schemas and types.'},
+{id:'zero_shot',label:'Zero-shot',cat:'prompting',g:3,p:'basic_prompting',desc:'Direct task instruction with no examples in the prompt.'},
+{id:'few_shot',label:'Few-shot',cat:'prompting',g:3,p:'basic_prompting',desc:'Provide 2–5 examples to guide format and style.'},
+{id:'system_prompts',label:'System Prompts',cat:'prompting',g:3,p:'basic_prompting',desc:'Persistent instructions setting persona, format, and constraints.'},
+{id:'role_prompting',label:'Role Prompting',cat:'prompting',g:3,p:'basic_prompting',desc:'Assign a persona to improve domain-specific responses.'},
+{id:'zero_cot',label:'Chain-of-Thought',cat:'prompting',g:3,p:'advanced_reasoning',desc:'"Think step by step" improves multi-step reasoning by 20–40%.'},
+{id:'scratchpad',label:'Extended Thinking',cat:'prompting',g:3,p:'advanced_reasoning',desc:'Model reasons in a private scratch space before final answer.'},
+{id:'self_consist',label:'Self-Consistency',cat:'prompting',g:3,p:'advanced_reasoning',desc:'Generate N reasoning paths, take majority vote for reliability.'},
+{id:'tot',label:'Tree of Thoughts',cat:'prompting',g:3,p:'advanced_reasoning',desc:'Explore reasoning tree with backtracking for complex problems.'},
+{id:'react',label:'ReAct',cat:'prompting',g:3,p:'advanced_reasoning',desc:'Interleave reasoning and action steps for agentic tasks.'},
+{id:'dspy',label:'DSPy',cat:'prompting',g:3,p:'programmatic_prompting',desc:'Optimize prompts automatically using labeled data + teleprompters.'},
+{id:'lmql',label:'LMQL',cat:'prompting',g:3,p:'programmatic_prompting',desc:'SQL-like query language for constrained LLM decoding.'},
+{id:'json_mode',label:'JSON Mode',cat:'prompting',g:3,p:'output_control',desc:'Force model to output valid JSON — supported natively by major APIs.'},
+{id:'instructor',label:'Instructor',cat:'prompting',g:3,p:'output_control',desc:'Pydantic-validated structured outputs via function calling.'},
+{id:'outlines',label:'Outlines',cat:'prompting',g:3,p:'output_control',desc:'Token-level constrained decoding using finite-state automata.'},
+{id:'rag',label:'RAG',cat:'rag',g:1,p:'root',desc:'Retrieval Augmented Generation: ground LLMs in external knowledge.'},
+{id:'embeddings_topic',label:'Embeddings',cat:'rag',g:2,p:'rag',desc:'Dense vector representations of text for semantic similarity search.'},
+{id:'vector_dbs',label:'Vector Databases',cat:'rag',g:2,p:'rag',desc:'Specialized stores for ANN search over high-dimensional embeddings.'},
+{id:'retrieval_tech',label:'Retrieval Techniques',cat:'rag',g:2,p:'rag',desc:'Dense, sparse, hybrid retrieval and query transformation methods.'},
+{id:'post_retrieval',label:'Post-Retrieval',cat:'rag',g:2,p:'rag',desc:'Reranking, context compression, and relevance filtering.'},
+{id:'advanced_rag',label:'Advanced RAG',cat:'rag',g:2,p:'rag',desc:'Multi-hop, agentic, and graph-based retrieval patterns.'},
+{id:'st_lib',label:'Sentence Transformers',cat:'rag',g:3,p:'embeddings_topic',desc:'Open-source SBERT library with 200+ pretrained embedding models.'},
+{id:'oai_emb',label:'OpenAI Embeddings',cat:'rag',g:3,p:'embeddings_topic',desc:'text-embedding-3-large: 3072-dim, strong cross-lingual performance.'},
+{id:'bge_rag',label:'BGE / E5 Models',cat:'rag',g:3,p:'embeddings_topic',desc:'BAAI general embeddings — top performers on MTEB benchmark.'},
+{id:'cohere_emb',label:'Cohere Embed',cat:'rag',g:3,p:'embeddings_topic',desc:'Commercial embeddings with int8 quantization for efficiency.'},
+{id:'pinecone',label:'Pinecone',cat:'rag',g:3,p:'vector_dbs',desc:'Managed serverless vector DB with namespaces for multi-tenancy.'},
+{id:'chroma',label:'Chroma',cat:'rag',g:3,p:'vector_dbs',desc:'In-process vector DB — perfect for local RAG prototyping.'},
+{id:'qdrant',label:'Qdrant',cat:'rag',g:3,p:'vector_dbs',desc:'Rust-native vector DB with payload filtering and named vectors.'},
+{id:'pgvector',label:'pgvector',cat:'rag',g:3,p:'vector_dbs',desc:'PostgreSQL extension for vector similarity (IVFFLAT, HNSW indexes).'},
+{id:'weaviate',label:'Weaviate',cat:'rag',g:3,p:'vector_dbs',desc:'Graph-based vector DB with built-in vectorization modules.'},
+{id:'milvus',label:'Milvus',cat:'rag',g:3,p:'vector_dbs',desc:'Cloud-native vector DB for billion-scale similarity search.'},
+{id:'dense_retrieval',label:'Dense Retrieval',cat:'rag',g:3,p:'retrieval_tech',desc:'ANN search over embeddings — DPR, bi-encoders, FAISS.'},
+{id:'bm25',label:'BM25',cat:'rag',g:3,p:'retrieval_tech',desc:'Probabilistic keyword retrieval — excellent for exact term matching.'},
+{id:'hybrid_search',label:'Hybrid Search',cat:'rag',g:3,p:'retrieval_tech',desc:'Combine dense + sparse scores via RRF for best-of-both retrieval.'},
+{id:'hyde',label:'HyDE',cat:'rag',g:3,p:'retrieval_tech',desc:'Generate hypothetical doc with LLM, embed it for better retrieval.'},
+{id:'multi_query',label:'Multi-Query',cat:'rag',g:3,p:'retrieval_tech',desc:'Generate N query rewrites, union results for broader recall.'},
+{id:'rerank',label:'Reranking',cat:'rag',g:3,p:'post_retrieval',desc:'Cross-encoder or Cohere Rerank rescores top-k chunks for precision.'},
+{id:'ctx_compress',label:'Context Compression',cat:'rag',g:3,p:'post_retrieval',desc:'LLMLingua and selective extraction reduce token cost by 20×.'},
+{id:'llamaindex',label:'LlamaIndex',cat:'rag',g:3,p:'advanced_rag',desc:'Full RAG framework with agents, pipelines, and many integrations.'},
+{id:'graphrag',label:'GraphRAG',cat:'rag',g:3,p:'advanced_rag',desc:'Microsoft knowledge graph RAG — better multi-hop reasoning.'},
+{id:'agentic_rag',label:'Agentic RAG',cat:'rag',g:3,p:'advanced_rag',desc:'Agent decides when and what to retrieve based on query analysis.'},
+{id:'agents',label:'Agents',cat:'agents',g:1,p:'root',desc:'LLM-powered autonomous systems that plan, act, and use tools.'},
+{id:'agent_planning',label:'Planning',cat:'agents',g:2,p:'agents',desc:'How agents decompose goals into multi-step action sequences.'},
+{id:'agent_memory',label:'Memory',cat:'agents',g:2,p:'agents',desc:'Short-term context, long-term retrieval, and episodic patterns.'},
+{id:'tool_use',label:'Tool Use',cat:'agents',g:2,p:'agents',desc:'Structured interfaces for agents to call external functions and APIs.'},
+{id:'agent_frameworks',label:'Frameworks',cat:'agents',g:2,p:'agents',desc:'Building, orchestrating, and deploying multi-step agent systems.'},
+{id:'multi_agent',label:'Multi-Agent',cat:'agents',g:2,p:'agents',desc:'Coordination: orchestrator-worker, peer-to-peer, debate patterns.'},
+{id:'react_agent',label:'ReAct Pattern',cat:'agents',g:3,p:'agent_planning',desc:'Reason-Act-Observe loop: think, take action, observe, repeat.'},
+{id:'plan_execute',label:'Plan & Execute',cat:'agents',g:3,p:'agent_planning',desc:'Separate planning phase from execution for complex multi-step tasks.'},
+{id:'reflection',label:'Reflection / Critique',cat:'agents',g:3,p:'agent_planning',desc:'Agent reviews and revises its own outputs before finalizing.'},
+{id:'st_memory',label:'Conversation Buffer',cat:'agents',g:3,p:'agent_memory',desc:'Sliding window or summary memory for conversation history.'},
+{id:'lt_memory',label:'Long-term Memory',cat:'agents',g:3,p:'agent_memory',desc:'External vector store for agents to persist and retrieve past facts.'},
+{id:'entity_memory',label:'Entity Memory',cat:'agents',g:3,p:'agent_memory',desc:'Track entities (people, orgs) and their attributes across sessions.'},
+{id:'fc_api',label:'Function Calling',cat:'agents',g:3,p:'tool_use',desc:'JSON schema defining callable tools; LLM decides when and how to call.'},
+{id:'mcp',label:'Model Context Protocol',cat:'agents',g:3,p:'tool_use',desc:'Anthropic open standard for LLM tool integration across clients.'},
+{id:'tool_selection',label:'Tool Selection',cat:'agents',g:3,p:'tool_use',desc:'How agents pick the right tool from many options; RAG-over-tools.'},
+{id:'langchain',label:'LangChain',cat:'agents',g:3,p:'agent_frameworks',desc:'Composable chains and tools; huge ecosystem, great for prototyping.'},
+{id:'langgraph',label:'LangGraph',cat:'agents',g:3,p:'agent_frameworks',desc:'Stateful cyclical graphs for production agent workflows.'},
+{id:'crewai',label:'CrewAI',cat:'agents',g:3,p:'agent_frameworks',desc:'Role-based multi-agent crews with task delegation.'},
+{id:'autogen',label:'AutoGen',cat:'agents',g:3,p:'agent_frameworks',desc:'Microsoft multi-agent framework with conversable agents.'},
+{id:'smolagents',label:'SmolAgents',cat:'agents',g:3,p:'agent_frameworks',desc:'HuggingFace minimal code-first agent framework.'},
+{id:'orchestrator',label:'Orchestrator Pattern',cat:'agents',g:3,p:'multi_agent',desc:'Central planner routes subtasks to specialized sub-agents.'},
+{id:'parallel_agents',label:'Parallel Execution',cat:'agents',g:3,p:'multi_agent',desc:'Fan-out pattern: run independent subtasks concurrently.'},
+{id:'finetuning',label:'Fine-tuning',cat:'finetuning',g:1,p:'root',desc:'Adapting pretrained models to specific tasks, styles, or domains.'},
+{id:'peft_methods',label:'PEFT Methods',cat:'finetuning',g:2,p:'finetuning',desc:'Parameter-efficient fine-tuning: train <1% of weights for ~90% gain.'},
+{id:'alignment',label:'Alignment & RLHF',cat:'finetuning',g:2,p:'finetuning',desc:'Techniques to align model behavior with human preferences.'},
+{id:'ft_tools',label:'Training Tools',cat:'finetuning',g:2,p:'finetuning',desc:'Libraries and frameworks for efficient LLM fine-tuning.'},
+{id:'data_prep',label:'Data Preparation',cat:'finetuning',g:2,p:'finetuning',desc:'Curating, cleaning, and formatting training data for SFT.'},
+{id:'lora',label:'LoRA',cat:'finetuning',g:3,p:'peft_methods',desc:'Low-rank adaptation: inject trainable rank-r matrices into attention layers.'},
+{id:'qlora4bit',label:'QLoRA',cat:'finetuning',g:3,p:'peft_methods',desc:'4-bit NF quantization + LoRA — fine-tune 65B on a single GPU.'},
+{id:'prefix_tuning',label:'Prefix Tuning',cat:'finetuning',g:3,p:'peft_methods',desc:'Prepend trainable soft tokens to input and hidden states.'},
+{id:'ia3',label:'IA³',cat:'finetuning',g:3,p:'peft_methods',desc:'Few-shot PEFT via learned vectors that scale activations.'},
+{id:'rlhf',label:'RLHF',cat:'finetuning',g:3,p:'alignment',desc:'PPO-based reinforcement learning from human feedback — powers ChatGPT.'},
+{id:'dpo',label:'DPO',cat:'finetuning',g:3,p:'alignment',desc:'Direct preference optimization — simpler, more stable alternative to RLHF.'},
+{id:'orpo',label:'ORPO',cat:'finetuning',g:3,p:'alignment',desc:'Odds Ratio Preference Optimization — single-stage SFT + alignment.'},
+{id:'rlaif',label:'RLAIF',cat:'finetuning',g:3,p:'alignment',desc:'Reinforcement learning from AI feedback — scale preference data with LLMs.'},
+{id:'trl',label:'HF TRL',cat:'finetuning',g:3,p:'ft_tools',desc:'Transformers RL library: SFTTrainer, DPOTrainer, PPOTrainer.'},
+{id:'unsloth',label:'Unsloth',cat:'finetuning',g:3,p:'ft_tools',desc:'Manual backprop kernels give 2–5× faster LoRA/QLoRA training.'},
+{id:'axolotl',label:'Axolotl',cat:'finetuning',g:3,p:'ft_tools',desc:'YAML-configured fine-tuning wrapper — great for quick experiments.'},
+{id:'llama_factory',label:'LLaMA-Factory',cat:'finetuning',g:3,p:'ft_tools',desc:'Web UI + CLI for fine-tuning 100+ models with built-in datasets.'},
+{id:'synthetic_data',label:'Synthetic Data',cat:'finetuning',g:3,p:'data_prep',desc:'Generate training data with strong LLMs — Alpaca, WizardLM approach.'},
+{id:'data_flywheel',label:'Data Flywheel',cat:'finetuning',g:3,p:'data_prep',desc:'Use model outputs + human ratings to continuously improve training data.'},
+{id:'multimodal',label:'Multimodal',cat:'multimodal',g:1,p:'root',desc:'Models that jointly process and generate across vision, audio, and text.'},
+{id:'vision_language',label:'Vision-Language',cat:'multimodal',g:2,p:'multimodal',desc:'Models understanding and reasoning about images alongside text.'},
+{id:'image_gen',label:'Image Generation',cat:'multimodal',g:2,p:'multimodal',desc:'Diffusion models and flow matching for text-to-image synthesis.'},
+{id:'audio_models',label:'Audio Models',cat:'multimodal',g:2,p:'multimodal',desc:'Speech recognition, TTS, and audio understanding.'},
+{id:'video_models',label:'Video Models',cat:'multimodal',g:2,p:'multimodal',desc:'Video generation, understanding, and temporal reasoning.'},
+{id:'gpt4v',label:'GPT-4V / 4o',cat:'multimodal',g:3,p:'vision_language',desc:'OpenAI vision model — strong at charts, documents, screenshots.'},
+{id:'llava',label:'LLaVA',cat:'multimodal',g:3,p:'vision_language',desc:'Open visual assistant: CLIP visual encoder + Llama text decoder.'},
+{id:'paligemma',label:'PaliGemma',cat:'multimodal',g:3,p:'vision_language',desc:'Google compact VLM — strong at captioning and DocVQA.'},
+{id:'qwen_vl',label:'Qwen-VL',cat:'multimodal',g:3,p:'vision_language',desc:'Alibaba multimodal model with strong OCR and chart understanding.'},
+{id:'diffusion',label:'Diffusion Models',cat:'multimodal',g:3,p:'image_gen',desc:'Score matching + denoising process (DDPM, DDIM) for image synthesis.'},
+{id:'stable_diff',label:'Stable Diffusion',cat:'multimodal',g:3,p:'image_gen',desc:'Latent diffusion model — best open-source image generation stack.'},
+{id:'dalle3',label:'DALL-E 3',cat:'multimodal',g:3,p:'image_gen',desc:'OpenAI image gen; uses ChatGPT to improve prompts before generation.'},
+{id:'flux',label:'Flux',cat:'multimodal',g:3,p:'image_gen',desc:'Black Forest Labs flow matching — SoTA open-source image generation.'},
+{id:'whisper',label:'Whisper',cat:'multimodal',g:3,p:'audio_models',desc:'OpenAI ASR — multilingual, noise-robust, fast with faster-whisper.'},
+{id:'tts_models',label:'TTS Models',cat:'multimodal',g:3,p:'audio_models',desc:'OpenAI TTS, ElevenLabs, Kokoro — text to natural-sounding speech.'},
+{id:'audiocraft',label:'MusicGen / AudioCraft',cat:'multimodal',g:3,p:'audio_models',desc:'Meta models for music and general audio generation.'},
+{id:'sora',label:'Sora',cat:'multimodal',g:3,p:'video_models',desc:'OpenAI video generation via spacetime diffusion transformer.'},
+{id:'video_diffusion',label:'Video Diffusion',cat:'multimodal',g:3,p:'video_models',desc:'Temporal diffusion — Wan2.1, CogVideoX, Mochi for open video gen.'},
+{id:'infra',label:'Infrastructure',cat:'infra',g:1,p:'root',desc:'Serving, quantization, hardware, and deployment for production LLMs.'},
+{id:'serving',label:'LLM Serving',cat:'infra',g:2,p:'infra',desc:'Inference engines and APIs for high-throughput, low-latency serving.'},
+{id:'quantization',label:'Quantization',cat:'infra',g:2,p:'infra',desc:'Reducing model precision (4-bit, 8-bit) to serve larger models cheaply.'},
+{id:'hardware',label:'Hardware',cat:'infra',g:2,p:'infra',desc:'GPU, TPU, and specialized silicon for training and inference.'},
+{id:'cloud_deploy',label:'Cloud & Deployment',cat:'infra',g:2,p:'infra',desc:'Managed hosting, auto-scaling, and serverless inference platforms.'},
+{id:'vllm',label:'vLLM',cat:'infra',g:3,p:'serving',desc:'Paged Attention + continuous batching — 10–20× better GPU utilization.'},
+{id:'ollama',label:'Ollama',cat:'infra',g:3,p:'serving',desc:'One-command local LLM runner with model library and REST API.'},
+{id:'tgi',label:'TGI (HF)',cat:'infra',g:3,p:'serving',desc:'HuggingFace Text Generation Inference — production-grade server.'},
+{id:'sglang',label:'SGLang',cat:'infra',g:3,p:'serving',desc:'Structured generation language — fast server with RadixAttention.'},
+{id:'gguf',label:'GGUF / llama.cpp',cat:'infra',g:3,p:'quantization',desc:'Quantized model format for CPU/GPU inference via llama.cpp.'},
+{id:'gptq',label:'GPTQ',cat:'infra',g:3,p:'quantization',desc:'Post-training 4-bit quantization via second-order optimization.'},
+{id:'awq',label:'AWQ',cat:'infra',g:3,p:'quantization',desc:'Activation-aware Weight Quantization — better accuracy than GPTQ.'},
+{id:'bnb',label:'BitsAndBytes',cat:'infra',g:3,p:'quantization',desc:'NF4/int8 quantization integrated into HuggingFace transformers.'},
+{id:'nvidia_gpu',label:'NVIDIA GPUs',cat:'infra',g:3,p:'hardware',desc:'H100, A100, RTX series — CUDA ecosystem dominates ML.'},
+{id:'amd_gpu',label:'AMD ROCm',cat:'infra',g:3,p:'hardware',desc:'MI300X competitive with H100; ROCm PyTorch support improving fast.'},
+{id:'apple_mlx',label:'Apple MLX',cat:'infra',g:3,p:'hardware',desc:'Apple Silicon ML framework — unified memory, fast local inference.'},
+{id:'hf_spaces',label:'HF Spaces',cat:'infra',g:3,p:'cloud_deploy',desc:'Instant ML app hosting with Gradio/Streamlit; free tier available.'},
+{id:'modal_labs',label:'Modal Labs',cat:'infra',g:3,p:'cloud_deploy',desc:'Serverless GPU compute — pay-per-second, deploy in pure Python.'},
+{id:'replicate',label:'Replicate',cat:'infra',g:3,p:'cloud_deploy',desc:'Run and share open-source models as APIs with fast cold-start.'},
+{id:'eval_safety',label:'Eval & Safety',cat:'eval_safety',g:1,p:'root',desc:'Measuring model quality and ensuring safe, aligned behavior.'},
+{id:'benchmarks',label:'Benchmarks',cat:'eval_safety',g:2,p:'eval_safety',desc:'Standard leaderboards and eval suites for model comparison.'},
+{id:'rag_eval',label:'RAG Evaluation',cat:'eval_safety',g:2,p:'eval_safety',desc:'Component-level and end-to-end evaluation of RAG pipelines.'},
+{id:'monitoring',label:'Observability',cat:'eval_safety',g:2,p:'eval_safety',desc:'Tracing, logging, and monitoring LLM apps in production.'},
+{id:'safety_tech',label:'Safety Techniques',cat:'eval_safety',g:2,p:'eval_safety',desc:'Red teaming, guardrails, and constitutional alignment methods.'},
+{id:'mmlu',label:'MMLU',cat:'eval_safety',g:3,p:'benchmarks',desc:'57-subject academic benchmark for general knowledge assessment.'},
+{id:'humaneval',label:'HumanEval',cat:'eval_safety',g:3,p:'benchmarks',desc:'OpenAI code generation benchmark — pass@k on Python functions.'},
+{id:'mt_bench',label:'MT-Bench',cat:'eval_safety',g:3,p:'benchmarks',desc:'GPT-4 judge scores multi-turn conversation quality (1–10 scale).'},
+{id:'lmsys',label:'Chatbot Arena',cat:'eval_safety',g:3,p:'benchmarks',desc:'Elo-rated human preference leaderboard via blind comparisons.'},
+{id:'ragas',label:'RAGAS',cat:'eval_safety',g:3,p:'rag_eval',desc:'Faithfulness, answer relevance, context precision/recall metrics.'},
+{id:'trulens',label:'TruLens',cat:'eval_safety',g:3,p:'rag_eval',desc:'RAG triad evaluation: groundedness, context relevance, answer relevance.'},
+{id:'deepeval',label:'DeepEval',cat:'eval_safety',g:3,p:'rag_eval',desc:'Pytest-style LLM evaluation framework with 14+ built-in metrics.'},
+{id:'wandb',label:'Weights & Biases',cat:'eval_safety',g:3,p:'monitoring',desc:'Experiment tracking, artifact management, and LLM tracing via Weave.'},
+{id:'langfuse',label:'Langfuse',cat:'eval_safety',g:3,p:'monitoring',desc:'Open-source LLM observability: traces, evals, prompt management.'},
+{id:'langsmith',label:'LangSmith',cat:'eval_safety',g:3,p:'monitoring',desc:'LangChain debugging, testing, and monitoring platform.'},
+{id:'red_teaming',label:'Red Teaming',cat:'eval_safety',g:3,p:'safety_tech',desc:'Adversarial probing to find jailbreaks and unsafe model behaviors.'},
+{id:'guardrails',label:'Guardrails',cat:'eval_safety',g:3,p:'safety_tech',desc:'Input/output filters — NeMo Guardrails, Llama Guard, Rebuff.'},
+{id:'const_ai',label:'Constitutional AI',cat:'eval_safety',g:3,p:'safety_tech',desc:'Anthropic RLAIF: principles-guided self-critique and revision.'},
+{id:'applications',label:'Applications',cat:'applications',g:1,p:'root',desc:'Production GenAI applications across industry domains.'},
+{id:'rag_systems',label:'RAG Systems',cat:'applications',g:2,p:'applications',desc:'Document Q&A, enterprise search, knowledge management.'},
+{id:'code_assist',label:'Code Assistants',cat:'applications',g:2,p:'applications',desc:'AI-powered coding, review, and code generation tools.'},
+{id:'structured_output_app',label:'Structured Outputs',cat:'applications',g:2,p:'applications',desc:'Extracting typed, validated data from unstructured text.'},
+{id:'database_query',label:'Text-to-Data',cat:'applications',g:2,p:'applications',desc:'Natural language interfaces for SQL, NoSQL, knowledge graphs.'},
+{id:'voice_agents',label:'Voice Agents',cat:'applications',g:2,p:'applications',desc:'Real-time voice interaction: ASR → LLM → TTS pipelines.'},
+{id:'doc_processing',label:'Document Processing',cat:'applications',g:2,p:'applications',desc:'Parsing, extracting, transforming PDFs, HTML, and tables.'},
+{id:'haystack',label:'Haystack',cat:'applications',g:3,p:'rag_systems',desc:'Deepset RAG framework with pipelines, REST API, and Studio UI.'},
+{id:'cognee',label:'Cognee',cat:'applications',g:3,p:'rag_systems',desc:'Memory graph for AI apps — connects RAG with knowledge graphs.'},
+{id:'cursor',label:'Cursor IDE',cat:'applications',g:3,p:'code_assist',desc:'AI-native editor with Composer, Chat, and inline edit modes.'},
+{id:'copilot',label:'GitHub Copilot',cat:'applications',g:3,p:'code_assist',desc:'LLM autocomplete + Copilot Chat in VS Code and IntelliJ.'},
+{id:'aider',label:'Aider',cat:'applications',g:3,p:'code_assist',desc:'CLI pair programmer editing files via git-aware LLM interaction.'},
+{id:'instructor_app',label:'Instructor',cat:'applications',g:3,p:'structured_output_app',desc:'Pydantic-validated extraction via function calling — returns typed objects.'},
+{id:'outlines_app',label:'Outlines',cat:'applications',g:3,p:'structured_output_app',desc:'Constrained decoding using regex and JSON schema automata.'},
+{id:'marvin',label:'Marvin',cat:'applications',g:3,p:'structured_output_app',desc:'Lightweight AI functions, extractors, and classifiers toolkit.'},
+{id:'text2sql',label:'Text-to-SQL',cat:'applications',g:3,p:'database_query',desc:'Natural language to SQL using few-shot prompting or fine-tuned models.'},
+{id:'vanna',label:'Vanna AI',cat:'applications',g:3,p:'database_query',desc:'RAG-based Text-to-SQL that stores schema + examples in a vector DB.'},
+{id:'livekit',label:'LiveKit Agents',cat:'applications',g:3,p:'voice_agents',desc:'Real-time voice agents — Whisper + LLM + TTS pipeline in < 300ms.'},
+{id:'elevenlabs',label:'ElevenLabs',cat:'applications',g:3,p:'voice_agents',desc:'Highest quality TTS API with voice cloning and emotional control.'},
+{id:'unstructured',label:'Unstructured.io',cat:'applications',g:3,p:'doc_processing',desc:'Parse PDF, HTML, DOCX, tables into chunks for RAG pipelines.'},
+{id:'docling',label:'Docling',cat:'applications',g:3,p:'doc_processing',desc:'IBM document parser with advanced table extraction and OCR.'},
+{id:'framework_tools',label:'Dev Tools',cat:'custom',g:1,p:'root',desc:'Developer ecosystem: MLOps, experiment tracking, and integration standards.'},
+{id:'mlops',label:'MLOps & Experiment',cat:'custom',g:2,p:'framework_tools',desc:'Tracking experiments, versioning data and models, CI/CD for ML.'},
+{id:'integration_std',label:'Integration Standards',cat:'custom',g:2,p:'framework_tools',desc:'OpenAI-compatible APIs and MCP for interoperable LLM tooling.'},
+{id:'dev_frameworks',label:'Dev Frameworks',cat:'custom',g:2,p:'framework_tools',desc:'Python UI and API frameworks for building LLM-powered apps.'},
+{id:'mlflow',label:'MLflow',cat:'custom',g:3,p:'mlops',desc:'Open-source experiment tracking, model registry, and deployment.'},
+{id:'dvc',label:'DVC',cat:'custom',g:3,p:'mlops',desc:'Data Version Control — version datasets and models alongside Git.'},
+{id:'hf_hub',label:'HuggingFace Hub',cat:'custom',g:3,p:'mlops',desc:'Model/dataset registry with 500K+ models and Git-LFS versioning.'},
+{id:'openai_compat',label:'OpenAI Compat API',cat:'custom',g:3,p:'integration_std',desc:'De facto API standard — vLLM, Ollama, LiteLLM all support it.'},
+{id:'litellm',label:'LiteLLM',cat:'custom',g:3,p:'integration_std',desc:'Unified API proxy for 100+ LLM providers with OpenAI format.'},
+{id:'streamlit',label:'Streamlit',cat:'custom',g:3,p:'dev_frameworks',desc:'Rapid LLM demo UIs in pure Python — great for internal tools.'},
+{id:'gradio',label:'Gradio',cat:'custom',g:3,p:'dev_frameworks',desc:'HuggingFace UI library — Spaces, chat interface, custom components.'},
+{id:'fastapi',label:'FastAPI',cat:'custom',g:3,p:'dev_frameworks',desc:'Async Python REST framework — wrap any LLM in a production endpoint.'}
+];
+
+const RICH={numpy:{use:'Array math for preprocessing, matrix ops, and vectorized computation.',code:`import numpy as np\na = np.array([[1,2],[3,4]])\nprint(np.linalg.eigvals(a))\n# Cosine similarity between two vectors\nv1, v2 = np.random.randn(768), np.random.randn(768)\nsim = np.dot(v1,v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))\nprint(f'cosine sim: {sim:.4f}')`,tip:'Use float32, not float64 — LLMs work in float32 and it halves memory usage.'},pytorch_t:{use:'Core tensor library for all deep learning in PyTorch.',code:`import torch\nx = torch.randn(2, 3, requires_grad=True, device='cuda')\ny = (x ** 2).mean()\ny.backward()\nprint(x.grad)\n# Use bfloat16 for LLM training\nx = x.to(torch.bfloat16)`,tip:'Always use bfloat16 for LLM training — more numerically stable than float16.'},adam:{use:'Default optimizer for training transformers and fine-tuning LLMs.',code:`import torch\nfrom torch.optim import AdamW\nmodel = MyModel()\noptimizer = AdamW(\n    model.parameters(),\n    lr=2e-4,\n    betas=(0.9, 0.999),\n    weight_decay=0.01  # AdamW decouples L2\n)\n# With cosine LR schedule\nfrom transformers import get_cosine_schedule_with_warmup\nscheduler = get_cosine_schedule_with_warmup(\n    optimizer, num_warmup_steps=100,\n    num_training_steps=1000\n)`,tip:'Use AdamW (not Adam) for transformers — weight decay is decoupled correctly.'},flash_attn:{use:'Drop-in attention replacement for 2-4× faster training and inference.',code:`# pip install flash-attn --no-build-isolation\nfrom flash_attn import flash_attn_qkvpacked_func\nimport torch\nqkv = torch.randn(2, 128, 3, 16, 64,\n    dtype=torch.float16, device='cuda')\nout = flash_attn_qkvpacked_func(qkv, dropout_p=0.0)\nprint(out.shape)  # (2, 128, 16, 64)\n# Or with HuggingFace (auto-enabled):\n# model = AutoModel.from_pretrained(...,\n#     attn_implementation='flash_attention_2')`,tip:'Requires A100/H100 with CUDA 11.6+. Pass dtype=torch.bfloat16 for stability.'},paged_attn:{use:'Core of vLLM — enables continuous batching and high GPU utilization.',code:`# pip install vllm\nfrom vllm import LLM, SamplingParams\nllm = LLM(model='meta-llama/Meta-Llama-3-8B-Instruct')\nparams = SamplingParams(\n    temperature=0.7, top_p=0.9, max_tokens=512\n)\nprompts = ['Explain attention in one paragraph.']\noutputs = llm.generate(prompts, params)\nprint(outputs[0].outputs[0].text)`,tip:'Set gpu_memory_utilization=0.90 to leave headroom. Use tensor_parallel_size for multi-GPU.'},spec_dec:{use:'Speed up inference 2-3× using a small draft model for token proposals.',code:`from transformers import AutoModelForCausalLM, AutoTokenizer\nimport torch\nass_model = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-125m', torch_dtype=torch.float16).cuda()\ntarget = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-1.3b', torch_dtype=torch.float16).cuda()\ntok = AutoTokenizer.from_pretrained('facebook/opt-1.3b')\ninputs = tok('Hello world', return_tensors='pt').to('cuda')\n# HF handles speculative decoding via assistant_model\nout = target.generate(**inputs,\n    assistant_model=ass_model, max_new_tokens=50)\nprint(tok.decode(out[0]))`,tip:'Use a 7B target + 1B draft. Both must share the same tokenizer.'},gpt4o:{use:'Best for multimodal tasks, complex reasoning, and agentic workflows.',code:`from openai import OpenAI\nclient = OpenAI()\n# Vision + text\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[{\n        'role': 'user',\n        'content': [\n            {'type': 'text', 'text': 'What is in this image?'},\n            {'type': 'image_url',\n             'image_url': {'url': 'https://example.com/img.jpg'}}\n        ]\n    }]\n)\nprint(response.choices[0].message.content)`,tip:'Use max_completion_tokens not max_tokens for o-series models.'},claude35:{use:'Top choice for coding, analysis, and long-context document tasks.',code:`import anthropic\nclient = anthropic.Anthropic()\nmessage = client.messages.create(\n    model='claude-3-5-sonnet-20241022',\n    max_tokens=1024,\n    system='You are an expert Python developer.',\n    messages=[{\n        'role': 'user',\n        'content': 'Review this code for bugs: def add(a,b): return a-b'\n    }]\n)\nprint(message.content[0].text)`,tip:'Claude excels at following complex multi-step instructions. Put key constraints in the system prompt.'},zero_cot:{use:'When the model is making reasoning errors on multi-step math or logic.',code:`from openai import OpenAI\nclient = OpenAI()\ndef cot_solve(problem: str) -> str:\n    response = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[\n            {'role': 'system', 'content':\n             'Think step by step before answering.'},\n            {'role': 'user', 'content': problem}\n        ]\n    )\n    return response.choices[0].message.content\nanswer = cot_solve('If I have 3 apples and give away 1.5, how many remain?')\nprint(answer)`,tip:'Add "Show your work" for math. Add "List your assumptions first" for logic problems.'},scratchpad:{use:'Complex multi-step reasoning where intermediate steps need to be hidden.',code:`import anthropic\nclient = anthropic.Anthropic()\nresponse = client.messages.create(\n    model='claude-3-5-sonnet-20241022',\n    max_tokens=8000,\n    thinking={\n        'type': 'enabled',\n        'budget_tokens': 5000\n    },\n    messages=[{'role': 'user',\n        'content': 'Prove that sqrt(2) is irrational.'}]\n)\nfor block in response.content:\n    if block.type == 'thinking':\n        print('THINKING:', block.thinking[:200])\n    else:\n        print('ANSWER:', block.text)`,tip:'budget_tokens controls how much the model reasons. More budget = slower but more accurate.'},self_consist:{use:'High-stakes questions where single path reasoning might be unreliable.',code:`from openai import OpenAI\nfrom collections import Counter\nclient = OpenAI()\ndef self_consistency(question, n=5):\n    responses = []\n    for _ in range(n):\n        r = client.chat.completions.create(\n            model='gpt-4o-mini',\n            messages=[\n                {'role': 'system', 'content': 'Think step by step. End with ANSWER: <answer>'},\n                {'role': 'user', 'content': question}\n            ],\n            temperature=0.7\n        )\n        text = r.choices[0].message.content\n        if 'ANSWER:' in text:\n            responses.append(text.split('ANSWER:')[-1].strip())\n    return Counter(responses).most_common(1)[0][0]\nprint(self_consistency('What is 17 * 24?'))`,tip:'Use temperature 0.5-0.8 for diversity. n=5 is sweet spot for cost vs accuracy.'},dspy:{use:'When you need to optimize prompts programmatically using labeled examples.',code:`import dspy\nlm = dspy.LM('openai/gpt-4o-mini')\ndspy.configure(lm=lm)\nclass QA(dspy.Signature):\n    """Answer questions with a short factual response."""\n    question: str = dspy.InputField()\n    answer: str = dspy.OutputField(desc='1-3 words')\npredict = dspy.Predict(QA)\nresult = predict(question='What is the capital of France?')\nprint(result.answer)\n# Optimize with labeled data\noptimizer = dspy.BootstrapFewShot(metric=my_metric)\noptimized = optimizer.compile(predict, trainset=examples)`,tip:'Start with dspy.Predict, then upgrade to dspy.ChainOfThought if accuracy is low.'},instructor:{use:'When you need structured, validated Python objects back from an LLM.',code:`import instructor\nfrom openai import OpenAI\nfrom pydantic import BaseModel\nfrom typing import List\nclient = instructor.from_openai(OpenAI())\nclass Entity(BaseModel):\n    name: str\n    entity_type: str\n    confidence: float\nclass Extraction(BaseModel):\n    entities: List[Entity]\nresult = client.chat.completions.create(\n    model='gpt-4o-mini',\n    response_model=Extraction,\n    messages=[{'role': 'user',\n        'content': 'Apple was founded by Steve Jobs in Cupertino.'}]\n)\nfor e in result.entities:\n    print(f'{e.name} ({e.entity_type}): {e.confidence:.0%}')`,tip:'Use model_validate_json for offline parsing. Add validators to Pydantic fields for auto-correction.'},fc_api:{use:'Letting LLMs call your Python functions reliably with structured arguments.',code:`from openai import OpenAI\nimport json\nclient = OpenAI()\ntools = [{\n    'type': 'function',\n    'function': {\n        'name': 'get_weather',\n        'description': 'Get current weather for a city',\n        'parameters': {\n            'type': 'object',\n            'properties': {\n                'city': {'type': 'string'},\n                'units': {'type': 'string', 'enum': ['celsius', 'fahrenheit']}\n            },\n            'required': ['city']\n        }\n    }\n}]\nresp = client.chat.completions.create(\n    model='gpt-4o', messages=[{'role':'user','content':'Weather in Tokyo?'}],\n    tools=tools, tool_choice='auto'\n)\ntool_call = resp.choices[0].message.tool_calls[0]\nargs = json.loads(tool_call.function.arguments)\nprint(args)`,tip:'Return JSON strings from your tool functions — models parse them better than plain text.'},st_lib:{use:'Generating embeddings for semantic search, RAG, and similarity tasks.',code:`from sentence_transformers import SentenceTransformer\nimport numpy as np\nmodel = SentenceTransformer('BAAI/bge-large-en-v1.5')\nsentences = [\n    'Machine learning is a subset of AI',\n    'Deep learning uses neural networks',\n    'Python is a programming language'\n]\nembeddings = model.encode(sentences, normalize_embeddings=True)\n# Cosine similarity (normalized = dot product)\nsim = embeddings @ embeddings.T\nprint(sim)\n# For queries, prefix with 'Represent this sentence:'\nquery = model.encode(['Represent: What is ML?'],\n    normalize_embeddings=True)`,tip:'BGE-large-en-v1.5 or gte-Qwen2-1.5B are best open-source choices as of 2024.'},oai_emb:{use:'Production semantic search and RAG where quality matters most.',code:`from openai import OpenAI\nimport numpy as np\nclient = OpenAI()\ndef embed(texts: list[str], model='text-embedding-3-large') -> np.ndarray:\n    resp = client.embeddings.create(input=texts, model=model)\n    return np.array([d.embedding for d in resp.data])\ndocs = ['Paris is the capital of France', 'Berlin is in Germany']\nquery = 'What is the French capital?'\ndoc_emb = embed(docs)\nq_emb = embed([query])\nscores = (q_emb @ doc_emb.T)[0]\nbest = docs[scores.argmax()]\nprint(f'Best match: {best}')`,tip:'text-embedding-3-small is 5× cheaper with only 5% less quality — use it for bulk processing.'},pinecone:{use:'Serverless managed vector search — no infra to manage.',code:`from pinecone import Pinecone, ServerlessSpec\npc = Pinecone(api_key='YOUR_KEY')\npc.create_index(\n    name='genai-docs', dimension=1536,\n    metric='cosine',\n    spec=ServerlessSpec(cloud='aws', region='us-east-1')\n)\nindex = pc.Index('genai-docs')\n# Upsert vectors\nindex.upsert(vectors=[\n    {'id': 'doc1', 'values': [0.1]*1536,\n     'metadata': {'text': 'hello', 'source': 'docs'}}\n])\n# Query\nresults = index.query(\n    vector=[0.1]*1536, top_k=3,\n    include_metadata=True,\n    filter={'source': {'$eq': 'docs'}}\n)\nprint(results['matches'])`,tip:'Use namespaces to isolate tenants without separate indexes.'},chroma:{use:'Local development RAG — zero setup, in-memory or persistent.',code:`import chromadb\nfrom chromadb.utils import embedding_functions\nclient = chromadb.PersistentClient(path='./chroma_db')\nef = embedding_functions.SentenceTransformerEmbeddingFunction(\n    model_name='BAAI/bge-small-en-v1.5'\n)\ncollection = client.get_or_create_collection(\n    name='docs', embedding_function=ef\n)\ncollection.add(\n    documents=['Python is great', 'FastAPI is fast'],\n    ids=['1', '2'],\n    metadatas=[{'source': 'wiki'}]*2\n)\nresults = collection.query(\n    query_texts=['best web framework'],\n    n_results=2\n)\nprint(results['documents'])`,tip:'Switch from chromadb.Client() to PersistentClient() to keep data between restarts.'},qdrant:{use:'Production vector DB with strong filtering and payload support.',code:`from qdrant_client import QdrantClient\nfrom qdrant_client.models import *\nclient = QdrantClient(':memory:')  # or 'http://localhost:6333'\nclient.create_collection('docs',\n    vectors_config=VectorParams(size=384, distance=Distance.COSINE)\n)\nclient.upsert('docs', points=[\n    PointStruct(id=1, vector=[0.1]*384,\n        payload={'text': 'hello', 'category': 'intro'})\n])\nresults = client.search('docs',\n    query_vector=[0.1]*384, limit=5,\n    query_filter=Filter(\n        must=[FieldCondition(\n            key='category',\n            match=MatchValue(value='intro')\n        )]\n    )\n)\nprint(results)`,tip:'Named vectors let you store multiple embedding models per document — great for multimodal.'},pgvector:{use:'Add semantic search to existing PostgreSQL databases.',code:`# pip install psycopg2-binary pgvector\nimport psycopg2\nfrom pgvector.psycopg2 import register_vector\nconn = psycopg2.connect('postgresql://localhost/mydb')\nregister_vector(conn)\ncur = conn.cursor()\ncur.execute('CREATE EXTENSION IF NOT EXISTS vector')\ncur.execute('''\n    CREATE TABLE IF NOT EXISTS docs (\n        id serial PRIMARY KEY,\n        content text,\n        embedding vector(1536)\n    )\n''')\n# Create HNSW index for fast search\ncur.execute('''\n    CREATE INDEX ON docs\n    USING hnsw (embedding vector_cosine_ops)\n    WITH (m=16, ef_construction=64)\n''')\ncur.execute('SELECT content FROM docs ORDER BY embedding <=> %s LIMIT 5',\n    ([0.1]*1536,))\nprint(cur.fetchall())`,tip:'HNSW index is 5-10× faster than IVFFlat — use it unless you have billions of rows.'},bm25:{use:'Keyword search when exact term matching matters alongside semantic search.',code:`# pip install rank-bm25\nfrom rank_bm25 import BM25Okapi\nimport string\ndef tokenize(text: str) -> list[str]:\n    text = text.lower().translate(\n        str.maketrans('', '', string.punctuation))\n    return text.split()\ncorpus = [\n    'machine learning algorithms optimize models',\n    'deep learning uses neural networks',\n    'python is great for data science'\n]\ntokenized = [tokenize(d) for d in corpus]\nbm25 = BM25Okapi(tokenized)\nscores = bm25.get_scores(tokenize('neural network optimization'))\nprint(list(zip(corpus, scores.round(3))))`,tip:'Combine BM25 + dense retrieval with Reciprocal Rank Fusion (RRF) for best results.'},rerank:{use:'After retrieving top-20 chunks, rerank to find the true top-3.',code:`# pip install cohere\nimport cohere\nclient = cohere.Client('YOUR_KEY')\ndocs = [\n    'Paris is the capital of France',\n    'France is known for wine',\n    'The Eiffel Tower is in Paris',\n    'Berlin is the capital of Germany'\n]\nresults = client.rerank(\n    model='rerank-english-v3.0',\n    query='What city is the capital of France?',\n    documents=docs,\n    top_n=2\n)\nfor r in results.results:\n    print(f'[{r.relevance_score:.3f}] {docs[r.index]}')`,tip:'Always retrieve 10-20 candidates before reranking to 3-5. The cost is trivial vs the quality gain.'},hyde:{use:'When queries are short/ambiguous and direct retrieval has low recall.',code:`from openai import OpenAI\nfrom sentence_transformers import SentenceTransformer\nclient = OpenAI()\nmodel = SentenceTransformer('BAAI/bge-large-en-v1.5')\ndef hyde_query(query: str, docs: list[str]):\n    # 1. Generate hypothetical answer\n    r = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role':'user',\n            'content': f'Write a 2-sentence answer to: {query}'}]\n    )\n    hypothesis = r.choices[0].message.content\n    # 2. Embed hypothesis, not original query\n    h_emb = model.encode([hypothesis], normalize_embeddings=True)\n    d_emb = model.encode(docs, normalize_embeddings=True)\n    scores = (h_emb @ d_emb.T)[0]\n    return docs[scores.argmax()]\nprint(hyde_query('latency tricks for LLMs', my_docs))`,tip:'HyDE works best when the gap between query style and document style is large.'},llamaindex:{use:'Building production RAG pipelines with many data sources.',code:`from llama_index.core import VectorStoreIndex, SimpleDirectoryReader\nfrom llama_index.core.node_parser import SentenceSplitter\nfrom llama_index.embeddings.openai import OpenAIEmbedding\n# Load and index documents\ndocs = SimpleDirectoryReader('./docs').load_data()\nparser = SentenceSplitter(chunk_size=512, chunk_overlap=50)\nnodes = parser.get_nodes_from_documents(docs)\nindex = VectorStoreIndex(nodes,\n    embed_model=OpenAIEmbedding(model='text-embedding-3-small')\n)\n# Query with streaming\nengine = index.as_query_engine(streaming=True, similarity_top_k=5)\nresponse = engine.query('How does attention work?')\nresponse.print_response_stream()`,tip:'Use chunk_size=512 with chunk_overlap=50 as baseline. Tune based on your doc structure.'},langchain:{use:'Quickly chain prompts, tools, and retrievers for prototype pipelines.',code:`from langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nllm = ChatOpenAI(model='gpt-4o-mini', temperature=0)\nprompt = ChatPromptTemplate.from_messages([\n    ('system', 'You are a helpful assistant.'),\n    ('human', '{question}')\n])\n# LCEL pipe syntax\nchain = prompt | llm | StrOutputParser()\nresult = chain.invoke({'question': 'What is RAG?'})\nprint(result)\n# Stream\nfor chunk in chain.stream({'question': 'Explain transformers'}):\n    print(chunk, end='', flush=True)`,tip:'Prefer LCEL (| pipe syntax) over legacy LLMChain — it supports streaming and async natively.'},langgraph:{use:'When your agent needs loops, conditionals, and persistent state.',code:`from langgraph.graph import StateGraph, END\nfrom typing import TypedDict, Annotated\nimport operator\nclass AgentState(TypedDict):\n    messages: Annotated[list, operator.add]\n    iterations: int\ndef call_llm(state):\n    # call your LLM here\n    return {'messages': ['response'], 'iterations': state['iterations']+1}\ndef should_continue(state):\n    return END if state['iterations'] >= 3 else 'call_llm'\ngraph = StateGraph(AgentState)\ngraph.add_node('call_llm', call_llm)\ngraph.set_entry_point('call_llm')\ngraph.add_conditional_edges('call_llm', should_continue)\napp = graph.compile()\nresult = app.invoke({'messages': [], 'iterations': 0})\nprint(result)`,tip:'Add checkpointers (MemorySaver, SqliteSaver) for resumable agents across sessions.'},crewai:{use:'Multi-agent workflows with role specialization and task delegation.',code:`from crewai import Agent, Task, Crew\nfrom crewai_tools import SerperDevTool\nresearcher = Agent(\n    role='Research Analyst',\n    goal='Find accurate information on AI trends',\n    backstory='Expert at synthesizing complex research',\n    tools=[SerperDevTool()], verbose=True\n)\nwriter = Agent(\n    role='Technical Writer',\n    goal='Write clear summaries of research',\n    backstory='Expert at making AI accessible'\n)\ntask = Task(\n    description='Research and summarize latest LLM benchmarks',\n    agent=researcher, expected_output='3-bullet summary'\n)\ncrew = Crew(agents=[researcher, writer], tasks=[task])\nresult = crew.kickoff()\nprint(result)`,tip:'Use process=Process.hierarchical for complex workflows where a manager agent coordinates.'},mcp:{use:'Standardizing tool integration across LLM clients (Claude, Cursor, etc.).',code:`# Create an MCP server in Python\n# pip install mcp\nfrom mcp.server.fastmcp import FastMCP\nmcp = FastMCP('My Tools')\n@mcp.tool()\ndef search_database(query: str, limit: int = 10) -> list[dict]:\n    """Search the company database for records.\n    \n    Args:\n        query: The search query\n        limit: Max results to return\n    \"\"\"\n    # Your implementation here\n    return [{'id': 1, 'result': f'Result for: {query}'}]\n@mcp.resource('file://docs/{path}')\ndef read_doc(path: str) -> str:\n    """Read a documentation file.\"\"\"\n    return open(f'./docs/{path}').read()\nif __name__ == '__main__':\n    mcp.run()`,tip:'Start with FastMCP for rapid development. Tools get auto-exposed to any MCP-compatible client.'},qlora4bit:{use:'Fine-tuning large models (7B-70B) on consumer or single datacenter GPU.',code:`# pip install transformers bitsandbytes peft accelerate\nimport torch\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig\nfrom peft import get_peft_model, LoraConfig, TaskType\nbnb_config = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_compute_dtype=torch.bfloat16,\n    bnb_4bit_quant_type='nf4',\n    bnb_4bit_use_double_quant=True\n)\nmodel = AutoModelForCausalLM.from_pretrained(\n    'meta-llama/Meta-Llama-3-8B',\n    quantization_config=bnb_config, device_map='auto'\n)\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16, lora_alpha=32,\n    target_modules=['q_proj','v_proj'],\n    lora_dropout=0.1\n)\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()`,tip:'Use r=16, alpha=32 as starting point. Increase r for complex tasks, decrease for efficiency.'},dpo:{use:'Aligning models to prefer certain outputs without needing a reward model.',code:`from datasets import Dataset\nfrom trl import DPOTrainer, DPOConfig\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\nmodel = AutoModelForCausalLM.from_pretrained('my-sft-model')\nref_model = AutoModelForCausalLM.from_pretrained('my-sft-model')\ntokenizer = AutoTokenizer.from_pretrained('my-sft-model')\n# DPO requires (prompt, chosen, rejected) triplets\ndataset = Dataset.from_dict({\n    'prompt': ['Explain quantum computing'],\n    'chosen': ['Quantum computing uses qubits...'],\n    'rejected': ['I dont know, its complicated']\n})\ntrainer = DPOTrainer(\n    model=model, ref_model=ref_model,\n    args=DPOConfig(output_dir='./dpo-out', beta=0.1),\n    train_dataset=dataset, tokenizer=tokenizer\n)\ntrainer.train()`,tip:'beta=0.1 is the standard. Higher beta = closer to reference model. Use ORPO to skip ref model.'},unsloth:{use:'Cutting fine-tuning time by 2-5× on the same hardware.',code:`# pip install unsloth\nfrom unsloth import FastLanguageModel\nimport torch\nmodel, tokenizer = FastLanguageModel.from_pretrained(\n    model_name='unsloth/Meta-Llama-3.1-8B',\n    max_seq_length=2048,\n    load_in_4bit=True,\n)\nmodel = FastLanguageModel.get_peft_model(\n    model, r=16, target_modules=[\n        'q_proj','k_proj','v_proj','o_proj',\n        'gate_proj','up_proj','down_proj'\n    ],\n    lora_alpha=16, lora_dropout=0,\n    use_gradient_checkpointing='unsloth',\n)\n# Then use HF Trainer or TRL SFTTrainer normally\nprint(f'Trainable: {model.num_parameters()} params')`,tip:'Set target_modules to include gate_proj/up_proj/down_proj for MLP layers — boosts accuracy.'},trl:{use:'Full SFT→DPO→PPO training pipeline with HuggingFace integration.',code:`from trl import SFTTrainer, SFTConfig\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\nfrom datasets import load_dataset\nmodel = AutoModelForCausalLM.from_pretrained('meta-llama/Meta-Llama-3-8B')\ntokenizer = AutoTokenizer.from_pretrained('meta-llama/Meta-Llama-3-8B')\ndataset = load_dataset('json', data_files='train.jsonl')['train']\ndef format_prompt(ex):\n    return {'text': f\"### Instruction: {ex['instruction']}\\n### Response: {ex['output']}\"}\ndataset = dataset.map(format_prompt)\ntrainer = SFTTrainer(\n    model=model, tokenizer=tokenizer,\n    args=SFTConfig(\n        output_dir='./sft-out',\n        per_device_train_batch_size=2,\n        gradient_accumulation_steps=4,\n        num_train_epochs=3,\n        learning_rate=2e-4\n    ),\n    train_dataset=dataset\n)\ntrainer.train()`,tip:'Combine with Unsloth by passing model through FastLanguageModel.get_peft_model() first.'},vllm:{use:'High-throughput LLM serving in production — 10-20× better GPU utilization.',code:`# Start server: python -m vllm.entrypoints.openai.api_server --model meta-llama/Meta-Llama-3-8B\n# Then use OpenAI client:\nfrom openai import OpenAI\nclient = OpenAI(base_url='http://localhost:8000/v1', api_key='dummy')\n# Batch generation (continuous batching is automatic)\nresponses = client.completions.create(\n    model='meta-llama/Meta-Llama-3-8B',\n    prompt=['Explain RAG in one sentence.'] * 10,\n    max_tokens=100, temperature=0.7\n)\nfor r in responses.choices:\n    print(r.text)\n# For structured output\nfrom vllm import LLM, SamplingParams\nllm = LLM(model='meta-llama/Meta-Llama-3-8B',\n    guided_decoding_backend='xgrammar')\nparams = SamplingParams(guided_decoding={'json': {'type': 'object'}})\nout = llm.generate(['Give me JSON: '], params)`,tip:'Use vllm serve --enable-prefix-caching to cache shared prompt prefixes across requests.'},ollama:{use:'Running open-source LLMs locally with a simple REST API.',code:`import ollama\n# Pull and run in Python\nclient = ollama.Client()\n# Stream a response\nfor chunk in client.chat(\n    model='llama3.1:8b',\n    messages=[{'role': 'user', 'content': 'Why is Python popular?'}],\n    stream=True\n):\n    print(chunk['message']['content'], end='', flush=True)\n# Embeddings\nemb = client.embeddings(\n    model='nomic-embed-text',\n    prompt='Hello world'\n)\nprint(len(emb['embedding']))  # 768\n# List available models\nmodels = client.list()\nprint([m['name'] for m in models['models']])`,tip:'Use Modelfile to customize system prompts and parameters permanently: FROM llama3.1:8b SYSTEM "..."'},gguf:{use:'Running quantized models locally with llama.cpp on CPU or consumer GPU.',code:`# pip install llama-cpp-python\nfrom llama_cpp import Llama\n# Load a GGUF model (download from HuggingFace)\nllm = Llama(\n    model_path='./Meta-Llama-3-8B-Instruct.Q4_K_M.gguf',\n    n_ctx=4096,\n    n_gpu_layers=35,  # Offload layers to GPU\n    n_threads=8\n)\n# Chat interface\noutput = llm.create_chat_completion(\n    messages=[{'role': 'user', 'content': 'What is 2+2?'}],\n    max_tokens=100, temperature=0.1\n)\nprint(output['choices'][0]['message']['content'])\n# Embeddings\nemb = llm.create_embedding('Hello world')\nprint(len(emb['data'][0]['embedding']))`,tip:'Q4_K_M is the best quality/size tradeoff. Q8_0 if you have RAM. Q2_K only if desperate.'},wandb:{use:'Track experiments, log artifacts, and compare model runs visually.',code:`import wandb\nimport torch\nwandb.init(project='llm-finetuning', config={\n    'model': 'llama-3-8b', 'lr': 2e-4, 'epochs': 3\n})\n# Log training metrics\nfor step, (loss, acc) in enumerate(training_loop()):\n    wandb.log({'loss': loss, 'accuracy': acc, 'step': step})\n# Log model artifact\nartifact = wandb.Artifact('fine-tuned-model', type='model')\nartifact.add_dir('./output')\nwandb.log_artifact(artifact)\n# LLM Weave tracing (automatic)\nimport weave\nweave.init('my-llm-app')\n@weave.op()\ndef my_llm_call(prompt: str) -> str:\n    # This call is auto-traced\n    return client.chat.completions.create(...)\nwandb.finish()`,tip:'Use wandb.watch(model) to log gradient histograms — invaluable for debugging training instability.'},langfuse:{use:'Tracing LLM app calls in production — find slow/expensive/wrong generations.',code:`from langfuse import Langfuse\nfrom langfuse.openai import openai  # Drop-in replacement\nlangfuse = Langfuse()\n# Option 1: OpenAI drop-in (auto-traces all calls)\nresponse = openai.chat.completions.create(\n    model='gpt-4o-mini',\n    messages=[{'role':'user','content':'Hello!'}],\n    name='my-generation'  # Shows in Langfuse UI\n)\n# Option 2: Manual tracing\ntrace = langfuse.trace(name='rag-pipeline', user_id='user123')\nspan = trace.span(name='retrieval')\n# ... do retrieval ...\nspan.end(output={'chunks': 5, 'latency_ms': 120})\ngen = trace.generation(name='generate',\n    model='gpt-4o', input=[...], output='...')\nlangfuse.flush()`,tip:'Use Langfuse Prompt Management to version and A/B test prompts without redeploying code.'},ragas:{use:'Measuring RAG pipeline quality with automated metrics.',code:`from ragas import evaluate\nfrom ragas.metrics import faithfulness, answer_relevancy, context_recall\nfrom datasets import Dataset\n# Prepare evaluation dataset\ndata = {\n    'question': ['What is RAG?'],\n    'answer': ['RAG stands for Retrieval Augmented Generation'],\n    'contexts': [['RAG combines retrieval with generation...']],\n    'ground_truth': ['RAG is a technique that grounds LLMs in retrieved documents']\n}\ndataset = Dataset.from_dict(data)\nresult = evaluate(\n    dataset,\n    metrics=[faithfulness, answer_relevancy, context_recall],\n)\nprint(result.to_pandas())`,tip:'Start with faithfulness + answer_relevancy. Add context_recall only when you have ground truth answers.'},cursor:{use:'AI-assisted coding with multi-file context and autonomous refactoring.',code:`# Cursor uses Claude/GPT-4o under the hood\n# Key patterns to get best results:\n\n# 1. Composer for multi-file changes\n# CMD+I -> describe the change you want\n# Add @file references for context\n\n# 2. Chat for understanding code\n# CMD+L -> highlight code + ask questions\n\n# 3. Rules (in .cursor/rules/*.mdc):\n# ---\n# description: Python coding standards\n# ---\n# - Always use type hints\n# - Prefer list comprehensions\n# - Use f-strings not .format()\n\n# 4. .cursorignore to exclude files\n# (like .gitignore but for AI context)\nprint("Cursor IDE: AI-native development")`,tip:'Use @ to pin specific files/docs as context. The more targeted context you provide, the better the suggestions.'},text2sql:{use:'Letting business users query databases using natural language.',code:`from openai import OpenAI\nclient = OpenAI()\ndef text_to_sql(question: str, schema: str) -> str:\n    response = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[\n            {'role': 'system', 'content': f\"\"\"You are a SQL expert.\nDatabase schema:\n{schema}\nRules: Use only existing tables/columns. Return only the SQL query.\"\"\"},\n            {'role': 'user', 'content': question}\n        ]\n    )\n    return response.choices[0].message.content\nschema = \"\"\"users(id, name, email, created_at)\norders(id, user_id, total, status, created_at)\"\"\"\nprint(text_to_sql('Top 5 users by total spend last month', schema))`,tip:'Always include primary keys and foreign key relationships in the schema. Add 3-5 example rows for better results.'},livekit:{use:'Building real-time voice agents with sub-300ms end-to-end latency.',code:`# pip install livekit-agents livekit-plugins-openai\nfrom livekit.agents import AutoSubscribe, JobContext, WorkerOptions, cli\nfrom livekit.agents.voice_assistant import VoiceAssistant\nfrom livekit.plugins import openai, silero\nasync def entrypoint(ctx: JobContext):\n    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)\n    assistant = VoiceAssistant(\n        vad=silero.VAD.load(),\n        stt=openai.STT(),\n        llm=openai.LLM(model='gpt-4o-mini'),\n        tts=openai.TTS(voice='nova'),\n        chat_ctx={\n            'role': 'system',\n            'content': 'You are a helpful voice assistant'\n        }\n    )\n    assistant.start(ctx.room)\n    await asyncio.sleep(float('inf'))\ncli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))`,tip:'Use silero VAD for accurate voice activity detection. ElevenLabs TTS for highest quality output.'}
+};
+
+const PATHS={
+  foundations:[
+    {id:'math_foundations',note:'Linear algebra, calculus, probability — the math that underpins everything'},
+    {id:'python_ecosystem',note:'NumPy, Pandas, Matplotlib — your daily scientific computing tools'},
+    {id:'pytorch_basics',note:'Tensors, autograd, and the training loop — essential before any LLM work'}
+  ],
+  ml_core_domain:[
+    {id:'neural_nets',note:'Backprop, activations, LayerNorm — how models learn representations'},
+    {id:'optimization',note:'Adam, LR scheduling — making your training converge reliably'},
+    {id:'training_tech',note:'Mixed precision, gradient checkpointing, DeepSpeed for scale'},
+    {id:'regularization',note:'Dropout, weight decay — preventing overfitting'}
+  ],
+  transformers_domain:[
+    {id:'attention',note:'Self-attention is the core innovation — master Flash Attention & Paged Attention'},
+    {id:'transformer_arch',note:'Encoder-only vs decoder-only vs enc-dec — which to use when'},
+    {id:'pos_encoding',note:'RoPE and ALiBi — how models know token order and handle long contexts'},
+    {id:'kv_cache',note:'GQA, speculative decoding — efficiency tricks for inference'}
+  ],
+  llms:[
+    {id:'llm_internals',note:'Tokenization, context window, scaling laws — understand before you use'},
+    {id:'open_models',note:'Start with Llama 3 or Mistral locally — free, fine-tunable'},
+    {id:'frontier_models',note:'GPT-4o, Claude 3.5 — when API quality justifies the cost'}
+  ],
+  prompting:[
+    {id:'basic_prompting',note:'Zero-shot, few-shot, system prompts — the foundation'},
+    {id:'advanced_reasoning',note:'Chain-of-thought, extended thinking, self-consistency — unlock reasoning'},
+    {id:'output_control',note:'JSON mode, Instructor, Outlines — get structured typed data back'},
+    {id:'programmatic_prompting',note:'DSPy — optimize prompts automatically with labeled data'}
+  ],
+  rag:[
+    {id:'embeddings_topic',note:'How semantic similarity works — BGE or OpenAI embeddings to start'},
+    {id:'retrieval_tech',note:'Dense + BM25 hybrid + HyDE — find the most relevant chunks'},
+    {id:'vector_dbs',note:'Chroma locally → Qdrant or Pinecone in production'},
+    {id:'post_retrieval',note:'Cohere Rerank + context compression — sharpen precision'},
+    {id:'advanced_rag',note:'LlamaIndex, GraphRAG, agentic RAG — production patterns'}
+  ],
+  agents:[
+    {id:'agent_planning',note:'ReAct, Plan & Execute, reflection — how agents decompose goals'},
+    {id:'tool_use',note:'Function calling and MCP — agents interacting with the real world'},
+    {id:'agent_memory',note:'Conversation buffer, long-term vector store, entity memory'},
+    {id:'agent_frameworks',note:'LangGraph for stateful workflows; CrewAI for role-based teams'},
+    {id:'multi_agent',note:'Orchestrator-worker and parallel execution — coordinate many agents'}
+  ],
+  finetuning:[
+    {id:'data_prep',note:'Data quality beats model quality — curate carefully'},
+    {id:'peft_methods',note:'LoRA and QLoRA — adapt models by training <1% of weights'},
+    {id:'ft_tools',note:'Unsloth + TRL for fast training; Axolotl for YAML-configured runs'},
+    {id:'alignment',note:'DPO and ORPO to steer model behavior toward preferences'}
+  ],
+  multimodal:[
+    {id:'vision_language',note:'GPT-4V, LLaVA, Qwen-VL — understand images with LLMs'},
+    {id:'audio_models',note:'Whisper for ASR, ElevenLabs / Kokoro for TTS pipelines'},
+    {id:'image_gen',note:'Stable Diffusion, Flux — open-source text-to-image'},
+    {id:'video_models',note:'Frontier research — Sora and open alternatives like Wan2.1'}
+  ],
+  infra:[
+    {id:'serving',note:'vLLM for cloud, Ollama for local — deploy with one command'},
+    {id:'quantization',note:'GGUF, AWQ, BitsAndBytes — shrink models to fit your hardware'},
+    {id:'cloud_deploy',note:'HF Spaces, Modal Labs, Replicate — go serverless in minutes'},
+    {id:'hardware',note:'NVIDIA H100/A100, Apple MLX, AMD ROCm — know your silicon'}
+  ],
+  eval_safety:[
+    {id:'rag_eval',note:'RAGAS and TruLens — measure faithfulness and relevance first'},
+    {id:'monitoring',note:'Langfuse or W&B Weave — trace every LLM call in production'},
+    {id:'benchmarks',note:'MMLU, HumanEval, MT-Bench — compare models on standard tasks'},
+    {id:'safety_tech',note:'Red teaming, Llama Guard, Constitutional AI — build responsibly'}
+  ],
+  applications:[
+    {id:'rag_systems',note:'Document Q&A — the most common enterprise GenAI use case'},
+    {id:'code_assist',note:'Cursor, Copilot, Aider — AI in your editor today'},
+    {id:'structured_output_app',note:'Instructor and Outlines — extract typed data reliably'},
+    {id:'database_query',note:'Text-to-SQL for self-serve analytics and data access'},
+    {id:'voice_agents',note:'LiveKit + Whisper + TTS for real-time < 300ms voice pipelines'},
+    {id:'doc_processing',note:'Unstructured.io, Docling — parse PDFs and tables for RAG'}
+  ],
+  framework_tools:[
+    {id:'mlops',note:'MLflow, DVC, HuggingFace Hub — track experiments and versions'},
+    {id:'integration_std',note:'LiteLLM and OpenAI Compat API — swap LLM providers freely'},
+    {id:'dev_frameworks',note:'Streamlit, Gradio, FastAPI — ship demos and APIs fast'}
+  ]
+};
+
+const DX=[
+{s:'flash_attn',t:'vllm',label:'core of'},
+{s:'paged_attn',t:'vllm',label:'core of'},
+{s:'flash_attn',t:'qlora4bit',label:'accelerates'},
+{s:'rope',t:'llama3',label:'used in'},
+{s:'rope',t:'mistral',label:'used in'},
+{s:'gqa',t:'llama3',label:'used in'},
+{s:'gqa',t:'mistral',label:'used in'},
+{s:'spec_dec',t:'vllm',label:'supported by'},
+{s:'pytorch_t',t:'adam',label:'uses'},
+{s:'adam',t:'trl',label:'powered by'},
+{s:'mixed_prec',t:'deepspeed',label:'combined with'},
+{s:'grad_ckpt',t:'qlora4bit',label:'enables'},
+{s:'bm25',t:'rerank',label:'pre-filter for'},
+{s:'hybrid_search',t:'rerank',label:'feeds'},
+{s:'st_lib',t:'chroma',label:'works with'},
+{s:'st_lib',t:'pinecone',label:'feeds'},
+{s:'bge_rag',t:'pgvector',label:'works with'},
+{s:'oai_emb',t:'llamaindex',label:'option in'},
+{s:'st_lib',t:'llamaindex',label:'embedded in'},
+{s:'rerank',t:'llamaindex',label:'integrated in'},
+{s:'hyde',t:'st_lib',label:'uses'},
+{s:'unstructured',t:'llamaindex',label:'feeds into'},
+{s:'graphrag',t:'weaviate',label:'works with'},
+{s:'langchain',t:'langgraph',label:'foundation for'},
+{s:'fc_api',t:'langgraph',label:'enables'},
+{s:'mcp',t:'fc_api',label:'standard for'},
+{s:'instructor',t:'fc_api',label:'wraps'},
+{s:'llamaindex',t:'langchain',label:'interops with'},
+{s:'crewai',t:'langgraph',label:'built on'},
+{s:'autogen',t:'crewai',label:'alternative to'},
+{s:'litellm',t:'vllm',label:'proxies'},
+{s:'litellm',t:'ollama',label:'wraps'},
+{s:'dpo',t:'trl',label:'implemented by'},
+{s:'rlhf',t:'dpo',label:'simplified by'},
+{s:'qlora4bit',t:'unsloth',label:'accelerated by'},
+{s:'unsloth',t:'trl',label:'compatible with'},
+{s:'axolotl',t:'trl',label:'uses'},
+{s:'const_ai',t:'rlaif',label:'uses'},
+{s:'gguf',t:'ollama',label:'format for'},
+{s:'vllm',t:'gguf',label:'can serve'},
+{s:'bnb',t:'qlora4bit',label:'enables'},
+{s:'zero_cot',t:'self_consist',label:'building block for'},
+{s:'react',t:'react_agent',label:'pattern for'},
+{s:'scratchpad',t:'claude35',label:'feature of'},
+{s:'dspy',t:'self_consist',label:'optimizes'},
+{s:'ragas',t:'llamaindex',label:'evaluates'},
+{s:'trulens',t:'ragas',label:'alternative to'},
+{s:'wandb',t:'langfuse',label:'alternative to'},
+{s:'langfuse',t:'langsmith',label:'alternative to'},
+{s:'whisper',t:'livekit',label:'STT in'},
+{s:'tts_models',t:'livekit',label:'TTS in'},
+{s:'instructor',t:'instructor_app',label:'same tool'},
+{s:'outlines',t:'outlines_app',label:'same tool'},
+{s:'pgvector',t:'text2sql',label:'augments'}
+];
+
+DN.forEach(n=>{if(RICH[n.id])Object.assign(n,RICH[n.id])});
+let N=JSON.parse(JSON.stringify(DN)),X=JSON.parse(JSON.stringify(DX)),e=false,s=null;
+function ifs(){const c=document.getElementById('starfield'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;const t=[];for(let i=0;i<100;i++)t.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,v:Math.random()*0.3+0.1});function a(){x.fillStyle='#030a1a';x.fillRect(0,0,c.width,c.height);x.fillStyle='#a78bfa';t.forEach(d=>{d.r+=d.v*0.01;if(d.r>2.5)d.r=0;x.beginPath();x.arc(d.x,d.y,d.r,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight})}
+function hc(cd){return cd.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\b(from|import|class|def|async|await|return|for|if|elif|else|in|not|and|or|with|as|try|except|print|True|False|None|pass|raise|yield|lambda|while|break|continue)\b/g,'<span style="color:#c084fc">$1</span>').replace(/(#[^\n]*)/g,'<span style="color:#6b7280;font-style:italic">$1</span>').replace(/("(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\')/g,'<span style="color:#34d399">$1</span>').replace(/\b(\d+\.?\d*)\b/g,'<span style="color:#fb923c">$1</span>')}
+function bl(){const c=document.getElementById('legend-items');c.innerHTML='';const d=N.filter(n=>n.g===1);d.forEach(n=>{const t=CATS[n.cat]||CATS.custom;const i=document.createElement('div');i.className='legend-item';i.innerHTML=`<div class="legend-dot" style="background:${t.c}"></div><span>${n.label}</span>`;i.addEventListener('click',()=>{N.forEach(o=>{if(o.cat===n.cat)o.expanded=!o.expanded});rg()});c.appendChild(i)})}
+let sim=null,svg,gc,tr=d3.zoomIdentity;
+function ig(){gc=d3.select('#graph-container');svg=d3.select('#graph');const w=window.innerWidth,h=window.innerHeight-60;sim=d3.forceSimulation(N).force('link',d3.forceLink(X.map(l=>({source:N.find(n=>n.id===l.s),target:N.find(n=>n.id===l.t)}))).id(d=>d.id).distance(100).strength(0.3)).force('charge',d3.forceManyBody().strength(-500).distanceMax(500)).force('center',d3.forceCenter(w/2,h/2)).force('collide',d3.forceCollide(d=>SZ[Math.min(d.g,3)].w/2+20)).on('tick',ug);svg.append('defs').html(`<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="rgba(255,255,255,0.15)"/></marker><marker id="arrowhead-x" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="rgba(200,200,200,0.2)"/></marker>`);svg.append('g').attr('class','links');svg.append('g').attr('class','nodes');svg.call(d3.zoom().on('zoom',e=>{tr=e.transform;svg.select('.links').attr('transform',tr);svg.select('.nodes').attr('transform',tr)}));window.addEventListener('resize',()=>{sim.force('center',d3.forceCenter(window.innerWidth/2,(window.innerHeight-60)/2))})}
+function rg(){const vn=N.filter(n=>{if(n.g===0)return true;let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return n.g===1;if(!pn.expanded&&pn.g>0)return false;p=pn.p}return true});const vid=new Set(vn.map(n=>n.id)),vl=X.filter(l=>vid.has(l.s)&&vid.has(l.t)),ld=vl.map(l=>({source:N.find(n=>n.id===l.s),target:N.find(n=>n.id===l.t),xlink:true}));N.filter(n=>n.g>0).forEach(n=>{if(n.p){const pn=N.find(x=>x.id===n.p);if(pn&&vid.has(n.id)&&vid.has(pn.id))ld.push({source:pn,target:n,xlink:false})}});sim.nodes(vn);sim.force('link').links(ld);const lks=svg.select('.links').selectAll('.link').data(ld,(d,i)=>i);lks.exit().remove();lks.enter().append('line').attr('class',d=>`link ${d.xlink?'xlink':''}`).merge(lks);const ns=svg.select('.nodes').selectAll('.node-card').data(vn,d=>d.id);ns.exit().remove();const ne=ns.enter().append('g').attr('class',d=>`node-card ${d.id===s?.id?'selected':''}`).attr('data-id',d=>d.id).on('click',(e,d)=>{e.stopPropagation();sn(d);sp(d)}).on('dblclick',(e,d)=>{e.stopPropagation();d.expanded=!d.expanded;rg()}).on('contextmenu',(e,d)=>{e.preventDefault();if(e)alert(`Context menu for ${d.label}`)}).call(d3.drag().on('start',dgs).on('drag',dg).on('end',dge));const sz=d=>SZ[Math.min(d.g,3)];ne.append('rect').attr('class','node-rect').attr('x',d=>-sz(d).w/2).attr('y',d=>-sz(d).h/2).attr('width',d=>sz(d).w).attr('height',d=>sz(d).h).attr('rx',4).attr('fill',d=>CATS[d.cat].c).attr('stroke',d=>CATS[d.cat].c);ne.append('foreignObject').attr('x',d=>-sz(d).w/2+4).attr('y',d=>-sz(d).h/2+4).attr('width',d=>sz(d).w-8).attr('height',d=>sz(d).h-8).append('xhtml:div').style('padding','4px').style('display','flex').style('flex-direction','column').style('align-items','center').style('justify-content','center').style('height','100%').style('text-align','center').html(d=>{let h=`<div class="node-label">${d.label}</div>`;if(d.g<=2)h+=`<div class="node-category">${CATS[d.cat].n}</div>`;if(N.filter(n=>n.p===d.id&&n.g<4).length>0)h+=`<div class="expand-dot">●</div>`;return h});sim.alpha(1).restart()}
+function ug(){svg.selectAll('.link').attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);svg.selectAll('.node-card').attr('transform',d=>`translate(${d.x},${d.y})`)}
+function dgs(e,d){if(!e.active)sim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y}
+function dg(e,d){d.fx=e.x;d.fy=e.y}
+function dge(e,d){if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null}
+function sn(d){s=d;document.querySelectorAll('.node-card').forEach(el=>el.classList.remove('selected'));document.querySelector(`[data-id="${d.id}"]`)?.classList.add('selected')}
+function sp(d){
+  const p=document.getElementById('panel'),c=CATS[d.cat]||CATS.custom;
+  // BREADCRUMB — build parent chain for back navigation
+  const bcEl=document.getElementById('panel-breadcrumb');
+  const chain=[];let cur=d;while(cur){chain.unshift(cur);if(cur.p)cur=N.find(n=>n.id===cur.p);else break;}
+  bcEl.innerHTML=chain.map((n,i)=>{
+    const isCurrent=i===chain.length-1;
+    return `${i>0?'<span class="bc-sep">›</span>':''}<span class="bc-item${isCurrent?' bc-current':''}" data-bcid="${n.id}">${n.label}</span>`;
+  }).join('');
+  bcEl.querySelectorAll('.bc-item:not(.bc-current)').forEach(el=>el.addEventListener('click',()=>{const t=N.find(n=>n.id===el.dataset.bcid);if(t){sn(t);sp(t)}}));
+  // BACK BUTTON — visible whenever there is a parent node
+  const backBtn=document.getElementById('panel-back');
+  if(d.p){
+    const parentNode=N.find(n=>n.id===d.p);
+    backBtn.textContent=`← ${parentNode?parentNode.label:'Back'}`;
+    backBtn.classList.add('visible');
+    backBtn.onclick=()=>{if(parentNode){sn(parentNode);sp(parentNode)}};
+  } else {
+    backBtn.classList.remove('visible');
+    backBtn.onclick=null;
+  }
+  // DEPTH LABEL
+  const depthLabels={0:'KNOWLEDGE MAP',1:'DOMAIN',2:'TOPIC',3:'TOOL / TECHNIQUE'};
+  document.getElementById('panel-depth-label').textContent=depthLabels[d.g]||'NODE';
+  // CATEGORY BADGE
+  const badge=document.getElementById('panel-cat');
+  badge.style.background=`${c.c}18`;badge.style.color=c.c;
+  badge.style.borderColor=`${c.c}35`;badge.textContent=c.n;
+  // TITLE + DESCRIPTION
+  document.getElementById('panel-title').textContent=d.label;
+  document.getElementById('panel-desc').textContent=d.desc||'';
+  // WHY IT MATTERS
+  if(d.use){document.getElementById('ps-why-text').textContent=d.use;document.getElementById('ps-why').style.display='block'}
+  else document.getElementById('ps-why').style.display='none';
+  // LEARNING PATH — use PATHS for g:1 domain nodes, otherwise show child pills
+  const path=PATHS[d.id];
+  const learnEl=document.getElementById('ps-learn-pills');
+  const learnSection=document.getElementById('ps-learn');
+  const learnTitle=learnSection.querySelector('.panel-section-title');
+  if(path&&path.length>0){
+    learnTitle.textContent='Learning path';
+    learnEl.innerHTML=path.map((step,i)=>{const node=N.find(n=>n.id===step.id);if(!node)return '';return `<div class="path-item" data-target="${step.id}"><div class="path-num">${i+1}</div><div><div class="path-node-name">${node.label}</div><div class="path-note">${step.note}</div></div></div>`;}).join('');
+    learnSection.style.display='block';
+  } else {
+    const children=N.filter(n=>n.p===d.id);
+    if(children.length>0){
+      learnTitle.textContent='What to learn';
+      learnEl.innerHTML=children.map(ch=>`<div class="panel-pill" data-target="${ch.id}">${ch.label}</div>`).join('');
+      learnSection.style.display='block';
+    } else learnSection.style.display='none';
+  }
+  learnEl.querySelectorAll('[data-target]').forEach(el=>el.addEventListener('click',()=>{const t=N.find(n=>n.id===el.dataset.target);if(t){sn(t);sp(t)}}));
+  // KEY TOOLS — only for g:1 domain nodes (g:2 topics already show their g:3 children above)
+  if(d.g===1){
+    const getAllDesc=(id)=>{const kids=N.filter(n=>n.p===id);return kids.flatMap(k=>[k,...getAllDesc(k.id)])};
+    const tools=getAllDesc(d.id).filter(n=>n.g===3).slice(0,14);
+    if(tools.length>0){
+      const toolsEl=document.getElementById('ps-tools-pills');
+      toolsEl.innerHTML=tools.map(t=>`<div class="panel-pill pill-tool" data-target="${t.id}">${t.label}</div>`).join('');
+      toolsEl.querySelectorAll('.panel-pill').forEach(pill=>pill.addEventListener('click',()=>{const t=N.find(n=>n.id===pill.dataset.target);if(t){sn(t);sp(t)}}));
+      document.getElementById('ps-tools-sec').style.display='block';
+    } else document.getElementById('ps-tools-sec').style.display='none';
+  } else document.getElementById('ps-tools-sec').style.display='none';
+  // PYTHON EXAMPLE
+  if(d.code){document.getElementById('code-block').innerHTML=hc(d.code);document.getElementById('ps-code').style.display='block';document.getElementById('copy-code-btn').onclick=()=>{navigator.clipboard.writeText(d.code);document.getElementById('copy-code-btn').textContent='copied!';setTimeout(()=>{document.getElementById('copy-code-btn').textContent='copy'},2000)}}
+  else document.getElementById('ps-code').style.display='none';
+  // PRO TIP
+  if(d.tip){document.getElementById('ps-tip-text').textContent=d.tip;document.getElementById('ps-tip').style.display='block'}
+  else document.getElementById('ps-tip').style.display='none';
+  // CONNECTED TOPICS — cross-links
+  const xl=X.filter(l=>l.s===d.id||l.t===d.id);
+  if(xl.length>0){
+    const linksEl=document.getElementById('panel-links');
+    linksEl.innerHTML=xl.map(l=>{const isSrc=l.s===d.id,other=N.find(n=>n.id===(isSrc?l.t:l.s));if(!other)return '';const arrow=isSrc?'→':'←';return `<div class="panel-pill" data-target="${other.id}" title="${arrow} ${l.label}">${other.label}</div>`}).join('');
+    linksEl.querySelectorAll('.panel-pill').forEach(pill=>pill.addEventListener('click',()=>{const t=N.find(n=>n.id===pill.dataset.target);if(t){sn(t);sp(t)}}));
+    document.getElementById('ps-links').style.display='block';
+  } else document.getElementById('ps-links').style.display='none';
+  p.classList.add('open');document.getElementById('graph-container').style.paddingRight='410px';
+}
+document.getElementById('panel-close').addEventListener('click',()=>{document.getElementById('panel').classList.remove('open');document.getElementById('graph-container').style.paddingRight='0';s=null;svg.selectAll('.node-card').classed('selected',false)});
+document.getElementById('btn-domains').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);rg()});
+document.getElementById('btn-topics').addEventListener('click',()=>{N.filter(n=>n.g===1).forEach(n=>n.expanded=true);N.filter(n=>n.g===2).forEach(n=>n.expanded=true);rg()});
+document.getElementById('btn-tools').addEventListener('click',()=>{N.filter(n=>n.g<=3).forEach(n=>n.expanded=true);rg()});
+document.getElementById('btn-collapse').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);rg()});
+document.getElementById('btn-fit').addEventListener('click',()=>{const nodes=N.filter(n=>{let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return n.g===1;if(!pn.expanded&&pn.g>0)return false;p=pn.p}return true}),xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y),mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys),pad=50,sc=Math.min((window.innerWidth-pad*2)/(mxx-mnx||1),(window.innerHeight-60-pad*2)/(mxy-mny||1))*0.9,tx=(window.innerWidth-pad*2)/2-(mnx+mxx)/2*sc,ty=(window.innerHeight-60-pad*2)/2-(mny+mxy)/2*sc;svg.transition().duration(750).call(d3.zoom().transform,d3.zoomIdentity.translate(tx,ty).scale(sc))});
+document.getElementById('btn-reset').addEventListener('click',()=>{N=JSON.parse(JSON.stringify(DN));DN.forEach(n=>{if(RICH[n.id])Object.assign(n,RICH[n.id])});X=JSON.parse(JSON.stringify(DX));sim.nodes(N);rg()});
+document.getElementById('btn-edit').addEventListener('click',()=>{e=!e;document.getElementById('btn-add').classList.toggle('hidden');document.getElementById('btn-link').classList.toggle('hidden');document.getElementById('btn-edit').textContent=e?'[✏ Edit ✓]':'[✏ Edit]'});
+document.getElementById('btn-export').addEventListener('click',()=>{const d={N,X},j=JSON.stringify(d,null,2),b=new Blob([j],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='mindmap-export.json';a.click();URL.revokeObjectURL(u)});
+document.getElementById('btn-import').addEventListener('click',()=>{const i=document.createElement('input');i.type='file';i.accept='application/json';i.addEventListener('change',(e)=>{const f=e.target.files[0],r=new FileReader();r.onload=(e)=>{try{const d=JSON.parse(e.target.result);N=d.N||DN;X=d.X||DX;rg();bl()}catch(e){alert('Invalid JSON')}};r.readAsText(f)});i.click()});
+document.getElementById('topbar-search').addEventListener('input',(e)=>{const q=e.target.value.toLowerCase();document.querySelectorAll('.node-card').forEach(el=>el.classList.remove('search-highlight'));if(!q){rg();return}const m=N.filter(n=>n.label.toLowerCase().includes(q)||n.id.includes(q));if(m.length===0)return;const mid=new Set(m.map(n=>n.id));if(m.length<=8){const te=new Set;m.forEach(m=>{let p=m.p;while(p){te.add(p);const pn=N.find(x=>x.id===p);if(!pn)break;p=pn.p}});N.forEach(n=>{if(te.has(n.id))n.expanded=true})}rg();setTimeout(()=>{document.querySelectorAll('.node-card').forEach(el=>{if(mid.has(el.dataset.id))el.classList.add('search-highlight')})},100)});
+ifs();ig();bl();rg();
+  </script>
+</body>
+</html>
