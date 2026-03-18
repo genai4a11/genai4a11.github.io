@@ -3053,6 +3053,246 @@ def filter_dataset(
     print(f"Kept {len(filtered)}/{len(pairs)} examples "
           f"({100*len(filtered)//len(pairs)}%)")
     return filtered`,tip:'Aim to keep 40–60% of your synthetic data after filtering — if you keep more than 80%, your quality bar is too low; if you keep less than 20%, your generation prompt needs work. The quality score step alone (keeping only 4s and 5s) is the highest-ROI filter and worth the extra LLM calls.'},
+self_instruct:{use:'Self-Instruct and Evol-Instruct are techniques to bootstrap large instruction datasets from a tiny seed set using a strong LLM. Stanford Alpaca generated 52K examples from 175 seeds. Evol-Instruct (WizardLM) evolves instructions to be more complex and diverse.',diag:`  Self-Instruct vs Evol-Instruct
+  ──────────────────────────────────────────────────────────
+  Self-Instruct (Alpaca)       Evol-Instruct (WizardLM)
+
+  Start: 175 seed tasks        Start: existing instruction set
+
+  LLM generates new            LLM rewrites each instruction
+  instructions by analogy      to be harder / more complex
+  to seeds                     (add constraints, reasoning
+                                steps, domain specifics)
+
+  Filter: remove               Filter: remove too-easy,
+  duplicates, unsafe,          too-similar, failed
+  and low-quality              generations
+
+  Result: 52K diverse          Result: same count but harder
+  instruction pairs            instructions → stronger model
+
+  ──────────────────────────────────────────────────────────
+  Self-Instruct = breadth   |   Evol-Instruct = difficulty`,code:`# Evol-Instruct: evolve a simple instruction into harder variants
+# Each evolution makes the task more complex and specific
+
+from anthropic import Anthropic
+import json
+
+client = Anthropic()
+
+EVOL_PROMPT = """Rewrite the following instruction to make it more
+complex and challenging, while keeping it answerable.
+
+Use ONE of these evolution strategies:
+- Add constraints (format, length, style requirements)
+- Add reasoning steps (require step-by-step explanation)
+- Increase domain specificity (add technical context)
+- Add a comparison or trade-off component
+
+Original instruction: {instruction}
+
+Return JSON: {{"evolved": "...", "strategy": "..."}}"""
+
+def evolve_instruction(instruction: str) -> dict:
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=512,
+        messages=[{"role": "user",
+                   "content": EVOL_PROMPT.format(
+                       instruction=instruction)}]
+    )
+    return json.loads(response.content[0].text)
+
+def generate_response(instruction: str) -> str:
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": instruction}]
+    )
+    return response.content[0].text
+
+# Evolve a seed instruction through multiple rounds
+seed = "Explain what a transformer is."
+pairs = []
+
+current = seed
+for round_num in range(3):
+    evolved = evolve_instruction(current)
+    response = generate_response(evolved["evolved"])
+    pairs.append({
+        "instruction": evolved["evolved"],
+        "response": response,
+        "strategy": evolved["strategy"],
+        "round": round_num + 1,
+    })
+    current = evolved["evolved"]   # evolve from the evolved version
+    print(f"Round {round_num+1} [{evolved['strategy']}]: {evolved['evolved'][:60]}...")
+
+print(f"Generated {len(pairs)} evolved instruction pairs")`,tip:'Use Self-Instruct for breadth — quickly covering many task types. Use Evol-Instruct for depth — when your model handles easy cases but fails on complex ones. In practice, combine both: Self-Instruct for initial dataset creation, Evol-Instruct to harden the instructions that your model currently gets wrong.'},
+data_prep:{use:'Fine-tuning data preparation is where most fine-tuning projects fail silently. The model trains without errors but produces bad outputs — because the data was poorly formatted, imbalanced, or contaminated with the very patterns you are trying to fix.',diag:`  Data preparation pipeline for SFT
+  ──────────────────────────────────────────────────────────
+  Step        What to do              Common mistake
+
+  Collect     Gather instruction-     Using raw model
+              response pairs from     outputs without
+              human experts or        human review
+              LLM generation
+
+  Clean       Dedup, fix encoding,    Skipping dedup —
+              remove truncated or     near-duplicates
+              malformed examples      inflate eval scores
+
+  Format      Convert to chat         Wrong template =
+              template your model     silent training
+              expects (ChatML,        failure, model
+              Llama-3, Alpaca)        never learns format
+
+  Split       80% train / 10% val    Leaking eval into
+              / 10% test              train via near-
+              Stratify by task type   duplicates
+
+  Validate    Run schema checks,      Trusting the count —
+              sample 50 manually,     100 bad examples
+              check token lengths     silently corrupts
+  ──────────────────────────────────────────────────────────
+  Target: 500–5000 high-quality examples per task`,code:`# Format training data into ChatML format for fine-tuning
+# ChatML is used by Llama-3, Mistral, Qwen and others
+
+import json
+from pathlib import Path
+
+SYSTEM_PROMPT = "You are a helpful AI assistant."
+
+def format_chatml(
+    instruction: str,
+    response: str,
+    system: str = SYSTEM_PROMPT,
+) -> dict:
+    """Convert an instruction-response pair to ChatML format."""
+    return {
+        "messages": [
+            {"role": "system",    "content": system},
+            {"role": "user",      "content": instruction},
+            {"role": "assistant", "content": response},
+        ]
+    }
+
+def prepare_dataset(
+    raw_pairs: list[dict],
+    output_path: str,
+    max_tokens: int = 2048,
+) -> dict:
+    formatted, skipped = [], 0
+
+    for pair in raw_pairs:
+        record = format_chatml(
+            pair["instruction"], pair["response"]
+        )
+        # Rough token estimate: 1 token ≈ 4 chars
+        total_chars = sum(
+            len(m["content"]) for m in record["messages"]
+        )
+        if total_chars // 4 > max_tokens:
+            skipped += 1
+            continue
+        formatted.append(record)
+
+    # Write as JSONL
+    with open(output_path, "w") as f:
+        for record in formatted:
+            f.write(json.dumps(record) + "\\n")
+
+    stats = {
+        "total": len(raw_pairs),
+        "kept": len(formatted),
+        "skipped_too_long": skipped,
+    }
+    print(f"Dataset stats: {stats}")
+    return stats
+
+# Usage
+raw = [
+    {"instruction": "What is RAG?",
+     "response": "RAG stands for Retrieval Augmented Generation..."},
+]
+prepare_dataset(raw, "train.jsonl")`,tip:'Always sample 50 random examples from your final training set and read them manually before training. This takes 20 minutes and will catch the formatting errors, truncation issues, and label noise that automated checks miss. A model trained on 500 clean examples consistently beats one trained on 5000 noisy ones.'},
+data_lineage:{use:'Data lineage answers the question "where did this training data come from?" — tracing every transformation from raw source to final training set. It becomes essential when a model behaves unexpectedly and you need to find the root cause in the data.',diag:`  Data lineage graph — example
+  ──────────────────────────────────────────────────────────
+  Raw sources
+  ├── support_tickets.csv  (v2, 2024-01-10)
+  ├── docs_crawl/          (snapshot 2024-01-08)
+  └── synthetic_v3.jsonl   (generated 2024-01-12)
+       │
+       ▼
+  ETL pipeline  (Prefect run: abc123)
+  ├── cleaned_tickets.jsonl   (1,204 rows)
+  ├── chunked_docs.jsonl       (8,821 chunks)
+  └── filtered_synthetic.jsonl (892 examples)
+       │
+       ▼
+  merge_and_dedup.py  (hash: f3a9...)
+       │
+       ▼
+  train_v4.jsonl  (10,917 examples)
+       │
+       ▼
+  Training run  (MLflow run: xyz789)
+  └── llama3-ft-v4  (model checkpoint)
+  ──────────────────────────────────────────────────────────
+  Goal: given any model, reconstruct the exact data that
+  trained it — including all intermediate transformations`,code:`# Log data lineage in MLflow — hash every dataset version
+# pip install mlflow
+
+import mlflow
+import hashlib
+import json
+from pathlib import Path
+
+def file_hash(path: str) -> str:
+    """SHA256 hash of a file — fingerprints the exact version."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def log_data_lineage(
+    run_name: str,
+    sources: list[dict],   # [{"path": ..., "description": ...}]
+    output_path: str,
+):
+    """Log full data lineage for a training run."""
+    with mlflow.start_run(run_name=run_name):
+
+        # Log each source dataset with its hash
+        for src in sources:
+            path = src["path"]
+            h = file_hash(path)
+            mlflow.log_param(f"source_{Path(path).stem}_hash", h)
+            mlflow.log_param(f"source_{Path(path).stem}_desc",
+                             src["description"])
+
+        # Log the merged output
+        output_hash = file_hash(output_path)
+        row_count = sum(1 for _ in open(output_path))
+        mlflow.log_param("output_hash", output_hash)
+        mlflow.log_metric("training_examples", row_count)
+        mlflow.log_artifact(output_path)
+
+        print(f"Logged lineage for {row_count} training examples")
+        print(f"Output hash: {output_hash}")
+
+# Usage
+log_data_lineage(
+    run_name="train-v4-lineage",
+    sources=[
+        {"path": "cleaned_tickets.jsonl",
+         "description": "Support tickets Jan 2024"},
+        {"path": "filtered_synthetic.jsonl",
+         "description": "Synthetic data v3, quality>=4"},
+    ],
+    output_path="train_v4.jsonl",
+)`,tip:'Log the hash of every input dataset at the start of each training run — not just the filename. Filenames are mutable; hashes are not. When a model regression appears two weeks later, the hash is the only way to know whether the data changed between runs. Store lineage in MLflow so it lives alongside your experiment metrics.'},
 finetuning:{use:'Fine-tuning updates a model\'s weights on your data — teaching it behaviour that prompting cannot reliably produce. Use it when prompting has hit its ceiling.',diag:`  Prompt vs Fine-tune decision:\n\n  Prompting is enough when:\n  ✓ Model understands the task\n  ✓ You just need consistent format/tone\n  ✓ You have fewer than ~100 examples\n\n  Fine-tune when:\n  ✓ Prompt too long or expensive to repeat\n  ✓ Need consistent proprietary style/domain\n  ✓ Latency matters (smaller FT model can\n    beat a larger prompted model)\n  ✓ You have 500+ quality examples\n\n  Fine-tuning pipeline:\n  ┌──────────┐  ┌──────────┐  ┌──────────┐\n  │  Collect │─►│  Format  │─►│  Train   │\n  │  data    │  │  JSONL   │  │  QLoRA   │\n  └──────────┘  └──────────┘  └────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │   Eval    │\n                              │ (LLM judge│\n                              │  RAGAS)   │\n                              └─────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │  Deploy   │\n                              └───────────┘`,tip:'Always establish a prompted baseline before fine-tuning. Fine-tuning that does not beat prompting is wasted compute. 500 curated examples beats 50,000 noisy ones.'},
 sysdesign:{use:'System design is the layer most tutorials skip. Individual tools are well documented; how to combine them into something reliable, cost-efficient, and maintainable in production is not.',diag:`  Layers of a production AI system:\n  ┌───────────────────────────────────────┐\n  │  User-facing API / interface          │\n  ├───────────────────────────────────────┤\n  │  Orchestration  (agent loop / chain)  │\n  ├──────────────┬────────────────────────┤\n  │  LLM calls   │  Tools & retrieval     │\n  ├──────────────┴────────────────────────┤\n  │  Data layer  (chunks, metadata, vDB)  │\n  ├───────────────────────────────────────┤\n  │  Reliability (retry, fallback, cache) │\n  ├───────────────────────────────────────┤\n  │  Eval & observability (Langfuse...)   │\n  └───────────────────────────────────────┘\n\n  Key decisions:\n  RAG vs FT vs prompting alone?\n  Which model at which cost tier?\n  Agent loop vs deterministic pipeline?\n  Build vs buy vs open-source?`,tip:'Design your eval harness before your system architecture. If you cannot measure quality, you cannot make reliable design decisions.'},
 retry_backoff:{use:'Every LLM API call can fail with a 429 or 503. Without retry logic, a single timeout kills your pipeline.',diag:`  API Call\n     │\n     ▼\n  ┌──────────┐   success\n  │ Attempt 1│ ──────────► return result\n  └──────────┘\n       │ 429 / 503\n       ▼\n  wait 1s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 2│ ──────────► return result\n  └──────────┘\n       │ still failing\n       ▼\n  wait 2s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 3│ ──────────► return result\n  └──────────┘\n       │ max retries hit\n       ▼\n  raise / fallback`,code:`import time, random\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef llm_with_retry(\n    messages: list,\n    model: str = "gpt-4o-mini",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    """\n    Call the OpenAI API with exponential backoff + full jitter.\n    Retries on 429 (rate limit) and 5xx (server errors).\n    """\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model=model, messages=messages\n            )\n            return resp.choices[0].message.content\n\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            # Full jitter: sleep random(0, base * 2^attempt)\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            print(f"Rate limited. Retrying in {delay:.1f}s...")\n            time.sleep(delay)\n\n        except APIStatusError as e:\n            if e.status_code < 500 or attempt == max_retries - 1:\n                raise  # Don't retry 4xx client errors\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            time.sleep(delay)\n\nresult = llm_with_retry(\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(result)`,tip:'Use full jitter (random between 0 and cap) not equal jitter — it prevents thundering herd when many clients retry simultaneously.'},
