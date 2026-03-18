@@ -742,6 +742,231 @@ orchestrator:{use:'Coordinating multiple specialised sub-agents for a complex pi
 rlhf:{use:'Aligning a base LLM to follow instructions and match human preferences.',code:`# RLHF = SFT + Reward Model + PPO\n# In practice: use DPO instead of PPO (simpler, same result)\n\n# Step 1: Supervised Fine-Tuning on demonstrations\nfrom trl import SFTTrainer, SFTConfig\nsft = SFTTrainer(\n    model=base_model,\n    args=SFTConfig(output_dir="./sft", num_train_epochs=1),\n    train_dataset=instruction_dataset  # {prompt, response} pairs\n)\nsft.train()\n\n# Step 2: Train Reward Model on preference pairs\nfrom trl import RewardTrainer, RewardConfig\nrm = RewardTrainer(\n    model=reward_model,\n    args=RewardConfig(output_dir="./rm"),\n    train_dataset=preference_dataset  # {prompt, chosen, rejected}\n)\nrm.train()\n\n# Step 3: PPO optimisation\n# from trl import PPOTrainer  # complex — see TRL docs\n# Modern alternative: just use DPO (skips reward model entirely)\nprint("For new projects: use DPO instead of RLHF PPO")`,tip:'RLHF with PPO is complex and unstable. Use DPO or ORPO for new projects — same alignment quality, far simpler training loop.'},
 st_memory:{use:'Any multi-turn chatbot or agent that needs to remember what was said earlier in the same session — customer support bots, coding assistants, tutors.',code:`from openai import OpenAI\n\nclient = OpenAI()\n\n# Strategy 1: Window memory — keep the last k turns verbatim\n# Zero extra LLM calls, but old context is hard-dropped\nclass WindowMemory:\n    def __init__(self, k: int = 5):\n        self.k = k\n        self.history = []\n\n    def chat(self, user_msg: str) -> str:\n        self.history.append({"role": "user", "content": user_msg})\n        window = self.history[-(self.k * 2):]  # k turns = k user + k assistant\n        resp = client.chat.completions.create(\n            model="gpt-4o-mini", messages=window\n        )\n        reply = resp.choices[0].message.content\n        self.history.append({"role": "assistant", "content": reply})\n        return reply\n\nmem = WindowMemory(k=5)\nmem.chat("My name is Deepak and I work in fintech.")\nmem.chat("I mostly code in Python.")\nprint(mem.chat("What do you know about me so far?"))\n\n# Strategy 2: Summary memory — LLM compresses old turns into a paragraph\n# Handles very long conversations; costs one extra LLM call to compress\nclass SummaryMemory:\n    def __init__(self, compress_after: int = 6):\n        self.summary = ""\n        self.recent = []\n        self.compress_after = compress_after\n\n    def _compress(self):\n        text = "\\n".join(f"{m[\'role\']}: {m[\'content\']}" for m in self.recent)\n        self.summary = client.chat.completions.create(\n            model="gpt-4o-mini",\n            messages=[{"role": "user",\n                "content": f"Summarise this in 2 sentences:\\n{text}"}]\n        ).choices[0].message.content\n        self.recent = []\n\n    def chat(self, user_msg: str) -> str:\n        messages = []\n        if self.summary:\n            messages.append({"role": "system",\n                "content": f"Conversation so far: {self.summary}"})\n        messages += self.recent + [{"role": "user", "content": user_msg}]\n        resp = client.chat.completions.create(\n            model="gpt-4o-mini", messages=messages\n        )\n        reply = resp.choices[0].message.content\n        self.recent += [{"role": "user", "content": user_msg},\n                        {"role": "assistant", "content": reply}]\n        if len(self.recent) >= self.compress_after:\n            self._compress()\n        return reply`,tip:'Window memory is free (no extra LLM calls). Use summary memory only when conversations routinely exceed ~20 turns — the compression cost adds up otherwise.'},
 prompt_versioning:{use:'Treating prompts like code — version them, A/B test variants, track which version performs best, and roll back when quality drops.',diag:`  Prompt Registry\n        │\n  ┌─────┴──────────────────────────┐\n  │  v1.0    v1.1      v2.0        │\n  │  "Be    "Be a     "You are     │\n  │  helpful helpful   an expert   │\n  │  ..."   expert..." assistant"  │\n  └──┬──────────┬─────────┬────────┘\n     │          │         │\n   A/B        A/B      Deploy\n   test       test\n     │          │\n     └────┬─────┘\n    Compare metrics\n    (accuracy, cost, latency)\n          │\n    Best version → Production`,code:`# Langfuse Prompt Management (free, open-source)\nfrom langfuse import Langfuse\nfrom openai import OpenAI\n\nlangfuse = Langfuse()\nclient = OpenAI()\n\n# Push a versioned prompt to the registry\nlangfuse.create_prompt(\n    name="rag-system-prompt",\n    prompt="You are a helpful assistant. Answer based only on: {{context}}",\n    labels=["production"],  # tag as active production version\n    config={"model": "gpt-4o-mini", "temperature": 0}\n)\n\n# Pull the current production version (cached locally)\nprompt = langfuse.get_prompt("rag-system-prompt")\ncompiled = prompt.compile(context="RAG docs here...")\n\n# Use it\nresp = client.chat.completions.create(\n    model="gpt-4o-mini",\n    messages=[\n        {"role": "system", "content": compiled},\n        {"role": "user", "content": "What is RAG?"}\n    ]\n)\n\n# Log which prompt version was used (auto-tracks in Langfuse)\nprint(f"Prompt version: {prompt.version}")\nprint(resp.choices[0].message.content)`,tip:'Never hardcode prompts in application code. Even a small change to a prompt is a deployment — version it, test it, and track the impact on your eval metrics.'},
+zero_shot:{use:'Ask the model to perform a task with no examples — just a clear instruction. Surprisingly effective for well-understood tasks when the instruction is specific.',diag:`  Zero-shot prompt structure:
+
+  ┌─────────────────────────────────────┐
+  │  [System]                           │
+  │  You are a {persona}.               │
+  │  {constraints / format rules}       │
+  ├─────────────────────────────────────┤
+  │  [User]                             │
+  │  {clear task description}           │
+  │  {input data}                       │
+  └─────────────────────────────────────┘
+
+  Works well when:
+  • Task is common in training data
+  • Output format is simple
+  • Instruction is unambiguous
+
+  Fails when:
+  • Format must be exact (use few-shot)
+  • Task is domain-specific / unusual
+  • Model hallucinates without grounding`,code:`from openai import OpenAI
+
+client = OpenAI()
+
+def zero_shot(task: str, input_text: str,
+              persona: str = "a helpful assistant") -> str:
+    return client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": f"You are {persona}."},
+            {"role": "user",   "content": f"{task}\\n\\n{input_text}"}
+        ]
+    ).choices[0].message.content
+
+# Classification
+label = zero_shot(
+    "Classify the sentiment as positive, negative, or neutral. "
+    "Reply with one word only.",
+    "The new update broke my workflow and support ignored me.",
+    "a sentiment classifier"
+)
+print(label)  # → negative
+
+# Extraction
+entities = zero_shot(
+    "Extract the company name, product, and issue as JSON: "
+    '{"company":"...","product":"...","issue":"..."}',
+    "Acme Corp reports that their DataPipe v3 has a memory leak.",
+    "an information extraction system"
+)
+print(entities)
+
+# Translation
+translated = zero_shot(
+    "Translate the following text to French.",
+    "The model achieved state-of-the-art performance on all benchmarks.",
+    "a professional translator"
+)
+print(translated)`,tip:'The single biggest lever for zero-shot quality is instruction specificity. "Summarise this" gets mediocre results. "Summarise in 3 bullet points, each under 15 words, focusing on action items" gets exactly what you need.'},
+few_shot:{use:'Provide 2–5 input/output examples in the prompt to show the model exactly what format and style you expect. The fastest way to improve quality without fine-tuning.',diag:`  Few-shot prompt structure:
+
+  [System] You are a {persona}.
+
+  [User]   Example 1 input
+  [Asst]   Example 1 output   ← exact format you want
+
+  [User]   Example 2 input
+  [Asst]   Example 2 output
+
+  [User]   Example 3 input
+  [Asst]   Example 3 output
+
+  [User]   ← your actual query
+  [Asst]   ← model follows the pattern
+
+  Guidelines for examples:
+  • Cover edge cases, not just easy ones
+  • Keep format identical across all examples
+  • 3–5 examples is usually the sweet spot
+  • Diversity > quantity`,code:`from openai import OpenAI
+
+client = OpenAI()
+
+# Few-shot: teach the model a custom output format
+def few_shot_classify(text: str) -> str:
+    examples = [
+        ("Invoice #4521 overdue by 30 days",
+         "category:billing | urgency:high | action:escalate"),
+        ("How do I reset my password?",
+         "category:account | urgency:low | action:send-guide"),
+        ("App crashes when uploading files > 10MB",
+         "category:technical | urgency:medium | action:create-bug"),
+        ("Cancel my subscription immediately",
+         "category:billing | urgency:high | action:retention-call"),
+    ]
+
+    messages = [
+        {"role": "system",
+         "content": "Classify support tickets in the exact format shown."}
+    ]
+    for user_ex, asst_ex in examples:
+        messages.append({"role": "user",      "content": user_ex})
+        messages.append({"role": "assistant", "content": asst_ex})
+
+    # Append the real query
+    messages.append({"role": "user", "content": text})
+
+    return client.chat.completions.create(
+        model="gpt-4o-mini", messages=messages
+    ).choices[0].message.content
+
+result = few_shot_classify("Payment declined three times this morning")
+print(result)
+# → category:billing | urgency:high | action:escalate`,tip:'If zero-shot gives 70% accuracy and you need 90%, try few-shot before fine-tuning. Good examples are 10× cheaper than labelled training data. If you still need more, those same examples become your fine-tuning seed set.'},
+system_prompts:{use:'The persistent instruction layer that sets persona, tone, constraints, and output format for every message in the conversation. The highest-leverage prompt you write.',diag:`  Request lifecycle:
+
+  ┌──────────────────────────────────────┐
+  │  System prompt (sent every request)  │
+  │  • Persona: "You are a ..."          │
+  │  • Constraints: "Never discuss ..."  │
+  │  • Format: "Always reply as JSON"    │
+  │  • Context: "You work for Acme Corp" │
+  └───────────────────┬──────────────────┘
+                      │ prepended before
+                      ▼ every user message
+  ┌──────────────────────────────────────┐
+  │  Conversation history                │
+  │  user → assistant → user → ...      │
+  └──────────────────────────────────────┘
+
+  System prompt is NOT visible to user.
+  It persists for the entire session.
+  Cached by Anthropic/OpenAI if > 1024 tokens.`,code:`from openai import OpenAI
+
+client = OpenAI()
+
+SYSTEM = """You are a senior financial analyst at a hedge fund.
+
+Rules:
+- Always cite data with [Source: ...] tags
+- Express uncertainty explicitly: "Based on available data..."
+- Never provide specific buy/sell recommendations
+- Format numbers with commas: 1,000,000 not 1000000
+- Keep responses under 150 words unless asked for detail
+
+Output format for market questions:
+SUMMARY: <one sentence>
+KEY FACTORS: <bullet list>
+RISK: <one sentence>
+"""
+
+def chat(user_message: str,
+         history: list[dict] | None = None) -> str:
+    messages = [{"role": "system", "content": SYSTEM}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_message})
+
+    resp = client.chat.completions.create(
+        model="gpt-4o", messages=messages
+    )
+    return resp.choices[0].message.content
+
+# Persona, format, and constraints all enforced automatically
+print(chat("What's driving tech stock volatility this quarter?"))`,tip:'Write your system prompt in order of importance: persona first, then hard constraints, then output format, then soft preferences. Models weight earlier instructions more. Use "Never" and "Always" for non-negotiable rules — softer language gets ignored under pressure.'},
+role_prompting:{use:'Assign a specific expert persona to the model to shift its vocabulary, reasoning style, and level of detail toward that domain.',diag:`  Without role:
+  "Explain transformers."
+   → Generic Wikipedia-style answer
+
+  With role:
+  "You are a senior ML engineer who has
+   implemented transformers from scratch.
+   Explain transformers to a junior
+   developer joining your team."
+   → Practical, opinionated, concrete
+
+  Role anchors:
+  ┌─────────────────┬────────────────────┐
+  │ Role            │ Effect             │
+  ├─────────────────┼────────────────────┤
+  │ Senior engineer │ Practical, opinionated│
+  │ Professor       │ Structured, thorough│
+  │ Socratic tutor  │ Questions, not answers│
+  │ Devil's advocate│ Challenges assumptions│
+  │ Code reviewer   │ Critical, detailed │
+  └─────────────────┴────────────────────┘`,code:`from openai import OpenAI
+
+client = OpenAI()
+
+ROLES = {
+    "explainer": (
+        "You are a world-class teacher who explains complex technical "
+        "topics using simple analogies and concrete examples. "
+        "No jargon unless you define it first."
+    ),
+    "critic": (
+        "You are a rigorous peer reviewer. Find weaknesses, edge cases, "
+        "and unstated assumptions. Be direct and specific. "
+        "Do not soften feedback."
+    ),
+    "socratic": (
+        "You are a Socratic tutor. Never give the answer directly. "
+        "Ask probing questions that lead the user to the insight themselves."
+    ),
+    "engineer": (
+        "You are a senior staff engineer with 15 years experience. "
+        "Prioritise practical tradeoffs over theoretical purity. "
+        "Always consider scale, cost, and maintainability."
+    ),
+}
+
+def ask(role_key: str, question: str) -> str:
+    return client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": ROLES[role_key]},
+            {"role": "user",   "content": question}
+        ]
+    ).choices[0].message.content
+
+topic = "Should I use RAG or fine-tuning for my use case?"
+print("--- Engineer ---")
+print(ask("engineer", topic))
+print("--- Critic ---")
+print(ask("critic", "My plan: always use RAG, never fine-tune."))`,tip:'Combine role + audience: "You are a {expert} explaining to a {audience}." This single addition often doubles output quality because it sets both the knowledge level and the communication style simultaneously.'},
 prompt_caching:{use:'Reducing latency and cost when your prompt has a long shared prefix — system prompts, retrieved docs, few-shot examples.',diag:`  Standard API call:\n  ┌──────────────────────────────────────┐\n  │ [System prompt 2000 tokens]          │  \n  │ [Retrieved docs 5000 tokens]         │  Process ALL tokens\n  │ [User question 50 tokens]            │  every single call\n  └──────────────────────────────────────┘\n  Cost: 7050 tokens input\n\n  With Prompt Caching:\n  ┌──────────────────────────────────────┐\n  │ [System prompt 2000 tokens] ✓ cached │  0.1x cost\n  │ [Retrieved docs 5000 tokens] ✓ cached│  0.1x cost\n  │ [User question 50 tokens]    fresh   │  1x cost\n  └──────────────────────────────────────┘\n  Cost: 50 tokens (+ tiny cache read fee)`,code:`import anthropic\n\nclient = anthropic.Anthropic()\n\n# Long shared content (system prompt + docs)\nSYSTEM_DOCS = """You are an expert assistant.\n\"\"\" + ("documentation text " * 500)  # simulate 2000+ token prefix\n\n# First call — content is processed and cached automatically\nresp1 = client.messages.create(\n    model="claude-opus-4-6",\n    max_tokens=1024,\n    system=[\n        {\n            "type": "text",\n            "text": SYSTEM_DOCS,\n            "cache_control": {"type": "ephemeral"}  # mark for caching\n        }\n    ],\n    messages=[{"role": "user", "content": "What is RAG?"}]\n)\nprint("Cache write tokens:", resp1.usage.cache_creation_input_tokens)\n\n# Second call — prefix is served from cache (90% cheaper, 2x faster)\nresp2 = client.messages.create(\n    model="claude-opus-4-6",\n    max_tokens=1024,\n    system=[\n        {"type": "text", "text": SYSTEM_DOCS,\n         "cache_control": {"type": "ephemeral"}}\n    ],\n    messages=[{"role": "user", "content": "Explain vector search?"}]\n)\nprint("Cache read tokens:", resp2.usage.cache_read_input_tokens)`,tip:'Cache breakeven is ~2 requests for Anthropic (cache write costs 25% more, reads cost 90% less). For apps with 10+ users sharing the same system prompt, savings are massive.'},
 chunking:{use:'Your RAG quality is mostly determined by how you split documents — bad chunking means relevant content is always cut at the wrong place.',diag:`  Document\n      │\n  ┌───┴─────────────────────────────────┐\n  │         Chunking Strategies          │\n  ├──────────┬──────────┬───────────────┤\n  ↓          ↓          ↓               ↓\nFixed     Sentence   Semantic      Parent-Child\nSize      Window     Split         (Nested)\n512 tok   Overlap    Embed+        Large parent\nSimple    50 tok     cluster       Small child\n                     Similar →     Retrieve child\n                     same chunk    Return parent`,code:`from openai import OpenAI\nfrom sentence_transformers import SentenceTransformer\nimport numpy as np\n\nclient = OpenAI()\n\n# Strategy 1: Fixed-size (baseline)\ndef fixed_chunks(text: str, size: int = 512, overlap: int = 50) -> list[str]:\n    words = text.split()\n    chunks = []\n    for i in range(0, len(words), size - overlap):\n        chunks.append(" ".join(words[i:i + size]))\n    return chunks\n\n# Strategy 2: Semantic chunking (best for mixed content)\ndef semantic_chunks(sentences: list[str], threshold: float = 0.8) -> list[str]:\n    model = SentenceTransformer("BAAI/bge-small-en-v1.5")\n    embs = model.encode(sentences, normalize_embeddings=True)\n    chunks, current = [], [sentences[0]]\n    for i in range(1, len(sentences)):\n        sim = float(embs[i-1] @ embs[i])\n        if sim < threshold:  # topic shift — start new chunk\n            chunks.append(" ".join(current))\n            current = []\n        current.append(sentences[i])\n    if current:\n        chunks.append(" ".join(current))\n    return chunks\n\ntext = "RAG combines retrieval with generation. "\\\n       "Vector databases store embeddings. "\\\n       "Paris is the capital of France."\nprint(semantic_chunks(text.split(". ")))`,tip:'Start with fixed-size (512 tokens, 50 overlap). If precision is poor, switch to semantic chunking. Use parent-child only when answers need more context than a single chunk provides.'},
 contextual_retrieval:{use:"When standard RAG retrieves the right document but chunks are too isolated to make sense without their surrounding context.",diag:`  Standard RAG:\n  Doc chunk: "The result was 42%"\n  → Embedded and stored as-is\n  → Retrieved but meaningless alone\n\n  Contextual Retrieval (Anthropic):\n  ┌─────────────────────────────────────────┐\n  │  For each chunk, ask Claude:            │\n  │  "Briefly describe where this chunk     │\n  │   sits in the full document."           │\n  └───────────────────┬─────────────────────┘\n                      ↓\n  Context: "Section 3 of Q3 earnings report.\n  This refers to the YoY revenue growth."\n  + Original chunk: "The result was 42%"\n                      ↓\n  Embed the COMBINED text — much richer signal\n  Recall improves ~67% on benchmark tests`,code:`import anthropic\nimport chromadb\n\nclient = anthropic.Anthropic()\ndb = chromadb.Client()\ncollection = db.create_collection("contextual_docs")\n\ndef add_context_to_chunk(full_doc: str, chunk: str) -> str:\n    """Prepend a short context summary to a chunk before embedding."""\n    resp = client.messages.create(\n        model="claude-haiku-4-5-20251001",  # fast + cheap for this task\n        max_tokens=100,\n        system="Give a 1-2 sentence context for where this chunk "\n               "fits in the document. Be concise.",\n        messages=[{"role": "user",\n            "content": f"Document:\\n{full_doc[:3000]}\\n\\nChunk:\\n{chunk}"}]\n    )\n    context = resp.content[0].text\n    return f"{context}\\n\\n{chunk}"  # prepend context to chunk\n\ndocument = "Q3 Report: Revenue grew 42% YoY... "\\\n           "This was driven by enterprise sales..."\nchunks = [document[i:i+200] for i in range(0, len(document), 150)]\n\nfor i, chunk in enumerate(chunks):\n    enriched = add_context_to_chunk(document, chunk)\n    # Embed enriched chunk (use OpenAI embeddings or local model)\n    collection.add(documents=[enriched], ids=[f"chunk_{i}"])\n\nprint(f"Indexed {len(chunks)} contextual chunks")`,tip:'Use claude-haiku-4-5-20251001 for context generation — it\'s 10x cheaper than Sonnet and the task is simple. Combine with BM25 for hybrid retrieval for best results.'},
@@ -1462,12 +1687,6 @@ ifs();ig();bl();rg();
     overlay.style.opacity='0';
     setTimeout(()=>{overlay.classList.add('hidden')},400);
     markSeen();
-    // Auto-demo: expand Building cluster then open RAG panel so users see depth immediately
-    setTimeout(()=>{
-      const mb=N.find(n=>n.id==='meta_building');
-      if(mb){mb.expanded=true;rg();}
-      setTimeout(()=>{const demoNode=N.find(n=>n.id==='rag');if(demoNode){sn(demoNode);sp(demoNode);}},300);
-    },600);
   });
 })();
 // Onboarding hint bar — stays until user explicitly dismisses or clicks a node
