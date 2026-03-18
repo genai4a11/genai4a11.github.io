@@ -1112,6 +1112,67 @@ print("\nSyntax valid:", validate_python(code)[0])
 namespace: dict = {}
 exec(code, namespace)
 print("Result:", namespace["fibonacci"](10))`,tip:'Never use exec() with globals() — always pass an isolated namespace dict. For stronger sandboxing use RestrictedPython or run in a subprocess with resource limits. AST validation only catches syntax errors, not logic bugs — add unit test assertions after exec() for critical code.'},
+outlines:{use:'Outlines constrains LLM token generation at the decoder level using finite-state automata. Instead of hoping the model outputs valid JSON or matches a regex, Outlines makes it mathematically impossible to output anything else — works only with local/self-hosted models.',diag:`  API-based vs Outlines constrained decoding
+  ──────────────────────────────────────────────────────────
+  Approach         How it works           When to use
+
+  JSON Mode        Ask model nicely       Cloud APIs (OpenAI,
+  (OpenAI)         to output JSON         Anthropic). Easy.
+                   — usually works        Occasional failures.
+
+  Structured       Schema enforced at     Cloud APIs.
+  Outputs          API level by           Best cloud option.
+  (OpenAI)         provider               No local model needed.
+
+  Instructor       Pydantic + retries     Any API (cloud or
+                   — re-prompts on        local). Most flexible.
+                   validation failure     Works everywhere.
+
+  Outlines         FSA constrains         Local models only
+                   which tokens are       (vLLM, transformers).
+                   valid at each step     100% guarantee.
+                   — impossible to        Best for production
+                   violate schema         self-hosted serving.
+  ──────────────────────────────────────────────────────────
+  Use Outlines when you self-host and need hard guarantees`,code:`# Outlines — token-level constrained decoding
+# pip install outlines transformers torch
+
+import outlines
+from pydantic import BaseModel
+from enum import Enum
+
+# Load a local model (runs on your hardware)
+model = outlines.models.transformers(
+    "microsoft/Phi-3-mini-4k-instruct",
+    device="cuda",   # or "cpu" for testing
+)
+
+# --- Example 1: Regex constraint ---
+# Only allows dates in YYYY-MM-DD format — no other output possible
+date_generator = outlines.generate.regex(
+    model,
+    r"\d{4}-\d{2}-\d{2}"
+)
+date = date_generator("What is today's date?")
+print(date)   # guaranteed: "2024-03-15" format
+
+# --- Example 2: Pydantic schema constraint ---
+class Sentiment(str, Enum):
+    positive = "positive"
+    negative = "negative"
+    neutral  = "neutral"
+
+class Review(BaseModel):
+    sentiment: Sentiment
+    confidence: float   # 0.0 to 1.0
+    summary: str
+
+json_generator = outlines.generate.json(model, Review)
+result = json_generator(
+    "Classify this review: 'The product is fantastic!'"
+)
+print(result)           # Review object, guaranteed valid
+print(result.sentiment) # Sentiment.positive`,tip:'Outlines is only for self-hosted models — it works by intercepting the logits before sampling, which requires access to the model weights. If you are on a cloud API, use Structured Outputs (OpenAI) or Instructor instead. Outlines shines in production deployments where a single schema violation would crash a downstream pipeline.'},
 lt_memory:{use:'Letting agents remember facts across sessions or long multi-turn conversations.',diag:`  Turn 1 ──► remember("User likes Python")\n  Turn 2 ──► remember("User builds RAG pipelines")\n  Turn 3 ──► remember("User prefers async code")\n                         │\n                         ▼  (stored as embeddings)\n              ┌─────────────────────┐\n              │    Vector Store     │\n              │  (ChromaDB / Redis) │\n              └──────────┬──────────┘\n                         │\n  New query ──► embed ──► similarity search\n                         │\n                         ▼\n              Top-K relevant memories\n                         │\n                         ▼\n              Injected into system prompt`,code:`import chromadb\nfrom openai import OpenAI\nimport uuid\n\nclient = OpenAI()\ndb = chromadb.PersistentClient(path="./memory_db")\ncollection = db.get_or_create_collection("agent_memory")\n\ndef embed(text: str) -> list[float]:\n    resp = client.embeddings.create(\n        model="text-embedding-3-small", input=[text]\n    )\n    return resp.data[0].embedding\n\ndef remember(fact: str):\n    """Store a fact in long-term memory."""\n    collection.add(\n        ids=[str(uuid.uuid4())],\n        embeddings=[embed(fact)],\n        documents=[fact]\n    )\n\ndef recall(query: str, k: int = 3) -> list[str]:\n    """Retrieve the most relevant past memories."""\n    results = collection.query(\n        query_embeddings=[embed(query)], n_results=k\n    )\n    return results["documents"][0]\n\ndef chat_with_memory(user_msg: str) -> str:\n    memories = recall(user_msg)\n    context = "\\n".join(memories)\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[\n            {"role": "system",\n             "content": f"Relevant memories:\\n{context}"},\n            {"role": "user", "content": user_msg}\n        ]\n    )\n    return resp.choices[0].message.content\n\nremember("User stack is Python + FastAPI + PostgreSQL")\nremember("User prefers async patterns and type hints")\nprint(chat_with_memory("What database should I use for this project?"))`,tip:'Store one fact per memory entry, not one full conversation turn — retrieval precision is much better with granular entries.'},
 orchestrator:{use:'Coordinating multiple specialised sub-agents for a complex pipeline.',diag:`         ┌────────────────┐\n         │  Orchestrator  │\n         └───────┬────────┘\n         ┌───────┴────────┐\n         ↓                ↓\n  ┌────────────┐   ┌────────────┐\n  │  Agent 1   │   │  Agent 2   │\n  │ Researcher │   │   Writer   │\n  └─────┬──────┘   └─────┬──────┘\n        └────────┬────────┘\n                 ↓\n          ┌────────────┐\n          │  Agent 3   │\n          │  Reviewer  │\n          └─────┬──────┘\n                ↓\n          ┌────────────┐\n          │   Result   │\n          └────────────┘`,code:`from openai import OpenAI\nfrom typing import TypedDict\n\nclient = OpenAI()\n\nclass State(TypedDict):\n    task: str\n    research: str\n    draft: str\n    final: str\n\ndef call(system: str, user: str) -> str:\n    return client.chat.completions.create(\n        model="gpt-4o",\n        messages=[\n            {"role": "system", "content": system},\n            {"role": "user", "content": user}\n        ]\n    ).choices[0].message.content\n\ndef researcher(state: State) -> State:\n    result = call(\n        "You are a research analyst. Be concise.",\n        f"Research in 3 bullet points: {state[\'task\']}"\n    )\n    return {**state, "research": result}\n\ndef writer(state: State) -> State:\n    result = call(\n        "You are a technical writer.",\n        f"Write a clear summary from this research:\\n{state[\'research\']}"\n    )\n    return {**state, "draft": result}\n\ndef reviewer(state: State) -> State:\n    result = call(\n        "You are an editor. Improve clarity and fix any errors.",\n        f"Improve this draft:\\n{state[\'draft\']}"\n    )\n    return {**state, "final": result}\n\n# Run the pipeline\nstate: State = {"task": "Latest advances in RAG",\n                "research": "", "draft": "", "final": ""}\nstate = researcher(state)\nstate = writer(state)\nstate = reviewer(state)\nprint(state["final"])`,tip:'For dynamic routing (where the orchestrator decides which agent runs next), use an LLM call that returns the next agent name, then dispatch with a dict lookup.'},
 rlhf:{use:'Aligning a base LLM to follow instructions and match human preferences.',code:`# RLHF = SFT + Reward Model + PPO\n# In practice: use DPO instead of PPO (simpler, same result)\n\n# Step 1: Supervised Fine-Tuning on demonstrations\nfrom trl import SFTTrainer, SFTConfig\nsft = SFTTrainer(\n    model=base_model,\n    args=SFTConfig(output_dir="./sft", num_train_epochs=1),\n    train_dataset=instruction_dataset  # {prompt, response} pairs\n)\nsft.train()\n\n# Step 2: Train Reward Model on preference pairs\nfrom trl import RewardTrainer, RewardConfig\nrm = RewardTrainer(\n    model=reward_model,\n    args=RewardConfig(output_dir="./rm"),\n    train_dataset=preference_dataset  # {prompt, chosen, rejected}\n)\nrm.train()\n\n# Step 3: PPO optimisation\n# from trl import PPOTrainer  # complex — see TRL docs\n# Modern alternative: just use DPO (skips reward model entirely)\nprint("For new projects: use DPO instead of RLHF PPO")`,tip:'RLHF with PPO is complex and unstable. Use DPO or ORPO for new projects — same alignment quality, far simpler training loop.'},
