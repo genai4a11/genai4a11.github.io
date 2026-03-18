@@ -4284,6 +4284,8 @@ function bl(){
         const clNode=N.find(x=>x.id===e.currentTarget.dataset.clusterId);
         const dNode=N.find(x=>x.id===e.currentTarget.dataset.domainId);
         if(!clNode||!dNode)return;
+        const rootNode=N.find(x=>x.g===0);
+        if(rootNode)rootNode.expanded=true;
         clNode.expanded=true;dNode.expanded=true;
         rg();
         sn(dNode);sp(dNode);
@@ -4301,6 +4303,11 @@ function bl(){
       openStates[cl.id]=!openStates[cl.id];
       domWrap.classList.toggle('collapsed',!openStates[cl.id]);
       hdr.querySelector('.legend-cluster-arrow').classList.toggle('open',openStates[cl.id]);
+      // also expand/collapse the cluster in the graph
+      const rootNode=N.find(x=>x.g===0);
+      if(rootNode)rootNode.expanded=true;
+      cl.expanded=openStates[cl.id];
+      rg();
     });
     wrap.appendChild(hdr);wrap.appendChild(domWrap);c.appendChild(wrap);
   });
@@ -4409,12 +4416,16 @@ function sp(d){
   p.classList.add('open');document.getElementById('graph-container').style.paddingRight=p.offsetWidth+'px';
 }
 document.getElementById('panel-close').addEventListener('click',()=>{document.getElementById('panel').classList.remove('open');document.getElementById('graph-container').style.paddingRight='0';s=null;svg.selectAll('.node-card').classed('selected',false)});
-document.getElementById('btn-domains').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'clusters_only'})});
-document.getElementById('btn-topics').addEventListener('click',()=>{N.filter(n=>n.meta).forEach(n=>n.expanded=true);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'show_domains'})});
-document.getElementById('btn-tools').addEventListener('click',()=>{N.filter(n=>n.meta||n.g===1).forEach(n=>n.expanded=true);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'show_topics'})});
-document.getElementById('btn-collapse').addEventListener('click',()=>{N.filter(n=>n.g<=3).forEach(n=>n.expanded=true);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'expand_all'})});
+// [Clusters] — show only the 5 meta-cluster nodes (collapse everything, expand root only)
+document.getElementById('btn-domains').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);const r=N.find(n=>n.g===0);if(r)r.expanded=true;rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'clusters_only'})});
+// [+Domains] — show meta-clusters + domain nodes (expand root + all meta-clusters)
+document.getElementById('btn-topics').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);const r=N.find(n=>n.g===0);if(r)r.expanded=true;N.filter(n=>n.meta).forEach(n=>n.expanded=true);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'show_domains'})});
+// [+Topics] — show everything down to g:2 topics (expand root + meta + all g:1 domains)
+document.getElementById('btn-tools').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);const r=N.find(n=>n.g===0);if(r)r.expanded=true;N.filter(n=>n.meta||n.g===1).forEach(n=>n.expanded=true);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'show_topics'})});
+// [+All] — expand everything
+document.getElementById('btn-collapse').addEventListener('click',()=>{N.forEach(n=>n.expanded=true);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'expand_all'})});
 document.getElementById('btn-fit').addEventListener('click',()=>{const nodes=N.filter(n=>{let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return n.g===1;if(!pn.expanded&&pn.g>0)return false;p=pn.p}return true}),xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y),mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys),pad=50,sc=Math.min((window.innerWidth-pad*2)/(mxx-mnx||1),(window.innerHeight-60-pad*2)/(mxy-mny||1))*0.9,tx=(window.innerWidth-pad*2)/2-(mnx+mxx)/2*sc,ty=(window.innerHeight-60-pad*2)/2-(mny+mxy)/2*sc;svg.transition().duration(750).call(d3.zoom().transform,d3.zoomIdentity.translate(tx,ty).scale(sc))});
-document.getElementById('btn-reset').addEventListener('click',()=>{N=JSON.parse(JSON.stringify(DN));DN.forEach(n=>{if(RICH[n.id])Object.assign(n,RICH[n.id])});X=JSON.parse(JSON.stringify(DX));sim.nodes(N);rg()});
+document.getElementById('btn-reset').addEventListener('click',()=>{N=JSON.parse(JSON.stringify(DN));DN.forEach(n=>{if(RICH[n.id])Object.assign(n,RICH[n.id])});X=JSON.parse(JSON.stringify(DX));sim.nodes(N);bl();rg()});
 document.getElementById('btn-edit').addEventListener('click',()=>{e=!e;document.getElementById('btn-add').classList.toggle('hidden');document.getElementById('btn-link').classList.toggle('hidden');document.getElementById('btn-edit').textContent=e?'[✏ Edit ✓]':'[✏ Edit]'});
 document.getElementById('btn-export').addEventListener('click',()=>{const d={N,X},j=JSON.stringify(d,null,2),b=new Blob([j],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='mindmap-export.json';a.click();URL.revokeObjectURL(u)});
 document.getElementById('btn-import').addEventListener('click',()=>{const i=document.createElement('input');i.type='file';i.accept='application/json';i.addEventListener('change',(e)=>{const f=e.target.files[0],r=new FileReader();r.onload=(e)=>{try{const d=JSON.parse(e.target.result);N=d.N||DN;X=d.X||DX;rg();bl()}catch(e){alert('Invalid JSON')}};r.readAsText(f)});i.click()});
