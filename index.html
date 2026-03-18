@@ -105,6 +105,12 @@
     }
     .legend-item:hover { background: rgba(255,255,255,0.08); }
     .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-cluster { font-size: 11px; font-weight: 600; padding: 5px 6px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+    .legend-cluster:hover { background: rgba(255,255,255,0.08); }
+    .legend-cluster-arrow { font-size: 9px; color: rgba(255,255,255,0.4); transition: transform 0.2s; }
+    .legend-cluster-arrow.open { transform: rotate(90deg); }
+    .legend-domains { padding-left: 16px; overflow: hidden; }
+    .legend-domains.collapsed { display: none; }
 
     #panel {
       position: fixed; right: 0; top: 0; width: 400px; min-width: 320px; max-width: 85vw; height: 100%;
@@ -337,7 +343,7 @@
     <svg id="graph"></svg>
   </div>
   <div id="legend">
-    <div class="legend-title">Domains</div>
+    <div class="legend-title">Clusters</div>
     <div id="legend-items"></div>
   </div>
   <div id="kb-hints">
@@ -3727,7 +3733,39 @@ function hc(cd){
   out.push(kw(s.slice(last)));
   return out.join('');
 }
-function bl(){const c=document.getElementById('legend-items');c.innerHTML='';const d=N.filter(n=>n.g===1&&!n.meta);d.forEach(n=>{const t=CATS[n.cat]||CATS.custom;const i=document.createElement('div');i.className='legend-item';i.innerHTML=`<div class="legend-dot" style="background:${t.c}"></div><span>${n.label}</span>`;i.addEventListener('click',()=>{const mp=N.find(x=>x.id===n.p);if(mp)mp.expanded=true;n.expanded=!n.expanded;rg();});c.appendChild(i)})}
+function bl(){
+  const c=document.getElementById('legend-items');c.innerHTML='';
+  // 5 meta-clusters (g:1, meta:true)
+  const clusters=N.filter(n=>n.g===1&&n.meta);
+  const openStates={};
+  clusters.forEach(cl=>{
+    openStates[cl.id]=false;
+    // cluster header row
+    const wrap=document.createElement('div');
+    const hdr=document.createElement('div');
+    hdr.className='legend-cluster';
+    hdr.innerHTML=`<span style="font-size:9px;color:rgba(255,255,255,0.4)" class="legend-cluster-arrow">▶</span><span>${cl.label}</span>`;
+    // domain list (collapsed by default)
+    const domWrap=document.createElement('div');
+    domWrap.className='legend-domains collapsed';
+    // fill domains — g:1 non-meta children of this cluster
+    const domains=N.filter(n=>n.g===1&&!n.meta&&n.p===cl.id);
+    domains.forEach(n=>{
+      const t=CATS[n.cat]||CATS.custom;
+      const item=document.createElement('div');
+      item.className='legend-item';
+      item.innerHTML=`<div class="legend-dot" style="background:${t.c}"></div><span>${n.label}</span>`;
+      item.addEventListener('click',(e)=>{e.stopPropagation();cl.expanded=true;n.expanded=!n.expanded;rg();});
+      domWrap.appendChild(item);
+    });
+    hdr.addEventListener('click',()=>{
+      openStates[cl.id]=!openStates[cl.id];
+      domWrap.classList.toggle('collapsed',!openStates[cl.id]);
+      hdr.querySelector('.legend-cluster-arrow').classList.toggle('open',openStates[cl.id]);
+    });
+    wrap.appendChild(hdr);wrap.appendChild(domWrap);c.appendChild(wrap);
+  });
+}
 let sim=null,svg,gc,tr=d3.zoomIdentity;
 window._expandNode=function(nodeId){const node=N.find(n=>n.id===nodeId);if(!node)return;node.expanded=!node.expanded;if(typeof gtag==='function')gtag('event','node_expand',{node_id:node.id,node_label:node.label,action:node.expanded?'expand':'collapse'});rg();};
 document.addEventListener('click',function(e){const chip=e.target.closest?e.target.closest('.expand-chip'):null;if(!chip)return;const nodeId=chip.getAttribute('data-nodeid');if(!nodeId)return;e.stopPropagation();window._expandNode(nodeId);},true);
