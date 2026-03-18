@@ -1550,6 +1550,107 @@ entity_memory:{use:'When your agent interacts with users who mention real-world 
 agents:{use:'An agent is an LLM that can take actions — not just generate text. It perceives inputs, reasons about what to do next, calls tools, observes the results, and repeats until the goal is achieved. The key difference from a plain LLM call: the model controls the loop.',diag:`  Plain LLM call (one shot):\n  Input ──► LLM ──► Output\n\n  Agent (loop until done):\n  Input ──► LLM ──► Tool call ──► Result\n              ▲                      │\n              └──── Observe ─────────┘\n\n  Four things that make something an agent:\n  ┌────────────────────────────────────────┐\n  │ 1. LLM   — decides what to do next     │\n  │ 2. Tools — search, code, APIs, files   │\n  │ 3. Memory— context within + across runs│\n  │ 4. Loop  — runs until goal or limit    │\n  └────────────────────────────────────────┘\n\n  When to use an agent vs a plain LLM call:\n  ┌──────────────────┬─────────────────────┐\n  │ Plain call       │ Agent               │\n  ├──────────────────┼─────────────────────┤\n  │ Single clear task│ Multi-step task     │\n  │ No tool needed   │ Needs external data │\n  │ Strict < 1s      │ Steps unpredictable │\n  │ Low error cost   │ Can verify & retry  │\n  └──────────────────┴─────────────────────┘`,tip:'Start with a single agent and one or two tools. Add memory, parallelism, and multi-agent coordination only once the simpler version provably fails — agent complexity compounds quickly.'},
 rag:{use:'RAG solves the core problem with plain LLMs: they only know what was in their training data. RAG attaches any external knowledge — your docs, your database, live data — to any LLM at query time, without retraining the model.',diag:`  Without RAG:\n  Question ──► LLM ──► Answer\n                ↑\n           Training cutoff · no private data · hallucination risk\n\n  With RAG:\n  Question ──► Retrieve chunks ──► LLM ──► Grounded answer\n                    ↑\n               Your documents\n               Your database\n               Live / private data\n\n  The two phases:\n\n  INDEXING (offline, run once):\n  Documents ──► Chunk ──► Embed ──► Store in vector DB\n\n  RETRIEVAL (online, every query):\n  Question ──► Embed ──► Search ──► Top-k chunks\n                                         │\n                                    LLM prompt\n                                         │\n                                      Answer`,tip:'RAG quality is determined before any model call — by how you chunk, what metadata you store, and how you retrieve. Fix the data pipeline first, prompt engineering second.'},
 prompting:{use:'Prompting is the primary interface between you and an LLM. A well-designed prompt can make a smaller model outperform a larger one. Poor prompts make even the best models inconsistent.',diag:`  Anatomy of a production-grade prompt:\n  ┌─────────────────────────────────────────┐\n  │ SYSTEM  — role, constraints, format     │\n  │ "You are a senior Python engineer.      │\n  │  Always use type hints. JSON output."   │\n  ├─────────────────────────────────────────┤\n  │ EXAMPLES — show the format you want     │\n  │ Input: fix_bug(code) → {code, reason}   │\n  │ (2-5 examples beats long instructions)  │\n  ├─────────────────────────────────────────┤\n  │ TASK — clear, specific, scoped          │\n  │ "Refactor this function to use a dict"  │\n  ├─────────────────────────────────────────┤\n  │ OUTPUT FORMAT — what you want back      │\n  │ "Return JSON: {code, explanation}"      │\n  └─────────────────────────────────────────┘\n\n  Techniques in order of impact:\n  1. Few-shot examples    (highest leverage)\n  2. Chain-of-thought     (reasoning tasks)\n  3. System role          (consistency)\n  4. Output schema        (reliability)\n  5. Self-consistency     (accuracy)`,tip:'The fastest quality improvement: add 2-3 worked examples. Models learn format and tone from examples faster than from instructions.'},
+data_eng:{use:'Every AI system is only as good as its data. Data engineering is the unglamorous layer that most tutorials skip — but bad data causes more production failures than bad models. This cluster covers the full pipeline from raw source to clean, versioned, labeled training data.',diag:`  The AI data pipeline
+  ──────────────────────────────────────────────────────────
+  Raw sources
+  (PDFs, DBs, APIs, logs, web)
+       │
+       ▼
+  ┌──────────────────────────────────────┐
+  │  Ingestion & Pipelines               │
+  │  ETL/ELT, chunking, metadata tagging │
+  └──────────────────┬───────────────────┘
+                     │
+       ┌─────────────┼─────────────┐
+       ▼             ▼             ▼
+  ┌─────────┐  ┌──────────┐  ┌──────────┐
+  │ RAG     │  │ Training │  │ Eval     │
+  │ vector  │  │ dataset  │  │ dataset  │
+  │ store   │  │ (JSONL)  │  │          │
+  └─────────┘  └──────────┘  └──────────┘
+                     │
+       ┌─────────────┼─────────────┐
+       ▼             ▼             ▼
+  Labeling     Synthetic      Governance
+  & Annotation   Data         (versioning,
+                               lineage)
+  ──────────────────────────────────────────────────────────
+  Garbage in → garbage out. Fix data before fixing models.`,tip:'Before debugging your model, check your data. Run a sample of 50 examples through your pipeline manually — you will almost always find mislabeled rows, truncated chunks, or encoding errors that explain your quality problems. Data quality gates are cheaper to build than model fixes.'},
+data_ingestion:{use:'Data ingestion is where most AI projects quietly fail. Before a single token hits a model, your raw documents need to be cleaned, chunked, enriched with metadata, and validated. Each step is a potential silent failure.',diag:`  Ingestion pipeline stages
+  ──────────────────────────────────────────────────────────
+  Stage          What happens           Common failures
+
+  Extract        Pull from PDFs, DBs,   Encoding errors,
+                 APIs, S3, web          scanned PDFs with
+                                        no OCR, rate limits
+
+  Clean          Strip boilerplate,     Keeping headers/
+                 fix encoding,          footers, HTML tags,
+                 normalise whitespace   or page numbers in
+                                        chunks
+
+  Chunk          Split into segments    Chunks too large
+                 that fit context       (lose precision),
+                 window                 too small (lose
+                                        context)
+
+  Enrich         Add metadata:          Missing source URL,
+  metadata       source, date,          date, or section
+                 section, entity tags   makes filtering
+                                        impossible later
+
+  Validate       Schema checks,         Silent corruption —
+                 deduplication,         duplicate chunks
+                 quality gates          inflate retrieval
+  ──────────────────────────────────────────────────────────
+  Orchestrate with Airflow or Prefect for production`,code:`# Chunking with metadata — the right way
+# pip install langchain-text-splitters tiktoken
+
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from datetime import datetime
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=512,        # tokens
+    chunk_overlap=64,      # overlap to preserve context at boundaries
+    length_function=len,
+)
+
+def ingest_document(raw_text: str, source_meta: dict) -> list[dict]:
+    """
+    Chunk a document and attach metadata to every chunk.
+    source_meta: {source, title, section, date, doc_type}
+    """
+    chunks = splitter.split_text(raw_text)
+
+    records = []
+    for i, chunk in enumerate(chunks):
+        records.append({
+            "text": chunk,
+            "metadata": {
+                **source_meta,
+                "chunk_index": i,
+                "chunk_total": len(chunks),
+                "ingested_at": datetime.utcnow().isoformat(),
+                "char_count": len(chunk),
+            }
+        })
+
+    # Basic quality gate — skip empty or tiny chunks
+    records = [r for r in records if r["metadata"]["char_count"] > 50]
+    return records
+
+# Example
+chunks = ingest_document(
+    raw_text="Your document text here...",
+    source_meta={
+        "source": "https://docs.example.com/guide",
+        "title": "Getting Started Guide",
+        "section": "Introduction",
+        "date": "2024-01-15",
+        "doc_type": "documentation",
+    }
+)
+print(f"Produced {len(chunks)} chunks")`,tip:'Always store metadata at chunk time — it is nearly impossible to add later. At minimum: source URL, ingestion date, and document section. These three fields unlock filtered retrieval (e.g. "only search docs from the last 6 months") and make debugging retrieval failures dramatically easier.'},
 meta_building:{use:'Building with GenAI means combining prompting, retrieval, agents, and fine-tuning into a working system. Most tutorials teach each technique in isolation — this cluster shows how they fit together and when to reach for each one.',diag:`  The GenAI building decision tree
   ──────────────────────────────────────────────────────────
   Start here → Can prompting solve it?
@@ -2220,6 +2321,214 @@ async def health():
 
 # Run with: uvicorn main:app --reload
 # Docs auto-generated at: http://localhost:8000/docs`,tip:'Start with Streamlit — you can have a working chat UI in under 20 lines. Switch to FastAPI when you need proper auth, rate limiting, or to serve multiple clients. FastAPI auto-generates interactive API docs at /docs, which makes it easy to share with teammates and test without writing a frontend first.'},
+data_labeling:{use:'A model is only as good as the labels it was trained on. Data labeling is the process of creating high-quality ground truth — for fine-tuning datasets, RAG eval sets, and RLHF preference data. The bottleneck is almost always human annotation throughput.',diag:`  Labeling workflow
+  ──────────────────────────────────────────────────────────
+  Approach         When to use             Tool
+
+  Human            High-stakes labels,     Label Studio
+  annotation       complex tasks,          (open-source)
+                   subjective quality      Argilla
+
+  Active           Large unlabeled         ModAL, small-text
+  learning         pool, want to           Ask model: "which
+                   label only the          examples am I
+                   most informative        least confident on?"
+                   examples
+
+  LLM-assisted     Scale annotation        GPT-4o / Claude
+  labeling         with spot-check         as annotator +
+                   human review            human review 10%
+
+  Inter-           Multiple annotators?    Cohen's kappa
+  annotator        Measure agreement       > 0.7 = good
+  agreement        before trusting         < 0.4 = rewrite
+                   the labels              your guidelines
+  ──────────────────────────────────────────────────────────
+  Budget: 200 human labels + LLM-assist beats 2000 noisy ones`,code:`# LLM-assisted labeling with human spot-check
+# Use GPT-4o to label at scale, sample 10% for human review
+
+import random
+from openai import OpenAI
+from pydantic import BaseModel
+from typing import Literal
+
+client = OpenAI()
+
+class Label(BaseModel):
+    label: Literal["positive", "negative", "neutral"]
+    confidence: Literal["high", "medium", "low"]
+    reasoning: str
+
+def llm_label(text: str) -> Label:
+    """Label sentiment using structured output."""
+    response = client.beta.chat.completions.parse(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content":
+                "Label the sentiment of this customer review. "
+                "Be conservative — mark as neutral if unsure."},
+            {"role": "user", "content": text},
+        ],
+        response_format=Label,
+    )
+    return response.choices[0].message.parsed
+
+def label_dataset(
+    examples: list[str],
+    human_review_rate: float = 0.10,
+) -> list[dict]:
+    results = []
+    for text in examples:
+        label = llm_label(text)
+        needs_review = (
+            label.confidence != "high"
+            or random.random() < human_review_rate
+        )
+        results.append({
+            "text": text,
+            "label": label.label,
+            "confidence": label.confidence,
+            "reasoning": label.reasoning,
+            "needs_human_review": needs_review,
+        })
+    return results`,tip:'Always write a labeling guide before you start — one page with definitions and 3 examples per class. Annotators without a guide produce labels that look consistent but secretly disagree on edge cases. Run a calibration round on 20 shared examples before scaling up.'},
+synthetic_data:{use:'Human labeling is expensive and slow. Synthetic data uses LLMs to generate training examples at scale — cutting labeling cost by 10–100× for instruction fine-tuning, RAG eval sets, and edge case coverage.',diag:`  When synthetic data helps vs hurts
+  ──────────────────────────────────────────────────────────
+  Good for                    Risky for
+
+  Instruction-response pairs  Tasks requiring real-world
+  (fine-tuning SFT datasets)  distribution knowledge
+
+  Augmenting rare classes     High-stakes labels where
+  and edge cases              LLM hallucinations matter
+
+  RAG eval sets               Direct preference data
+  (Q&A pairs from your docs)  (RLHF) — model bias bleeds in
+
+  Paraphrase and format       Any task where the LLM
+  variation                   generating data can't do
+                              the task reliably itself
+  ──────────────────────────────────────────────────────────
+  Rule: synthetic data must pass the same quality bar
+  as human data — filter aggressively`,code:`# Self-Instruct pattern: generate instruction pairs from your docs
+# Bootstrap a fine-tuning dataset from a seed document
+
+import json
+from anthropic import Anthropic
+
+client = Anthropic()
+
+SEED_DOCUMENT = """
+Your product documentation or domain text here...
+"""
+
+def generate_qa_pairs(document: str, n: int = 10) -> list[dict]:
+    """Generate instruction-response pairs from a document."""
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=2048,
+        messages=[{
+            "role": "user",
+            "content": f"""Given this document, generate {n} diverse
+instruction-response pairs for fine-tuning.
+
+Rules:
+- Questions should be specific and answerable from the document
+- Vary question types: factual, how-to, comparison, edge cases
+- Answers should be concise and accurate
+- Include 2-3 edge cases the document doesn't fully cover
+
+Document:
+{document}
+
+Return as JSON array:
+[{{"instruction": "...", "response": "..."}}]"""
+        }]
+    )
+
+    pairs = json.loads(response.content[0].text)
+    return pairs
+
+# Generate and filter
+pairs = generate_qa_pairs(SEED_DOCUMENT, n=20)
+
+# Quality filter: remove very short responses
+pairs = [p for p in pairs if len(p["response"]) > 50]
+
+# Save as JSONL for fine-tuning
+with open("synthetic_train.jsonl", "w") as f:
+    for pair in pairs:
+        f.write(json.dumps(pair) + "\\n")
+
+print(f"Generated {len(pairs)} training pairs")`,tip:'Always filter synthetic data — at minimum remove duplicates and very short outputs. For higher quality, run a second LLM pass to score each example (1–5) and keep only 4s and 5s. The Self-Instruct paper showed that 52K synthetic examples can outperform much larger human-labeled sets when quality filtering is applied.'},
+data_governance:{use:'As your AI system matures, you need to answer: what data trained this model, where did it come from, and can we reproduce this result? Data governance answers all three — and becomes non-negotiable once you hit compliance requirements or production failures.',diag:`  Governance layers
+  ──────────────────────────────────────────────────────────
+  Layer            What it tracks         Tool
+
+  Dataset          Which version of the   DVC
+  versioning       dataset trained        git + dvc tag
+                   which model run
+
+  Data             Who owns this          Great Expectations
+  contracts        dataset, what          Pandera
+                   schema is promised,    (schema + SLA
+                   what SLA it meets      as code)
+
+  Data             Raw source →           MLflow
+  lineage          transformations →      (log dataset
+                   final training set     hash per run)
+                   Full audit trail
+
+  ──────────────────────────────────────────────────────────
+  Minimum viable governance:
+  1. Hash every dataset version (md5/sha256)
+  2. Log that hash in every training run
+  3. Keep the raw source immutable`,code:`# Data contract with Pandera — validate schema before training
+# pip install pandera
+
+import pandas as pd
+import pandera as pa
+from pandera import Column, DataFrameSchema, Check
+
+# Define the contract — what your training data must look like
+training_schema = DataFrameSchema({
+    "instruction": Column(
+        str,
+        checks=[
+            Check(lambda s: s.str.len() > 10,
+                  error="instruction too short"),
+            Check(lambda s: s.str.len() < 2000,
+                  error="instruction too long"),
+        ],
+        nullable=False,
+    ),
+    "response": Column(
+        str,
+        checks=[
+            Check(lambda s: s.str.len() > 20,
+                  error="response too short — likely empty"),
+        ],
+        nullable=False,
+    ),
+    "split": Column(
+        str,
+        checks=Check.isin(["train", "val", "test"]),
+        nullable=False,
+    ),
+})
+
+def validate_training_data(path: str) -> pd.DataFrame:
+    df = pd.read_json(path, lines=True)
+    try:
+        validated = training_schema.validate(df, lazy=True)
+        print(f"✓ {len(validated)} rows passed validation")
+        return validated
+    except pa.errors.SchemaErrors as e:
+        print(f"✗ Schema violations found:")
+        print(e.failure_cases)
+        raise
+
+df = validate_training_data("train.jsonl")`,tip:'Add data contracts before your first production training run, not after. The first time a schema change silently corrupts a training set and takes a week to debug is the last time you will skip this step. Even a basic md5 hash logged per dataset version saves hours of forensics.'},
 finetuning:{use:'Fine-tuning updates a model\'s weights on your data — teaching it behaviour that prompting cannot reliably produce. Use it when prompting has hit its ceiling.',diag:`  Prompt vs Fine-tune decision:\n\n  Prompting is enough when:\n  ✓ Model understands the task\n  ✓ You just need consistent format/tone\n  ✓ You have fewer than ~100 examples\n\n  Fine-tune when:\n  ✓ Prompt too long or expensive to repeat\n  ✓ Need consistent proprietary style/domain\n  ✓ Latency matters (smaller FT model can\n    beat a larger prompted model)\n  ✓ You have 500+ quality examples\n\n  Fine-tuning pipeline:\n  ┌──────────┐  ┌──────────┐  ┌──────────┐\n  │  Collect │─►│  Format  │─►│  Train   │\n  │  data    │  │  JSONL   │  │  QLoRA   │\n  └──────────┘  └──────────┘  └────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │   Eval    │\n                              │ (LLM judge│\n                              │  RAGAS)   │\n                              └─────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │  Deploy   │\n                              └───────────┘`,tip:'Always establish a prompted baseline before fine-tuning. Fine-tuning that does not beat prompting is wasted compute. 500 curated examples beats 50,000 noisy ones.'},
 sysdesign:{use:'System design is the layer most tutorials skip. Individual tools are well documented; how to combine them into something reliable, cost-efficient, and maintainable in production is not.',diag:`  Layers of a production AI system:\n  ┌───────────────────────────────────────┐\n  │  User-facing API / interface          │\n  ├───────────────────────────────────────┤\n  │  Orchestration  (agent loop / chain)  │\n  ├──────────────┬────────────────────────┤\n  │  LLM calls   │  Tools & retrieval     │\n  ├──────────────┴────────────────────────┤\n  │  Data layer  (chunks, metadata, vDB)  │\n  ├───────────────────────────────────────┤\n  │  Reliability (retry, fallback, cache) │\n  ├───────────────────────────────────────┤\n  │  Eval & observability (Langfuse...)   │\n  └───────────────────────────────────────┘\n\n  Key decisions:\n  RAG vs FT vs prompting alone?\n  Which model at which cost tier?\n  Agent loop vs deterministic pipeline?\n  Build vs buy vs open-source?`,tip:'Design your eval harness before your system architecture. If you cannot measure quality, you cannot make reliable design decisions.'},
 retry_backoff:{use:'Every LLM API call can fail with a 429 or 503. Without retry logic, a single timeout kills your pipeline.',diag:`  API Call\n     │\n     ▼\n  ┌──────────┐   success\n  │ Attempt 1│ ──────────► return result\n  └──────────┘\n       │ 429 / 503\n       ▼\n  wait 1s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 2│ ──────────► return result\n  └──────────┘\n       │ still failing\n       ▼\n  wait 2s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 3│ ──────────► return result\n  └──────────┘\n       │ max retries hit\n       ▼\n  raise / fallback`,code:`import time, random\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef llm_with_retry(\n    messages: list,\n    model: str = "gpt-4o-mini",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    """\n    Call the OpenAI API with exponential backoff + full jitter.\n    Retries on 429 (rate limit) and 5xx (server errors).\n    """\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model=model, messages=messages\n            )\n            return resp.choices[0].message.content\n\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            # Full jitter: sleep random(0, base * 2^attempt)\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            print(f"Rate limited. Retrying in {delay:.1f}s...")\n            time.sleep(delay)\n\n        except APIStatusError as e:\n            if e.status_code < 500 or attempt == max_retries - 1:\n                raise  # Don't retry 4xx client errors\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            time.sleep(delay)\n\nresult = llm_with_retry(\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(result)`,tip:'Use full jitter (random between 0 and cap) not equal jitter — it prevents thundering herd when many clients retry simultaneously.'},
