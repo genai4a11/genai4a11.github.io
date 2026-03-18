@@ -1550,6 +1550,34 @@ entity_memory:{use:'When your agent interacts with users who mention real-world 
 agents:{use:'An agent is an LLM that can take actions — not just generate text. It perceives inputs, reasons about what to do next, calls tools, observes the results, and repeats until the goal is achieved. The key difference from a plain LLM call: the model controls the loop.',diag:`  Plain LLM call (one shot):\n  Input ──► LLM ──► Output\n\n  Agent (loop until done):\n  Input ──► LLM ──► Tool call ──► Result\n              ▲                      │\n              └──── Observe ─────────┘\n\n  Four things that make something an agent:\n  ┌────────────────────────────────────────┐\n  │ 1. LLM   — decides what to do next     │\n  │ 2. Tools — search, code, APIs, files   │\n  │ 3. Memory— context within + across runs│\n  │ 4. Loop  — runs until goal or limit    │\n  └────────────────────────────────────────┘\n\n  When to use an agent vs a plain LLM call:\n  ┌──────────────────┬─────────────────────┐\n  │ Plain call       │ Agent               │\n  ├──────────────────┼─────────────────────┤\n  │ Single clear task│ Multi-step task     │\n  │ No tool needed   │ Needs external data │\n  │ Strict < 1s      │ Steps unpredictable │\n  │ Low error cost   │ Can verify & retry  │\n  └──────────────────┴─────────────────────┘`,tip:'Start with a single agent and one or two tools. Add memory, parallelism, and multi-agent coordination only once the simpler version provably fails — agent complexity compounds quickly.'},
 rag:{use:'RAG solves the core problem with plain LLMs: they only know what was in their training data. RAG attaches any external knowledge — your docs, your database, live data — to any LLM at query time, without retraining the model.',diag:`  Without RAG:\n  Question ──► LLM ──► Answer\n                ↑\n           Training cutoff · no private data · hallucination risk\n\n  With RAG:\n  Question ──► Retrieve chunks ──► LLM ──► Grounded answer\n                    ↑\n               Your documents\n               Your database\n               Live / private data\n\n  The two phases:\n\n  INDEXING (offline, run once):\n  Documents ──► Chunk ──► Embed ──► Store in vector DB\n\n  RETRIEVAL (online, every query):\n  Question ──► Embed ──► Search ──► Top-k chunks\n                                         │\n                                    LLM prompt\n                                         │\n                                      Answer`,tip:'RAG quality is determined before any model call — by how you chunk, what metadata you store, and how you retrieve. Fix the data pipeline first, prompt engineering second.'},
 prompting:{use:'Prompting is the primary interface between you and an LLM. A well-designed prompt can make a smaller model outperform a larger one. Poor prompts make even the best models inconsistent.',diag:`  Anatomy of a production-grade prompt:\n  ┌─────────────────────────────────────────┐\n  │ SYSTEM  — role, constraints, format     │\n  │ "You are a senior Python engineer.      │\n  │  Always use type hints. JSON output."   │\n  ├─────────────────────────────────────────┤\n  │ EXAMPLES — show the format you want     │\n  │ Input: fix_bug(code) → {code, reason}   │\n  │ (2-5 examples beats long instructions)  │\n  ├─────────────────────────────────────────┤\n  │ TASK — clear, specific, scoped          │\n  │ "Refactor this function to use a dict"  │\n  ├─────────────────────────────────────────┤\n  │ OUTPUT FORMAT — what you want back      │\n  │ "Return JSON: {code, explanation}"      │\n  └─────────────────────────────────────────┘\n\n  Techniques in order of impact:\n  1. Few-shot examples    (highest leverage)\n  2. Chain-of-thought     (reasoning tasks)\n  3. System role          (consistency)\n  4. Output schema        (reliability)\n  5. Self-consistency     (accuracy)`,tip:'The fastest quality improvement: add 2-3 worked examples. Models learn format and tone from examples faster than from instructions.'},
+meta_building:{use:'Building with GenAI means combining prompting, retrieval, agents, and fine-tuning into a working system. Most tutorials teach each technique in isolation — this cluster shows how they fit together and when to reach for each one.',diag:`  The GenAI building decision tree
+  ──────────────────────────────────────────────────────────
+  Start here → Can prompting solve it?
+                    │
+              yes   │   no
+               │    │
+               ▼    ▼
+          Ship it   Does it need external knowledge?
+                         │
+                   yes   │   no
+                    │    │
+                    ▼    ▼
+                   RAG   Does it need to take actions?
+                              │
+                        yes   │   no
+                         │    │
+                         ▼    ▼
+                       Agents  Does prompting quality
+                               need to improve more?
+                                    │
+                              yes   │   no
+                               │    │
+                               ▼    ▼
+                           Fine-tune  You may have
+                                      a data problem
+  ──────────────────────────────────────────────────────────
+  Most systems use RAG + prompting. Agents add complexity.
+  Fine-tune last, not first.`,tip:'The most common mistake is jumping straight to fine-tuning or agents. Work through this decision tree in order: nail your prompt first, add retrieval if the model lacks knowledge, add tools if it needs to act, and only fine-tune when prompting has genuinely hit its ceiling. Each layer adds latency, cost, and failure modes.'},
 root:{use:'Generative AI is a class of models that create new content — text, code, images, audio, video — by learning patterns from large datasets. Unlike discriminative AI that classifies or predicts, GenAI generates. This map covers the full stack across 5 layers.',diag:`  Discriminative AI       Generative AI
   ─────────────────       ──────────────────────
   Input → Label           Input → New content
