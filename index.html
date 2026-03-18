@@ -1957,6 +1957,79 @@ peft_methods:{use:'Adapt a pretrained model to your task by training less than 1
   └──────────────────────────────────────────┘
 
   Result: fine-tune a 7B model on a single RTX 4090`,tip:'Start with LoRA — it is the most battle-tested and the adapter can be merged back into the base model for zero inference overhead. Use QLoRA if you are memory-constrained. Consider Prefix Tuning or IA³ only if you need to serve many task-specific adapters from one shared base model at inference time.'},
+ft_tools:{use:'Once you know you want to fine-tune, you need the right tool for the job. The ecosystem has converged around three libraries that each solve a different bottleneck: speed, simplicity, and configurability.',diag:`  Choose your training tool
+  ──────────────────────────────────────────────────────────
+  Tool          Best for           Trade-off
+
+  Unsloth       Speed on a         Less flexible than
+                single GPU         pure Transformers;
+                2–5× faster        open-source tier
+                LoRA/QLoRA         limited to 1 GPU
+
+  HF TRL        Flexibility        More boilerplate;
+  (SFTTrainer   SFT + DPO +        you wire up the
+  DPOTrainer)   PPO in one         training loop
+                library
+
+  Axolotl       Config-driven      Harder to debug
+                experiments        custom logic;
+                YAML file →        abstracts away
+                full training      the internals
+                run
+
+  LLaMA-        Non-coders or      Less programmatic
+  Factory       fast prototyping   control; web UI
+                100+ models        limits automation
+                supported
+  ──────────────────────────────────────────────────────────
+  Stack for most teams: Unsloth speed + TRL trainers`,code:`# Unsloth + TRL SFTTrainer — fastest QLoRA on a single GPU
+# pip install unsloth trl datasets
+
+from unsloth import FastLanguageModel
+from trl import SFTTrainer, SFTConfig
+from datasets import load_dataset
+
+# 1. Load base model with Unsloth (4-bit QLoRA)
+model, tokenizer = FastLanguageModel.from_pretrained(
+    model_name="unsloth/Llama-3.2-3B-Instruct",
+    max_seq_length=2048,
+    load_in_4bit=True,       # QLoRA — fits on 8GB VRAM
+)
+
+# 2. Attach LoRA adapters
+model = FastLanguageModel.get_peft_model(
+    model,
+    r=16,                    # LoRA rank — higher = more capacity
+    target_modules=["q_proj", "v_proj"],
+    lora_alpha=16,
+    lora_dropout=0,
+    bias="none",
+)
+
+# 3. Load your dataset (JSONL with "text" column)
+dataset = load_dataset("json", data_files="train.jsonl", split="train")
+
+# 4. Train
+trainer = SFTTrainer(
+    model=model,
+    tokenizer=tokenizer,
+    train_dataset=dataset,
+    args=SFTConfig(
+        output_dir="./output",
+        num_train_epochs=3,
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=4,
+        learning_rate=2e-4,
+        fp16=True,
+        logging_steps=10,
+        save_steps=100,
+    ),
+)
+trainer.train()
+
+# 5. Save adapter (merge later for zero inference overhead)
+model.save_pretrained("./lora-adapter")
+tokenizer.save_pretrained("./lora-adapter")`,tip:'Use Unsloth for the training loop — it patches the attention kernels for 2–5× speed with no code changes. Use TRL trainers (SFTTrainer, DPOTrainer) for the training logic — they handle data collation, packing, and loss masking correctly. The two work together: just pass the Unsloth model to the TRL trainer.'},
 finetuning:{use:'Fine-tuning updates a model\'s weights on your data — teaching it behaviour that prompting cannot reliably produce. Use it when prompting has hit its ceiling.',diag:`  Prompt vs Fine-tune decision:\n\n  Prompting is enough when:\n  ✓ Model understands the task\n  ✓ You just need consistent format/tone\n  ✓ You have fewer than ~100 examples\n\n  Fine-tune when:\n  ✓ Prompt too long or expensive to repeat\n  ✓ Need consistent proprietary style/domain\n  ✓ Latency matters (smaller FT model can\n    beat a larger prompted model)\n  ✓ You have 500+ quality examples\n\n  Fine-tuning pipeline:\n  ┌──────────┐  ┌──────────┐  ┌──────────┐\n  │  Collect │─►│  Format  │─►│  Train   │\n  │  data    │  │  JSONL   │  │  QLoRA   │\n  └──────────┘  └──────────┘  └────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │   Eval    │\n                              │ (LLM judge│\n                              │  RAGAS)   │\n                              └─────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │  Deploy   │\n                              └───────────┘`,tip:'Always establish a prompted baseline before fine-tuning. Fine-tuning that does not beat prompting is wasted compute. 500 curated examples beats 50,000 noisy ones.'},
 sysdesign:{use:'System design is the layer most tutorials skip. Individual tools are well documented; how to combine them into something reliable, cost-efficient, and maintainable in production is not.',diag:`  Layers of a production AI system:\n  ┌───────────────────────────────────────┐\n  │  User-facing API / interface          │\n  ├───────────────────────────────────────┤\n  │  Orchestration  (agent loop / chain)  │\n  ├──────────────┬────────────────────────┤\n  │  LLM calls   │  Tools & retrieval     │\n  ├──────────────┴────────────────────────┤\n  │  Data layer  (chunks, metadata, vDB)  │\n  ├───────────────────────────────────────┤\n  │  Reliability (retry, fallback, cache) │\n  ├───────────────────────────────────────┤\n  │  Eval & observability (Langfuse...)   │\n  └───────────────────────────────────────┘\n\n  Key decisions:\n  RAG vs FT vs prompting alone?\n  Which model at which cost tier?\n  Agent loop vs deterministic pipeline?\n  Build vs buy vs open-source?`,tip:'Design your eval harness before your system architecture. If you cannot measure quality, you cannot make reliable design decisions.'},
 retry_backoff:{use:'Every LLM API call can fail with a 429 or 503. Without retry logic, a single timeout kills your pipeline.',diag:`  API Call\n     │\n     ▼\n  ┌──────────┐   success\n  │ Attempt 1│ ──────────► return result\n  └──────────┘\n       │ 429 / 503\n       ▼\n  wait 1s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 2│ ──────────► return result\n  └──────────┘\n       │ still failing\n       ▼\n  wait 2s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 3│ ──────────► return result\n  └──────────┘\n       │ max retries hit\n       ▼\n  raise / fallback`,code:`import time, random\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef llm_with_retry(\n    messages: list,\n    model: str = "gpt-4o-mini",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    """\n    Call the OpenAI API with exponential backoff + full jitter.\n    Retries on 429 (rate limit) and 5xx (server errors).\n    """\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model=model, messages=messages\n            )\n            return resp.choices[0].message.content\n\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            # Full jitter: sleep random(0, base * 2^attempt)\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            print(f"Rate limited. Retrying in {delay:.1f}s...")\n            time.sleep(delay)\n\n        except APIStatusError as e:\n            if e.status_code < 500 or attempt == max_retries - 1:\n                raise  # Don't retry 4xx client errors\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            time.sleep(delay)\n\nresult = llm_with_retry(\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(result)`,tip:'Use full jitter (random between 0 and cap) not equal jitter — it prevents thundering herd when many clients retry simultaneously.'},
