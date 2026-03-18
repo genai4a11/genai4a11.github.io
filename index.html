@@ -2082,6 +2082,56 @@ with mlflow.start_run(run_name="llama3-qlora-v1"):
 
 # Later: compare runs in the MLflow UI
 # mlflow ui  →  open http://localhost:5000`,tip:'Log every run, even failed ones — the failed runs tell you what not to try. Use run names that describe the hypothesis ("increase-rank-to-32", "add-dropout-0.1") not just the date. DVC is most valuable on teams: it prevents the silent bug where two people train on different versions of the same dataset filename.'},
+integration_std:{use:'The LLM ecosystem has converged on one API shape: the OpenAI Chat Completions format. This means you can swap providers — OpenAI, Anthropic, local Ollama, self-hosted vLLM — without rewriting your application code.',diag:`  OpenAI-compatible API — the universal adapter
+  ──────────────────────────────────────────────────────────
+  Your app calls one endpoint shape:
+  POST /v1/chat/completions
+  { model, messages, temperature, ... }
+
+  Any of these can sit behind it:
+
+  Cloud          OpenAI GPT-4o, GPT-4o-mini
+                 Anthropic Claude  (via LiteLLM)
+                 Google Gemini     (via LiteLLM)
+                 Mistral, Cohere, Together AI
+
+  Local          Ollama    — run any model on your laptop
+                 vLLM      — production self-hosted serving
+                 LM Studio — desktop GUI for local models
+
+  Proxy          LiteLLM   — unified proxy for 100+ providers
+                             adds cost tracking, fallbacks,
+                             and rate limiting in one place
+  ──────────────────────────────────────────────────────────
+  Write once → swap provider with one config change`,code:`# LiteLLM — call any provider with the same code
+# pip install litellm
+
+import litellm
+
+def call_llm(prompt: str, provider: str = "openai") -> str:
+    models = {
+        "openai":    "gpt-4o-mini",
+        "anthropic": "claude-3-5-haiku-20241022",
+        "gemini":    "gemini/gemini-1.5-flash",
+        "local":     "ollama/llama3.2",   # local Ollama
+    }
+    response = litellm.completion(
+        model=models[provider],
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.choices[0].message.content
+
+# Switch provider with one argument — code stays the same
+print(call_llm("Explain RAG in one sentence.", "openai"))
+print(call_llm("Explain RAG in one sentence.", "anthropic"))
+
+# LiteLLM also gives you per-call cost tracking
+response = litellm.completion(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+cost = litellm.completion_cost(completion_response=response)
+print(f"Cost: \${cost:.6f}")`,tip:'Build against the OpenAI format from day one — even if you only use one provider today. Provider lock-in is real: switching APIs mid-project means rewriting every call site. LiteLLM also adds fallback logic: if your primary provider hits a rate limit, it automatically retries on a backup provider.'},
 finetuning:{use:'Fine-tuning updates a model\'s weights on your data — teaching it behaviour that prompting cannot reliably produce. Use it when prompting has hit its ceiling.',diag:`  Prompt vs Fine-tune decision:\n\n  Prompting is enough when:\n  ✓ Model understands the task\n  ✓ You just need consistent format/tone\n  ✓ You have fewer than ~100 examples\n\n  Fine-tune when:\n  ✓ Prompt too long or expensive to repeat\n  ✓ Need consistent proprietary style/domain\n  ✓ Latency matters (smaller FT model can\n    beat a larger prompted model)\n  ✓ You have 500+ quality examples\n\n  Fine-tuning pipeline:\n  ┌──────────┐  ┌──────────┐  ┌──────────┐\n  │  Collect │─►│  Format  │─►│  Train   │\n  │  data    │  │  JSONL   │  │  QLoRA   │\n  └──────────┘  └──────────┘  └────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │   Eval    │\n                              │ (LLM judge│\n                              │  RAGAS)   │\n                              └─────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │  Deploy   │\n                              └───────────┘`,tip:'Always establish a prompted baseline before fine-tuning. Fine-tuning that does not beat prompting is wasted compute. 500 curated examples beats 50,000 noisy ones.'},
 sysdesign:{use:'System design is the layer most tutorials skip. Individual tools are well documented; how to combine them into something reliable, cost-efficient, and maintainable in production is not.',diag:`  Layers of a production AI system:\n  ┌───────────────────────────────────────┐\n  │  User-facing API / interface          │\n  ├───────────────────────────────────────┤\n  │  Orchestration  (agent loop / chain)  │\n  ├──────────────┬────────────────────────┤\n  │  LLM calls   │  Tools & retrieval     │\n  ├──────────────┴────────────────────────┤\n  │  Data layer  (chunks, metadata, vDB)  │\n  ├───────────────────────────────────────┤\n  │  Reliability (retry, fallback, cache) │\n  ├───────────────────────────────────────┤\n  │  Eval & observability (Langfuse...)   │\n  └───────────────────────────────────────┘\n\n  Key decisions:\n  RAG vs FT vs prompting alone?\n  Which model at which cost tier?\n  Agent loop vs deterministic pipeline?\n  Build vs buy vs open-source?`,tip:'Design your eval harness before your system architecture. If you cannot measure quality, you cannot make reliable design decisions.'},
 retry_backoff:{use:'Every LLM API call can fail with a 429 or 503. Without retry logic, a single timeout kills your pipeline.',diag:`  API Call\n     │\n     ▼\n  ┌──────────┐   success\n  │ Attempt 1│ ──────────► return result\n  └──────────┘\n       │ 429 / 503\n       ▼\n  wait 1s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 2│ ──────────► return result\n  └──────────┘\n       │ still failing\n       ▼\n  wait 2s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 3│ ──────────► return result\n  └──────────┘\n       │ max retries hit\n       ▼\n  raise / fallback`,code:`import time, random\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef llm_with_retry(\n    messages: list,\n    model: str = "gpt-4o-mini",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    """\n    Call the OpenAI API with exponential backoff + full jitter.\n    Retries on 429 (rate limit) and 5xx (server errors).\n    """\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model=model, messages=messages\n            )\n            return resp.choices[0].message.content\n\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            # Full jitter: sleep random(0, base * 2^attempt)\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            print(f"Rate limited. Retrying in {delay:.1f}s...")\n            time.sleep(delay)\n\n        except APIStatusError as e:\n            if e.status_code < 500 or attempt == max_retries - 1:\n                raise  # Don't retry 4xx client errors\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            time.sleep(delay)\n\nresult = llm_with_retry(\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(result)`,tip:'Use full jitter (random between 0 and cap) not equal jitter — it prevents thundering herd when many clients retry simultaneously.'},
