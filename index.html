@@ -3502,6 +3502,186 @@ print(f"Model loaded: {mem_gb:.1f} GB")
 inputs = tokenizer("Explain quantization in one sentence:", return_tensors="pt").to("cuda")
 outputs = model.generate(**inputs, max_new_tokens=100)
 print(tokenizer.decode(outputs[0], skip_special_tokens=True))`,tip:'Use NF4 (not int4) — NF4 is designed for normally-distributed weights and preserves quality better. Enable double quantization for an extra ~0.4GB saving with no quality cost. For inference-only workloads, AWQ-quantized models from HuggingFace Hub are often better than runtime quantization — they were calibrated on representative data at export time.'},
+gptq:{use:'GPTQ (Generative Pre-Trained Transformer Quantization) is a one-shot post-training quantization method that uses second-order Hessian information to find the best 4-bit (or 3/8-bit) approximation of each weight. It was the first practical method to quantize 175B+ models to 4-bit with near-float16 quality, and is why you see hundreds of "GPTQ" models on HuggingFace Hub. GPTQ runs a small calibration dataset (128 samples) to compute the Hessian, so quantization takes minutes rather than retraining.',diag:`  GPTQ quantization process
+  ──────────────────────────────────────────────────────────
+  Float16 model weights (e.g. 70B = 140GB)
+       │
+  ┌────▼──────────────────────────────────┐
+  │  1. Load calibration dataset          │
+  │     (128 random samples from C4/wiki) │
+  └────┬──────────────────────────────────┘
+       │
+  ┌────▼──────────────────────────────────┐
+  │  2. Compute Hessian per layer         │
+  │     H = E[x xᵀ]  (activation stats)  │
+  │     Identifies which weights matter   │
+  └────┬──────────────────────────────────┘
+       │
+  ┌────▼──────────────────────────────────┐
+  │  3. Quantize column-by-column         │
+  │     Minimize: ||WX - Ŵ X||²           │
+  │     Update remaining cols to fix err  │
+  └────┬──────────────────────────────────┘
+       │
+  4-bit INT4 model (70B = ~35GB) ──► ship to HF Hub
+
+  Quality comparison (perplexity on Wikitext-2):
+  Format     Bits  Memory   PPL ↓ better
+  float16    16    140GB    3.12
+  GPTQ       4     37GB     3.28   (+0.5%)
+  GPTQ       3     28GB     3.89   (+2.5%)`,code:`# Load a pre-quantized GPTQ model (easiest path)
+# pip install auto-gptq transformers accelerate
+
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+# Pre-quantized models are named like: TheBloke/Llama-2-7B-GPTQ
+model_id = "TheBloke/Llama-2-7B-Chat-GPTQ"
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    device_map="auto",          # spread across available GPUs/CPU
+    torch_dtype="auto",
+)
+
+# Inference — same as any HF model
+prompt = "[INST] What is quantization? [/INST]"
+inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+outputs = model.generate(**inputs, max_new_tokens=200, temperature=0.7)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+
+# ---- Quantize your own model with auto-gptq ----
+# from auto_gptq import AutoGPTQForCausalLM, BaseQuantizeConfig
+# quant_config = BaseQuantizeConfig(
+#     bits=4,           # 4-bit quantization
+#     group_size=128,   # weight group size — 128 is standard
+#     desc_act=True,    # use activation reordering for quality
+# )
+# model = AutoGPTQForCausalLM.from_pretrained(
+#     "meta-llama/Llama-2-7b",
+#     quantize_config=quant_config
+# )
+# calibration_data = [...]  # 128 tokenized samples
+# model.quantize(calibration_data)
+# model.save_quantized("llama2-7b-gptq-4bit")`,tip:'In practice, download pre-quantized GPTQ models from HuggingFace Hub (TheBloke\'s models or official ones) rather than quantizing from scratch — it saves hours and the calibration is already done. Group size 128 is the sweet spot between quality and speed; group size 32 gives better quality at slightly higher memory. If you need to deploy today, GPTQ + vLLM is a well-tested production combination.'},
+awq:{use:'AWQ (Activation-Aware Weight Quantization) improves on GPTQ by observing that not all weights are equally important — the weights that activate on large input activations matter most. AWQ identifies these salient weights (roughly 1% of all weights) and protects them from aggressive quantization by scaling the activation channels before quantizing. The result: better perplexity than GPTQ at the same 4-bit budget, and a format that maps efficiently to modern GPU hardware (INT4 Tensor Core instructions).',diag:`  AWQ core insight
+  ──────────────────────────────────────────────────────────
+  Problem: 99% of quantization error comes from <1% of weights
+           that correspond to large-magnitude activations.
+
+  Float16:   W₁  W₂  W₃  W₄  W₅  ...  (activations: small, small, BIG, small)
+
+  Naive INT4:  quantize everything equally → big error on W₃
+
+  AWQ:
+  1. Find salient channels (large activation magnitude)
+  2. Scale those channels UP before quantizing:
+     W₃_scaled = W₃ × scale_factor     ← protected
+  3. Quantize all weights to INT4
+  4. Rescale output down to compensate
+  ──────────────────────────────────────────────────────────
+  Quality comparison (LLaMA-2 7B, Wikitext-2 perplexity):
+  Method    Bits  PPL   Notes
+  float16   16    5.47  baseline
+  GPTQ      4     5.63  standard
+  AWQ       4     5.53  better accuracy
+  AWQ       3     6.24  usable at 3-bit`,code:`# Load AWQ model (recommended: use pre-quantized from HF Hub)
+# pip install autoawq transformers accelerate
+
+from awq import AutoAWQForCausalLM
+from transformers import AutoTokenizer
+
+# Pre-quantized AWQ models available on HF Hub
+model_id = "casperhansen/llama-3-8b-instruct-awq"
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoAWQForCausalLM.from_quantized(
+    model_id,
+    fuse_layers=True,       # fuse attention layers for extra speed
+    trust_remote_code=False,
+    safetensors=True,
+)
+
+# Or use via transformers (AWQ backend auto-detected)
+from transformers import AutoModelForCausalLM
+model_hf = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    device_map="auto",
+)
+
+# Inference
+prompt = "Explain AWQ quantization in simple terms."
+inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
+output = model_hf.generate(**inputs, max_new_tokens=150)
+print(tokenizer.decode(output[0], skip_special_tokens=True))
+
+# vLLM also supports AWQ directly:
+# python -m vllm.entrypoints.openai.api_server \\
+#   --model casperhansen/llama-3-8b-instruct-awq \\
+#   --quantization awq`,tip:'AWQ is generally preferred over GPTQ for new deployments — it has better accuracy at the same bit-width and maps better to hardware INT4 instructions. Most major models (LLaMA 3, Mistral, Mixtral, Qwen) have community AWQ versions on HF Hub. AWQ + vLLM is a strong production stack: AWQ shrinks the model, vLLM maximises throughput. The fuse_layers=True flag in autoawq gives an additional 10–20% speed boost by fusing attention projections.'},
+bnb:{use:'BitsAndBytes (bnb) is the easiest way to quantize any HuggingFace model: add a BitsAndBytesConfig to from_pretrained() and the model loads in 4-bit NF4 or 8-bit INT8 with no other changes. Its most important use case is QLoRA — you quantize the base model to 4-bit (frozen, no gradients) and train only small LoRA adapters in bfloat16. This allows fine-tuning a 70B model on a single A100 that could not otherwise fit the model at all.',diag:`  BitsAndBytes quantization modes
+  ──────────────────────────────────────────────────────────
+  Mode        Format  Memory (7B)  Quality  Best for
+  float16     fp16    14GB         ████████  full precision
+  int8 (bnb)  int8    7GB          ███████   inference, low-VRAM
+  nf4 (bnb)   int4    4.5GB        ██████    QLoRA fine-tuning
+  int4 (bnb)  int4    4.5GB        █████     faster inference
+  ──────────────────────────────────────────────────────────
+  NF4 vs INT4: NF4 (Normal Float 4) is designed for
+  normally-distributed weights — better quality than generic int4.
+
+  QLoRA memory breakdown (7B model):
+  ┌─────────────────────────────────────┐
+  │ Frozen base model: NF4   ≈ 4.5 GB  │
+  │ LoRA adapters (r=16):    ≈ 0.3 GB  │
+  │ Gradients + optimizer:   ≈ 1.5 GB  │
+  │ Activations:             ≈ 1.5 GB  │
+  │ Total:                   ≈ 8 GB    │  ← fits on RTX 3080!
+  └─────────────────────────────────────┘
+  vs full fine-tuning:        ≈ 56GB+`,code:`from transformers import (
+    AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+)
+from peft import get_peft_model, LoraConfig, TaskType
+import torch
+
+model_id = "meta-llama/Llama-3.1-8B-Instruct"
+
+# 4-bit NF4 config — the standard QLoRA setup
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",         # NF4 > int4 for quality
+    bnb_4bit_compute_dtype=torch.bfloat16,  # compute in bf16, store in nf4
+    bnb_4bit_use_double_quant=True,    # nested quantization — saves ~0.4GB
+)
+
+# Load base model in 4-bit (frozen — no gradients)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    quantization_config=bnb_config,
+    device_map="auto",
+)
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+# Add trainable LoRA adapters on top of the frozen 4-bit base
+lora_config = LoraConfig(
+    r=16,                              # rank — higher = more params, better quality
+    lora_alpha=32,                     # scaling factor (alpha/r = effective lr scale)
+    target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type=TaskType.CAUSAL_LM,
+)
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()
+# trainable params: 13,631,488 || all params: 8,043,438,080
+# trainable%: 0.17%  ← only 0.17% of weights are updated!
+
+# For pure 8-bit inference (no training):
+# model = AutoModelForCausalLM.from_pretrained(
+#     model_id,
+#     load_in_8bit=True,     # simpler — just add this flag
+#     device_map="auto",
+# )`,tip:'Always use NF4, not plain int4. NF4 is a 4-bit floating point format optimised for normally-distributed weights (which most LLM weights are), so it quantises with less error. Double quantization (bnb_4bit_use_double_quant=True) quantises the quantization constants themselves, saving ~0.4GB more for free — always enable it. For QLoRA, set bnb_4bit_compute_dtype=torch.bfloat16: the model stores weights as NF4 but dequantises to bfloat16 for the actual matrix multiply, getting GPU speed without the memory cost.'},
 hardware:{use:'The GPU you choose determines what models you can run, at what speed, and at what cost. The LLM hardware landscape changed rapidly in 2024 — NVIDIA still dominates but AMD and Apple Silicon are now serious options for specific use cases.',diag:`  GPU options for LLM work
   ──────────────────────────────────────────────────────────
   GPU              VRAM    Best for           Cost
@@ -3529,6 +3709,130 @@ hardware:{use:'The GPU you choose determines what models you can run, at what sp
   ──────────────────────────────────────────────────────────
   For local dev: RTX 4090 or Apple M-series
   For production: H100 on cloud (Modal, Lambda, RunPod)`,tip:'Rent before you buy. Cloud GPU costs have dropped significantly — an H100 on RunPod or Lambda Labs is ~$2–3/hr. Unless you are training continuously, renting is cheaper than owning. For local inference and fine-tuning, an RTX 4090 (24GB) handles most 7B–13B models in 4-bit and QLoRA fine-tuning of 7B models comfortably.'},
+tgi:{use:'HuggingFace Text Generation Inference (TGI) is the production-grade inference server that powers HuggingFace\'s own Inference API. It supports any model on the HF Hub out of the box, with tensor parallelism for multi-GPU serving, continuous batching, token streaming over SSE, and built-in quantization (AWQ, GPTQ, BitsAndBytes). It is the most common choice in enterprise deployments that are already on the HuggingFace ecosystem.',diag:`  TGI Architecture
+  ──────────────────────────────────────────────────────────
+  Client (HTTP/SSE)
+       │
+  ┌────▼──────────────────────────────────────┐
+  │  TGI Router (Rust — high-performance)     │
+  │  • Continuous batching queue              │
+  │  • Token streaming (SSE)                  │
+  │  • Health checks & metrics (Prometheus)   │
+  └────┬──────────────────────────────────────┘
+       │
+  ┌────▼──────────────────────────────────────┐
+  │  Model Shards (Python + PyTorch)          │
+  │  • Tensor parallelism across GPUs         │
+  │  • Flash Attention 2 + Paged Attention    │
+  │  • Quantization: AWQ / GPTQ / NF4        │
+  └────▼──────────────────────────────────────┘
+       │
+  GPU 0  GPU 1  GPU 2  GPU 3   (tensor parallel)
+
+  Key metrics exposed:
+  tgi_request_duration_seconds
+  tgi_batch_current_size
+  tgi_queue_size`,code:`# Launch TGI with Docker (GPU)
+# docker run --gpus all -p 8080:80 \\
+#   ghcr.io/huggingface/text-generation-inference:latest \\
+#   --model-id meta-llama/Llama-3.1-8B-Instruct \\
+#   --quantize bitsandbytes-nf4
+
+# Or with tensor parallelism across 2 GPUs:
+# --num-shard 2
+
+# Python client using the official huggingface_hub package
+from huggingface_hub import InferenceClient
+
+# Connect to local TGI server
+client = InferenceClient(base_url="http://localhost:8080")
+
+# Simple generation
+response = client.text_generation(
+    "Explain quantization in one paragraph.",
+    max_new_tokens=200,
+    temperature=0.7,
+)
+print(response)
+
+# Streaming — yields tokens as they arrive
+for token in client.text_generation(
+    "List 3 benefits of RAG:",
+    max_new_tokens=150,
+    stream=True,
+):
+    print(token, end="", flush=True)
+
+# Chat completions (OpenAI-compatible endpoint)
+import openai
+openai_client = openai.OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="dummy",          # TGI doesn't require a real key
+)
+resp = openai_client.chat.completions.create(
+    model="tgi",
+    messages=[{"role": "user", "content": "What is RAG?"}],
+)
+print(resp.choices[0].message.content)`,tip:'TGI\'s OpenAI-compatible /v1/chat/completions endpoint means you can swap TGI for OpenAI by just changing the base_url — no code changes needed. For multi-GPU serving, --num-shard splits the model across GPUs using tensor parallelism. Use --quantize bitsandbytes-nf4 to halve VRAM usage with minimal quality loss on models you haven\'t pre-quantized.'},
+sglang:{use:'SGLang (Structured Generation Language) is a fast inference engine from Berkeley\'s Sky Computing Lab. Its key innovation is RadixAttention — a KV cache management strategy that shares cached prefixes across multiple requests. When many requests start with the same long system prompt, SGLang avoids recomputing that prompt\'s KV cache for every request, delivering 2–5× better throughput than vLLM for these workloads.',diag:`  Why RadixAttention wins for chatbots
+  ──────────────────────────────────────────────────────────
+  Typical chatbot: every request starts with a 500-token system prompt.
+
+  vLLM (standard paged attention):
+  ┌──────────────────────────────────────────┐
+  │ Request 1: [system prompt 500t][user 20t]│ → compute all 520t
+  │ Request 2: [system prompt 500t][user 15t]│ → compute all 515t again
+  │ Request 3: [system prompt 500t][user 30t]│ → compute all 530t again
+  └──────────────────────────────────────────┘
+  KV cache wasted: 500t × 3 = 1500 token-compute wasted
+
+  SGLang (RadixAttention):
+  ┌──────────────────────────────────────────┐
+  │ Request 1: [system prompt 500t][user 20t]│ → compute 520t, cache prefix
+  │ Request 2: [prefix HIT!     ][user 15t] │ → compute only 15t
+  │ Request 3: [prefix HIT!     ][user 30t] │ → compute only 30t
+  └──────────────────────────────────────────┘
+  Speedup: 3–5× on system-prompt-heavy workloads`,code:`# Launch SGLang server
+# pip install "sglang[all]"
+# python -m sglang.launch_server \\
+#   --model-path meta-llama/Llama-3.1-8B-Instruct \\
+#   --port 30000
+
+# OpenAI-compatible client (SGLang exposes /v1 API)
+import openai
+
+client = openai.OpenAI(
+    base_url="http://localhost:30000/v1",
+    api_key="dummy",
+)
+
+# Batch requests with shared system prompt — RadixAttention shines here
+SYSTEM_PROMPT = """You are a helpful AI assistant specialising in
+Python programming. Always include runnable code examples.
+Keep answers concise but complete."""  # 500+ tokens in practice
+
+questions = [
+    "How do I use list comprehensions?",
+    "What is a generator?",
+    "Explain decorators.",
+]
+
+for q in questions:
+    resp = client.chat.completions.create(
+        model="default",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": q},
+        ],
+    )
+    print(f"Q: {q}")
+    print(f"A: {resp.choices[0].message.content[:100]}...")
+    print()
+
+# Check cache hit rate via metrics endpoint
+import httpx
+metrics = httpx.get("http://localhost:30000/metrics").text
+# Look for: sglang:cache_hit_rate`,tip:'SGLang is particularly effective when you have a fixed, long system prompt (instructions, persona, tool descriptions) sent with every request. If your system prompt is short or varies per user, the RadixAttention advantage shrinks. For pure throughput with diverse prompts, vLLM is often simpler to tune. SGLang\'s structured output (constrained decoding) is also more efficient than vLLM\'s for JSON schema enforcement.'},
 cloud_deploy:{use:'Deploying LLMs to the cloud used to mean managing GPU servers yourself. Serverless GPU platforms now let you deploy a model as an API endpoint in pure Python — paying only for the seconds your code runs, with automatic scaling to zero when idle.',diag:`  Cloud deployment options
   ──────────────────────────────────────────────────────────
   Platform      Model              Best for
