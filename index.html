@@ -1866,6 +1866,66 @@ basic_prompting:{use:'Before reaching for chain-of-thought, agents, or fine-tuni
   ──────────────────────────────────────────────────────────
   Combine in this order:
   System Prompt → Role → Few-shot examples → Your question`,tip:'A strong prompt typically uses all four together — system prompt sets the persona, role sets the domain context, few-shot shows the expected format, and the question itself is zero-shot. Add them one at a time and test after each addition. You will often find you do not need all four.'},
+programmatic_prompting:{use:'Hand-written prompts plateau. Programmatic prompting treats your prompt as code — version it, cache it, and let an optimizer find wording that scores better on your actual eval data automatically.',diag:`  The prompting maturity ladder
+  ──────────────────────────────────────────────────────────
+  Level   Approach          When to use
+
+  1       Hand-written       Starting out. Works fine
+          prompt             until quality plateaus.
+
+  2       Prompt             Team is iterating fast.
+          Versioning         Track changes, A/B test,
+          (PromptLayer,      roll back bad deploys.
+          LangSmith)
+
+  3       Prompt             Repeated calls share a
+          Caching            long system prompt.
+          (Anthropic /       Cache the prefix → up to
+          OpenAI API)        90% cost cut, 2× speed.
+
+  4       DSPy               You have labeled examples
+          (auto-optimize)    and want the best prompt
+                             found automatically —
+                             not written by hand.
+  ──────────────────────────────────────────────────────────
+  Most teams stop at Level 2. Level 3 is free money.
+  Reach for Level 4 only when you have evals first.`,code:`# DSPy — automatic prompt optimisation
+# DSPy compiles your program to find the best prompts
+# given a small set of labeled input/output examples
+
+import dspy
+
+# 1. Configure the LM
+lm = dspy.LM("openai/gpt-4o-mini")
+dspy.configure(lm=lm)
+
+# 2. Define a typed signature — no prompt text yet
+class SentimentClassifier(dspy.Signature):
+    """Classify the sentiment of a product review."""
+    review: str = dspy.InputField()
+    sentiment: str = dspy.OutputField(desc="positive, negative, or neutral")
+
+# 3. Wrap in a module
+classifier = dspy.Predict(SentimentClassifier)
+
+# 4. Provide a small labeled dataset
+trainset = [
+    dspy.Example(review="Love it!", sentiment="positive").with_inputs("review"),
+    dspy.Example(review="Broke after a day.", sentiment="negative").with_inputs("review"),
+    dspy.Example(review="It's fine I guess.", sentiment="neutral").with_inputs("review"),
+]
+
+# 5. Define a metric
+def accuracy(example, pred, trace=None):
+    return example.sentiment == pred.sentiment
+
+# 6. Compile — DSPy writes the best prompt for you
+teleprompter = dspy.BootstrapFewShot(metric=accuracy)
+optimised = teleprompter.compile(classifier, trainset=trainset)
+
+# 7. Use it
+result = optimised(review="Absolutely terrible quality.")
+print(result.sentiment)  # negative`,tip:'Prompt caching is the easiest win — if your system prompt is >1024 tokens and repeated across calls, enable caching with one extra API flag and costs drop immediately. DSPy pays off when you have 20+ labeled examples and a clear eval metric. Without evals, DSPy cannot optimize — build your eval set first.'},
 peft_methods:{use:'Adapt a pretrained model to your task by training less than 1% of its weights. Instead of updating all parameters — which needs expensive multi-GPU setups — PEFT methods freeze the base model and add a small trainable component on top.',diag:`  Full fine-tuning vs PEFT:
 
   Full fine-tuning:
