@@ -2030,6 +2030,58 @@ trainer.train()
 # 5. Save adapter (merge later for zero inference overhead)
 model.save_pretrained("./lora-adapter")
 tokenizer.save_pretrained("./lora-adapter")`,tip:'Use Unsloth for the training loop — it patches the attention kernels for 2–5× speed with no code changes. Use TRL trainers (SFTTrainer, DPOTrainer) for the training logic — they handle data collation, packing, and loss masking correctly. The two work together: just pass the Unsloth model to the TRL trainer.'},
+mlops:{use:'Without MLOps tooling, every training run is a mystery — you cannot reproduce results, compare experiments, or safely roll back a bad model update. These three tools cover the full lifecycle from experiment to deployment.',diag:`  The MLOps stack
+  ──────────────────────────────────────────────────────────
+  Problem              Tool               What it solves
+
+  "Which run gave      MLflow             Log params, metrics,
+  me that result?"     Experiments        and artifacts per run.
+                                          Compare runs in the UI.
+                                          Reproducible training.
+
+  "The dataset         DVC                Version datasets and
+  changed — what       (Data Version      models alongside Git.
+  version trained      Control)           dvc push/pull like
+  this model?"                            git push/pull.
+
+  "Where do I          HuggingFace        Central registry for
+  publish and share    Hub                weights, datasets, and
+  my model?"                              model cards. 500K+
+                                          public models.
+  ──────────────────────────────────────────────────────────
+  Minimal stack: MLflow + Git + HuggingFace Hub covers 90% of teams`,code:`# MLflow experiment tracking — log everything from day one
+# pip install mlflow
+
+import mlflow
+import mlflow.sklearn
+
+mlflow.set_experiment("my-llm-finetune")
+
+with mlflow.start_run(run_name="llama3-qlora-v1"):
+
+    # Log hyperparameters
+    mlflow.log_params({
+        "model": "Llama-3.2-3B-Instruct",
+        "lora_rank": 16,
+        "learning_rate": 2e-4,
+        "epochs": 3,
+        "dataset": "train_v2.jsonl",
+        "dataset_size": 1200,
+    })
+
+    # ... your training loop here ...
+    # (log metrics at each step)
+    for step, loss in enumerate(training_losses):
+        mlflow.log_metric("train_loss", loss, step=step)
+
+    # Log the final eval score
+    mlflow.log_metric("eval_accuracy", 0.87)
+
+    # Save the adapter as an artifact
+    mlflow.log_artifact("./lora-adapter")
+
+# Later: compare runs in the MLflow UI
+# mlflow ui  →  open http://localhost:5000`,tip:'Log every run, even failed ones — the failed runs tell you what not to try. Use run names that describe the hypothesis ("increase-rank-to-32", "add-dropout-0.1") not just the date. DVC is most valuable on teams: it prevents the silent bug where two people train on different versions of the same dataset filename.'},
 finetuning:{use:'Fine-tuning updates a model\'s weights on your data — teaching it behaviour that prompting cannot reliably produce. Use it when prompting has hit its ceiling.',diag:`  Prompt vs Fine-tune decision:\n\n  Prompting is enough when:\n  ✓ Model understands the task\n  ✓ You just need consistent format/tone\n  ✓ You have fewer than ~100 examples\n\n  Fine-tune when:\n  ✓ Prompt too long or expensive to repeat\n  ✓ Need consistent proprietary style/domain\n  ✓ Latency matters (smaller FT model can\n    beat a larger prompted model)\n  ✓ You have 500+ quality examples\n\n  Fine-tuning pipeline:\n  ┌──────────┐  ┌──────────┐  ┌──────────┐\n  │  Collect │─►│  Format  │─►│  Train   │\n  │  data    │  │  JSONL   │  │  QLoRA   │\n  └──────────┘  └──────────┘  └────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │   Eval    │\n                              │ (LLM judge│\n                              │  RAGAS)   │\n                              └─────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │  Deploy   │\n                              └───────────┘`,tip:'Always establish a prompted baseline before fine-tuning. Fine-tuning that does not beat prompting is wasted compute. 500 curated examples beats 50,000 noisy ones.'},
 sysdesign:{use:'System design is the layer most tutorials skip. Individual tools are well documented; how to combine them into something reliable, cost-efficient, and maintainable in production is not.',diag:`  Layers of a production AI system:\n  ┌───────────────────────────────────────┐\n  │  User-facing API / interface          │\n  ├───────────────────────────────────────┤\n  │  Orchestration  (agent loop / chain)  │\n  ├──────────────┬────────────────────────┤\n  │  LLM calls   │  Tools & retrieval     │\n  ├──────────────┴────────────────────────┤\n  │  Data layer  (chunks, metadata, vDB)  │\n  ├───────────────────────────────────────┤\n  │  Reliability (retry, fallback, cache) │\n  ├───────────────────────────────────────┤\n  │  Eval & observability (Langfuse...)   │\n  └───────────────────────────────────────┘\n\n  Key decisions:\n  RAG vs FT vs prompting alone?\n  Which model at which cost tier?\n  Agent loop vs deterministic pipeline?\n  Build vs buy vs open-source?`,tip:'Design your eval harness before your system architecture. If you cannot measure quality, you cannot make reliable design decisions.'},
 retry_backoff:{use:'Every LLM API call can fail with a 429 or 503. Without retry logic, a single timeout kills your pipeline.',diag:`  API Call\n     │\n     ▼\n  ┌──────────┐   success\n  │ Attempt 1│ ──────────► return result\n  └──────────┘\n       │ 429 / 503\n       ▼\n  wait 1s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 2│ ──────────► return result\n  └──────────┘\n       │ still failing\n       ▼\n  wait 2s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 3│ ──────────► return result\n  └──────────┘\n       │ max retries hit\n       ▼\n  raise / fallback`,code:`import time, random\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef llm_with_retry(\n    messages: list,\n    model: str = "gpt-4o-mini",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    """\n    Call the OpenAI API with exponential backoff + full jitter.\n    Retries on 429 (rate limit) and 5xx (server errors).\n    """\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model=model, messages=messages\n            )\n            return resp.choices[0].message.content\n\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            # Full jitter: sleep random(0, base * 2^attempt)\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            print(f"Rate limited. Retrying in {delay:.1f}s...")\n            time.sleep(delay)\n\n        except APIStatusError as e:\n            if e.status_code < 500 or attempt == max_retries - 1:\n                raise  # Don't retry 4xx client errors\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            time.sleep(delay)\n\nresult = llm_with_retry(\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(result)`,tip:'Use full jitter (random between 0 and cap) not equal jitter — it prevents thundering herd when many clients retry simultaneously.'},
