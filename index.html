@@ -3452,6 +3452,136 @@ print(response.choices[0].message.content)
 import httpx
 stats = httpx.get("http://localhost:8000/metrics").text
 # Look for: vllm:gpu_cache_usage_perc, vllm:num_requests_running`,tip:'Monitor vllm:gpu_cache_usage_perc — if it stays above 90%, your KV cache is full and you are leaving throughput on the table. Increase --max-model-len or reduce --max-num-seqs. For multi-turn chat workloads, SGLang\'s RadixAttention can be 2–5× faster than vLLM because it caches shared system prompt prefixes across requests.'},
+quantization:{use:'A 70B model needs ~140GB of GPU VRAM in full float16 precision — that is two H100s just to load it. Quantization shrinks model weights to 4-bit or 8-bit, cutting memory 2–4× with minimal quality loss. It is the single most practical way to run large models on affordable hardware.',diag:`  Precision vs memory vs quality trade-off
+  ──────────────────────────────────────────────────────────
+  Format    Bits  Memory (7B)  Quality    Best for
+
+  float16   16    ~14 GB       Baseline   Training, max quality
+  int8      8     ~7 GB        ~99%       Safe default, fast
+  NF4/      4     ~4 GB        ~97%       QLoRA fine-tuning,
+  float4                                  local inference
+
+  GGUF      4-8   3–7 GB       ~97%       CPU/GPU via llama.cpp
+  (quant)                                 Ollama, LM Studio
+
+  GPTQ      4     ~4 GB        ~96%       GPU inference,
+                                          post-training quant
+
+  AWQ       4     ~4 GB        ~97%       Better than GPTQ,
+                                          activation-aware
+  ──────────────────────────────────────────────────────────
+  Rule of thumb: 1B params ≈ 2GB in float16 ≈ 0.5GB in 4-bit`,code:`# BitsAndBytes — load any HuggingFace model in 4-bit
+# pip install transformers bitsandbytes accelerate
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+model_id = "meta-llama/Llama-3.2-3B-Instruct"
+
+# 4-bit NF4 quantization config
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",        # NF4 > int4 for quality
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=True,   # nested quant — saves ~0.4GB more
+)
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    quantization_config=bnb_config,
+    device_map="auto",                # auto-place across available GPUs
+)
+
+# Check actual memory usage
+mem_gb = model.get_memory_footprint() / 1e9
+print(f"Model loaded: {mem_gb:.1f} GB")
+
+# Inference — same as normal
+inputs = tokenizer("Explain quantization in one sentence:", return_tensors="pt").to("cuda")
+outputs = model.generate(**inputs, max_new_tokens=100)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))`,tip:'Use NF4 (not int4) — NF4 is designed for normally-distributed weights and preserves quality better. Enable double quantization for an extra ~0.4GB saving with no quality cost. For inference-only workloads, AWQ-quantized models from HuggingFace Hub are often better than runtime quantization — they were calibrated on representative data at export time.'},
+hardware:{use:'The GPU you choose determines what models you can run, at what speed, and at what cost. The LLM hardware landscape changed rapidly in 2024 — NVIDIA still dominates but AMD and Apple Silicon are now serious options for specific use cases.',diag:`  GPU options for LLM work
+  ──────────────────────────────────────────────────────────
+  GPU              VRAM    Best for           Cost
+
+  NVIDIA H100      80 GB   Production         Cloud only
+  SXM/PCIe                 serving, training  ~$3/hr
+
+  NVIDIA A100      80 GB   Training, large    Cloud
+  80GB                     batch inference    ~$2/hr
+
+  NVIDIA RTX       24 GB   Local fine-tuning  ~$800 consumer
+  4090                     (QLoRA 7-70B),     ~$2,500 pro
+                           fast local infer
+
+  NVIDIA RTX       16 GB   Local inference    ~$500
+  4080                     up to 13B models
+
+  AMD MI300X       192 GB  Large model        Cloud
+                           serving, rivals    competitive
+                           H100 on throughput with H100
+
+  Apple M3/M4      Shared  Local dev,         MacBook Pro
+  Max              up      fast Ollama,        $2,000–4,000
+                   to 128G MLX models
+  ──────────────────────────────────────────────────────────
+  For local dev: RTX 4090 or Apple M-series
+  For production: H100 on cloud (Modal, Lambda, RunPod)`,tip:'Rent before you buy. Cloud GPU costs have dropped significantly — an H100 on RunPod or Lambda Labs is ~$2–3/hr. Unless you are training continuously, renting is cheaper than owning. For local inference and fine-tuning, an RTX 4090 (24GB) handles most 7B–13B models in 4-bit and QLoRA fine-tuning of 7B models comfortably.'},
+cloud_deploy:{use:'Deploying LLMs to the cloud used to mean managing GPU servers yourself. Serverless GPU platforms now let you deploy a model as an API endpoint in pure Python — paying only for the seconds your code runs, with automatic scaling to zero when idle.',diag:`  Cloud deployment options
+  ──────────────────────────────────────────────────────────
+  Platform      Model              Best for
+
+  Modal Labs    Serverless GPU,    Custom models, Python-
+                pay-per-second,    native deployment,
+                cold start ~2s     fast iteration
+
+  Replicate     Pre-built model    Open-source models
+                APIs + custom      as instant APIs,
+                deployments        sharing demos
+
+  HuggingFace   Spaces (free       Demo UIs, Gradio/
+  Spaces        tier) + Inference  Streamlit, HF Hub
+                Endpoints (paid)   model serving
+
+  Lambda Labs   Bare GPU VMs       Long training runs,
+  / RunPod      ~$0.80–2/hr        cost-sensitive teams
+
+  AWS SageMaker Managed endpoints  Enterprise, existing
+                with auto-scaling  AWS infrastructure
+  ──────────────────────────────────────────────────────────
+  Modal for custom models · Replicate for quick sharing
+  SageMaker only if already on AWS`,code:`# Modal Labs — deploy vLLM as serverless endpoint
+# pip install modal; modal setup
+
+import modal
+
+app = modal.App("llm-inference")
+
+# Container image with vLLM pre-installed
+image = modal.Image.debian_slim().pip_install("vllm")
+
+# GPU-backed function — spins up on demand, scales to zero
+@app.function(
+    image=image,
+    gpu="A10G",              # ~$0.60/hr, 24GB VRAM
+    timeout=300,
+    scaledown_window=60,     # keep warm for 60s after last request
+)
+def generate(prompt: str, max_tokens: int = 256) -> str:
+    from vllm import LLM, SamplingParams
+
+    llm = LLM(model="meta-llama/Llama-3.2-3B-Instruct")
+    params = SamplingParams(temperature=0.7, max_tokens=max_tokens)
+    outputs = llm.generate([prompt], params)
+    return outputs[0].outputs[0].text
+
+# Deploy: modal deploy inference.py
+# Call from anywhere:
+@app.local_entrypoint()
+def main():
+    result = generate.remote("Explain RAG in one paragraph.")
+    print(result)`,tip:'Modal\'s scaledown_window is the key cost lever — set it to 60s for dev (warm for quick iteration) and 10s for production (minimize idle GPU cost). Cold start on an A10G with vLLM is ~10–15s including model load. For latency-sensitive APIs, keep one instance warm with keep_warm=1.'},
 cost_routing:{use:'Sending every request to GPT-4o when gpt-4o-mini would do costs 15-30× more. Route by complexity at runtime.',diag:`  Incoming request\n         │\n  ┌──────▼──────────────────────┐\n  │  Complexity classifier       │\n  │  (fast, cheap — e.g. Haiku) │\n  └──────┬───────────────────────┘\n         │\n    ┌────┴────────┐\n    │             │\n  simple       complex\n    │             │\n    ▼             ▼\ngpt-4o-mini   gpt-4o / Opus\n  $0.15/1M    $2.50-15/1M\n    │             │\n    └──────┬───────┘\n           ▼\n      Response`,code:`import litellm\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef classify_complexity(query: str) -> str:\n    """Use a cheap model to decide which model to use."""\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{\n            "role": "system",\n            "content": (\n                "Classify this query as SIMPLE or COMPLEX. "\n                "SIMPLE: factual lookup, short generation, formatting. "\n                "COMPLEX: multi-step reasoning, code review, analysis. "\n                "Reply with one word only: SIMPLE or COMPLEX."\n            )\n        }, {"role": "user", "content": query}],\n        max_tokens=5\n    )\n    return resp.choices[0].message.content.strip()\n\ndef route_and_call(query: str) -> dict:\n    complexity = classify_complexity(query)\n\n    model = "gpt-4o-mini" if complexity == "SIMPLE" else "gpt-4o"\n\n    resp = litellm.completion(\n        model=model,\n        messages=[{"role": "user", "content": query}]\n    )\n    return {\n        "model_used": model,\n        "complexity": complexity,\n        "answer": resp.choices[0].message.content,\n        "cost_usd": litellm.completion_cost(resp)\n    }\n\nfor q in [\n    "What is the capital of France?",\n    "Analyse the trade-offs between RAG and fine-tuning for a legal Q&A system"\n]:\n    result = route_and_call(q)\n    print(f"[{result['complexity']}] {result['model_used']} — cost: {result['cost_usd']:.5f}")`,tip:'Track actual accuracy by complexity tier over time. If SIMPLE queries have > 95% accuracy on gpt-4o-mini, your threshold is calibrated right.'},
 session_state:{use:'Stateless API servers cannot hold conversation history in memory. Every request needs context from previous turns.',diag:`  User request\n       │\n  ┌────▼────────────────────────┐\n  │  API Server (stateless)     │\n  │  session_id = "abc123"      │\n  └────┬────────────────────────┘\n       │  load messages\n  ┌────▼────────────────────────┐\n  │  Session Store (Redis)      │\n  │  "abc123" → [msg1, msg2...] │\n  └────┬────────────────────────┘\n       │\n  ┌────▼────────────────────────┐\n  │  LLM call with full history │\n  └────┬────────────────────────┘\n       │  save new messages\n       └──► Session Store`,code:`import json\nfrom openai import OpenAI\nimport redis\n\nclient = OpenAI()\nr = redis.Redis(host="localhost", port=6379, decode_responses=True)\n\nSESSION_TTL = 3600  # 1 hour\nMAX_TURNS = 20      # prevent unbounded context growth\n\ndef load_session(session_id: str) -> list:\n    raw = r.get(f"session:{session_id}")\n    return json.loads(raw) if raw else []\n\ndef save_session(session_id: str, messages: list) -> None:\n    # Keep only the last MAX_TURNS messages\n    trimmed = messages[-MAX_TURNS * 2:]\n    r.setex(\n        f"session:{session_id}",\n        SESSION_TTL,\n        json.dumps(trimmed)\n    )\n\ndef chat(session_id: str, user_message: str) -> str:\n    messages = load_session(session_id)\n    messages.append({"role": "user", "content": user_message})\n\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini", messages=messages\n    )\n    assistant_reply = resp.choices[0].message.content\n    messages.append({"role": "assistant", "content": assistant_reply})\n\n    save_session(session_id, messages)\n    return assistant_reply\n\n# Multi-turn conversation across separate calls\nprint(chat("user-42", "My name is Deepak."))\nprint(chat("user-42", "What is my name?"))  # remembers context`,tip:'Always cap MAX_TURNS to prevent the context window growing unbounded. For longer sessions, summarise old turns instead of truncating.'},
 approval_gate:{use:'Before an agent takes an irreversible action — sending an email, charging a card, deleting a record — pause and require human confirmation.',diag:`  Agent decides to take action\n            │\n  ┌─────────▼──────────────────┐\n  │  Is action reversible?     │\n  └─────────┬──────────────────┘\n      yes   │   no\n       │    │\n       │    ▼\n       │  ┌─────────────────────────┐\n       │  │  Create approval request │\n       │  │  Notify human reviewer   │\n       │  └──────────┬──────────────┘\n       │             │\n       │    ┌────────┴────────┐\n       │  approve          reject\n       │    │                │\n       │    ▼                ▼\n       │  proceed        abort / log\n       │    │\n       └────┴──► continue agent`,code:`from openai import OpenAI\nfrom pydantic import BaseModel\nfrom enum import Enum\nimport uuid, time\n\nclient = OpenAI()\n\nclass ActionType(str, Enum):\n    REVERSIBLE = "reversible"\n    IRREVERSIBLE = "irreversible"\n\nclass PendingApproval(BaseModel):\n    approval_id: str\n    action: str\n    details: dict\n    status: str = "pending"  # pending | approved | rejected\n\n# In production: store in DB and notify via Slack/email\nAPPROVAL_STORE: dict[str, PendingApproval] = {}\n\ndef request_approval(action: str, details: dict) -> str:\n    """Pause execution and request human sign-off."""\n    approval_id = str(uuid.uuid4())[:8]\n    APPROVAL_STORE[approval_id] = PendingApproval(\n        approval_id=approval_id,\n        action=action,\n        details=details\n    )\n    # In production: send Slack message / email here\n    print(f"[APPROVAL REQUIRED] id={approval_id}")\n    print(f"Action: {action}")\n    print(f"Details: {details}")\n    return approval_id\n\ndef wait_for_approval(approval_id: str,\n                      timeout_s: int = 300) -> bool:\n    """Poll until approved, rejected, or timeout."""\n    start = time.time()\n    while time.time() - start < timeout_s:\n        approval = APPROVAL_STORE.get(approval_id)\n        if approval and approval.status == "approved":\n            return True\n        if approval and approval.status == "rejected":\n            return False\n        time.sleep(2)\n    raise TimeoutError(f"Approval {approval_id} timed out")\n\ndef execute_with_gate(action: str, details: dict,\n                      action_type: ActionType) -> bool:\n    if action_type == ActionType.REVERSIBLE:\n        print(f"Executing directly: {action}")\n        return True\n    aid = request_approval(action, details)\n    # Simulate human approval for demo\n    APPROVAL_STORE[aid].status = "approved"\n    return wait_for_approval(aid)`,tip:'Send approval requests to Slack with approve/reject buttons using Block Kit. Set a timeout so stalled agents don\'t block indefinitely.'}
