@@ -4424,7 +4424,18 @@ document.getElementById('btn-topics').addEventListener('click',()=>{N.forEach(n=
 document.getElementById('btn-tools').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);const r=N.find(n=>n.g===0);if(r)r.expanded=true;N.filter(n=>n.meta||n.g===1).forEach(n=>n.expanded=true);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'show_topics'})});
 // [+All] — expand everything
 document.getElementById('btn-collapse').addEventListener('click',()=>{N.forEach(n=>n.expanded=true);rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'expand_all'})});
-document.getElementById('btn-fit').addEventListener('click',()=>{const nodes=N.filter(n=>{let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return n.g===1;if(!pn.expanded&&pn.g>0)return false;p=pn.p}return true}),xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y),mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys),pad=50,sc=Math.min((window.innerWidth-pad*2)/(mxx-mnx||1),(window.innerHeight-60-pad*2)/(mxy-mny||1))*0.9,tx=(window.innerWidth-pad*2)/2-(mnx+mxx)/2*sc,ty=(window.innerHeight-60-pad*2)/2-(mny+mxy)/2*sc;svg.transition().duration(750).call(d3.zoom().transform,d3.zoomIdentity.translate(tx,ty).scale(sc))});
+document.getElementById('btn-fit').addEventListener('click',()=>{
+  // match same visibility logic as rg()
+  const nodes=N.filter(n=>{if(n.g===0)return true;let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return false;if(!pn.expanded)return false;p=pn.p}return true});
+  if(!nodes.length||!zb)return;
+  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
+  const mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
+  const pad=60,W=window.innerWidth,H=window.innerHeight-60;
+  const sc=Math.min((W-pad*2)/(mxx-mnx||1),(H-pad*2)/(mxy-mny||1))*0.9;
+  const tx=W/2-(mnx+mxx)/2*sc,ty=H/2-(mny+mxy)/2*sc;
+  // use stored zb — not a new d3.zoom() — so pan/scroll stays in sync
+  svg.transition().duration(750).call(zb.transform,d3.zoomIdentity.translate(tx,ty).scale(sc));
+});
 document.getElementById('btn-reset').addEventListener('click',()=>{N=JSON.parse(JSON.stringify(DN));DN.forEach(n=>{if(RICH[n.id])Object.assign(n,RICH[n.id])});X=JSON.parse(JSON.stringify(DX));sim.nodes(N);bl();rg()});
 document.getElementById('btn-edit').addEventListener('click',()=>{e=!e;document.getElementById('btn-add').classList.toggle('hidden');document.getElementById('btn-link').classList.toggle('hidden');document.getElementById('btn-edit').textContent=e?'[✏ Edit ✓]':'[✏ Edit]'});
 document.getElementById('btn-export').addEventListener('click',()=>{const d={N,X},j=JSON.stringify(d,null,2),b=new Blob([j],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='mindmap-export.json';a.click();URL.revokeObjectURL(u)});
