@@ -1651,6 +1651,89 @@ chunks = ingest_document(
     }
 )
 print(f"Produced {len(chunks)} chunks")`,tip:'Always store metadata at chunk time — it is nearly impossible to add later. At minimum: source URL, ingestion date, and document section. These three fields unlock filtered retrieval (e.g. "only search docs from the last 6 months") and make debugging retrieval failures dramatically easier.'},
+etl_pipeline:{use:'Ad-hoc ingestion scripts work for prototypes. When your AI system needs to ingest dozens of data sources on a schedule — refreshing your vector store, reprocessing updated documents, triggering retraining — you need a proper pipeline orchestrator.',diag:`  ETL orchestration options for AI
+  ──────────────────────────────────────────────────────────
+  Tool        Best for              Trade-off
+
+  Airflow     Complex DAGs,         Heavy setup; needs
+              enterprise teams,     a Postgres DB +
+              many dependencies     scheduler process
+
+  Prefect     Simpler Python-       Less mature ecosystem
+              native workflows,     than Airflow; managed
+              fast to get started   cloud tier costs
+
+  dbt         SQL transformations   Not for LLM/vector
+              on structured data    pipelines; SQL-only
+              before it hits AI
+
+  Dagster     Data + ML combined,   Steeper learning curve;
+              asset-based thinking  best for larger teams
+
+  Cron +      Small teams, single   No retries, no UI,
+  Python      data source, low      no dependency graph
+  scripts     update frequency
+  ──────────────────────────────────────────────────────────
+  Start with cron + Python. Graduate to Prefect when you
+  need retries, scheduling UI, and failure alerts.`,code:`# Prefect pipeline — ingest docs, chunk, upsert to vector store
+# pip install prefect langchain-text-splitters
+
+from prefect import flow, task
+from prefect.tasks import task_input_hash
+from datetime import timedelta
+import hashlib, json
+from pathlib import Path
+
+@task(cache_key_fn=task_input_hash, cache_expiration=timedelta(hours=1))
+def load_documents(source_dir: str) -> list[dict]:
+    """Load all markdown files from a directory."""
+    docs = []
+    for path in Path(source_dir).glob("**/*.md"):
+        text = path.read_text(encoding="utf-8")
+        docs.append({
+            "text": text,
+            "source": str(path),
+            "checksum": hashlib.md5(text.encode()).hexdigest(),
+        })
+    print(f"Loaded {len(docs)} documents")
+    return docs
+
+@task
+def chunk_documents(docs: list[dict]) -> list[dict]:
+    """Chunk each document and inherit metadata."""
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=512, chunk_overlap=64
+    )
+    chunks = []
+    for doc in docs:
+        for i, chunk in enumerate(splitter.split_text(doc["text"])):
+            chunks.append({
+                "text": chunk,
+                "source": doc["source"],
+                "chunk_index": i,
+                "doc_checksum": doc["checksum"],
+            })
+    print(f"Produced {len(chunks)} chunks")
+    return chunks
+
+@task
+def upsert_to_vector_store(chunks: list[dict]) -> int:
+    """Upsert chunks — real impl would call your vector DB."""
+    # Replace with: chromadb / qdrant / pinecone upsert
+    print(f"Upserting {len(chunks)} chunks to vector store")
+    return len(chunks)
+
+@flow(name="doc-ingestion-pipeline", log_prints=True)
+def ingestion_pipeline(source_dir: str = "./docs"):
+    docs   = load_documents(source_dir)
+    chunks = chunk_documents(docs)
+    count  = upsert_to_vector_store(chunks)
+    print(f"Pipeline complete — {count} chunks indexed")
+
+if __name__ == "__main__":
+    ingestion_pipeline(source_dir="./docs")
+    # Schedule: ingestion_pipeline.serve(cron="0 2 * * *")`,tip:'Add a checksum on every document at ingest time. On re-runs, skip documents whose checksum has not changed — this makes incremental updates fast and idempotent. Without this, a daily pipeline re-embeds your entire corpus every night and costs 10× more than it needs to.'},
 meta_building:{use:'Building with GenAI means combining prompting, retrieval, agents, and fine-tuning into a working system. Most tutorials teach each technique in isolation — this cluster shows how they fit together and when to reach for each one.',diag:`  The GenAI building decision tree
   ──────────────────────────────────────────────────────────
   Start here → Can prompting solve it?
