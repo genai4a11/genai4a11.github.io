@@ -2687,6 +2687,157 @@ def validate_training_data(path: str) -> pd.DataFrame:
         raise
 
 df = validate_training_data("train.jsonl")`,tip:'Add data contracts before your first production training run, not after. The first time a schema change silently corrupts a training set and takes a week to debug is the last time you will skip this step. Even a basic md5 hash logged per dataset version saves hours of forensics.'},
+data_quality:{use:'Bad data entering your pipeline silently degrades model quality, retrieval precision, and fine-tuning results — often without any error. Data quality gates catch problems at the source, before they compound downstream.',diag:`  Common data quality failures in AI pipelines
+  ──────────────────────────────────────────────────────────
+  Failure              Impact               Fix
+
+  Duplicate chunks     Retrieval returns    Deduplication
+                       same content         (MinHash / exact
+                       multiple times       hash)
+
+  Truncated docs       Missing context,     Length validation,
+  (PDF parse errors)   hallucinated         char count gate
+                       answers
+
+  Encoding errors      Garbled tokens,      UTF-8 normalise,
+  (mojibake)           model confusion      ftfy library
+
+  Schema drift         Training crashes     Pandera /
+  (new column,         or wrong labels      Great Expectations
+  changed types)       silently used        schema checks
+
+  Near-duplicates      Model memorises      Semantic dedup
+  (paraphrases)        surface forms not    (embed + cosine
+                       concepts             similarity < 0.95)
+  ──────────────────────────────────────────────────────────
+  Run quality gates at ingest time, not before training`,code:`# Data quality pipeline: dedup + validate + report
+# pip install pandera ftfy datasketch
+
+import hashlib, ftfy
+import pandas as pd
+import pandera as pa
+from pandera import Column, DataFrameSchema, Check
+from datasketch import MinHash, MinHashLSH
+
+# 1. Fix encoding issues
+def clean_text(text: str) -> str:
+    return ftfy.fix_text(text.strip())
+
+# 2. Exact deduplication by content hash
+def exact_dedup(records: list[dict]) -> list[dict]:
+    seen = set()
+    unique = []
+    for r in records:
+        h = hashlib.md5(r["text"].encode()).hexdigest()
+        if h not in seen:
+            seen.add(h)
+            unique.append(r)
+    return unique
+
+# 3. Near-duplicate detection with MinHash LSH
+def near_dedup(records: list[dict],
+               threshold: float = 0.85) -> list[dict]:
+    lsh = MinHashLSH(threshold=threshold, num_perm=128)
+    unique = []
+    for i, r in enumerate(records):
+        m = MinHash(num_perm=128)
+        for word in r["text"].lower().split():
+            m.update(word.encode())
+        key = f"doc_{i}"
+        if not lsh.query(m):   # no near-duplicate found
+            lsh.insert(key, m)
+            unique.append(r)
+    return unique
+
+# 4. Schema validation
+schema = DataFrameSchema({
+    "text":   Column(str, Check(lambda s: s.str.len() > 50)),
+    "source": Column(str, nullable=False),
+})
+
+def run_quality_pipeline(raw: list[dict]) -> pd.DataFrame:
+    cleaned  = [{"text": clean_text(r["text"]),
+                 "source": r["source"]} for r in raw]
+    deduped  = exact_dedup(cleaned)
+    deduped  = near_dedup(deduped)
+    df       = pd.DataFrame(deduped)
+    validated = schema.validate(df, lazy=True)
+    print(f"Input: {len(raw)} | After dedup+validate: {len(validated)}")
+    return validated`,tip:'Track your quality metrics over time — what percentage of records fail each check, and how that changes as your data sources evolve. A sudden spike in encoding errors or truncated docs usually means a source changed its format. Catching this in the quality layer is 10× cheaper than debugging it as a model regression.'},
+annotation_tools:{use:'Annotation tools are where raw examples become labeled training data. The right tool depends on your task type, team size, and whether you need human-only or LLM-assisted workflows.',diag:`  Annotation tool comparison
+  ──────────────────────────────────────────────────────────
+  Tool          Best for              Key features
+
+  Label Studio  General purpose,      Open-source, self-
+  (open-source) any data type:        hosted, 10+ task
+                text, image,          templates, supports
+                audio, video          LLM pre-annotation
+
+  Argilla       NLP-specific:         Tight HuggingFace
+                text classification,  integration, built-in
+                NER, RAG evals,       disagreement metrics,
+                RLHF feedback         great for fine-tuning
+
+  Prodigy       Active learning       Paid; CLI-driven,
+                workflows,            integrates with
+                spaCy pipelines       spaCy natively
+
+  Scale AI /    Enterprise volume,    Managed human
+  Labelbox      compliance needs      workforce, SLA
+                                      guarantees, costly
+  ──────────────────────────────────────────────────────────
+  Start: Label Studio locally → Argilla for NLP/fine-tuning`,code:`# Argilla — log LLM outputs for human review and fine-tuning
+# pip install argilla
+
+import argilla as rg
+from openai import OpenAI
+
+# Connect to Argilla server (local Docker or Argilla Cloud)
+rg.init(api_url="http://localhost:6900", api_key="admin.apikey")
+
+client = OpenAI()
+
+# Create a dataset for rating LLM responses
+dataset = rg.FeedbackDataset(
+    fields=[
+        rg.TextField(name="instruction"),
+        rg.TextField(name="response"),
+    ],
+    questions=[
+        rg.RatingQuestion(
+            name="quality",
+            title="Rate the response quality",
+            values=[1, 2, 3, 4, 5],
+        ),
+        rg.TextQuestion(
+            name="correction",
+            title="Corrected response (if needed)",
+            required=False,
+        ),
+    ],
+)
+dataset.push_to_argilla(name="llm-feedback", workspace="admin")
+
+# Generate responses and log for human review
+prompts = [
+    "Explain gradient descent in one paragraph.",
+    "What is the difference between RAG and fine-tuning?",
+]
+
+records = []
+for prompt in prompts:
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    records.append(rg.FeedbackRecord(fields={
+        "instruction": prompt,
+        "response": resp.choices[0].message.content,
+    }))
+
+dataset.add_records(records)
+print(f"Logged {len(records)} records for human review")
+# Now open Argilla UI → annotators rate each response`,tip:'Use LLM pre-annotation to speed up human review — have GPT-4o-mini generate a draft label, then humans only correct disagreements. This cuts annotation time by 60–80% on well-defined tasks. Always keep a 10% fully-human-labeled gold set to measure how much the LLM-assisted labels drift from ground truth.'},
 finetuning:{use:'Fine-tuning updates a model\'s weights on your data — teaching it behaviour that prompting cannot reliably produce. Use it when prompting has hit its ceiling.',diag:`  Prompt vs Fine-tune decision:\n\n  Prompting is enough when:\n  ✓ Model understands the task\n  ✓ You just need consistent format/tone\n  ✓ You have fewer than ~100 examples\n\n  Fine-tune when:\n  ✓ Prompt too long or expensive to repeat\n  ✓ Need consistent proprietary style/domain\n  ✓ Latency matters (smaller FT model can\n    beat a larger prompted model)\n  ✓ You have 500+ quality examples\n\n  Fine-tuning pipeline:\n  ┌──────────┐  ┌──────────┐  ┌──────────┐\n  │  Collect │─►│  Format  │─►│  Train   │\n  │  data    │  │  JSONL   │  │  QLoRA   │\n  └──────────┘  └──────────┘  └────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │   Eval    │\n                              │ (LLM judge│\n                              │  RAGAS)   │\n                              └─────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │  Deploy   │\n                              └───────────┘`,tip:'Always establish a prompted baseline before fine-tuning. Fine-tuning that does not beat prompting is wasted compute. 500 curated examples beats 50,000 noisy ones.'},
 sysdesign:{use:'System design is the layer most tutorials skip. Individual tools are well documented; how to combine them into something reliable, cost-efficient, and maintainable in production is not.',diag:`  Layers of a production AI system:\n  ┌───────────────────────────────────────┐\n  │  User-facing API / interface          │\n  ├───────────────────────────────────────┤\n  │  Orchestration  (agent loop / chain)  │\n  ├──────────────┬────────────────────────┤\n  │  LLM calls   │  Tools & retrieval     │\n  ├──────────────┴────────────────────────┤\n  │  Data layer  (chunks, metadata, vDB)  │\n  ├───────────────────────────────────────┤\n  │  Reliability (retry, fallback, cache) │\n  ├───────────────────────────────────────┤\n  │  Eval & observability (Langfuse...)   │\n  └───────────────────────────────────────┘\n\n  Key decisions:\n  RAG vs FT vs prompting alone?\n  Which model at which cost tier?\n  Agent loop vs deterministic pipeline?\n  Build vs buy vs open-source?`,tip:'Design your eval harness before your system architecture. If you cannot measure quality, you cannot make reliable design decisions.'},
 retry_backoff:{use:'Every LLM API call can fail with a 429 or 503. Without retry logic, a single timeout kills your pipeline.',diag:`  API Call\n     │\n     ▼\n  ┌──────────┐   success\n  │ Attempt 1│ ──────────► return result\n  └──────────┘\n       │ 429 / 503\n       ▼\n  wait 1s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 2│ ──────────► return result\n  └──────────┘\n       │ still failing\n       ▼\n  wait 2s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 3│ ──────────► return result\n  └──────────┘\n       │ max retries hit\n       ▼\n  raise / fallback`,code:`import time, random\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef llm_with_retry(\n    messages: list,\n    model: str = "gpt-4o-mini",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    """\n    Call the OpenAI API with exponential backoff + full jitter.\n    Retries on 429 (rate limit) and 5xx (server errors).\n    """\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model=model, messages=messages\n            )\n            return resp.choices[0].message.content\n\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            # Full jitter: sleep random(0, base * 2^attempt)\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            print(f"Rate limited. Retrying in {delay:.1f}s...")\n            time.sleep(delay)\n\n        except APIStatusError as e:\n            if e.status_code < 500 or attempt == max_retries - 1:\n                raise  # Don't retry 4xx client errors\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            time.sleep(delay)\n\nresult = llm_with_retry(\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(result)`,tip:'Use full jitter (random between 0 and cap) not equal jitter — it prevents thundering herd when many clients retry simultaneously.'},
