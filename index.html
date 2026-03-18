@@ -1734,6 +1734,81 @@ def ingestion_pipeline(source_dir: str = "./docs"):
 if __name__ == "__main__":
     ingestion_pipeline(source_dir="./docs")
     # Schedule: ingestion_pipeline.serve(cron="0 2 * * *")`,tip:'Add a checksum on every document at ingest time. On re-runs, skip documents whose checksum has not changed — this makes incremental updates fast and idempotent. Without this, a daily pipeline re-embeds your entire corpus every night and costs 10× more than it needs to.'},
+data_quality:{use:'Bad data enters AI pipelines silently — no errors, no warnings, just degraded output. Data quality gates catch problems before they reach your vector store or training run: empty chunks, duplicates, schema drift, and toxic content.',diag:`  Data quality checks by pipeline stage
+  ──────────────────────────────────────────────────────────
+  Stage          Check                  Tool
+
+  Schema         Column types, nulls,   Pandera
+  validation     allowed values,        Great Expectations
+                 string lengths
+
+  Deduplication  Exact: md5 hash        Python sets
+                 Near-duplicate:        MinHash / LSH
+                 cosine sim > 0.95      sentence-transformers
+
+  Content        Empty chunks           Simple len() check
+  quality        Boilerplate text       regex / keyword list
+                 Encoding errors        chardet
+                 Toxic content          Detoxify, LLM-as-judge
+
+  Distribution   Class imbalance        pandas value_counts
+  checks         Language mix           langdetect
+                 Outlier lengths        z-score on char count
+  ──────────────────────────────────────────────────────────
+  Run all checks before indexing. Fix upstream, not downstream.`,code:`# Data quality pipeline — validate, deduplicate, filter
+# pip install pandera sentence-transformers
+
+import hashlib
+import pandas as pd
+import pandera as pa
+from pandera import Column, DataFrameSchema, Check
+
+# 1. Schema validation
+chunk_schema = DataFrameSchema({
+    "text": Column(str, checks=[
+        Check(lambda s: s.str.len() >= 50,  error="chunk too short"),
+        Check(lambda s: s.str.len() <= 4000, error="chunk too long"),
+    ], nullable=False),
+    "source": Column(str, nullable=False),
+})
+
+# 2. Exact deduplication via md5
+def deduplicate_exact(chunks: list[dict]) -> list[dict]:
+    seen = set()
+    unique = []
+    for chunk in chunks:
+        h = hashlib.md5(chunk["text"].strip().encode()).hexdigest()
+        if h not in seen:
+            seen.add(h)
+            unique.append(chunk)
+    return unique
+
+# 3. Content quality filter
+BOILERPLATE = ["cookie policy", "all rights reserved",
+               "subscribe to our newsletter", "click here"]
+
+def filter_boilerplate(chunks: list[dict]) -> list[dict]:
+    return [
+        c for c in chunks
+        if not any(bp in c["text"].lower() for bp in BOILERPLATE)
+    ]
+
+# 4. Run the full quality pipeline
+def run_quality_pipeline(raw_chunks: list[dict]) -> list[dict]:
+    df = pd.DataFrame(raw_chunks)
+
+    # Schema check
+    chunk_schema.validate(df, lazy=True)
+
+    # Dedup
+    before = len(raw_chunks)
+    chunks = deduplicate_exact(raw_chunks)
+    chunks = filter_boilerplate(chunks)
+    after = len(chunks)
+
+    print(f"Quality pipeline: {before} → {after} chunks "
+          f"({before - after} removed)")
+    return chunks`,tip:'Log quality metrics on every pipeline run — how many chunks were removed and why. A sudden spike in removals (e.g. 40% deduped instead of 5%) is your earliest warning that a data source changed format or started sending garbage. Treat it like a monitoring alert.'},
 meta_building:{use:'Building with GenAI means combining prompting, retrieval, agents, and fine-tuning into a working system. Most tutorials teach each technique in isolation — this cluster shows how they fit together and when to reach for each one.',diag:`  The GenAI building decision tree
   ──────────────────────────────────────────────────────────
   Start here → Can prompting solve it?
