@@ -2838,6 +2838,221 @@ for prompt in prompts:
 dataset.add_records(records)
 print(f"Logged {len(records)} records for human review")
 # Now open Argilla UI → annotators rate each response`,tip:'Use LLM pre-annotation to speed up human review — have GPT-4o-mini generate a draft label, then humans only correct disagreements. This cuts annotation time by 60–80% on well-defined tasks. Always keep a 10% fully-human-labeled gold set to measure how much the LLM-assisted labels drift from ground truth.'},
+active_learning:{use:'Random sampling wastes annotation budget on examples the model already handles well. Active learning flips this — it asks the model which examples it is least confident about, and sends only those for human review.',diag:`  Random sampling vs Active learning
+  ──────────────────────────────────────────────────────────
+  Random sampling          Active learning
+
+  Label 1000 random        Train on 100 seed labels
+  examples                       │
+       │                         ▼
+       ▼                   Model predicts all unlabeled
+  Train model              examples
+                                 │
+                                 ▼
+                           Score by uncertainty:
+                           - Least confidence
+                           - Margin sampling
+                           - Entropy of predictions
+                                 │
+                                 ▼
+                           Send top-100 most uncertain
+                           to human annotators
+                                 │
+                                 ▼
+                           Retrain → repeat
+  ──────────────────────────────────────────────────────────
+  Result: same model quality with 5–10× fewer labels`,code:`# Active learning with uncertainty sampling
+# pip install small-text datasets
+
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+def uncertainty_sampling(
+    texts: list[str],
+    labels: list[int],
+    unlabeled: list[str],
+    n_query: int = 20,
+) -> list[int]:
+    """
+    Train on labeled data, return indices of most uncertain
+    unlabeled examples for human annotation.
+    """
+    vec = TfidfVectorizer(max_features=5000)
+    X_labeled   = vec.fit_transform(texts)
+    X_unlabeled = vec.transform(unlabeled)
+
+    clf = LogisticRegression(max_iter=1000)
+    clf.fit(X_labeled, labels)
+
+    # Get class probabilities for all unlabeled examples
+    probs = clf.predict_proba(X_unlabeled)
+
+    # Least confidence: 1 - max(P(class))
+    uncertainty = 1 - probs.max(axis=1)
+
+    # Return indices of top-n most uncertain examples
+    top_indices = np.argsort(uncertainty)[-n_query:][::-1]
+    return top_indices.tolist()
+
+# Example usage
+labeled_texts  = ["great product", "terrible service", "okay"]
+labels         = [1, 0, 1]
+unlabeled_pool = ["not sure about this", "loved it", "broken"]
+
+query_idx = uncertainty_sampling(labeled_texts, labels, unlabeled_pool)
+print(f"Send these {len(query_idx)} examples for annotation: {query_idx}")
+# Human labels these → add to training set → retrain → repeat`,tip:'Active learning pays off most when labeling is expensive (domain experts, legal review) or slow (multi-step annotation tasks). For simple classification with cheap annotators, the engineering overhead may not be worth it. Start with random sampling and only switch to active learning if annotation cost is genuinely the bottleneck.'},
+label_quality:{use:'Labels are only as good as the process that created them. Two annotators on the same example often disagree — and that disagreement is a signal, not noise. Measuring and managing label quality is what separates a reliable training set from an unreliable one.',diag:`  Label quality metrics
+  ──────────────────────────────────────────────────────────
+  Metric           What it measures        Threshold
+
+  Cohen\'s Kappa    Agreement between       > 0.8  excellent
+                   two annotators,         0.6–0.8  good
+                   corrected for chance    0.4–0.6  moderate
+                                           < 0.4  rewrite
+                                                   guidelines
+
+  Fleiss\' Kappa   Agreement across 3+     Same scale as
+                   annotators              Cohen\'s
+
+  Majority vote    Final label from        Use when kappa
+  confidence       N annotators            > 0.6 confirmed
+
+  Cleanlab         Finds mislabeled        Confident learning
+  label errors     examples                score — flag top 5%
+                   automatically           for re-review
+  ──────────────────────────────────────────────────────────
+  Always measure kappa on a shared calibration set before
+  releasing annotators to label independently`,code:`# Cohen's Kappa + Cleanlab label error detection
+# pip install scikit-learn cleanlab
+
+import numpy as np
+from sklearn.metrics import cohen_kappa_score
+from cleanlab.filter import find_label_issues
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# --- Inter-annotator agreement ---
+annotator_a = [1, 0, 1, 1, 0, 1, 0, 0, 1, 1]
+annotator_b = [1, 0, 1, 0, 0, 1, 1, 0, 1, 1]
+
+kappa = cohen_kappa_score(annotator_a, annotator_b)
+print(f"Cohen\'s Kappa: {kappa:.3f}")
+if kappa < 0.6:
+    print("⚠ Low agreement — review annotation guidelines")
+elif kappa >= 0.8:
+    print("✓ High agreement — labels are reliable")
+
+# --- Cleanlab: find likely mislabeled examples ---
+texts  = ["great", "terrible", "ok", "love it", "broken",
+          "fine", "awful", "nice", "bad", "perfect"]
+labels = np.array([1, 0, 1, 1, 0, 1, 0, 1, 0, 1])
+#                                          ^ suspicious
+
+vec    = TfidfVectorizer()
+X      = vec.fit_transform(texts).toarray()
+clf    = LogisticRegression(max_iter=500).fit(X, labels)
+probs  = clf.predict_proba(X)
+
+issues = find_label_issues(
+    labels=labels,
+    pred_probs=probs,
+    return_indices_ranked_by="self_confidence",
+)
+print(f"Suspected mislabeled indices: {issues}")
+# Review these examples — likely annotation errors`,tip:'Run a calibration round on 20–30 shared examples before annotators label independently. If kappa is below 0.6, stop — more labels will make quality worse, not better. The problem is in the guidelines, not the annotators.'},
+synth_quality:{use:'Synthetic data generation is only half the job. Raw LLM outputs contain duplicates, low-effort responses, off-topic examples, and subtle biases. Quality filtering is what turns a large noisy synthetic dataset into a small, clean, high-signal one.',diag:`  Synthetic data quality filtering pipeline
+  ──────────────────────────────────────────────────────────
+  Generated examples (raw)
+       │
+       ▼
+  ┌─────────────────────────────────────────┐
+  │  1. Exact dedup (hash)                  │
+  │     Remove identical outputs            │
+  └───────────────┬─────────────────────────┘
+                  │
+       ▼
+  ┌─────────────────────────────────────────┐
+  │  2. Length filter                       │
+  │     Drop too-short (<20 tokens) and     │
+  │     too-long (>2048 tokens) responses   │
+  └───────────────┬─────────────────────────┘
+                  │
+       ▼
+  ┌─────────────────────────────────────────┐
+  │  3. Toxicity / safety filter            │
+  │     Detoxify or LLM-as-judge            │
+  └───────────────┬─────────────────────────┘
+                  │
+       ▼
+  ┌─────────────────────────────────────────┐
+  │  4. Quality score (LLM-as-judge)        │
+  │     Rate 1–5, keep only 4–5             │
+  └───────────────┬─────────────────────────┘
+                  │
+       ▼
+  ┌─────────────────────────────────────────┐
+  │  5. Diversity sampling                  │
+  │     Embed + cluster, sample evenly      │
+  └───────────────┬─────────────────────────┘
+                  │
+       ▼
+  High-quality filtered dataset`,code:`# Synthetic data quality filtering pipeline
+# pip install anthropic detoxify sentence-transformers
+
+import hashlib
+from anthropic import Anthropic
+
+client = Anthropic()
+
+def score_quality(instruction: str, response: str) -> int:
+    """LLM-as-judge: rate response quality 1–5."""
+    result = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=16,
+        messages=[{"role": "user", "content": f"""Rate this instruction-response pair on quality from 1-5.
+1=poor/wrong, 3=acceptable, 5=excellent/clear/accurate.
+Reply with a single digit only.
+
+Instruction: {instruction}
+Response: {response}"""}]
+    )
+    try:
+        return int(result.content[0].text.strip()[0])
+    except (ValueError, IndexError):
+        return 1
+
+def filter_dataset(
+    pairs: list[dict],
+    min_quality: int = 4,
+    min_response_len: int = 30,
+    max_response_len: int = 2000,
+) -> list[dict]:
+    seen_hashes = set()
+    filtered = []
+
+    for p in pairs:
+        # 1. Exact dedup
+        h = hashlib.md5(p["response"].encode()).hexdigest()
+        if h in seen_hashes:
+            continue
+        seen_hashes.add(h)
+
+        # 2. Length filter
+        rlen = len(p["response"])
+        if rlen < min_response_len or rlen > max_response_len:
+            continue
+
+        # 3. Quality score
+        score = score_quality(p["instruction"], p["response"])
+        if score >= min_quality:
+            p["quality_score"] = score
+            filtered.append(p)
+
+    print(f"Kept {len(filtered)}/{len(pairs)} examples "
+          f"({100*len(filtered)//len(pairs)}%)")
+    return filtered`,tip:'Aim to keep 40–60% of your synthetic data after filtering — if you keep more than 80%, your quality bar is too low; if you keep less than 20%, your generation prompt needs work. The quality score step alone (keeping only 4s and 5s) is the highest-ROI filter and worth the extra LLM calls.'},
 finetuning:{use:'Fine-tuning updates a model\'s weights on your data — teaching it behaviour that prompting cannot reliably produce. Use it when prompting has hit its ceiling.',diag:`  Prompt vs Fine-tune decision:\n\n  Prompting is enough when:\n  ✓ Model understands the task\n  ✓ You just need consistent format/tone\n  ✓ You have fewer than ~100 examples\n\n  Fine-tune when:\n  ✓ Prompt too long or expensive to repeat\n  ✓ Need consistent proprietary style/domain\n  ✓ Latency matters (smaller FT model can\n    beat a larger prompted model)\n  ✓ You have 500+ quality examples\n\n  Fine-tuning pipeline:\n  ┌──────────┐  ┌──────────┐  ┌──────────┐\n  │  Collect │─►│  Format  │─►│  Train   │\n  │  data    │  │  JSONL   │  │  QLoRA   │\n  └──────────┘  └──────────┘  └────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │   Eval    │\n                              │ (LLM judge│\n                              │  RAGAS)   │\n                              └─────┬─────┘\n                                    │\n                              ┌─────▼─────┐\n                              │  Deploy   │\n                              └───────────┘`,tip:'Always establish a prompted baseline before fine-tuning. Fine-tuning that does not beat prompting is wasted compute. 500 curated examples beats 50,000 noisy ones.'},
 sysdesign:{use:'System design is the layer most tutorials skip. Individual tools are well documented; how to combine them into something reliable, cost-efficient, and maintainable in production is not.',diag:`  Layers of a production AI system:\n  ┌───────────────────────────────────────┐\n  │  User-facing API / interface          │\n  ├───────────────────────────────────────┤\n  │  Orchestration  (agent loop / chain)  │\n  ├──────────────┬────────────────────────┤\n  │  LLM calls   │  Tools & retrieval     │\n  ├──────────────┴────────────────────────┤\n  │  Data layer  (chunks, metadata, vDB)  │\n  ├───────────────────────────────────────┤\n  │  Reliability (retry, fallback, cache) │\n  ├───────────────────────────────────────┤\n  │  Eval & observability (Langfuse...)   │\n  └───────────────────────────────────────┘\n\n  Key decisions:\n  RAG vs FT vs prompting alone?\n  Which model at which cost tier?\n  Agent loop vs deterministic pipeline?\n  Build vs buy vs open-source?`,tip:'Design your eval harness before your system architecture. If you cannot measure quality, you cannot make reliable design decisions.'},
 retry_backoff:{use:'Every LLM API call can fail with a 429 or 503. Without retry logic, a single timeout kills your pipeline.',diag:`  API Call\n     │\n     ▼\n  ┌──────────┐   success\n  │ Attempt 1│ ──────────► return result\n  └──────────┘\n       │ 429 / 503\n       ▼\n  wait 1s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 2│ ──────────► return result\n  └──────────┘\n       │ still failing\n       ▼\n  wait 2s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 3│ ──────────► return result\n  └──────────┘\n       │ max retries hit\n       ▼\n  raise / fallback`,code:`import time, random\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef llm_with_retry(\n    messages: list,\n    model: str = "gpt-4o-mini",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    """\n    Call the OpenAI API with exponential backoff + full jitter.\n    Retries on 429 (rate limit) and 5xx (server errors).\n    """\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model=model, messages=messages\n            )\n            return resp.choices[0].message.content\n\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            # Full jitter: sleep random(0, base * 2^attempt)\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            print(f"Rate limited. Retrying in {delay:.1f}s...")\n            time.sleep(delay)\n\n        except APIStatusError as e:\n            if e.status_code < 500 or attempt == max_retries - 1:\n                raise  # Don't retry 4xx client errors\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            time.sleep(delay)\n\nresult = llm_with_retry(\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(result)`,tip:'Use full jitter (random between 0 and cap) not equal jitter — it prevents thundering herd when many clients retry simultaneously.'},
