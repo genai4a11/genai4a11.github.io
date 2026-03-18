@@ -272,6 +272,14 @@
       0%, 100% { filter: drop-shadow(0 0 8px rgba(52,211,153,0.6)); }
       50% { filter: drop-shadow(0 0 16px rgba(52,211,153,1)); }
     }
+    /* Search state */
+    .node-card.search-fade { opacity: 0.1; pointer-events: none; transition: opacity 0.15s; }
+    .node-card.search-match { opacity: 1; transition: opacity 0.15s; }
+    .node-card.search-match .node-rect { filter: drop-shadow(0 0 8px rgba(52,211,153,0.85)); }
+    #topbar-search { transition: border-color 0.2s, background 0.2s; }
+    #topbar-search.no-results { border-color: rgba(239,68,68,0.7) !important; background: rgba(239,68,68,0.08) !important; }
+    #topbar-search:focus { outline: none; border-color: rgba(255,255,255,0.3); }
+    #search-count { font-size: 11px; color: rgba(255,255,255,0.45); margin-left: 4px; white-space: nowrap; align-self: center; }
     /* ◆ indicator on nodes that have code / diagrams / tips */
     .rich-dot { font-size: 7px; color: rgba(56,189,248,0.85); pointer-events: none; animation: rich-pulse 2.8s ease-in-out infinite; }
     @keyframes rich-pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
@@ -303,7 +311,8 @@
   <canvas id="starfield"></canvas>
   <div id="topbar">
     <div id="topbar-title">🧠 GenAI Mindmap</div>
-    <input type="text" id="topbar-search" placeholder="Search nodes...">
+    <input type="text" id="topbar-search" placeholder="🔍 Search nodes..." autocomplete="off" spellcheck="false">
+    <span id="search-count"></span>
     <div class="topbar-btn-group">
       <button class="topbar-btn" id="btn-domains">[Clusters]</button>
       <button class="topbar-btn" id="btn-topics">[+Domains]</button>
@@ -337,33 +346,34 @@
     <div id="welcome-card">
       <div id="welcome-logo">🧠</div>
       <div id="welcome-title">GenAI Knowledge Map</div>
-      <div id="welcome-sub">200+ concepts from fundamentals to production systems</div>
+      <div id="welcome-sub">300+ concepts · from math foundations to production systems</div>
       <div id="welcome-steps">
         <div class="ws">
           <div class="ws-icon">👆</div>
           <div class="ws-head">Click any node</div>
-          <div class="ws-body">Opens code examples, diagrams, tips &amp; learning paths</div>
+          <div class="ws-body">Opens diagrams, copy-ready code snippets, tips and learning paths on the right</div>
         </div>
         <div class="ws">
           <div class="ws-icon">⊕</div>
           <div class="ws-head">Double-click to expand</div>
-          <div class="ws-body">Drills down to sub-topics and tools inside each domain</div>
+          <div class="ws-body">Drills into sub-topics and tools — use the toolbar to jump to any depth instantly</div>
         </div>
         <div class="ws">
           <div class="ws-icon">🔍</div>
-          <div class="ws-head">Search &amp; navigate</div>
-          <div class="ws-body">Type in the top bar · drag to pan · scroll to zoom</div>
+          <div class="ws-head">Search anything</div>
+          <div class="ws-body">Type in the search box to find any concept instantly — even ones hidden deep in the map</div>
         </div>
       </div>
       <button id="welcome-start">Start Exploring →</button>
-      <div id="welcome-footnote">Nodes marked ◆ have code examples you can copy</div>
+      <div id="welcome-footnote">Nodes marked ◆ have code &amp; diagrams · Work in progress — feedback welcome</div>
     </div>
   </div>
   <!-- Onboarding hint bar — must be in DOM before the script runs -->
   <div id="hint-bar">
-    <span>💡 <strong>Click</strong> any node — nodes marked <span style="color:#38bdf8">◆</span> have code &amp; diagrams
+    <span>💡 <strong>Click</strong> a node to open code &amp; diagrams <span style="color:#38bdf8">◆</span>
       <span class="hint-sep">·</span> <strong>Double-click</strong> to expand/collapse
-      <span class="hint-sep">·</span> <strong>Drag</strong> the panel edge to resize it</span>
+      <span class="hint-sep">·</span> <strong>Search</strong> any concept in the top bar
+      <span class="hint-sep">·</span> <strong>Drag</strong> the panel edge to resize</span>
     <button id="hint-close">Got it ✓</button>
   </div>
   <div id="panel">
@@ -2009,6 +2019,97 @@ ifs();ig();bl();rg();
   document.addEventListener('click',function onFirst(e){
     if(e.target.closest('.node-card')){dismiss();document.removeEventListener('click',onFirst,true)}
   },true);
+})();
+
+// ── SEARCH ───────────────────────────────────────────────────────────────────
+(function(){
+  const input   = document.getElementById('topbar-search');
+  const counter = document.getElementById('search-count');
+  let preSrch   = null; // snapshot of expansion state before search
+  let gaTimer   = null; // debounce GA4 event
+
+  function expandParents(nodeId){
+    let node = N.find(n=>n.id===nodeId);
+    while(node && node.p){
+      const parent = N.find(n=>n.id===node.p);
+      if(parent) parent.expanded=true;
+      node=parent;
+    }
+  }
+
+  function applyClasses(matchIds){
+    svg.selectAll('.node-card').each(function(d){
+      const el=d3.select(this);
+      const hit=matchIds.has(d.id);
+      el.classed('search-match', hit).classed('search-fade', !hit);
+    });
+  }
+
+  function clearSearch(){
+    input.classList.remove('no-results');
+    counter.textContent='';
+    // restore pre-search expansion state
+    if(preSrch){
+      N.forEach(n=>{ if(n.id in preSrch) n.expanded=preSrch[n.id]; });
+      preSrch=null;
+    }
+    rg();
+    svg.selectAll('.node-card').classed('search-match',false).classed('search-fade',false);
+  }
+
+  input.addEventListener('input',()=>{
+    const raw=input.value.trim().toLowerCase();
+
+    if(!raw){ clearSearch(); return; }
+
+    // snapshot expansion state once on first keypress
+    if(!preSrch){
+      preSrch=N.reduce((acc,n)=>{acc[n.id]=!!n.expanded;return acc;},{});
+    }
+
+    // find matches across ALL nodes (label, desc, category name)
+    const matches=N.filter(n=>{
+      if(n.g===0||n.meta) return false; // skip root & meta-clusters
+      const label=(n.label||'').toLowerCase();
+      const desc=(n.desc||'').toLowerCase();
+      const catName=(CATS[n.cat]?.n||'').toLowerCase();
+      return label.includes(raw)||desc.includes(raw)||catName.includes(raw);
+    });
+
+    if(matches.length===0){
+      input.classList.add('no-results');
+      counter.textContent='no results';
+      rg();
+      svg.selectAll('.node-card').classed('search-match',false).classed('search-fade',true);
+      return;
+    }
+
+    input.classList.remove('no-results');
+    counter.textContent=matches.length+' match'+(matches.length===1?'':'es');
+
+    // expand parent chains so every match is visible
+    matches.forEach(n=>expandParents(n.id));
+    rg(); // rebuild DOM with newly-visible nodes
+
+    // apply highlight / fade after DOM rebuild
+    const matchIds=new Set(matches.map(n=>n.id));
+    applyClasses(matchIds);
+
+    // GA4 — debounced so we don't spam on every keystroke
+    clearTimeout(gaTimer);
+    gaTimer=setTimeout(()=>{
+      if(typeof gtag==='function')
+        gtag('event','search',{search_term:raw,result_count:matches.length});
+    },800);
+  });
+
+  // Escape clears search
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){ input.value=''; clearSearch(); input.blur(); }
+  });
+
+  // Clicking anywhere on the graph while searching selects + opens panel normally
+  // (search-fade nodes have pointer-events:none so only matches are clickable)
 })();
   </script>
 </body>
