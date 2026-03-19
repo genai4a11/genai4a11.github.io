@@ -4470,9 +4470,14 @@ document.getElementById('btn-fit').addEventListener('click',()=>{
   if(!nodes.length||!zb)return;
   const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
   const mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
-  const pad=60,W=window.innerWidth,H=window.innerHeight-60;
+  const pad=60,H=window.innerHeight-60;
+  // subtract panel width if open so graph fits in the visible area
+  const panel=document.getElementById('panel');
+  const panelW=panel.classList.contains('open')?panel.offsetWidth:0;
+  const W=window.innerWidth-panelW;
   const sc=Math.min((W-pad*2)/(mxx-mnx||1),(H-pad*2)/(mxy-mny||1))*0.9;
-  const tx=W/2-(mnx+mxx)/2*sc,ty=H/2-(mny+mxy)/2*sc;
+  // centre within the visible area (left of panel), not the full window
+  const tx=(W/2)-(mnx+mxx)/2*sc,ty=H/2-(mny+mxy)/2*sc;
   // use stored zb — not a new d3.zoom() — so pan/scroll stays in sync
   svg.transition().duration(750).call(zb.transform,d3.zoomIdentity.translate(tx,ty).scale(sc));
 });
