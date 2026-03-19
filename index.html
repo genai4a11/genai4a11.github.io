@@ -1441,7 +1441,84 @@ print(ask("engineer", topic))
 print("--- Critic ---")
 print(ask("critic", "My plan: always use RAG, never fine-tune."))`,tip:'Combine role + audience: "You are a {expert} explaining to a {audience}." This single addition often doubles output quality because it sets both the knowledge level and the communication style simultaneously.'},
 prompt_caching:{use:'Reducing latency and cost when your prompt has a long shared prefix — system prompts, retrieved docs, few-shot examples.',diag:`  Standard API call:\n  ┌──────────────────────────────────────┐\n  │ [System prompt 2000 tokens]          │  \n  │ [Retrieved docs 5000 tokens]         │  Process ALL tokens\n  │ [User question 50 tokens]            │  every single call\n  └──────────────────────────────────────┘\n  Cost: 7050 tokens input\n\n  With Prompt Caching:\n  ┌──────────────────────────────────────┐\n  │ [System prompt 2000 tokens] ✓ cached │  0.1x cost\n  │ [Retrieved docs 5000 tokens] ✓ cached│  0.1x cost\n  │ [User question 50 tokens]    fresh   │  1x cost\n  └──────────────────────────────────────┘\n  Cost: 50 tokens (+ tiny cache read fee)`,code:`import anthropic\n\nclient = anthropic.Anthropic()\n\n# Long shared content (system prompt + docs)\nSYSTEM_DOCS = """You are an expert assistant.\n\"\"\" + ("documentation text " * 500)  # simulate 2000+ token prefix\n\n# First call — content is processed and cached automatically\nresp1 = client.messages.create(\n    model="claude-opus-4-6",\n    max_tokens=1024,\n    system=[\n        {\n            "type": "text",\n            "text": SYSTEM_DOCS,\n            "cache_control": {"type": "ephemeral"}  # mark for caching\n        }\n    ],\n    messages=[{"role": "user", "content": "What is RAG?"}]\n)\nprint("Cache write tokens:", resp1.usage.cache_creation_input_tokens)\n\n# Second call — prefix is served from cache (90% cheaper, 2x faster)\nresp2 = client.messages.create(\n    model="claude-opus-4-6",\n    max_tokens=1024,\n    system=[\n        {"type": "text", "text": SYSTEM_DOCS,\n         "cache_control": {"type": "ephemeral"}}\n    ],\n    messages=[{"role": "user", "content": "Explain vector search?"}]\n)\nprint("Cache read tokens:", resp2.usage.cache_read_input_tokens)`,tip:'Cache breakeven is ~2 requests for Anthropic (cache write costs 25% more, reads cost 90% less). For apps with 10+ users sharing the same system prompt, savings are massive.'},
-chunking:{use:'How you split documents is the single biggest lever on RAG quality — more impactful than your choice of vector DB or embedding model. Bad chunking silently degrades retrieval: the right content exists but is always cut at the wrong boundary.',diag:`  What type of content are you chunking?\n  │\n  ├─ Prose / articles / reports\n  │   └─ RecursiveCharacterTextSplitter\n  │       chunk_size=512, overlap=64\n  │       Splits on: paragraph → sentence → word\n  │\n  ├─ Structured docs (markdown, HTML, PDFs)\n  │   └─ Structure-aware splitter\n  │       MarkdownHeaderTextSplitter\n  │       Preserves heading hierarchy as metadata\n  │\n  ├─ Need precision AND rich context?\n  │   └─ Parent-child chunking\n  │       Small child (128 tok) → indexed for retrieval\n  │       Large parent (512 tok) → returned to LLM\n  │\n  └─ Long docs with cross-references (legal, technical)\n      └─ Late chunking\n          Embed full doc first, then chunk embeddings\n          Each chunk carries whole-document context\n\n  Rule: always attach metadata to every chunk\n  { source, page, section, chunk_index, doc_date }`,code:`# pip install langchain-text-splitters tiktoken\n\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\n\n# ── Strategy 1: Fixed-size (simplest baseline) ───────────────\ndef fixed_chunks(text: str, size: int = 512, overlap: int = 64) -> list[str]:\n    """Split on word boundaries with overlap. Fast, no dependencies."""\n    words = text.split()\n    chunks = []\n    for i in range(0, len(words), size - overlap):\n        chunks.append(" ".join(words[i:i + size]))\n    return chunks\n\n\n# ── Strategy 2: Recursive splitting (best default for prose) ──\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\n\nsplitter = RecursiveCharacterTextSplitter(\n    chunk_size=512,\n    chunk_overlap=64,\n    separators=["\\n\\n", "\\n", ". ", " ", ""],  # priority order\n)\n\ndef chunk_with_metadata(text: str, source: str) -> list[dict]:\n    """Always attach metadata — source, page, chunk index."""\n    chunks = splitter.create_documents([text])\n    return [\n        {\n            "text":        chunk.page_content,\n            "source":      source,\n            "chunk_index": i,\n            "char_count":  len(chunk.page_content),\n        }\n        for i, chunk in enumerate(chunks)\n    ]\n\ndocs = chunk_with_metadata("Your document text here...", "report_q3.pdf")\nprint(f"{len(docs)} chunks — first: {docs[0]}")\n\n\n# ── Strategy 2: Semantic chunking (topic-aware) ───────────────\nfrom sentence_transformers import SentenceTransformer\nimport numpy as np\n\ndef semantic_chunks(sentences: list[str], threshold: float = 0.8) -> list[str]:\n    model = SentenceTransformer("BAAI/bge-small-en-v1.5")\n    embs  = model.encode(sentences, normalize_embeddings=True)\n    chunks, current = [], [sentences[0]]\n    for i in range(1, len(sentences)):\n        sim = float(embs[i-1] @ embs[i])\n        if sim < threshold:   # topic shift → start new chunk\n            chunks.append(" ".join(current))\n            current = []\n        current.append(sentences[i])\n    if current:\n        chunks.append(" ".join(current))\n    return chunks\n\n\n# ── Strategy 3: Parent-child (production pattern) ────────────\nfrom langchain.retrievers import ParentDocumentRetriever\nfrom langchain_community.vectorstores import Chroma\nfrom langchain_openai import OpenAIEmbeddings\nfrom langchain.storage import InMemoryStore\n\nparent_splitter = RecursiveCharacterTextSplitter(chunk_size=1000)\nchild_splitter  = RecursiveCharacterTextSplitter(chunk_size=200)\n\nretriever = ParentDocumentRetriever(\n    vectorstore=Chroma(embedding_function=OpenAIEmbeddings()),\n    docstore=InMemoryStore(),          # swap for Redis in production\n    child_splitter=child_splitter,\n    parent_splitter=parent_splitter,\n)\n# Retrieves the small child chunk, returns the large parent to LLM`,tip:'Always attach metadata (source, page, section, chunk_index) to every chunk — without it you cannot filter, cite sources, or debug retrieval failures. For strategy: start with RecursiveCharacterTextSplitter (512 tokens, 64 overlap). Switch to parent-child when retrieved chunks lack context. Only add semantic splitting for heterogeneous corpora with sharp topic changes.'},
+chunking:{use:'How you split documents is the single biggest lever on RAG quality — more impactful than your choice of vector DB or embedding model. Bad chunking silently degrades retrieval: the right content exists but is always cut at the wrong boundary. There are now seven distinct strategies, ranging from zero-dependency fixed splitting to LLM-guided agentic boundary detection. Click each strategy node below to see code and full details.',diag:`  Strategy comparison — all 7 approaches
+  ──────────────────────────────────────────────────────────────────
+  Strategy          How it splits        Best for          Cost
+  ──────────────────────────────────────────────────────────────────
+  Fixed-size        Every N tokens       Baseline / any    ⬛ Lowest
+                    with overlap         content type
+
+  Sentence window   Sentence             Q&A over          ⬛ Low
+                    boundaries +         factual prose
+                    sliding window
+
+  Semantic          Cosine similarity    Mixed-topic       ⬛⬛ Medium
+                    drop between         docs, articles,
+                    sentences            Wikipedia
+
+  Parent-child      Two sizes: small     Production RAG    ⬛⬛ Medium
+                    for retrieval,       needing precision
+                    large for LLM        AND context
+
+  Late chunking     Embed full doc       Legal, technical, ⬛⬛ Medium
+                    first, then slice    docs with
+                    token embeddings     co-references
+
+  Proposition       LLM decomposes       Fact-heavy        ⬛⬛⬛ High
+                    into atomic          content, highest
+                    standalone facts     precision needed
+
+  Agentic           LLM reads + decides  Mixed-format      ⬛⬛⬛ Highest
+                    boundaries based     docs: tables +
+                    on content           code + prose
+  ──────────────────────────────────────────────────────────────────
+
+  Key principles (apply to ALL strategies):
+  ✓ Always attach metadata: source, page, section, chunk_index, date
+  ✓ Target 200–600 tokens per chunk — shorter loses context,
+    longer loses retrieval precision
+  ✓ Retrieve more (top-20), rerank down to top-5 before LLM
+  ✓ Measure retrieval precision@5 before changing strategy`,code:`# Decision guide — which strategy to start with?
+#
+# 1. Start here for any new project:
+#    RecursiveCharacterTextSplitter(chunk_size=512, overlap=64)
+#
+# 2. Retrieval feels "close but not quite"?
+#    → Add a reranker first (bigger win than changing chunks)
+#
+# 3. Chunks lack context when returned to LLM?
+#    → Switch to parent-child
+#
+# 4. Document has many co-references ("it", "they", "this result")?
+#    → Late chunking
+#
+# 5. Corpus has wildly different topics per section?
+#    → Semantic chunking
+#
+# 6. Need highest possible retrieval precision on factual content?
+#    → Proposition chunking (expensive — use Haiku to keep costs down)
+#
+# 7. Mixed format: tables + code + prose in same doc?
+#    → Agentic chunking
+
+# The one rule that applies to every strategy:
+from datetime import datetime
+
+def attach_metadata(chunks: list[str], source: str, page: int = 0) -> list[dict]:
+    """Always store metadata at chunk time — nearly impossible to add later."""
+    return [
+        {
+            "text":        chunk,
+            "source":      source,
+            "page":        page,
+            "chunk_index": i,
+            "chunk_total": len(chunks),
+            "ingested_at": datetime.utcnow().isoformat(),
+            "char_count":  len(chunk),
+        }
+        for i, chunk in enumerate(chunks)
+        if len(chunk) > 50  # skip tiny fragments
+    ]`,tip:'The order of improvements by ROI: (1) fix your chunking strategy, (2) add a reranker, (3) switch to hybrid search (dense + BM25). Most teams jump to (3) when (1) would have solved the problem. Start with fixed-size, measure precision@5 on 20 real queries, then decide if a different strategy is warranted. The metadata rule is universal — always store source, page, section, chunk_index, and ingested_at on every chunk regardless of which strategy you use.'},
 fixed_size:{use:'Fixed-size chunking splits text every N tokens with a small overlap between consecutive chunks. It is the fastest baseline — no ML models, no dependencies, works on any content type. It is the right starting point for every new RAG project because it is easy to debug and its failure modes are predictable.',diag:`  Document (1000 tokens)
   ──────────────────────────────────────────────────────────
   chunk_size=256, chunk_overlap=32
