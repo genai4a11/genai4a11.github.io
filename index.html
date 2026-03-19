@@ -94,9 +94,9 @@
     #arrowhead-x { fill: rgba(200,200,200,0.2); }
 
     #legend {
-      position: fixed; bottom: 20px; left: 20px; z-index: 25;
+      position: fixed; top: 70px; left: 20px; z-index: 25;
       background: rgba(4,12,28,0.95); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px; padding: 12px; min-width: 160px; max-height: 300px; overflow-y: auto;
+      border-radius: 8px; padding: 12px; min-width: 160px; max-height: calc(100vh - 120px); overflow-y: auto;
     }
     .legend-title { font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #a78bfa; }
     .legend-item {
@@ -235,7 +235,7 @@
     .path-note { font-size: 12px; color: #475569; line-height: 1.4; }
 
     #kb-hints {
-      position: fixed; bottom: 20px; left: 220px; z-index: 25;
+      position: fixed; bottom: 20px; left: 20px; z-index: 25;
       background: rgba(4,12,28,0.95); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px; padding: 12px; font-size: 11px; max-width: 200px;
     }
@@ -293,6 +293,22 @@
     /* ◆ indicator on nodes that have code / diagrams / tips */
     .rich-dot { font-size: 7px; color: rgba(56,189,248,0.85); pointer-events: none; animation: rich-pulse 2.8s ease-in-out infinite; }
     @keyframes rich-pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+    /* Context menu (right-click) */
+    #ctx-menu {
+      position: fixed; z-index: 1000; display: none;
+      background: rgba(10,18,38,0.98); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px; padding: 4px; min-width: 170px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    #ctx-menu.visible { display: block; }
+    .ctx-item {
+      padding: 8px 12px; font-size: 12px; color: #cbd5e1; cursor: pointer;
+      border-radius: 5px; display: flex; align-items: center; gap: 8px;
+      transition: background 0.15s;
+    }
+    .ctx-item:hover { background: rgba(167,139,250,0.15); color: #e2e8f0; }
+    .ctx-item .ctx-icon { font-size: 13px; width: 16px; text-align: center; }
+    .ctx-sep { height: 1px; background: rgba(255,255,255,0.07); margin: 3px 0; }
     /* Bottom onboarding hint bar */
     #hint-bar {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
@@ -350,7 +366,14 @@
   <div id="kb-hints">
     <div class="kb-hint"><strong>Click</strong> = select</div>
     <div class="kb-hint"><strong>Double-click</strong> = expand/collapse</div>
-    <div class="kb-hint"><strong>Right-click</strong> = context menu (edit mode)</div>
+    <div class="kb-hint"><strong>Right-click</strong> = context menu</div>
+  </div>
+  <!-- Right-click context menu -->
+  <div id="ctx-menu">
+    <div class="ctx-item" id="ctx-expand"><span class="ctx-icon">▸</span><span id="ctx-expand-label">Expand</span></div>
+    <div class="ctx-item" id="ctx-open"><span class="ctx-icon">◉</span>Open detail panel</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="ctx-copy"><span class="ctx-icon">⎘</span>Copy node name</div>
   </div>
   <!-- Welcome overlay (shown on first visit) -->
   <div id="welcome-overlay">
@@ -4315,8 +4338,24 @@ function bl(){
 let sim=null,svg,gc,tr=d3.zoomIdentity,zb=null;
 window._expandNode=function(nodeId){const node=N.find(n=>n.id===nodeId);if(!node)return;node.expanded=!node.expanded;if(typeof gtag==='function')gtag('event','node_expand',{node_id:node.id,node_label:node.label,action:node.expanded?'expand':'collapse'});rg();};
 document.addEventListener('click',function(e){const chip=e.target.closest?e.target.closest('.expand-chip'):null;if(!chip)return;const nodeId=chip.getAttribute('data-nodeid');if(!nodeId)return;e.stopPropagation();window._expandNode(nodeId);},true);
+// Context menu
+let _ctxNode=null;
+const ctxMenu=document.getElementById('ctx-menu');
+function showCtxMenu(e,d){
+  _ctxNode=d;
+  const hasChildren=N.filter(n=>n.p===d.id).length>0;
+  document.getElementById('ctx-expand').style.display=hasChildren?'flex':'none';
+  document.getElementById('ctx-expand-label').textContent=d.expanded?'Collapse':'Expand';
+  const x=Math.min(e.clientX,window.innerWidth-190),y=Math.min(e.clientY,window.innerHeight-140);
+  ctxMenu.style.left=x+'px';ctxMenu.style.top=y+'px';ctxMenu.classList.add('visible');
+}
+document.addEventListener('click',()=>ctxMenu.classList.remove('visible'));
+document.addEventListener('contextmenu',e=>{if(!e.target.closest('.node-card'))ctxMenu.classList.remove('visible');});
+document.getElementById('ctx-expand').addEventListener('click',()=>{if(_ctxNode){window._expandNode(_ctxNode.id);}ctxMenu.classList.remove('visible');});
+document.getElementById('ctx-open').addEventListener('click',()=>{if(_ctxNode){sn(_ctxNode);sp(_ctxNode);}ctxMenu.classList.remove('visible');});
+document.getElementById('ctx-copy').addEventListener('click',()=>{if(_ctxNode){navigator.clipboard?.writeText(_ctxNode.label).catch(()=>{});}ctxMenu.classList.remove('visible');});
 function ig(){gc=d3.select('#graph-container');svg=d3.select('#graph');const w=window.innerWidth,h=window.innerHeight-60;sim=d3.forceSimulation(N).force('link',d3.forceLink(X.map(l=>({source:N.find(n=>n.id===l.s),target:N.find(n=>n.id===l.t)}))).id(d=>d.id).distance(100).strength(0.3)).force('charge',d3.forceManyBody().strength(-500).distanceMax(500)).force('center',d3.forceCenter(w/2,h/2)).force('collide',d3.forceCollide(d=>(d.meta?155:SZ[Math.min(d.g,3)].w)/2+20)).on('tick',ug);svg.append('defs').html(`<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="rgba(255,255,255,0.15)"/></marker><marker id="arrowhead-x" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="rgba(200,200,200,0.2)"/></marker>`);svg.append('g').attr('class','links');svg.append('g').attr('class','nodes');zb=d3.zoom().on('zoom',e=>{tr=e.transform;svg.select('.links').attr('transform',tr);svg.select('.nodes').attr('transform',tr)});svg.call(zb);window.addEventListener('resize',()=>{sim.force('center',d3.forceCenter(window.innerWidth/2,(window.innerHeight-60)/2))})}
-function rg(){const vn=N.filter(n=>{if(n.g===0)return true;let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return false;if(!pn.expanded)return false;p=pn.p}return true});const vid=new Set(vn.map(n=>n.id)),vl=X.filter(l=>vid.has(l.s)&&vid.has(l.t)),ld=vl.map(l=>({source:N.find(n=>n.id===l.s),target:N.find(n=>n.id===l.t),xlink:true}));N.filter(n=>n.g>0).forEach(n=>{if(n.p){const pn=N.find(x=>x.id===n.p);if(pn&&vid.has(n.id)&&vid.has(pn.id))ld.push({source:pn,target:n,xlink:false})}});sim.nodes(vn);sim.force('link').links(ld);const lks=svg.select('.links').selectAll('.link').data(ld,(d,i)=>i);lks.exit().remove();lks.enter().append('line').attr('class',d=>`link ${d.xlink?'xlink':''}`).merge(lks);const ns=svg.select('.nodes').selectAll('.node-card').data(vn,d=>d.id);ns.exit().remove();const ne=ns.enter().append('g').attr('class',d=>`node-card ${d.id===s?.id?'selected':''}`).attr('data-id',d=>d.id).attr('data-g',d=>d.g).attr('data-meta',d=>d.meta?'true':null).on('click',(e,d)=>{e.stopPropagation();sn(d);sp(d)}).on('dblclick',(e,d)=>{e.stopPropagation();d.expanded=!d.expanded;if(typeof gtag==='function')gtag('event','node_expand',{node_id:d.id,node_label:d.label,action:d.expanded?'expand':'collapse'});rg()}).on('contextmenu',(e,d)=>{e.preventDefault();if(e)alert(`Context menu for ${d.label}`)}).call(d3.drag().on('start',dgs).on('drag',dg).on('end',dge));const sz=d=>d.meta?{w:155,h:62}:SZ[Math.min(d.g,3)];ne.append('title').text(d=>{const cc=N.filter(n=>n.p===d.id&&n.g<4).length;return cc>0?'Click ▸ chip to expand · Click node for details':'Click to open details'});ne.append('rect').attr('class','node-rect').attr('x',d=>-sz(d).w/2).attr('y',d=>-sz(d).h/2).attr('width',d=>sz(d).w).attr('height',d=>sz(d).h).attr('rx',4).attr('fill',d=>CATS[d.cat].c).attr('stroke',d=>CATS[d.cat].c);ne.append('foreignObject').attr('x',d=>-sz(d).w/2+4).attr('y',d=>-sz(d).h/2+4).attr('width',d=>sz(d).w-8).attr('height',d=>sz(d).h-8).append('xhtml:div').style('padding','4px').style('display','flex').style('flex-direction','column').style('align-items','center').style('justify-content','center').style('height','100%').style('text-align','center').html(d=>{let h=`<div class="node-label">${d.label}</div>`;if(d.meta){const cnt=N.filter(n=>n.p===d.id).length;h+=`<div class="node-category">${cnt} domains</div>`;}else if(d.g<=2)h+=`<div class="node-category">${CATS[d.cat].n}</div>`;const childCount=N.filter(n=>n.p===d.id&&n.g<4).length;if(childCount>0){const label=d.g===0||d.meta?`▸ ${childCount} domains`:d.g===1?`▸ ${childCount} topics`:`▸ ${childCount} tools`;h+=`<div class="expand-chip" data-nodeid="${d.id}">${label}</div>`;}if(d.code||d.diag||d.tip)h+=`<div class="rich-dot" title="Has code &amp; diagrams — click to explore">◆</div>`;return h});sim.alpha(1).restart()}
+function rg(){const vn=N.filter(n=>{if(n.g===0)return true;let p=n.p;while(p){const pn=N.find(x=>x.id===p);if(!pn)return false;if(!pn.expanded)return false;p=pn.p}return true});const vid=new Set(vn.map(n=>n.id)),vl=X.filter(l=>vid.has(l.s)&&vid.has(l.t)),ld=vl.map(l=>({source:N.find(n=>n.id===l.s),target:N.find(n=>n.id===l.t),xlink:true}));N.filter(n=>n.g>0).forEach(n=>{if(n.p){const pn=N.find(x=>x.id===n.p);if(pn&&vid.has(n.id)&&vid.has(pn.id))ld.push({source:pn,target:n,xlink:false})}});sim.nodes(vn);sim.force('link').links(ld);const lks=svg.select('.links').selectAll('.link').data(ld,(d,i)=>i);lks.exit().remove();lks.enter().append('line').attr('class',d=>`link ${d.xlink?'xlink':''}`).merge(lks);const ns=svg.select('.nodes').selectAll('.node-card').data(vn,d=>d.id);ns.exit().remove();const ne=ns.enter().append('g').attr('class',d=>`node-card ${d.id===s?.id?'selected':''}`).attr('data-id',d=>d.id).attr('data-g',d=>d.g).attr('data-meta',d=>d.meta?'true':null).on('click',(e,d)=>{e.stopPropagation();sn(d);sp(d)}).on('dblclick',(e,d)=>{e.stopPropagation();d.expanded=!d.expanded;if(typeof gtag==='function')gtag('event','node_expand',{node_id:d.id,node_label:d.label,action:d.expanded?'expand':'collapse'});rg()}).on('contextmenu',(e,d)=>{e.preventDefault();e.stopPropagation();showCtxMenu(e.sourceEvent||e,d);}).call(d3.drag().on('start',dgs).on('drag',dg).on('end',dge));const sz=d=>d.meta?{w:155,h:62}:SZ[Math.min(d.g,3)];ne.append('title').text(d=>{const cc=N.filter(n=>n.p===d.id&&n.g<4).length;return cc>0?'Click ▸ chip to expand · Click node for details':'Click to open details'});ne.append('rect').attr('class','node-rect').attr('x',d=>-sz(d).w/2).attr('y',d=>-sz(d).h/2).attr('width',d=>sz(d).w).attr('height',d=>sz(d).h).attr('rx',4).attr('fill',d=>CATS[d.cat].c).attr('stroke',d=>CATS[d.cat].c);ne.append('foreignObject').attr('x',d=>-sz(d).w/2+4).attr('y',d=>-sz(d).h/2+4).attr('width',d=>sz(d).w-8).attr('height',d=>sz(d).h-8).append('xhtml:div').style('padding','4px').style('display','flex').style('flex-direction','column').style('align-items','center').style('justify-content','center').style('height','100%').style('text-align','center').html(d=>{let h=`<div class="node-label">${d.label}</div>`;if(d.meta){const cnt=N.filter(n=>n.p===d.id).length;h+=`<div class="node-category">${cnt} domains</div>`;}else if(d.g<=2)h+=`<div class="node-category">${CATS[d.cat].n}</div>`;const childCount=N.filter(n=>n.p===d.id&&n.g<4).length;if(childCount>0){const label=d.g===0||d.meta?`▸ ${childCount} domains`:d.g===1?`▸ ${childCount} topics`:`▸ ${childCount} tools`;h+=`<div class="expand-chip" data-nodeid="${d.id}">${label}</div>`;}if(d.code||d.diag||d.tip)h+=`<div class="rich-dot" title="Has code &amp; diagrams — click to explore">◆</div>`;return h});sim.alpha(1).restart()}
 function ug(){svg.selectAll('.link').attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);svg.selectAll('.node-card').attr('transform',d=>`translate(${d.x},${d.y})`)}
 function dgs(e,d){if(!e.active)sim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y}
 function dg(e,d){d.fx=e.x;d.fy=e.y}
