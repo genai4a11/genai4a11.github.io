@@ -5109,21 +5109,30 @@ document.getElementById('panel-share').addEventListener('click',()=>{
 
 // ── DEEP LINK — open node from URL hash on page load ─────────────────────
 (function(){
+  const hashId=window.location.hash.replace('#','');
+  if(!hashId)return;
+  // shared link: skip the welcome overlay so the panel isn't buried behind it
+  const overlay=document.getElementById('welcome-overlay');
+  if(overlay){overlay.classList.add('hidden');}
+  try{localStorage.setItem('gmwelcome','1');}catch(e){}
+  // also hide the hint bar immediately
+  const hintBar=document.getElementById('hint-bar');
+  if(hintBar){hintBar.classList.add('hidden');}
+  try{localStorage.setItem('gmhint','1');}catch(e){}
   function expandParentsFor(nodeId){
     let node=N.find(n=>n.id===nodeId);
     while(node&&node.p){const par=N.find(n=>n.id===node.p);if(par)par.expanded=true;node=par;}
   }
-  function tryHash(){
-    const id=window.location.hash.replace('#','');
-    if(!id)return;
-    const d=N.find(n=>n.id===id);
+  function tryOpen(){
+    const d=N.find(n=>n.id===hashId);
     if(!d)return;
     expandParentsFor(d.id);
     rg();
-    setTimeout(()=>{sn(d);sp(d);},300);
+    // give the simulation a beat to re-layout after expanding parents
+    setTimeout(()=>{sn(d);sp(d);},400);
   }
-  // wait for simulation to place nodes before opening the panel
-  setTimeout(tryHash,600);
+  // wait for initial simulation warm-up, then open
+  setTimeout(tryOpen,800);
 })();
 
 // Welcome overlay — shown on first visit, auto-demo after dismiss
