@@ -1,151 +1,300 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-Y9590EJKQX');
-</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GenAI Knowledge Mindmap</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-  <link rel="stylesheet" href="styles.css">
+  <title>GenAI Mindmap — The GenAI Landscape, Structured</title>
+  <meta name="description" content="A visual knowledge system covering foundations, architectures, tooling, and production patterns across modern Generative AI. 337 concepts, 175 with code and diagrams.">
+  <meta property="og:title" content="GenAI Mindmap">
+  <meta property="og:description" content="The GenAI landscape — structured. 337 concepts from transformers to production systems.">
+  <meta property="og:url" content="https://genai4a11.github.io">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-Y9590EJKQX');</script>
+  <script>
+    // Redirect shared node links (e.g. ?node=dense_retrieval) straight to the map
+    (function() {
+      var qs = window.location.search;
+      var hash = window.location.hash;
+      if (qs || hash) { window.location.replace('map.html' + qs + hash); }
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:     #0b1120;
+      --bg2:    #111827;
+      --bg3:    #1e293b;
+      --border: rgba(148,163,184,0.12);
+      --purple: #a78bfa;
+      --purple2:#7c3aed;
+      --text:   #f1f5f9;
+      --muted:  #94a3b8;
+      --muted2: #64748b;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 56px; background: rgba(11,17,32,0.88); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .nav-brand { font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .nav-brand span { color: var(--purple); }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta { background: var(--purple2); color: #fff; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; text-decoration: none; transition: background 0.2s; }
+    .nav-cta:hover { background: #6d28d9; }
+
+    /* HERO */
+    .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 100px 1.5rem 80px; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(124,58,237,0.12) 0%, transparent 70%); pointer-events: none; }
+    .hero-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--purple); margin-bottom: 1.25rem; }
+    .hero h1 { font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 700; line-height: 1.15; color: var(--text); max-width: 760px; margin-bottom: 1.25rem; }
+    .hero h1 em { font-style: normal; color: var(--purple); }
+    .hero-pitch { font-size: clamp(1rem, 2.5vw, 1.15rem); color: var(--muted); max-width: 600px; margin-bottom: 2rem; }
+    .hero-stats { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2.5rem; }
+    .stat-pill { background: var(--bg3); border: 1px solid var(--border); border-radius: 999px; padding: 6px 16px; font-size: 13px; font-weight: 500; color: var(--text); }
+    .stat-pill b { color: var(--purple); }
+    .hero-cta { display: inline-flex; align-items: center; gap: 8px; background: var(--purple2); color: #fff; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; transition: background 0.2s, transform 0.15s; box-shadow: 0 0 32px rgba(124,58,237,0.35); }
+    .hero-cta:hover { background: #6d28d9; transform: translateY(-1px); }
+    .hero-cta svg { width: 18px; height: 18px; }
+
+    /* WHY STRIP */
+    .why-strip { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 2rem 1.5rem; text-align: center; }
+    .why-strip p { font-size: 1.05rem; color: var(--muted); max-width: 640px; margin: 0 auto; }
+    .why-strip p em { color: var(--text); font-style: normal; font-weight: 500; }
+
+    /* SECTIONS */
+    section { padding: 80px 1.5rem; max-width: 1100px; margin: 0 auto; }
+    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--purple); margin-bottom: 0.6rem; }
+    .section-title { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+    .section-sub { font-size: 0.95rem; color: var(--muted); max-width: 520px; margin-bottom: 2.5rem; }
+
+    /* CLUSTER CARDS */
+    .clusters { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .cluster-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: border-color 0.2s, transform 0.15s; }
+    .cluster-card:hover { border-color: rgba(167,139,250,0.4); transform: translateY(-2px); }
+    .cluster-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .cluster-name { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .cluster-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+    .cluster-desc { font-size: 0.88rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.5; }
+    .cluster-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cluster-tag { font-size: 11px; color: var(--muted2); background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; }
+    .badge-foundations { background: rgba(148,163,184,0.12); color: #94a3b8; }
+    .badge-building     { background: rgba(167,139,250,0.12); color: #a78bfa; }
+    .badge-production   { background: rgba(251,146,60,0.12);  color: #fb923c; }
+    .badge-governance   { background: rgba(244,114,182,0.12); color: #f472b6; }
+    .badge-applications { background: rgba(52,211,153,0.12);  color: #34d399; }
+
+    /* HOW TO USE */
+    .steps-wrap { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 1.5rem; }
+    .steps-inner { max-width: 1100px; margin: 0 auto; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
+    .step { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    .step-num { width: 32px; height: 32px; border-radius: 8px; background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.35); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 0.75rem; }
+    .step h3 { font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 0.35rem; }
+    .step p  { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .step-hint { margin-top: 1.75rem; text-align: center; font-size: 0.85rem; color: var(--muted2); }
+
+    /* WHO IT'S FOR */
+    .audience { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; }
+    .audience-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    .audience-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+    .audience-card h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem; }
+    .audience-card p  { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+
+    /* BOTTOM CTA */
+    .cta-strip { background: var(--bg2); border-top: 1px solid var(--border); padding: 72px 1.5rem; text-align: center; }
+    .cta-strip h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .cta-strip p  { font-size: 0.95rem; color: var(--muted); margin-bottom: 1.75rem; }
+    .cta-note { margin-top: 1.25rem; font-size: 12px; color: var(--muted2); }
+
+    /* FOOTER */
+    .footer-wrap { border-top: 1px solid var(--border); }
+    footer { padding: 2.5rem 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; }
+    .footer-brand { font-size: 14px; font-weight: 600; color: var(--text); }
+    .footer-brand span { color: var(--muted); font-weight: 400; font-size: 13px; }
+    .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--text); }
+    .footer-meta { font-size: 12px; color: var(--muted2); margin-top: 4px; }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+      footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
 </head>
 <body>
-  <canvas id="starfield"></canvas>
-  <div id="topbar">
-    <div id="topbar-title">🧠 GenAI Mindmap <span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);margin-left:8px;">by <a href="https://www.linkedin.com/in/deepakmehta79" target="_blank" style="color:rgba(167,139,250,0.7);text-decoration:none;" onmouseover="this.style.color='#a78bfa'" onmouseout="this.style.color='rgba(167,139,250,0.7)'">Deepak Mehta</a></span></div>
-    <input type="text" id="topbar-search" placeholder="🔍 Search nodes..." autocomplete="off" spellcheck="false">
-    <span id="search-count"></span>
-    <div class="topbar-btn-group">
-      <button class="topbar-btn" id="btn-domains">[Clusters]</button>
-      <button class="topbar-btn" id="btn-topics">[+Domains]</button>
-      <button class="topbar-btn" id="btn-tools">[+Topics]</button>
-      <button class="topbar-btn" id="btn-collapse">[+All]</button>
-      <button class="topbar-btn" id="btn-fit">[Fit]</button>
-      <button class="topbar-btn" id="btn-reset">[Reset]</button>
-    </div>
-    <div id="topbar-right">
-      <a href="https://github.com/genai4a11/genai4a11.github.io/issues/new?title=Feedback&body=%23%23+What+would+you+like+to+share%3F%0A%0A%3C!--+e.g.+missing+node%2C+wrong+content%2C+suggestion%2C+typo+--%3E%0A%0A" target="_blank" id="btn-feedback" class="topbar-btn">💬 Feedback</a>
-      <button class="topbar-btn" id="btn-edit">[✏ Edit]</button>
-      <button class="topbar-btn hidden" id="btn-add">[+ Node]</button>
-      <button class="topbar-btn hidden" id="btn-link">[⟶ Link]</button>
-      <button class="topbar-btn hidden" id="btn-export">[⬇ Export]</button>
-      <button class="topbar-btn hidden" id="btn-import">[⬆ Import]</button>
-    </div>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="/">🧠 <span>GenAI</span> Mindmap</a>
+  <div class="nav-links">
+    <a href="#inside">What's inside</a>
+    <a href="#how">How to use</a>
+    <a href="https://github.com/genai4a11/genai4a11.github.io" target="_blank">GitHub</a>
   </div>
-  <div id="graph-container">
-    <svg id="graph"></svg>
+  <a class="nav-cta" href="map.html">Open the Map →</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Visual Knowledge System</div>
+  <h1>The GenAI Landscape — <em>structured</em></h1>
+  <p class="hero-pitch">A visual knowledge system covering foundations, architectures, tooling, and production patterns across modern Generative AI.</p>
+  <div class="hero-stats">
+    <div class="stat-pill"><b>337</b> concepts</div>
+    <div class="stat-pill"><b>175</b> with code &amp; diagrams</div>
+    <div class="stat-pill"><b>5</b> clusters</div>
   </div>
-  <div id="legend">
-    <div class="legend-title">Clusters</div>
-    <div id="legend-items"></div>
-  </div>
-  <div id="kb-hints">
-    <div class="kb-hint"><strong>Click</strong> node = open detail panel</div>
-    <div class="kb-hint"><strong>Click ▸ N domains</strong> chip = expand node</div>
-    <div class="kb-hint"><strong>Double-click</strong> = expand/collapse</div>
-    <div class="kb-hint"><strong>Right-click</strong> = context menu</div>
-  </div>
-  <!-- Right-click context menu -->
-  <div id="ctx-menu">
-    <div class="ctx-item" id="ctx-expand"><span class="ctx-icon">▸</span><span id="ctx-expand-label">Expand</span></div>
-    <div class="ctx-item" id="ctx-open"><span class="ctx-icon">◉</span>Open detail panel</div>
-    <div class="ctx-sep"></div>
-    <div class="ctx-item" id="ctx-copy"><span class="ctx-icon">⎘</span>Copy node name</div>
-  </div>
-  <!-- Welcome overlay (shown on first visit) -->
-  <div id="welcome-overlay">
-    <div id="welcome-card">
-      <div id="welcome-logo">🧠</div>
-      <div id="welcome-title">GenAI Knowledge Map</div>
-      <div id="welcome-sub">300+ concepts · from math foundations to production systems</div>
-      <div id="welcome-steps">
-        <div class="ws">
-          <div class="ws-icon">👆</div>
-          <div class="ws-head">Click any node</div>
-          <div class="ws-body">Opens diagrams, copy-ready code snippets, tips and learning paths on the right</div>
-        </div>
-        <div class="ws">
-          <div class="ws-icon">⊕</div>
-          <div class="ws-head">Double-click to expand</div>
-          <div class="ws-body">Drills into sub-topics and tools — use the toolbar to jump to any depth instantly</div>
-        </div>
-        <div class="ws">
-          <div class="ws-icon">🔍</div>
-          <div class="ws-head">Search anything</div>
-          <div class="ws-body">Type in the search box to find any concept instantly — even ones hidden deep in the map</div>
-        </div>
+  <a class="hero-cta" href="map.html">
+    Open the Map
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+  </a>
+</div>
+
+<!-- WHY THIS EXISTS -->
+<div class="why-strip">
+  <p>Most GenAI content explains techniques in isolation. <em>This map shows how they connect into working systems.</em></p>
+</div>
+
+<!-- WHAT'S INSIDE -->
+<section id="inside">
+  <div class="section-label">What's inside</div>
+  <div class="section-title">Five clusters, 22 domains</div>
+  <p class="section-sub">From core theory to production deployment — every major area of the GenAI stack, organised by how they relate to each other.</p>
+  <div class="clusters">
+    <div class="cluster-card">
+      <div class="cluster-header">
+        <div class="cluster-name">Foundations</div>
+        <div class="cluster-badge badge-foundations">5 domains</div>
       </div>
-      <button id="welcome-start">Start Exploring →</button>
-      <div id="welcome-footnote">Nodes marked ◆ have code &amp; diagrams · Work in progress — feedback welcome</div>
-      <div style="margin-top:12px;font-size:12px;color:#475569;">Built by <a href="https://www.linkedin.com/in/deepakmehta79" target="_blank" style="color:#a78bfa;text-decoration:none;">Deepak Mehta</a> · <a href="https://github.com/genai4a11/genai4a11.github.io" target="_blank" style="color:#a78bfa;text-decoration:none;">Contribute on GitHub ↗</a></div>
+      <p class="cluster-desc">Core technical concepts that explain how models work — the theory behind the tools.</p>
+      <div class="cluster-tags">
+        <span class="cluster-tag">Transformers</span><span class="cluster-tag">Attention</span><span class="cluster-tag">Tokenization</span><span class="cluster-tag">Embeddings</span><span class="cluster-tag">Multimodal</span>
+      </div>
+    </div>
+    <div class="cluster-card">
+      <div class="cluster-header">
+        <div class="cluster-name">Building</div>
+        <div class="cluster-badge badge-building">6 domains</div>
+      </div>
+      <p class="cluster-desc">How GenAI applications are constructed in practice — prompting, retrieval, agents, and the tooling around them.</p>
+      <div class="cluster-tags">
+        <span class="cluster-tag">Prompting</span><span class="cluster-tag">RAG</span><span class="cluster-tag">Agents</span><span class="cluster-tag">Fine-tuning</span><span class="cluster-tag">Dev Tools</span><span class="cluster-tag">Data Engineering</span>
+      </div>
+    </div>
+    <div class="cluster-card">
+      <div class="cluster-header">
+        <div class="cluster-name">Production</div>
+        <div class="cluster-badge badge-production">3 domains</div>
+      </div>
+      <p class="cluster-desc">What is required to deploy and operate GenAI reliably at scale — infrastructure, patterns, and engineering practices.</p>
+      <div class="cluster-tags">
+        <span class="cluster-tag">Infrastructure</span><span class="cluster-tag">System Design</span><span class="cluster-tag">Observability</span><span class="cluster-tag">Evaluation pipelines</span>
+      </div>
+    </div>
+    <div class="cluster-card">
+      <div class="cluster-header">
+        <div class="cluster-name">Governance</div>
+        <div class="cluster-badge badge-governance">2 domains</div>
+      </div>
+      <p class="cluster-desc">How GenAI systems are evaluated, monitored, and controlled — quality, safety, and risk management.</p>
+      <div class="cluster-tags">
+        <span class="cluster-tag">Evaluation</span><span class="cluster-tag">Safety</span><span class="cluster-tag">Guardrails</span><span class="cluster-tag">Red-teaming</span>
+      </div>
+    </div>
+    <div class="cluster-card">
+      <div class="cluster-header">
+        <div class="cluster-name">Applications</div>
+        <div class="cluster-badge badge-applications">6 domains</div>
+      </div>
+      <p class="cluster-desc">Common patterns of real-world GenAI solutions — where the stack lands in production.</p>
+      <div class="cluster-tags">
+        <span class="cluster-tag">RAG Systems</span><span class="cluster-tag">Code Assistants</span><span class="cluster-tag">Structured Outputs</span><span class="cluster-tag">Document AI</span><span class="cluster-tag">Voice Agents</span>
+      </div>
     </div>
   </div>
-  <div class="share-toast" id="share-toast">🔗 Link copied!</div>
-  <!-- Onboarding hint bar — must be in DOM before the script runs -->
-  <div id="hint-bar">
-    <span>💡 <strong>Click</strong> a node to open code &amp; diagrams <span style="color:#38bdf8">◆</span>
-      <span class="hint-sep">·</span> <strong>Double-click</strong> to expand/collapse
-      <span class="hint-sep">·</span> <strong>Search</strong> any concept in the top bar
-      <span class="hint-sep">·</span> <strong>Drag</strong> the panel edge to resize</span>
-    <button id="hint-close">Got it ✓</button>
+</section>
+
+<!-- HOW TO USE -->
+<div class="steps-wrap" id="how">
+  <div class="steps-inner">
+    <div class="section-label">How to use</div>
+    <div class="section-title">Designed for both learning and reference</div>
+    <p class="section-sub">Explore in any order — follow a structured path or jump directly to what you need.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Click a node</h3>
+        <p>Opens an explanation, diagram, copy-ready code example, and learning path in the side panel.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Double-click to expand</h3>
+        <p>Drills into a cluster to reveal sub-topics and tools. Use the toolbar to jump to any depth instantly.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Search any concept</h3>
+        <p>Type in the search bar to jump directly to any topic — even ones hidden deep inside a cluster.</p>
+      </div>
+    </div>
+    <p class="step-hint">Nodes marked ◆ include code examples and diagrams.</p>
   </div>
-  <div id="panel">
-    <div id="panel-resize" title="Drag to resize"></div>
-    <button id="panel-focus" title="Focus mode — expand to full screen">⛶</button>
-    <button id="panel-share" title="Copy link to this node">🔗</button>
-    <button id="panel-close">✕</button>
-    <div id="panel-breadcrumb"></div>
-    <button id="panel-back">← Back</button>
-    <div id="panel-depth-label">SELECTED NODE</div>
-    <div class="panel-cat-badge" id="panel-cat"></div>
-    <h2 class="panel-title" id="panel-title"></h2>
-    <p class="panel-desc" id="panel-desc"></p>
-    <div class="panel-section" id="ps-why" style="display:none;">
-      <div class="panel-section-title">Why it matters</div>
-      <div id="ps-why-text"></div>
+</div>
+
+<!-- WHO IT'S FOR -->
+<section id="who">
+  <div class="section-label">Who this is for</div>
+  <div class="section-title">Three kinds of readers</div>
+  <p class="section-sub"></p>
+  <div class="audience">
+    <div class="audience-card">
+      <div class="audience-icon">⚙️</div>
+      <h3>Engineers</h3>
+      <p>Understand architectures, tooling choices, and implementation patterns across the full GenAI stack.</p>
     </div>
-    <div class="panel-section" id="ps-diag" style="display:none;">
-      <div class="panel-section-title">How it works</div>
-      <pre class="diag-block" id="diag-block"></pre>
+    <div class="audience-card">
+      <div class="audience-icon">📖</div>
+      <h3>Learners</h3>
+      <p>Build structured understanding from fundamentals to real-world systems — with code and diagrams on every key concept.</p>
     </div>
-    <div class="panel-section" id="ps-learn" style="display:none;">
-      <div class="panel-section-title">What to learn</div>
-      <div class="panel-pills" id="ps-learn-pills"></div>
-    </div>
-    <div class="panel-section" id="ps-tools-sec" style="display:none;">
-      <div class="panel-section-title">Key tools</div>
-      <div class="panel-pills" id="ps-tools-pills"></div>
-    </div>
-    <div class="panel-section" id="ps-code" style="display:none;">
-      <div class="panel-section-title">Python Example <button class="copy-btn" id="copy-code-btn" title="Copy clean code to clipboard">📋 copy</button></div>
-      <pre class="code-block" id="code-block"></pre>
-    </div>
-    <div class="panel-section" id="ps-tip" style="display:none;">
-      <div class="panel-section-title">💡 Pro tip</div>
-      <div id="ps-tip-text"></div>
-    </div>
-    <div class="panel-section" id="ps-refs" style="display:none;">
-      <div class="panel-section-title">📖 Further reading</div>
-      <div id="ps-refs-list"></div>
-    </div>
-    <div class="panel-section" id="ps-links" style="display:none;">
-      <div class="panel-section-title">Connected topics</div>
-      <div class="panel-pills" id="panel-links"></div>
+    <div class="audience-card">
+      <div class="audience-icon">🧭</div>
+      <h3>Product &amp; Leaders</h3>
+      <p>Understand the landscape, terminology, and system trade-offs when working with GenAI teams.</p>
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-  <script src="data/cats.js"></script>
-  <script src="data/nodes.js"></script>
-  <script src="data/snippets.js"></script>
-  <script src="data/paths.js"></script>
-  <script src="data/edges.js"></script>
-  <script src="app.js"></script>
+</section>
+
+<!-- BOTTOM CTA -->
+<div class="cta-strip">
+  <h2>Ready to explore?</h2>
+  <p>Start from any concept — or use the search to go directly to what matters to you.</p>
+  <a class="hero-cta" href="map.html">
+    Open the Map
+    <svg viewBox="0 0 20 20" fill="currentColor" style="width:18px;height:18px;"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+  </a>
+  <p class="cta-note">Open source · MIT License · Work in progress</p>
+</div>
+
+<!-- FOOTER -->
+<div class="footer-wrap">
+  <footer>
+    <div>
+      <div class="footer-brand">GenAI Mindmap <span>— built by <a href="https://www.linkedin.com/in/deepakmehta79" target="_blank" style="color:var(--purple);text-decoration:none;">Deepak Mehta</a></span></div>
+      <div class="footer-meta">MIT License · Open source and continuously evolving · v0.1</div>
+    </div>
+    <div class="footer-links">
+      <a href="map.html">Open Map</a>
+      <a href="https://github.com/genai4a11/genai4a11.github.io" target="_blank">GitHub →</a>
+      <a href="https://github.com/genai4a11/genai4a11.github.io/issues" target="_blank">Feedback →</a>
+    </div>
+  </footer>
+</div>
+
 </body>
 </html>
