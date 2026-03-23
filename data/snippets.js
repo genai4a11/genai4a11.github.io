@@ -3671,7 +3671,7 @@ session_state:{use:'Stateless API servers cannot hold conversation history in me
 approval_gate:{use:'Before an agent takes an irreversible action — sending an email, charging a card, deleting a record — pause and require human confirmation.',diag:`  Agent decides to take action\n            │\n  ┌─────────▼──────────────────┐\n  │  Is action reversible?     │\n  └─────────┬──────────────────┘\n      yes   │   no\n       │    │\n       │    ▼\n       │  ┌─────────────────────────┐\n       │  │  Create approval request │\n       │  │  Notify human reviewer   │\n       │  └──────────┬──────────────┘\n       │             │\n       │    ┌────────┴────────┐\n       │  approve          reject\n       │    │                │\n       │    ▼                ▼\n       │  proceed        abort / log\n       │    │\n       └────┴──► continue agent`,code:`from openai import OpenAI\nfrom pydantic import BaseModel\nfrom enum import Enum\nimport uuid, time\n\nclient = OpenAI()\n\nclass ActionType(str, Enum):\n    REVERSIBLE = "reversible"\n    IRREVERSIBLE = "irreversible"\n\nclass PendingApproval(BaseModel):\n    approval_id: str\n    action: str\n    details: dict\n    status: str = "pending"  # pending | approved | rejected\n\n# In production: store in DB and notify via Slack/email\nAPPROVAL_STORE: dict[str, PendingApproval] = {}\n\ndef request_approval(action: str, details: dict) -> str:\n    """Pause execution and request human sign-off."""\n    approval_id = str(uuid.uuid4())[:8]\n    APPROVAL_STORE[approval_id] = PendingApproval(\n        approval_id=approval_id,\n        action=action,\n        details=details\n    )\n    # In production: send Slack message / email here\n    print(f"[APPROVAL REQUIRED] id={approval_id}")\n    print(f"Action: {action}")\n    print(f"Details: {details}")\n    return approval_id\n\ndef wait_for_approval(approval_id: str,\n                      timeout_s: int = 300) -> bool:\n    """Poll until approved, rejected, or timeout."""\n    start = time.time()\n    while time.time() - start < timeout_s:\n        approval = APPROVAL_STORE.get(approval_id)\n        if approval and approval.status == "approved":\n            return True\n        if approval and approval.status == "rejected":\n            return False\n        time.sleep(2)\n    raise TimeoutError(f"Approval {approval_id} timed out")\n\ndef execute_with_gate(action: str, details: dict,\n                      action_type: ActionType) -> bool:\n    if action_type == ActionType.REVERSIBLE:\n        print(f"Executing directly: {action}")\n        return True\n    aid = request_approval(action, details)\n    # Simulate human approval for demo\n    APPROVAL_STORE[aid].status = "approved"\n    return wait_for_approval(aid)`,tip:'Send approval requests to Slack with approve/reject buttons using Block Kit. Set a timeout so stalled agents don\'t block indefinitely.'},
 // ── GOVERNANCE RICH ENTRIES ───────────────────────────────────────────────
 meta_governance:{use:'You\'re building or operating a GenAI system and need to know two things: does it work, and can it cause harm. Those are separate questions that need separate tools.',diag:`  ┌─────────────────────────────┐  ┌─────────────────────────────┐\n  │        EVALUATION           │  │          SAFETY             │\n  │    "Does it work?"          │  │   "Can it cause harm?"      │\n  ├─────────────────────────────┤  ├─────────────────────────────┤\n  │ Does the model know enough  │  │ Can a user manipulate it    │\n  │ for my domain?              │  │ into ignoring my rules?     │\n  │                             │  │                             │\n  │ Is it retrieving the right  │  │ Could my agent take an      │\n  │ chunks?                     │  │ action I didn't intend?     │\n  │                             │  │                             │\n  │ Is it hallucinating?        │  │ Is it leaking private or    │\n  │                             │  │ sensitive data?             │\n  │ Is the answer relevant to   │  │                             │\n  │ what was asked?             │  │ Does it behave the same     │\n  │                             │  │ for all user groups?        │\n  │ Has quality changed since   │  │                             │\n  │ last week?                  │  │ What if a tool returns      │\n  │                             │  │ malicious content to        │\n  │ How does my model compare   │  │ my agent?                   │\n  │ to the alternatives?        │  │                             │\n  └─────────────────────────────┘  └─────────────────────────────┘\n\n  Key difference:\n  Evaluation = measuring quality on normal inputs\n  Safety     = probing behaviour on adversarial / edge inputs`,tip:'Start with Evaluation — if your system doesn\'t work in the first place, safety is a secondary concern. Once you have a quality baseline, run red-teaming and add guardrails before any public launch. You need both, but in that order.'},
-eval:{use:'You can\'t improve what you don\'t measure. Evaluation tells you if your model knows enough, if your RAG is retrieving the right chunks, and whether quality has quietly degraded since last week — before your users notice.',diag:`  BEFORE DEPLOYMENT\n  ────────────────────────────────────────────────────────────────────\n  ┌──────────────────────────────────────┬─────────────────────────────────┐\n  │ 1. Offline benchmarks                │  Standardised question          │\n  │    MMLU, HumanEval, MT-Bench         │              ↓                  │\n  │    → Compare models on               │          Your model             │\n  │      standardised tasks              │              ↓                  │\n  │    → Tests the model in general,     │            Answer               │\n  │      not your use case               │              ↓                  │\n  │                                      │  Compare to correct answer      │\n  │                                      │              ↓                  │\n  │                                      │  % correct across 1000s         │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 2. Golden dataset eval               │  Your question + expected       │\n  │    Questions from your domain,       │              ↓                  │\n  │    scored by LLM judge               │         Your LLM app            │\n  │    → Only you know what correct      │              ↓                  │\n  │      looks like for your app         │           Response              │\n  │    → Re-run every time you change    │              ↓                  │\n  │      a model or prompt               │  Judge LLM (GPT-4o / Claude)    │\n  │                                      │              ↓                  │\n  │                                      │  ✓ match  or  ✗ mismatch        │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 3. RAG pipeline eval                 │  Question + retrieved chunks    │\n  │    RAGAS, TruLens, DeepEval          │              ↓                  │\n  │    → Faithfulness: did the model     │  RAGAS / TruLens / DeepEval     │\n  │      make things up?                 │              ↓                  │\n  │    → Relevance: does it address      │  Made things up?                │\n  │      the question?                   │  On topic?                      │\n  │    → Groundedness: can every claim   │  Claims traceable?              │\n  │      be traced to the source?        │                                 │\n  ├──────────────────────────────────────┴─────────────────────────────────┤\n  │  AFTER DEPLOYMENT                                                       │\n  ├──────────────────────────────────────┬─────────────────────────────────┤\n  │ 4. Production monitoring             │  Every live LLM call            │\n  │    Langfuse, LangSmith, W&B Weave    │              ↓                  │\n  │    → Latency: how long each LLM      │  Langfuse / LangSmith / W&B     │\n  │      call takes (P50/P95)            │              ↓                  │\n  │    → Cost: token spend per           │  Latency: P50/P95               │\n  │      user / per session              │  Cost: per user/session         │\n  │    → Quality: sample live responses  │  Quality: LLM judge             │\n  │      with an LLM judge               │              ↓                  │\n  │                                      │  Dashboard + alerts             │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 5. Online eval                       │  5-10% of requests sampled      │\n  │    5-10% of real requests scored     │              ↓                  │\n  │    by a judge LLM in the background  │  Question + context + response  │\n  │    — no known correct answer needed. │              ↓                  │\n  │    The judge checks faithfulness     │  Judge LLM (background)         │\n  │    and relevance from question +     │              ↓                  │\n  │    context + response.               │  Faithful? Relevant?            │\n  │    A sustained score drop is your    │              ↓                  │\n  │    early warning signal.             │  Track score over time →        │\n  │                                      │  alert on drop                  │\n  └──────────────────────────────────────┴─────────────────────────────────┘`,tip:'Build your golden evaluation set from day 1. Start with 20-30 representative questions and expected answers. This investment pays back every time you swap models, update prompts, or add new features — run the golden set and know immediately if you broke something.',refs:[{label:'Building Golden Datasets — reference guide',url:'concepts/golden-datasets.html'}]},
+eval:{use:'You can\'t improve what you don\'t measure. Evaluation tells you if your model knows enough, if your RAG is retrieving the right chunks, and whether quality has quietly degraded since last week — before your users notice.',diag:`  BEFORE DEPLOYMENT\n  ────────────────────────────────────────────────────────────────────\n  ┌──────────────────────────────────────┬─────────────────────────────────┐\n  │ 1. Offline benchmarks                │  Standardised question          │\n  │    MMLU, HumanEval, MT-Bench         │              ↓                  │\n  │    → Compare models on               │          Your model             │\n  │      standardised tasks              │              ↓                  │\n  │    → Tests the model in general,     │            Answer               │\n  │      not your use case               │              ↓                  │\n  │                                      │  Compare to correct answer      │\n  │                                      │              ↓                  │\n  │                                      │  % correct across 1000s         │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 2. Golden dataset eval               │  Your question + expected       │\n  │    Questions from your domain,       │              ↓                  │\n  │    scored by LLM judge               │         Your LLM app            │\n  │    → Only you know what correct      │              ↓                  │\n  │      looks like for your app         │           Response              │\n  │    → Re-run every time you change    │              ↓                  │\n  │      a model or prompt               │  Judge LLM (GPT-4o / Claude)    │\n  │                                      │              ↓                  │\n  │                                      │  ✓ match  or  ✗ mismatch        │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 3. RAG pipeline eval                 │  Question + retrieved chunks    │\n  │    RAGAS, TruLens, DeepEval          │              ↓                  │\n  │    → Faithfulness: did the model     │  RAGAS / TruLens / DeepEval     │\n  │      make things up?                 │              ↓                  │\n  │    → Relevance: does it address      │  Made things up?                │\n  │      the question?                   │  On topic?                      │\n  │    → Groundedness: can every claim   │  Claims traceable?              │\n  │      be traced to the source?        │                                 │\n  ├──────────────────────────────────────┴─────────────────────────────────┤\n  │  AFTER DEPLOYMENT                                                       │\n  ├──────────────────────────────────────┬─────────────────────────────────┤\n  │ 4. Production monitoring             │  Every live LLM call            │\n  │    Langfuse, LangSmith, W&B Weave    │              ↓                  │\n  │    → Latency: how long each LLM      │  Langfuse / LangSmith / W&B     │\n  │      call takes (P50/P95)            │              ↓                  │\n  │    → Cost: token spend per           │  Latency: P50/P95               │\n  │      user / per session              │  Cost: per user/session         │\n  │    → Quality: sample live responses  │  Quality: LLM judge             │\n  │      with an LLM judge               │              ↓                  │\n  │                                      │  Dashboard + alerts             │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 5. Online eval                       │  5-10% of requests sampled      │\n  │    5-10% of real requests scored     │              ↓                  │\n  │    by a judge LLM in the background  │  Question + context + response  │\n  │    — no known correct answer needed. │              ↓                  │\n  │    The judge checks faithfulness     │  Judge LLM (background)         │\n  │    and relevance from question +     │              ↓                  │\n  │    context + response.               │  Faithful? Relevant?            │\n  │    A sustained score drop is your    │              ↓                  │\n  │    early warning signal.             │  Track score over time →        │\n  │                                      │  alert on drop                  │\n  └──────────────────────────────────────┴─────────────────────────────────┘`,tip:'Build your golden evaluation set from day 1. Start with 20-30 representative questions and expected answers. This investment pays back every time you swap models, update prompts, or add new features — run the golden set and know immediately if you broke something.',refs:[{label:'Building Golden Datasets — reference guide',url:'concepts/golden-datasets.html'}],questions:{leader:['Is RAG the right architecture or would fine-tuning serve better — what is the decision threshold?','What is the ongoing cost (embedding, storage, retrieval) as the knowledge base scales?','Which vendor or OSS stack owns this, and what is the migration risk?'],pm:['How do I measure retrieval quality vs. generation quality separately?','When does RAG fail users, and how do I detect those failures before they reach production?','How do I spec chunk size and freshness requirements so engineering has clear acceptance criteria?'],eng:['How do I tune chunk size and embedding model together without exhaustive grid search?','How do I debug hallucinations — is the problem in retrieval, the prompt, or the model?','What reranking strategy gives the best accuracy-to-latency tradeoff at my data size?'],questions:{leader:['What is the cost and latency profile of multi-step agentic workflows at production scale?','Where are the failure modes that create silent business risk — what can go wrong undetected?','Build vs. buy: when does a managed agent platform beat building in-house?'],pm:['How do I define a clear, measurable success criterion before adding more agent autonomy?','When should the agent fail gracefully vs. escalate to a human — who decides and how?','How do I scope a safe MVP that is genuinely useful before unlocking more capabilities?'],eng:['How do I make tool calls reliable and idempotent so retries are safe?','How do I handle partial pipeline failures without losing intermediate state?','What tracing and observability do I need to debug agent runs in production?'],questions:{leader:['When is fine-tuning worth the compute cost over prompting or RAG — what is the threshold?','Who owns the training data and resulting model weights — what are the IP implications?','How often will retraining be needed as the domain evolves?'],pm:['How do I measure whether fine-tuning improved task performance vs. the prompted baseline?','What production data do we need to collect to build a training set — and how much is enough?','What is the latency and cost difference vs. a prompted frontier model serving the same use case?'],eng:['How do I prevent catastrophic forgetting of general capability while specialising on domain data?','What LoRA rank and learning rate should I use for my dataset size without full sweeps?','How do I validate that the fine-tuned model has not learned spurious correlations from noisy labels?'],questions:{leader:['What is the total cost of ownership — GPU hours, storage, serving, and ops overhead?','Owned hardware vs. cloud VMs vs. managed inference API — what is the lock-in risk?','What are our SLAs for latency and availability, and what does it cost to meet them at scale?'],pm:['What p50 and p99 latency is acceptable for this user experience, and how do we measure it?','How do we handle model versioning and rollbacks without downtime?','What usage and cost dashboards do teams need to make infra investment decisions?'],eng:['How do I pick batch size and replica count to hit target cost-per-token?','What KV cache strategy gives the best throughput for our request mix (short vs. long prompts)?','How do I set up autoscaling so the service self-heals under traffic spikes?'],questions:{leader:['How does this GenAI system degrade gracefully when a model provider has an outage?','What is the fallback strategy — rule-based response, cached answer, or human escalation?','How do we ensure the architecture avoids a single point of failure for the business?'],pm:['How do I spec caching and fallback behaviour in the PRD so users have a clear degraded experience?','What does the product look like when the AI component is unavailable — is there a useful fallback?','How do I communicate system constraints to stakeholders who only see the product surface?'],eng:['Where does caching live — embedding layer, prompt layer, or response layer?','How do I design the system so I can swap the underlying model without re-architecting?','What is the right async vs. sync boundary for long-running inference requests?'],questions:{leader:['How much of the model quality problem is a data problem vs. a model problem — how do we know?','Who owns data quality: engineering, data science, or a dedicated team?','What is the cost of data curation at the scale we need, and is it one-time or ongoing?'],pm:['How do I specify data quality requirements so engineers know what is good enough to ship?','What data flywheel can we build — how does user feedback improve training data over time?','How do I prioritise which data gaps to close first based on observed model failure modes?'],eng:['How do I balance deduplication aggressiveness vs. data volume — when does over-dedup hurt model recall?','What perplexity threshold should I use for quality filtering and how do I calibrate it for my domain?','How do I version and lineage-track datasets so I can reproduce any model checkpoint?']}}}}}}},
 safety:{use:'Making sure your LLM application does not cause harm — to users, to your company, or to third parties. Safety is an engineering discipline, not just a content policy.',diag:`  Safety is multi-layered:\n\n  Alignment layer (model training):\n  Constitutional AI, RLHF, instruction tuning\n  → The model\'s base disposition toward safety\n  → You inherit this from your model provider\n\n  Application layer (your code):\n  Input guards  — catch bad inputs before LLM\n  Output guards — catch bad outputs after LLM\n  Privilege separation — limit what agents can do\n  HITL — require human approval for risky actions\n\n  Red team layer (adversarial testing):\n  Find the gaps before attackers do\n  Automated (Garak, PyRIT) + manual expert review\n\n  Safety failure modes:\n  ┌──────────────────┬──────────────────────────┐\n  │  Failure         │  Mitigation              │\n  ├──────────────────┼──────────────────────────┤\n  │  Jailbreak       │  Llama Guard + RLHF      │\n  │  Prompt inject.  │  Privilege separation    │\n  │  Hallucination   │  RAG + groundedness eval │\n  │  PII leakage     │  Presidio output filter  │\n  │  Bias            │  Diverse eval + RLAIF    │\n  └──────────────────┴──────────────────────────┘`,tip:'Safety must be designed in from the start — bolting it on later is 10× harder. The minimum viable safety stack for a customer-facing LLM app: (1) Llama Guard on input/output, (2) privilege-separated tool use, (3) no PII in prompts via Presidio, (4) red team before launch with 50+ adversarial cases. Then monitor with an online eval sample.'},
 benchmarks:{use:'Comparing models objectively before picking one for your use case — benchmarks give you a standardised score on knowledge, reasoning, and coding so you are not relying on vibes.',diag:`  Model selection workflow:\n\n  Question: "Which model should I use for my legal QA app?"\n\n  ┌─────────────────┬──────────┬───────────┬──────────┐\n  │  Benchmark      │ GPT-4o   │ Claude 3.5│ Llama 3  │\n  │                 │          │ Sonnet    │ 70B      │\n  ├─────────────────┼──────────┼───────────┼──────────┤\n  │  MMLU (know.)   │  88.7%   │  88.3%    │  82.0%   │\n  │  HumanEval (code)│  90.2%  │  92.0%    │  81.7%   │\n  │  MT-Bench       │  9.0/10  │  9.0/10   │  8.2/10  │\n  │  Chatbot Arena  │  #2 Elo  │  #1 Elo   │  #5 Elo  │\n  └─────────────────┴──────────┴───────────┴──────────┘\n\n  → For legal QA: instruction following (MT-Bench) + knowledge (MMLU)\n  → Always check the leaderboard date — it moves weekly`,code:`# Benchmark leaderboards to check before choosing a model\n# No pip install needed — these are web resources\n\nbenchmark_resources = {\n    "MMLU": "https://paperswithcode.com/sota/multi-task-language-understanding-on-mmlu",\n    "HumanEval": "https://paperswithcode.com/sota/code-generation-on-humaneval",\n    "MT-Bench": "https://huggingface.co/spaces/lmsys/mt-bench",\n    "Chatbot Arena": "https://leaderboard.lmsys.org",\n    "OpenLLM Leaderboard": "https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard"\n}\n\n# Programmatic access via lm-eval-harness (Eleuther AI)\n# pip install lm-eval\n# lm_eval --model hf \\\n#   --model_args pretrained=meta-llama/Meta-Llama-3-8B-Instruct \\\n#   --tasks mmlu,hellaswag,arc_challenge \\\n#   --device cuda:0 --batch_size 8\n\nimport subprocess\n\ndef run_evals(model_name: str, tasks: list[str]) -> None:\n    """Run standard benchmarks via lm-eval-harness."""\n    task_str = ",".join(tasks)\n    cmd = [\n        "lm_eval", "--model", "hf",\n        "--model_args", f"pretrained={model_name}",\n        "--tasks", task_str,\n        "--device", "cuda:0",\n        "--batch_size", "8",\n        "--output_path", "./eval_results"\n    ]\n    print(f"Running evals: {task_str} on {model_name}")\n    subprocess.run(cmd, check=True)\n\n# run_evals("meta-llama/Meta-Llama-3-8B-Instruct",\n#           ["mmlu", "hellaswag", "arc_challenge"])`,tip:'Never pick a model based on a single benchmark. Check at least: knowledge (MMLU), instruction following (MT-Bench), and task-specific performance (HumanEval for code, MATH for maths). Chatbot Arena Elo is the most reliable signal for chat quality because it is based on real human preferences, not academic prompts.'},
 mmlu:{use:'Checking whether a model has broad factual knowledge before deploying it for knowledge-intensive tasks — law, medicine, finance, science.',diag:`  MMLU = Massive Multitask Language Understanding\n  (Hendrycks et al., 2020)\n\n  57 subjects across 4 categories:\n\n  STEM           Humanities       Social Science   Other\n  ────────────   ──────────────   ──────────────   ─────────────\n  Mathematics    History          Economics        Nutrition\n  Physics        Philosophy       Sociology        Clinical Med\n  Chemistry      Law              Psychology       World Reli.\n  Biology        Morality         Geography        Global Facts\n  Computer Sci.  \n\n  Format: 4-choice multiple choice\n  Example:\n  Q: "A transformer uses self-attention to..."\n  A) Learn positional encoding  B) Reduce vocabulary size\n  C) Relate all token positions in one step  D) Apply dropout\n\n  Score = % correct across all 57 subjects\n  Human expert baseline: ~89.8%`,code:`from lm_eval import evaluator\nfrom lm_eval.models.huggingface import HFLM\n\n# pip install lm-eval\nmodel = HFLM(\n    pretrained="meta-llama/Meta-Llama-3-8B-Instruct",\n    dtype="bfloat16",\n    device="cuda"\n)\n\n# Run MMLU (all 57 subjects)\nresults = evaluator.simple_evaluate(\n    model=model,\n    tasks=["mmlu"],\n    num_fewshot=5,  # standard is 5-shot\n    batch_size=8\n)\n\nprint(f"MMLU score: {results['results']['mmlu']['acc,none']:.3f}")\n\n# Or just specific subjects:\nresults_subset = evaluator.simple_evaluate(\n    model=model,\n    tasks=["mmlu_law", "mmlu_medicine", "mmlu_computer_science"],\n    num_fewshot=5,\n    batch_size=8\n)\nfor task, r in results_subset["results"].items():\n    print(f"{task}: {r['acc,none']:.3f}")`,tip:'Use 5-shot (standard) to compare models fairly. For domain-specific apps, score only the relevant subjects — overall MMLU score may not predict performance on your specific domain. A model scoring 85% overall might score 70% on your subject area.'},
@@ -3757,7 +3757,7 @@ def rag_answer(question: str) -> str:
     ).content[0].text
 
 # Zero keyword overlap — dense retrieval still finds the right doc
-print(rag_answer("my order hasn't arrived yet"))`,tip:'Three rules for production:\n1. Always normalise embeddings before storing — skip this and similarity scores will be wrong.\n2. Pre-compute and cache all document embeddings offline — re-encoding at query time kills throughput.\n3. Switch from FAISS to a vector database (Qdrant, Weaviate, Pinecone) the moment you need metadata filtering, live updates, or persistence — FAISS is a flat file that requires a full rebuild on every change.\n\nWhere to start:\n- Bi-encoder model: BGE-small-en-v1.5 — fast, lightweight, good enough for most cases\n- ANN library: FAISS — simplest option for local work and prototypes',refs:[{label:'📖 Full Guide',url:'concepts/dense_retrieval.html'},{label:'Sentence Transformers Docs',url:'https://www.sbert.net'},{label:'FAISS Docs',url:'https://faiss.ai'},{label:'BGE Models',url:'https://huggingface.co/BAAI/bge-small-en-v1.5'},{label:'DPR Paper',url:'https://arxiv.org/abs/2004.04906'},{label:'BEIR Benchmark',url:'https://github.com/beir-cellar/beir'}]},
+print(rag_answer("my order hasn't arrived yet"))`,tip:'Three rules for production:\n1. Always normalise embeddings before storing — skip this and similarity scores will be wrong.\n2. Pre-compute and cache all document embeddings offline — re-encoding at query time kills throughput.\n3. Switch from FAISS to a vector database (Qdrant, Weaviate, Pinecone) the moment you need metadata filtering, live updates, or persistence — FAISS is a flat file that requires a full rebuild on every change.\n\nWhere to start:\n- Bi-encoder model: BGE-small-en-v1.5 — fast, lightweight, good enough for most cases\n- ANN library: FAISS — simplest option for local work and prototypes',refs:[{label:'📖 Full Guide',url:'concepts/dense_retrieval.html'},{label:'Sentence Transformers Docs',url:'https://www.sbert.net'},{label:'FAISS Docs',url:'https://faiss.ai'},{label:'BGE Models',url:'https://huggingface.co/BAAI/bge-small-en-v1.5'},{label:'DPR Paper',url:'https://arxiv.org/abs/2004.04906'},{label:'BEIR Benchmark',url:'https://github.com/beir-cellar/beir'}],questions:{leader:['What are the top three ways this system could harm users or the company, and how are each mitigated?','What is the incident response process — who has kill-switch authority and how fast can it be invoked?','What regulatory requirements (EU AI Act, GDPR, etc.) apply and are we compliant before launch?'],pm:['How do I write acceptance criteria that include safety behaviour, not just functional correctness?','Which guardrails should be visible to users vs. handled silently in the backend?','How do I balance restrictive guardrails (reduce harm) with usefulness (drive adoption)?'],eng:['How do I build a red-team eval suite that catches jailbreaks and prompt injections before production?','What is the right layering of input filters, output filters, and model-level alignment?','How do I measure guard-rail false-positive rate — legitimate requests that are incorrectly blocked?']}},
 axolotl:{use:'Use Axolotl when you want to fine-tune an open-source LLM (Llama, Mistral, Gemma, Phi, Qwen) with LoRA or QLoRA and need a reproducible, config-driven pipeline without writing training boilerplate. Declare your model, dataset, adapter settings, and quantisation in a single YAML file and run one command.',code:`# config.yml — Axolotl QLoRA fine-tuning (save then: axolotl train config.yml)
 # pip install axolotl[flash-attn]
 
@@ -3850,4 +3850,260 @@ RAG.index(
 results = RAG.search(query="my order hasn't arrived yet", k=3)
 for r in results:
     print(f"Score: {r['score']:.3f}  |  {r['content'][:70]}")`,tip:'Three rules for choosing ColBERT:\n1. Pick ColBERT over bi-encoders when accuracy matters more than index size — ColBERT indexes are ≈4× larger (one vector per token, not per document).\n2. Pick ColBERT over cross-encoders when retrieving from large collections — cross-encoders compare query+doc together at query time, too slow for millions of docs.\n3. Use ColBERT as a reranker when you already have a bi-encoder pipeline — retrieve 100 candidates fast, then rerank with ColBERT for precision.\n\nWhere to start:\n- Library: RAGatouille — one-line ColBERT indexing and search in Python\n- Model: colbert-ir/colbertv2.0 — best open-source checkpoint on HuggingFace',refs:[{label:'\ud83d\udcd6 ColBERT Paper (2020)',url:'https://arxiv.org/abs/2004.12832'},{label:'\ud83d\udcd6 ColBERTv2 Paper (2021)',url:'https://arxiv.org/abs/2112.01488'},{label:'RAGatouille Library',url:'https://github.com/bclavie/RAGatouille'},{label:'colbert-ir/colbertv2.0',url:'https://huggingface.co/colbert-ir/colbertv2.0'},{label:'Stanford ColBERT Blog',url:'https://hazyresearch.stanford.edu/blog/2022-06-20-colbert'}]}
+// ── NEW NODES ─────────────────────────────────────────────────────────────────
+,pydantic_ai:{use:'PydanticAI brings the validation-first philosophy that made Pydantic the Python standard to LLM agents. Every input and output is a Pydantic model — typed, validated results with zero JSON parsing.\n\nUnlike LangChain it is minimal by design: define a system prompt, inject dependencies via a typed context, and declare tools as plain Python functions. Works with OpenAI, Anthropic, Gemini, and Ollama.',code:`import asyncio
+from pydantic import BaseModel
+from pydantic_ai import Agent
+
+class CityInfo(BaseModel):
+    city: str
+    population: int
+    country: str
+
+agent = Agent(
+    'openai:gpt-4o-mini',
+    result_type=CityInfo,
+    system_prompt='Extract structured city info from text.'
+)
+result = asyncio.run(
+    agent.run('Paris is the capital of France with ~2.1M people.')
+)
+print(result.data)
+# CityInfo(city='Paris', population=2100000, country='France')`,tip:'Use result_type=YourModel for structured outputs. Add deps=YourDeps to inject DB connections and API clients into tools — no global state.',refs:[{label:'PydanticAI Docs',url:'https://ai.pydantic.dev'},{label:'PydanticAI GitHub',url:'https://github.com/pydantic/pydantic-ai'},{label:'Agents intro',url:'https://ai.pydantic.dev/agents/'}]}
+,dify:{use:'Dify is an open-source LLMOps platform for building production AI apps without boilerplate. It covers the full loop: prompt IDE, RAG pipeline, agent orchestration, observability, and REST API deployment — all in one UI.\n\nWith 130k+ GitHub stars it is one of the fastest-growing tools in the GenAI stack. Best for teams that want to ship agents fast without managing infrastructure from scratch.',code:`import requests
+
+API_KEY = "your-dify-app-key"
+BASE_URL = "https://api.dify.ai/v1"
+
+resp = requests.post(
+    f"{BASE_URL}/chat-messages",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    json={
+        "inputs": {},
+        "query": "What are our Q3 sales figures?",
+        "response_mode": "blocking",
+        "conversation_id": "",
+        "user": "user-123"
+    }
+)
+print(resp.json()["answer"])`,tip:'Use Dify for prototyping and mid-scale production. For heavy customisation, self-host on Docker. The workflow builder exports to a YAML DSL you can version-control.',refs:[{label:'Dify GitHub',url:'https://github.com/langgenius/dify'},{label:'Dify Docs',url:'https://docs.dify.ai'},{label:'Self-hosting guide',url:'https://docs.dify.ai/getting-started/install-self-hosted'}]}
+,langflow:{use:'Langflow is a visual drag-and-drop builder for LangChain-based agent and RAG pipelines. Compose components — LLMs, retrievers, memory, tools — on a canvas, then export to Python or deploy as an API.\n\nIdeal for rapid prototyping: non-engineers sketch pipelines visually while engineers review and harden the exported code for production.',code:`import requests
+
+BASE_URL = "http://localhost:7860"
+FLOW_ID  = "your-flow-id"
+
+resp = requests.post(
+    f"{BASE_URL}/api/v1/run/{FLOW_ID}",
+    json={
+        "input_value": "Summarise the key risks in the contract.",
+        "output_type": "chat",
+        "input_type": "chat",
+        "tweaks": {}
+    }
+)
+print(resp.json()["outputs"][0]["outputs"][0]["results"])`,tip:'Build in Langflow, then click Export to get the Python equivalent. Same logic, two surfaces — great for PM-engineer collaboration.',refs:[{label:'Langflow GitHub',url:'https://github.com/langflow-ai/langflow'},{label:'Langflow Docs',url:'https://docs.langflow.org'},{label:'Langflow Cloud',url:'https://www.langflow.org'}]}
+,plano:{use:'Plano is a lightweight LLM planning framework that forces the model to produce a complete, dependency-aware plan before any tools are called. Each step gets a goal, inputs, expected output, and a dependency list.\n\nThis pre-planning dramatically reduces mid-task errors by catching logical ordering problems before they cost LLM tokens.',diag:`  Without Plano (reactive):
+  Task → LLM → tool call → LLM → tool call → ...
+         errors decided ad-hoc and compound silently
+
+  With Plano (plan-first):
+  Task → [Plan]  Step 1: search(q)        deps: none
+                 Step 2: extract(step1)   deps: [1]
+                 Step 3: report(step2)    deps: [2]
+       → [Execute in dependency order]
+         errors caught at planning phase`,code:`from plano import PlanAgent
+
+agent = PlanAgent(model="gpt-4o")
+
+result = agent.run(
+    task="Research the top 3 competitors of Stripe "
+         "and summarise their pricing models.",
+    tools=[search_web, extract_content, format_report]
+)
+print(result.plan)    # structured steps + deps
+print(result.output)  # final report`,tip:'Run with plan_only=True to inspect the plan before execution — catch logical errors before burning LLM calls.',refs:[{label:'Building Effective Agents — Anthropic',url:'https://www.anthropic.com/research/building-effective-agents'},{label:'Plan-and-Solve prompting',url:'https://arxiv.org/abs/2305.04091'},{label:'LLM agent planning survey',url:'https://arxiv.org/abs/2308.11432'}]}
+,agentic_reasoning:{use:'Agentic reasoning is the pattern of having an LLM sketch a semi-formal reasoning structure before acting — decompose first, execute second. Rather than immediately calling tools, the agent outlines what it knows, what it needs, and a step-by-step plan.\n\nThis separates thinking from doing, making errors visible and catchable before they propagate through a multi-step pipeline.',diag:`  Without agentic reasoning (fragile):
+  Task → LLM → tool calls → output
+         errors propagate silently
+
+  With agentic reasoning (auditable):
+  Task → [Decompose] What do I know? What do I need?
+       → [Plan]      Step 1: X   Step 2: Y   Step 3: Z
+       → [Execute]   run step 1 → verify → run step 2
+       → Output      errors caught at each checkpoint`,code:`import anthropic
+client = anthropic.Anthropic()
+
+SYSTEM = (
+    "Before acting, always:\\n"
+    "1. Restate the goal in your own words\\n"
+    "2. List what you know vs. what you need\\n"
+    "3. Outline your next 2-3 concrete steps\\n"
+    "Then proceed with step 1."
+)
+
+resp = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    system=SYSTEM,
+    messages=[{"role": "user",
+        "content": "Find the best OSS LLM for code generation."}]
+)
+print(resp.content[0].text)`,tip:'Add a structured JSON output schema (goal/steps/unknowns) to make the reasoning trace machine-readable and auditable across runs.',refs:[{label:'Building Effective Agents — Anthropic',url:'https://www.anthropic.com/research/building-effective-agents'},{label:'ReAct: Reasoning + Acting',url:'https://arxiv.org/abs/2210.03629'},{label:'Agentic Reasoning paper',url:'https://arxiv.org/abs/2601.12538'}]}
+,agent_skills:{use:'Agent skills are modular bundles of instructions and tools loaded at runtime — extending an agent without retraining the model. A web-research skill adds browse and summarise tools; a code-review skill adds lint and test tools.\n\nThis pattern — used in Claude Code and Cowork — lets non-engineers extend agents by composing skills rather than writing code.',diag:`  Base agent (no skills loaded):
+  ┌──────────────────┐
+  │  LLM + memory    │   can only chat
+  └──────────────────┘
+
+  Agent + skills loaded at runtime:
+  ┌──────────────────────────────────┐
+  │  LLM + memory                    │
+  │  + web_research  (browse, cite)  │
+  │  + code_review   (lint, test)    │
+  │  + calendar      (gcal read)     │
+  └──────────────────────────────────┘`,code:`web_research_skill = {
+    "instructions": "Browse the web. Always cite sources.",
+    "tools": [browse_tool, summarise_tool]
+}
+code_review_skill = {
+    "instructions": "Review code for bugs, style, security.",
+    "tools": [run_linter, run_tests, check_deps]
+}
+skill_registry = {
+    "research": [web_research_skill],
+    "code":     [code_review_skill]
+}
+
+def build_agent(task_type: str):
+    skills = skill_registry[task_type]
+    system = "\n\n".join(s["instructions"] for s in skills)
+    tools  = [t for s in skills for t in s["tools"]]
+    return Agent(system=system, tools=tools)
+
+build_agent("code").run("Review this PR for security issues.")`,tip:'Keep skills stateless and composable. Each skill should work independently — never assume another skill is also loaded.',refs:[{label:'Claude Code skills docs',url:'https://docs.claude.ai/claude-code'},{label:'Building Effective Agents',url:'https://www.anthropic.com/research/building-effective-agents'}]}
+,mamba_ssm:{use:'Mamba is a state space model (SSM) that replaces attention with a selective state update — processing each token as a recurrence rather than attending to all prior tokens. This makes sequence processing O(n) instead of O(n²), enabling very long sequences at constant memory cost.\n\nMamba-2 and related models (Jamba, OLMo-Hybrid) show competitive accuracy with transformers while being significantly faster at contexts above 32K tokens.',diag:`  Transformer attention — quadratic cost:
+  token n attends to ALL n-1 prior tokens
+  Memory: O(n²)   100K tokens ≈ 10B operations
+
+  Mamba SSM — linear cost:
+  token n updates a compact hidden state h
+  Memory: O(n)    100K tokens ≈ 100K operations
+
+  Selective mechanism (key innovation):
+  Model LEARNS which tokens to keep in state h
+  vs. discard — input-dependent gating,
+  unlike fixed RNNs which treat all tokens equally`,code:`# pip install mamba-ssm causal-conv1d
+from mamba_ssm import Mamba
+import torch
+
+model = Mamba(
+    d_model=256,  # model dimension
+    d_state=16,   # SSM hidden state size
+    d_conv=4,     # local convolution width
+    expand=2,     # block expansion factor
+).to("cuda")
+
+x = torch.randn(2, 1024, 256).to("cuda")  # (batch, seq, dim)
+y = model(x)
+print(y.shape)  # (2, 1024, 256) — same shape, linear time`,tip:'Mamba excels at sequences longer than 32K tokens. For short sequences, transformers still win on accuracy. Hybrid models (some attention + some SSM layers) are the practical sweet spot.',refs:[{label:'Mamba paper (2023)',url:'https://arxiv.org/abs/2312.00752'},{label:'Mamba-2 paper (2024)',url:'https://arxiv.org/abs/2405.21060'},{label:'Mamba GitHub',url:'https://github.com/state-spaces/mamba'},{label:'Jamba hybrid model',url:'https://arxiv.org/abs/2403.19887'}]}
+,hybrid_llm:{use:'Hybrid LLM architectures interleave transformer attention layers with SSM layers — attention for precise, position-sensitive reasoning; SSM for efficient long-context processing.\n\nModels like Jamba (AI21) and OLMo-Hybrid (AllenAI) use roughly 1 attention layer per 4–8 SSM layers. The result: near-linear memory at long contexts with accuracy close to pure transformers.',diag:`  Pure Transformer — accurate, expensive at long context:
+  [Attn]─[Attn]─[Attn]─[Attn]─[Attn]─ ...
+   O(n²) memory grows with sequence length
+
+  Pure Mamba — efficient, misses long-range precision:
+  [SSM]─[SSM]─[SSM]─[SSM]─[SSM]─ ...
+   O(n) memory, can miss global patterns
+
+  Hybrid (Jamba ~1:7 ratio):
+  [Attn]─[SSM]─[SSM]─[SSM]─[SSM]─[SSM]─[SSM]─[SSM]─[Attn]
+   Near-linear memory + near-transformer accuracy`,code:`from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+model_id = "ai21labs/Jamba-v0.1"
+tok   = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, torch_dtype=torch.bfloat16, device_map="auto"
+)
+inputs = tok(
+    "The key advantage of hybrid LLM architectures is",
+    return_tensors="pt"
+).to("cuda")
+out = model.generate(**inputs, max_new_tokens=100)
+print(tok.decode(out[0], skip_special_tokens=True))`,tip:'For long-document tasks (>32K tokens), a hybrid often beats a pure transformer at half the memory cost. Check whether attention layers use GQA — this determines KV cache size.',refs:[{label:'Jamba paper',url:'https://arxiv.org/abs/2403.19887'},{label:'OLMo-Hybrid',url:'https://arxiv.org/abs/2409.02060'},{label:'Mamba-2 paper',url:'https://arxiv.org/abs/2405.21060'}]}
+,constrained_decoding:{use:'Constrained decoding forces the LLM to generate only tokens valid under a grammar — not as post-processing but during generation. At each step, tokens violating the schema have log-probabilities set to −∞ before sampling.\n\nThe result: syntactically valid JSON, XML, or any formal structure, every single time — no retry loops, no JSON-repair hacks.',diag:`  Standard generation (unreliable):
+  Prompt → LLM → "{ name: John, age: thirty }"
+                  invalid JSON — needs repair or retry
+
+  Constrained decoding (guaranteed):
+  At each token, grammar masks invalid continuations:
+  { → " → n → a → m → e → " → : → " → J → o → h → n → "
+  only valid tokens survive at every step
+  → { "name": "John", "age": 30 }   always valid`,code:`# pip install outlines
+import outlines
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: float
+    in_stock: bool
+
+model = outlines.models.transformers(
+    "mistralai/Mistral-7B-Instruct-v0.1"
+)
+generator = outlines.generate.json(model, Product)
+result = generator(
+    "Extract: The Pro Widget costs $49.99 and is available."
+)
+print(result)
+# Product(name='Pro Widget', price=49.99, in_stock=True)`,tip:'Use Outlines for local models, Instructor for API models (OpenAI/Anthropic). For llama.cpp, the --grammar flag is the lightest option.',refs:[{label:'Outlines library',url:'https://github.com/dottxt-ai/outlines'},{label:'Instructor (API-side)',url:'https://github.com/instructor-ai/instructor'},{label:'Guidance (Microsoft)',url:'https://github.com/guidance-ai/guidance'},{label:'LMQL',url:'https://lmql.ai'}]}
+,openrouter:{use:'OpenRouter is a unified API gateway to 200+ LLMs — GPT-4o, Claude, Gemini, Llama, Mistral — from one endpoint with one API key. It handles routing, automatic fallbacks, and cost tracking.\n\nKey uses: switch models without code changes, automatic failover when a provider is down, real-time cost comparison, and access to models unavailable in your region.',code:`from openai import OpenAI  # same SDK, different base_url
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="sk-or-..."
+)
+
+response = client.chat.completions.create(
+    model="anthropic/claude-3.5-sonnet",
+    messages=[{
+        "role": "user",
+        "content": "Explain KV caching in 2 sentences."
+    }],
+    extra_headers={
+        "HTTP-Referer": "https://yourapp.com",
+        "X-Title": "Your App"
+    }
+)
+print(response.choices[0].message.content)`,tip:'Configure a fallback chain (primary + fallbacks list) to cut production downtime to near zero when a provider has an outage.',refs:[{label:'OpenRouter',url:'https://openrouter.ai'},{label:'OpenRouter docs',url:'https://openrouter.ai/docs'},{label:'Model pricing comparison',url:'https://openrouter.ai/models'}]}
+,data_centric:{use:'Data-centric AI shifts focus from model architecture to data quality. For a fixed model, improving training data quality by 10% often outperforms improving the model architecture by 10%.\n\nKey operations: deduplication (MinHash, SimHash), quality scoring (perplexity filters, classifiers), format normalisation, and toxic-content filtering. These pipelines underpin LLaMA, Mistral, Falcon, and Dolma pretraining.',diag:`  Model-centric (old default):
+  fixed data → bigger model → iterate
+  Result: diminishing returns, expensive
+
+  Data-centric:
+  fixed model → better data → iterate
+  Result: faster gains, cheaper experiments
+
+  The 5 data quality levers:
+  1. Dedup    — MinHash / SimHash near-deduplication
+  2. Filter   — perplexity score, classifier, rules
+  3. Balance  — topic, language, format mix
+  4. Curate   — quality sources > raw web scale
+  5. Annotate — correct labels > more labels`,code:`# pip install datasketch datasets
+from datasketch import MinHash, MinHashLSH
+from datasets import load_dataset
+
+lsh = MinHashLSH(threshold=0.85, num_perm=128)
+unique = []
+
+ds = load_dataset("allenai/c4","en",split="train",streaming=True)
+for i, ex in enumerate(ds.take(10_000)):
+    m = MinHash(num_perm=128)
+    for word in ex["text"].lower().split():
+        m.update(word.encode("utf8"))
+    key = f"doc_{i}"
+    if not lsh.query(m):
+        lsh.insert(key, m)
+        unique.append(ex["text"])
+
+print(f"Kept {len(unique):,} / 10,000 unique documents")`,tip:'Run deduplication before quality filtering — cheaper and removes the most noise. Use both exact (SHA-256) and fuzzy (MinHash) dedup. Read the Dolma and RedPajama papers — full pipelines are published.',refs:[{label:'Dolma dataset pipeline',url:'https://arxiv.org/abs/2402.00159'},{label:'RedPajama data',url:'https://github.com/togethercomputer/RedPajama-Data'},{label:'Data-centric AI (Andrew Ng)',url:'https://datacentricai.org'},{label:'Datasketch library',url:'https://github.com/ekzhu/datasketch'}]}
+
 };

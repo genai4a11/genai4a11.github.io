@@ -195,6 +195,21 @@ function sp(d){
     rl.innerHTML=d.refs.map(r=>`<a href="${r.url}?from=${d.id}" target="_blank" class="ref-link">→ ${r.label} ↗</a>`).join('');
     document.getElementById('ps-refs').style.display='block';
   } else document.getElementById('ps-refs').style.display='none';
+  // KEY QUESTIONS
+  if(d.questions){
+    const qBody=document.getElementById('ps-questions-body');
+    qBody.innerHTML='';
+    [{key:'leader',label:'For Leaders'},{key:'pm',label:'For PMs'},{key:'eng',label:'For Engineers'}].forEach(r=>{
+      const qs=d.questions[r.key];
+      if(!qs||!qs.length)return;
+      const grp=document.createElement('div');grp.className='qs-group';
+      const lbl=document.createElement('div');lbl.className='qs-role';lbl.textContent=r.label;
+      const ul=document.createElement('ul');ul.className='qs-list';
+      qs.forEach(q=>{const li=document.createElement('li');li.textContent=q;ul.appendChild(li);});
+      grp.appendChild(lbl);grp.appendChild(ul);qBody.appendChild(grp);
+    });
+    document.getElementById('ps-questions').style.display='block';
+  } else document.getElementById('ps-questions').style.display='none';
   // CONNECTED TOPICS — cross-links
   const xl=X.filter(l=>l.s===d.id||l.t===d.id);
   if(xl.length>0){
