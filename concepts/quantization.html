@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model Quantization — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9d174d; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Compression & Efficiency</span>
+  <h1>Model <em>Quantization</em></h1>
+  <p class="hero-sub">Reducing model memory by 2–8× with controlled accuracy loss — formats, methods, and tradeoffs when and how to quantize.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">2–8×</span>
+      <span class="stat-label">memory reduction</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">INT4 vs FP16</span>
+      <span class="stat-label">the common tradeoff</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Post-training or QAT</span>
+      <span class="stat-label">two main regimes</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-quantize" data-num="1">Why quantize?</a></li>
+      <li><a href="#ptq" data-num="2">Post-training quantization</a></li>
+      <li><a href="#qat" data-num="3">Quantization-aware training</a></li>
+      <li><a href="#calibration" data-num="4">Calibration and quality</a></li>
+      <li><a href="#mixed-precision" data-num="5">Mixed precision</a></li>
+      <li><a href="#hardware" data-num="6">Hardware acceleration</a></li>
+      <li><a href="#decision-guide" data-num="7">Practical decision guide</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY QUANTIZE? ── -->
+  <div class="section-block" id="why-quantize">
+    <div class="section-marker">01 — Motivation</div>
+    <h2>Why Quantize?</h2>
+    <p>Floating-point weights are the default in deep learning. A 7B parameter model in FP32 (32-bit floats) weighs 28 GB — too large for most consumer GPUs and expensive to serve. Even FP16 (16-bit, the current standard) is 14 GB for 7B, 140 GB for 70B.</p>
+
+    <p>Quantization reduces precision: convert FP32/FP16 weights to INT8, INT4, or custom formats like NF4. This cuts memory 2–8× with surprisingly small quality loss. The tradeoff: reduced precision costs some accuracy, and inference requires dequantization (fast but not free).</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Format</th><th>Bits</th><th>Bytes/param</th><th>7B size</th><th>70B size</th><th>Quality loss</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>FP32</strong></td><td>32</td><td>4</td><td>28 GB</td><td>280 GB</td><td>Baseline</td></tr>
+          <tr><td><strong>BF16</strong></td><td>16</td><td>2</td><td>14 GB</td><td>140 GB</td><td>Negligible</td></tr>
+          <tr><td><strong>FP8</strong></td><td>8</td><td>1</td><td>7 GB</td><td>70 GB</td><td>Minimal (&lt;1%)</td></tr>
+          <tr><td><strong>INT8</strong></td><td>8</td><td>1</td><td>7 GB</td><td>70 GB</td><td>Minimal (&lt;1%)</td></tr>
+          <tr><td><strong>INT4 / NF4</strong></td><td>4</td><td>0.5</td><td>3.5 GB</td><td>35 GB</td><td>Small (2–5%)</td></tr>
+          <tr><td><strong>INT2</strong></td><td>2</td><td>0.25</td><td>1.75 GB</td><td>17.5 GB</td><td>Large (20%+)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>INT4 is the sweet spot for most practitioners: 4× memory reduction, ~5% quality loss at worst. INT8 gives ~2× reduction with negligible loss. INT2 is rarely practical due to quality degradation.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Quantization unlocks deployment:</strong> INT4 lets you run 70B models on a single 80GB GPU (vs. two for FP16). This matters for cost, latency, and accessibility.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. POST-TRAINING QUANTIZATION ── -->
+  <div class="section-block" id="ptq">
+    <div class="section-marker">02 — No Retraining</div>
+    <h2>Post-Training Quantization (PTQ)</h2>
+    <p>Apply quantization after a model is fully trained. No retraining, no modification of the training loop. This is the default approach for open-source models: take a released weight file, convert it to INT4/INT8, and use it.</p>
+
+    <p><strong>Weight-only quantization:</strong> quantize weights to INT4/INT8, keep activations (intermediate values) in FP16 during inference. The model dequantizes weights on the fly — slightly slower than native inference but much smaller.</p>
+
+    <p><strong>Weight + activation quantization (W8A8):</strong> quantize both weights and activations to INT8. Requires hardware support (e.g., NVIDIA H100 has INT8 tensor cores) but can be significantly faster than weight-only on modern GPUs.</p>
+
+    <div class="methods-list">
+
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>GPTQ <em>— layer-wise with Hessian</em></h3>
+          <p>Quantize each layer using information from the Hessian (second derivative) of the loss. This captures which weights are most critical and protects them with error correction. Gold standard for 4-bit weight-only quantization.</p>
+          <ul>
+            <li>Standard for LLaMA, Mistral, and other OSS models</li>
+            <li>Slow to quantize (hours for 70B) but very fast inference</li>
+            <li>Excellent quality at INT4</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>AWQ <em>— activation-aware</em></h3>
+          <p>Protect salient weights (those with high activation magnitudes) by quantizing less aggressively. Faster to quantize than GPTQ while maintaining similar quality. Becoming more common.</p>
+          <ul>
+            <li>~3–4× faster quantization than GPTQ</li>
+            <li>Comparable or slightly better quality than GPTQ</li>
+            <li>Growing adoption in newer releases</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>SmoothQuant <em>— activation migration</em></h3>
+          <p>Migrate quantization difficulty from activations to weights via per-channel scaling. Enables W8A8 (both weights and activations INT8) on hardware with INT8 support, achieving 2× speedup vs. weight-only.</p>
+          <ul>
+            <li>Enables W8A8 inference on H100, H200</li>
+            <li>Requires calibration data and hardware support</li>
+            <li>Used in production deployments (TensorRT-LLM)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>GGUF <em>— CPU-friendly</em></h3>
+          <p>Format designed for llama.cpp and local CPU/GPU inference. Supports mixed-precision quantization: different layers or even weight groups can use different bit widths (Q2_K, Q4_K_M, Q8_0, etc.). Pragmatic for end users.</p>
+          <ul>
+            <li>Standard for llama.cpp ecosystem</li>
+            <li>Flexible per-layer quantization</li>
+            <li>Good CPU performance, runs on MacBooks</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <h3>PTQ Trade-offs</h3>
+    <p><strong>Pros:</strong> No retraining needed, instant deployment. <strong>Cons:</strong> Slightly lower quality than QAT, requires careful calibration data selection. For most practitioners, PTQ is sufficient; only invest in QAT if quality plateaus.</p>
+  </div>
+
+  <!-- ── 3. QUANTIZATION-AWARE TRAINING ── -->
+  <div class="section-block" id="qat">
+    <div class="section-marker">03 — With Retraining</div>
+    <h2>Quantization-Aware Training (QAT)</h2>
+    <p>During training, simulate quantization noise using fake quantization ops. The model learns to be robust to the precision loss, so when you actually quantize post-training, quality is better than PTQ at the same bit width.</p>
+
+    <p>The cost: you must modify the training loop and run a full training pass again. For a 70B model, this takes weeks. QAT is primarily used by model labs (Google, Meta, Anthropic) who have the compute budget and ship quantized weights directly (e.g., Gemma INT8, Llama 2 Int8).</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>PTQ</th><th>QAT</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Retraining needed</strong></td><td>No</td><td>Yes (full run)</td></tr>
+          <tr><td><strong>Time to apply</strong></td><td>Hours</td><td>Days–weeks</td></tr>
+          <tr><td><strong>Quality at INT4</strong></td><td>Good (≈7.6 PPL)</td><td>Better (≈7.2 PPL)</td></tr>
+          <tr><td><strong>Who uses it</strong></td><td>Most OSS deployments</td><td>Model labs (Google, Meta)</td></tr>
+          <tr><td><strong>When to use</strong></td><td>Default for serving</td><td>When PTQ quality insufficient</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>QAT is how Google ships Gemma-quantized models and how Meta ships quantized Llama variants.</strong> If you download Gemma-7B-it-int8 or Llama-2-70b-chat-int8 from Hugging Face, you're using QAT weights. Training is done; you just download and use them.</span>
+    </div>
+
+    <h3>When QAT is Worth It</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">You're training a new model from scratch and want to ship quantized.</li>
+      <li style="margin: 0.5rem 0;">You're fine-tuning a very large model and want the best quality at INT4.</li>
+      <li style="margin: 0.5rem 0;">You have compute budget (multiple TPU/GPU clusters) and months to spare.</li>
+      <li style="margin: 0.5rem 0;">You're a model lab producing a public release.</li>
+    </ul>
+  </div>
+
+  <!-- ── 4. CALIBRATION AND QUALITY MEASUREMENT ── -->
+  <div class="section-block" id="calibration">
+    <div class="section-marker">04 — Data Dependency</div>
+    <h2>Calibration and Quality Measurement</h2>
+    <p>PTQ methods need a calibration dataset to measure activation ranges and choose quantization thresholds. Pick a poor calibration set (random noise) and quality suffers. Pick a good one (representative of your use case) and quality is much better.</p>
+
+    <p>Typical calibration: 128–512 diverse samples from the same domain as your inference data. For general chat, use a mix of instructions and documents. For specialized domains, use domain-specific text.</p>
+
+    <div class="example-box"><span class="verdict-dim">## Quality Impact: Llama-3-8B</span>
+
+<span class="verdict-dim">Baseline (BF16):</span>
+PPL on WikiText-2: <span class="verdict-pass">7.1</span>
+
+<span class="verdict-dim">Quantization methods (GPTQ, AWQ, etc.):</span>
+INT8:        PPL = 7.2  <span class="verdict-pass">+1.4% loss</span>
+INT4 GPTQ:   PPL = 7.6  <span class="verdict-pass">+7.0% loss</span>
+INT4 AWQ:    PPL = 7.5  <span class="verdict-pass">+5.6% loss</span>
+INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span></div>
+
+    <h3>Quality Metrics</h3>
+    <p><strong>Perplexity (PPL):</strong> Standard metric on WikiText-2 or C4. Lower is better. A 5–10% PPL increase is acceptable; >20% indicates poor quantization.</p>
+
+    <p><strong>Downstream tasks:</strong> Run MMLU, HellaSwag, ARC to measure end-to-end impact. Some quantized models lose 1–2% accuracy on reasoning tasks but remain usable.</p>
+
+    <p><strong>Human evaluation:</strong> For critical applications, have humans rate responses from the quantized model vs. baseline. This catches issues that PPL misses.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Rule of thumb: INT4 GPTQ/AWQ with good calibration data loses &lt;7% PPL.</strong> If you're seeing >10% loss, your calibration data is bad or your model is particularly sensitive. Try different calibration sets.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. MIXED PRECISION AND LAYER SENSITIVITY ── -->
+  <div class="section-block" id="mixed-precision">
+    <div class="section-marker">05 — Selective Quantization</div>
+    <h2>Mixed Precision and Layer Sensitivity</h2>
+    <p>Not all layers are equally sensitive to quantization. Embedding layers and LM head (output projection) are very sensitive; MLPs are less so. A smart strategy: quantize robust layers to INT4, keep sensitive layers in INT8 or even FP16.</p>
+
+    <p>This is called mixed-precision quantization. GGUF's K-quant variants (Q4_K_M, Q5_K_M, etc.) do this automatically — important layers get higher precision, unimportant ones get lower.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Layer type</th><th>Sensitivity</th><th>Recommended min bits</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Embedding / LM head</strong></td><td>Very high</td><td>INT8 or BF16</td></tr>
+          <tr><td><strong>Attention Q/K/V projections</strong></td><td>High</td><td>INT8 (with care on INT4)</td></tr>
+          <tr><td><strong>Attention output projection</strong></td><td>High</td><td>INT8</td></tr>
+          <tr><td><strong>MLP gate / up projections</strong></td><td>Low</td><td>INT4 safe</td></tr>
+          <tr><td><strong>MLP down projection</strong></td><td>Medium</td><td>INT4 acceptable</td></tr>
+          <tr><td><strong>LayerNorm</strong></td><td>Very high</td><td>BF16 (never quantize)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Mixed-Precision Strategy</h3>
+    <p>Start with uniform INT4, measure PPL loss. If it's >10%, switch sensitive layers (embedding, attention outputs) to INT8. This typically recovers 50% of the quality loss. Most practical frameworks support this directly; you just specify which layers to quantize to which bit width.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>LayerNorm should never be quantized.</strong> These layers normalize activations and are extremely sensitive; even INT8 causes quality degradation. Always keep them in FP16 or FP32.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. HARDWARE ACCELERATION ── -->
+  <div class="section-block" id="hardware">
+    <div class="section-marker">06 — GPU & CPU Support</div>
+    <h2>Hardware Acceleration</h2>
+    <p>Not all quantization formats run fast on all hardware. Some GPUs have native INT8 tensor cores; others require software emulation. Choosing the right format for your hardware matters.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Hardware</th><th>INT8 GEMM</th><th>INT4 GEMM</th><th>FP8</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>NVIDIA A100</strong></td><td>✓</td><td>Software</td><td>✗</td><td>INT8 via cuBLAS, fast enough</td></tr>
+          <tr><td><strong>NVIDIA H100</strong></td><td>✓</td><td>✓</td><td>✓</td><td>Native support for all formats</td></tr>
+          <tr><td><strong>NVIDIA H200</strong></td><td>✓</td><td>✓</td><td>✓</td><td>Same as H100</td></tr>
+          <tr><td><strong>Apple M-series</strong></td><td>✓</td><td>✓</td><td>✗</td><td>via Metal / llama.cpp</td></tr>
+          <tr><td><strong>AMD MI300X</strong></td><td>✓</td><td>✓</td><td>✓</td><td>via ROCm, comparable to H100</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>FP8 on H100:</strong> Both training and inference support FP8 natively. This is becoming the new frontier-model standard — Llama 3.1, GPT-4o, and others use FP8 internally for efficiency.</p>
+
+    <p><strong>INT4 inference:</strong> NVIDIA A100 doesn't have INT4 tensor cores, so INT4 inference uses software dequantization (float multiply). Still fast because dequantization is simple, but not as fast as hardware-native formats.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>FP8 training and inference on H100 is becoming the new default for frontier labs.</strong> Check if your serving framework (vLLM, TensorRT-LLM, SGLang) supports FP8 before defaulting to INT4. On H100, FP8 may be faster and have better quality than INT4 weight-only.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. PRACTICAL DECISION GUIDE ── -->
+  <div class="section-block" id="decision-guide">
+    <div class="section-marker">07 — When and How</div>
+    <h2>Practical Decision Guide</h2>
+    <p>Quantization decisions depend on your constraints: VRAM, latency, quality requirements, and available hardware. Here's a framework to decide what to quantize and how.</p>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-name">llama.cpp</div>
+        <div class="tool-category">Local / CPU</div>
+        <div class="tool-desc">GGUF format, mixed-precision, runs on MacBooks and consumer GPUs</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">AutoGPTQ</div>
+        <div class="tool-category">PTQ</div>
+        <div class="tool-desc">GPTQ quantization, standard for Hugging Face OSS models</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">AutoAWQ</div>
+        <div class="tool-category">PTQ</div>
+        <div class="tool-desc">AWQ quantization, faster than GPTQ, growing adoption</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">bitsandbytes</div>
+        <div class="tool-category">Fine-tuning</div>
+        <div class="tool-desc">INT8/INT4 inference and fine-tuning, used in QLoRA</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">TensorRT-LLM</div>
+        <div class="tool-category">Production</div>
+        <div class="tool-desc">W8A8, FP8, and SmoothQuant for high-performance inference</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">Quanto (HF)</div>
+        <div class="tool-category">Fine-tuning</div>
+        <div class="tool-desc">Flexible quantization for training, integrates with Transformers</div>
+      </div>
+    </div>
+
+    <h3>Decision Flowchart</h3>
+    <div class="example-box"><span class="verdict-dim">Need to run 70B on 1×A100 (80GB)?</span>
+→ FP16 too big (140GB) 
+→ Try INT4 GPTQ/AWQ (~38GB for weights + activation cache) <span class="verdict-pass">✓ fits</span>
+
+<span class="verdict-dim">Need 7B on MacBook Pro (16GB)?</span>
+→ BF16 (14GB) fits, but tight
+→ Q4_K_M GGUF (4.5GB) gives headroom <span class="verdict-pass">✓ recommended</span>
+
+<span class="verdict-dim">Need best quality at INT4?</span>
+→ Compare MMLU scores: AWQ usually ≥ GPTQ by 0.5–1%
+→ Try both on your eval set <span class="verdict-pass">✓ use the better one</span>
+
+<span class="verdict-dim">Need fastest INT8 on H100?</span>
+→ SmoothQuant W8A8 via TensorRT-LLM
+→ 2× faster than weight-only <span class="verdict-pass">✓ use W8A8</span>
+
+<span class="verdict-dim">Running 100 concurrent requests?</span>
+→ KV cache is your bottleneck, not weights
+→ Focus on cache optimization (prefix caching, paging)
+→ Quantization helps less here <span class="verdict-pass">✓ manage cache first</span></div>
+
+    <h3>Common Scenarios</h3>
+    <p><strong>Consumer deployment (1×consumer GPU, 24GB VRAM):</strong> INT4 GPTQ or Q4_K_M GGUF. Perplexity loss ~7%, acceptable for most tasks. Throughput: 5–10 tokens/sec.</p>
+
+    <p><strong>Production API (1×A100, 80GB, 20 concurrent requests):</strong> INT4 AWQ weights with INT8 activations (SmoothQuant if you have H100). Calibrate on your actual data. Throughput: 50–100 tokens/sec across batch.</p>
+
+    <p><strong>Cost-optimal (multiple smaller GPUs):</strong> Mixed quantization. Heavy layers INT8, lightweight INT4. Reduces memory vs. INT4 uniform, quality between INT4 and INT8.</p>
+
+    <p><strong>Research / evaluation:</strong> Start with GPTQ (standard baseline). If quality is insufficient, try AWQ or move to QAT if budget allows. Measure on your eval set, not defaults.</p>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Quantized models are not drop-in replacements.</strong> Always benchmark quality on your specific use case before deploying to production. Perplexity is useful but may not capture your task's real quality loss.</span>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Frantar, C., Ashkboos, S., et al. (2022).
+        <em>GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers.</em>
+        arXiv:2210.17323. —
+        <a href="https://arxiv.org/abs/2210.17323" target="_blank">arxiv:2210.17323 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Lin, J., Tang, J., et al. (2023).
+        <em>AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration.</em>
+        arXiv:2306.00978. —
+        <a href="https://arxiv.org/abs/2306.00978" target="_blank">arxiv:2306.00978 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Wei, X., Zhang, Y., et al. (2022).
+        <em>SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models.</em>
+        arXiv:2211.10438. —
+        <a href="https://arxiv.org/abs/2211.10438" target="_blank">arxiv:2211.10438 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Jacob, B., et al. (2018).
+        <em>Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference.</em>
+        CVPR 2018. arXiv:1806.08342. —
+        <a href="https://arxiv.org/abs/1806.08342" target="_blank">arxiv:1806.08342 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> llama.cpp GGUF Format Quantization. <a href="https://github.com/ggerganov/llama.cpp/blob/master/README.md" target="_blank">github.com/ggerganov ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace AutoGPTQ. <a href="https://huggingface.co/docs/transformers/main/en/quantization/gptq" target="_blank">huggingface.co/docs ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace AutoAWQ. <a href="https://huggingface.co/docs/transformers/main/en/quantization/awq" target="_blank">huggingface.co/docs ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> bitsandbytes Quantization and QLoRA. <a href="https://huggingface.co/docs/bitsandbytes/main/en/index" target="_blank">huggingface.co/docs/bitsandbytes ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> TensorRT-LLM Quantization. <a href="https://nvidia-opentask-lm.readthedocs.io/" target="_blank">nvidia-opentask-lm.readthedocs.io ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        HuggingFace. (2023). <em>The Ultimate Guide to Model Quantization.</em> —
+        <a href="https://huggingface.co/blog/quantization" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Huyen Chip. (2024). <em>Quantization for LLMs: From Theory to Practice.</em> —
+        <a href="https://huyenchip.com/2024/04/18/quantization.html" target="_blank">huyenchip.com ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Together AI. (2023). <em>Quantization in Production: Lessons from Running 70B Models.</em> —
+        <a href="https://www.together.ai/blog/quantization-deployment" target="_blank">together.ai ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        NVIDIA TensorRT-LLM. Quantization Best Practices. <a href="https://github.com/NVIDIA/TensorRT-LLM/blob/main/docs/source/blogs/quantization.md" target="_blank">github.com/NVIDIA ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

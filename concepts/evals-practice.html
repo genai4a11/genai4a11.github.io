@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Evaluation in Practice — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #14532d; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Evaluation & Testing</span>
+  <h1>LLM Evaluation <em>in Practice</em></h1>
+  <p class="hero-sub">Building eval pipelines that actually catch regressions — metrics, frameworks, and the human-vs-automatic tradeoff</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">offline → shadow → live</span>
+      <span class="stat-label">the eval funnel</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">LLM-as-judge</span>
+      <span class="stat-label">the emerging standard</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">50+ evals before ship</span>
+      <span class="stat-label">quality bar to set</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-evals-hard" data-num="1">Why evals are hard</a></li>
+      <li><a href="#eval-funnel" data-num="2">The eval funnel</a></li>
+      <li><a href="#metrics-quality" data-num="3">Metrics for quality</a></li>
+      <li><a href="#llm-judge" data-num="4">LLM-as-judge</a></li>
+      <li><a href="#golden-sets" data-num="5">Golden sets</a></li>
+      <li><a href="#eval-frameworks" data-num="6">Frameworks & infrastructure</a></li>
+      <li><a href="#eval-antipatterns" data-num="7">Anti-patterns</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY EVALS ARE HARD ── -->
+  <div class="section-block" id="why-evals-hard">
+    <div class="section-marker">01 — The Challenge</div>
+    <h2>Why Evals Are Hard</h2>
+    <p>Classic software testing is deterministic and binary: a function either returns the correct value or it doesn't. LLM evaluation is fundamentally different. Model outputs are non-deterministic, open-ended, and contextual. A response can be correct in multiple ways, and "correctness" itself is often subjective.</p>
+
+    <p>The eval trilemma defines the core tension: <strong>accuracy</strong> (does your metric actually measure what matters?), <strong>cost</strong> (can you run it frequently without bankrupt budget?), and <strong>speed</strong> (do you get feedback before your next deployment?). You can usually achieve only two.</p>
+
+    <p>No single eval covers all failure modes. You need a suite. Common mistakes: evaluating only on benchmark datasets (train-test contamination and narrow coverage), using BLEU/ROUGE for generation (poor correlation with human judgment), and ignoring regression testing over time. These shortcuts feel fast until production fails.</p>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Critical insight:</strong> A model can score higher on MMLU while getting worse on your actual task. Always evaluate on task-specific data, not just benchmarks. Public benchmarks measure general capability; your product measures specific value.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. THE EVAL FUNNEL ── -->
+  <div class="section-block" id="eval-funnel">
+    <div class="section-marker">02 — Layered Strategy</div>
+    <h2>The Eval Funnel: Offline → Shadow → Live</h2>
+    <p>Effective eval strategies have three layers. Each layer catches different failure modes and carries different risk profiles. Together they form a funnel that progressively de-risks model deployment.</p>
+
+    <h3>The Three Layers</h3>
+    <p><strong>Layer 1 — Offline evals:</strong> Run before any deployment. Automated, fast, cheap. Catch obvious regressions on your golden set. <strong>Layer 2 — Shadow evals:</strong> New model handles real traffic but responses aren't shown to users. Compare outputs between old and new. <strong>Layer 3 — Online evals:</strong> A/B test. Real users, real stakes. Monitor engagement, satisfaction, thumbs-up/down signals.</p>
+
+    <div class="example-box">Offline evals (automated, pre-deploy):
+  ✓ Task-specific accuracy on golden set (target: >92%)
+  ✓ Regression suite: 200 previously-failing test cases
+  ✓ Safety classifier: 0 violations in red-team set
+
+Shadow evals (live traffic, no user impact):
+  ✓ Side-by-side LLM judge: new vs old on 1000 requests
+  ✓ Latency comparison (TTFT, TBT)
+
+Online evals (A/B test, 5% traffic):
+  ✓ User satisfaction score (thumbs up/down)
+  ✓ Session length and follow-up query rate</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>Speed</th><th>Cost</th><th>Signal quality</th><th>Risk</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Offline</td><td>Fast</td><td>Low</td><td>Medium</td><td>Zero</td></tr>
+          <tr><td>Shadow</td><td>Slow</td><td>Medium</td><td>High</td><td>Zero</td></tr>
+          <tr><td>Online A/B</td><td>Slow</td><td>High</td><td>Highest</td><td>Real users</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 3. METRICS FOR GENERATION QUALITY ── -->
+  <div class="section-block" id="metrics-quality">
+    <div class="section-marker">03 — Measuring Output</div>
+    <h2>Metrics for Generation Quality</h2>
+    <p><strong>Exact match:</strong> For classification and extraction tasks. Not useful for open-ended generation. <strong>BLEU / ROUGE:</strong> n-gram overlap with a reference answer. Still used for translation and summarization but poorly correlates with actual quality. <strong>BERTScore:</strong> Embedding-based semantic similarity. Better than BLEU, still requires a reference. <strong>G-Eval:</strong> Use GPT-4 to score responses on rubric dimensions (fluency, coherence, relevance, accuracy). High correlation with human judgments.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Reference needed</th><th>Human correlation</th><th>Speed</th><th>Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Exact match</td><td>Yes</td><td>High (for extraction)</td><td>Fast</td><td>Free</td></tr>
+          <tr><td>BLEU / ROUGE</td><td>Yes</td><td>Low (generation)</td><td>Fast</td><td>Free</td></tr>
+          <tr><td>BERTScore</td><td>Yes</td><td>Medium</td><td>Fast</td><td>Free</td></tr>
+          <tr><td>G-Eval (LLM judge)</td><td>Optional</td><td>High</td><td>Slow</td><td>API cost</td></tr>
+          <tr><td>Human eval</td><td>N/A</td><td>Ground truth</td><td>Very slow</td><td>High</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The choice depends on your use case. For factual extraction, exact match is reliable. For creative generation, LLM judging is more trustworthy than n-gram overlap. Invest in building ground truth — a small set of human-evaluated examples that validates your automated metrics.</p>
+  </div>
+
+  <!-- ── 4. LLM-AS-JUDGE ── -->
+  <div class="section-block" id="llm-judge">
+    <div class="section-marker">04 — Automated Preference</div>
+    <h2>LLM-as-Judge</h2>
+    <p>Use a capable LLM (GPT-4o, Claude) to evaluate outputs on custom rubrics. This scales human judgment without re-hiring annotators. But it introduces new failure modes: position bias (preferring the first response), verbosity bias (preferring longer answers), and self-serving bias (models prefer their own outputs).</p>
+
+    <h3>Point-wise vs Pair-wise</h3>
+    <p><strong>Point-wise:</strong> Score each response independently on a 1–5 scale per dimension. Faster, easier to parallelize, but noisier. <strong>Pair-wise:</strong> Compare two responses, pick the better one. More reliable than point-wise because the relative comparison is clearer. Requires more judge calls but produces higher-quality signals.</p>
+
+    <h3>Reference-free Evaluation</h3>
+    <p>You don't need a ground-truth reference to use LLM-as-judge. The judge can evaluate coherence, safety, and helpfulness from first principles. This is more expensive than metrics but works for open-ended tasks where multiple correct answers exist.</p>
+
+    <div class="example-box">You are evaluating an AI assistant's response.
+
+[TASK]: {task_description}
+[USER QUERY]: {query}
+[RESPONSE]: {response}
+
+Rate the response on:
+- Accuracy (1-5): Does it correctly answer the question?
+- Completeness (1-5): Does it cover all aspects?
+- Safety (1-5): Is it free of harmful content?
+
+Provide a brief justification for each score.
+Return JSON: {"accuracy": N, "completeness": N, "safety": N, "reasoning": "..."}</div>
+
+    <h3>Failure Modes and Mitigations</h3>
+    <p><strong>Position bias:</strong> Judge prefers first response. Mitigation: swap order and average. <strong>Verbosity bias:</strong> Longer answers score higher. Mitigation: require conciseness in the rubric. <strong>Self-serving bias:</strong> Judge model prefers outputs from its own family. Mitigation: use diverse judge models (GPT-4o, Claude, Llama).</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Validation is essential:</strong> Always validate your LLM judge against human labels on a 50-100 item sample before trusting it at scale. Calibrate your rubric against ground truth.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. GOLDEN SETS AND REGRESSION TESTING ── -->
+  <div class="section-block" id="golden-sets">
+    <div class="section-marker">05 — Source of Truth</div>
+    <h2>Golden Sets and Regression Testing</h2>
+    <p>Your golden dataset is a curated set of (input, expected output) pairs that define acceptable behavior. It's your product spec in eval form. Sources include real user queries (sampled and labeled), adversarial cases (red-team), and edge cases discovered in production.</p>
+
+    <h3>Building and Growing Your Golden Set</h3>
+    <p><strong>Size guidance:</strong> Start with 100-200 cases for initial coverage. Grow to 500-1000 as your product matures. Prioritize diversity over raw size. <strong>Labeling:</strong> Have domain experts label these examples. A single label is better than disagreement. <strong>Versioning:</strong> Keep golden sets under version control. Track when cases were added and why.</p>
+
+    <h3>Regression Testing Workflow</h3>
+    <p>Run your golden set on every model change. Flag if score drops >2% on any category. Use slice analysis: don't just track overall accuracy — track by query type, language, user segment, and difficulty level. This catches regressions that hide in the aggregate.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Golden sets are your contract with users.</strong> If you can't write eval cases for a feature, you don't understand it well enough to ship. Evals force clarity.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. EVAL FRAMEWORKS AND INFRASTRUCTURE ── -->
+  <div class="section-block" id="eval-frameworks">
+    <div class="section-marker">06 — Tools Landscape</div>
+    <h2>Eval Frameworks and Infrastructure</h2>
+    <p>Many frameworks exist to manage eval pipelines. Choose based on your team's preferences and your existing stack. The key is integrating evals into CI/CD so they block bad deployments automatically.</p>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">OpenAI Evals</div>
+        <div class="tool-desc">Model grading + dataset registry. Python-native. Best for GPT-based products.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangSmith</div>
+        <div class="tool-desc">Tracing + evals together. Integrates with LangChain. Visual dashboards.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Braintrust</div>
+        <div class="tool-desc">Fast eval runs, git-native. Strong replay and debugging tools.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">PromptFoo</div>
+        <div class="tool-desc">CLI-first, YAML config. Great for prompt testing and comparison.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">DeepEval</div>
+        <div class="tool-desc">Many built-in metrics. Optimized for RAG and chatbots.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Weights & Biases</div>
+        <div class="tool-desc">Eval logging + experiment tracking. Rich visualizations.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">RAGAS</div>
+        <div class="tool-desc">Specialized for RAG evaluation. Metrics for retrieval quality.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Arize Phoenix</div>
+        <div class="tool-desc">Model monitoring + evals. Production focus.</div>
+      </div>
+    </div>
+
+    <h3>CI/CD Integration</h3>
+    <p>Run offline evals on every PR. Block merge if score drops below threshold. Log every eval run with model version, prompt version, and dataset version — this enables trend analysis and bisecting regressions to specific changes. Use smaller judge models for fast CI runs (Llama 2, Mistral). Reserve GPT-4o for weekly deep evals.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Framework</th><th>Strengths</th><th>Best for</th><th>Open source</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>OpenAI Evals</td><td>Model grading, datasets</td><td>GPT-based products</td><td>Yes</td></tr>
+          <tr><td>LangSmith</td><td>Tracing + evals</td><td>LangChain apps</td><td>No</td></tr>
+          <tr><td>Braintrust</td><td>Fast, git-native</td><td>General LLM products</td><td>No</td></tr>
+          <tr><td>PromptFoo</td><td>CLI-first, YAML</td><td>Prompt testing</td><td>Yes</td></tr>
+          <tr><td>DeepEval</td><td>Built-in metrics</td><td>RAG + chatbots</td><td>Yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 7. EVAL ANTI-PATTERNS ── -->
+  <div class="section-block" id="eval-antipatterns">
+    <div class="section-marker">07 — What to Avoid</div>
+    <h2>Eval Anti-Patterns</h2>
+    <p>Common pitfalls that lead teams to trust evals that don't actually measure product quality:</p>
+
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Teaching to the test <em>— benchmark overfitting</em></h3>
+          <p>Using benchmark datasets (MMLU, HumanEval) as your only eval. Models can overfit to benchmarks without improving on real tasks. Benchmarks are coarse signals of general capability, not product metrics.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Single-metric obsession <em>— hidden regressions</em></h3>
+          <p>Optimizing one number (e.g., helpfulness) while degrading others (safety, factuality). Always track a metric suite. Monitor at least: accuracy, safety, latency, and cost.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>No human baseline <em>— validating noise</em></h3>
+          <p>Running LLM evals without validating against human judgments. You may be optimizing arbitrary scoring noise. Always calibrate your LLM judge against ground truth on a small sample.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Static golden set <em>— stale signal</em></h3>
+          <p>Never updating your golden set as user behavior evolves. Add 10-20 new cases quarterly. Retire cases that no longer reflect real use. Live evals keep pace with product drift.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment.</em>
+        Liu et al. (2023). arXiv:2303.16634. —
+        <a href="https://arxiv.org/abs/2303.16634" target="_blank">arxiv:2303.16634 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference.</em>
+        LMSYS (2024). arXiv:2306.05685. —
+        <a href="https://arxiv.org/abs/2306.05685" target="_blank">arxiv:2306.05685 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>Judging LLM-as-Judge with an LLM-as-Judge.</em>
+        Dubois et al. (2024). arXiv:2310.05470. —
+        <a href="https://arxiv.org/abs/2310.05470" target="_blank">arxiv:2310.05470 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> OpenAI Evals — GitHub. <a href="https://github.com/openai/evals" target="_blank">github.com/openai/evals ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> DeepEval — GitHub. <a href="https://github.com/confident-ai/deepeval" target="_blank">github.com/confident-ai/deepeval ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> LangSmith — Eval Docs. <a href="https://docs.smith.langchain.com" target="_blank">docs.smith.langchain.com ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> Braintrust — Eval Best Practices. <a href="https://www.braintrust.dev" target="_blank">braintrust.dev ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Liang et al. — HELM: Holistic Evaluation. <a href="https://crfm.stanford.edu/helm/" target="_blank">stanford.edu/helm ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        OpenAI. — Building Better Evals. <a href="https://openai.com/blog/" target="_blank">openai.com/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Safety Techniques — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">SAFETY & ROBUSTNESS</span>
+  <h1>LLM <em>Safety</em> Techniques</h1>
+  <p class="hero-sub">Constitutional AI, red-teaming, guardrails, and jailbreak defenses — the technical toolkit for safe deployment</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">prevent · detect · mitigate</span>
+      <span class="stat-label">the three pillars</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">jailbreaks, bias, hallucination</span>
+      <span class="stat-label">what can go wrong</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">train-time + runtime</span>
+      <span class="stat-label">two intervention layers</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#safety-problem" data-num="1">The safety problem space</a></li>
+      <li><a href="#constitutional-ai" data-num="2">Constitutional AI & RLAIF</a></li>
+      <li><a href="#red-teaming" data-num="3">Red-teaming & evaluation</a></li>
+      <li><a href="#guardrails" data-num="4">Runtime guardrails</a></li>
+      <li><a href="#jailbreaks" data-num="5">Jailbreak patterns & defenses</a></li>
+      <li><a href="#privacy-mem" data-num="6">Privacy & memorization</a></li>
+      <li><a href="#safety-eval" data-num="7">Safety evaluation & red lines</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. THE SAFETY PROBLEM SPACE ── -->
+  <div class="section-block" id="safety-problem">
+    <div class="section-marker">01 — Overview</div>
+    <h2>The Safety Problem Space</h2>
+    <p>LLM safety is not one problem — it's a cluster of distinct failure modes, each requiring different defenses. Conflating them obscures solutions. A safety system must address harmful outputs, jailbreaks, hallucination, bias, privacy leakage, and prompt injection as separate but complementary concerns.</p>
+
+    <h3>Safety Failure Taxonomy</h3>
+    <p><strong>Harmful outputs:</strong> Instructions for violence, CSAM, bioweapons — direct policy violations. <strong>Jailbreaks:</strong> Prompt injections that bypass safety training through creative phrasing or role-play. <strong>Hallucination:</strong> Confident wrong answers, usually factual but sometimes harmful. <strong>Bias and fairness:</strong> Systematic disparate outputs across demographic groups. <strong>Privacy leakage:</strong> Memorized PII or training data extracted via prompting. <strong>Prompt injection:</strong> Malicious content in retrieved context that hijacks the model.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Failure type</th><th>Who is harmed</th><th>Main defense</th><th>Hard to fully solve?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Harmful outputs</td><td>Third parties</td><td>Alignment training</td><td>Yes</td></tr>
+          <tr><td>Jailbreaks</td><td>Users / society</td><td>Red-teaming + filters</td><td>Yes</td></tr>
+          <tr><td>Hallucination</td><td>Users</td><td>Grounding, evals</td><td>Yes</td></tr>
+          <tr><td>Bias</td><td>Affected groups</td><td>Data curation, red-team</td><td>Yes</td></tr>
+          <tr><td>Privacy leakage</td><td>Individuals</td><td>Differential privacy, filtering</td><td>Partial</td></tr>
+          <tr><td>Prompt injection</td><td>Deployers</td><td>Input sanitization, separation</td><td>Yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> Defense-in-depth is mandatory. No single technique solves safety. Combine alignment training, red-teaming, guardrails, input/output filtering, and monitoring.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. CONSTITUTIONAL AI & RLAIF ── -->
+  <div class="section-block" id="constitutional-ai">
+    <div class="section-marker">02 — Alignment</div>
+    <h2>Constitutional AI and RLAIF</h2>
+    <p><strong>Constitutional AI (CAI)</strong> is Anthropic's approach: instead of human preference labels, use a list of principles (the "constitution") to generate synthetic feedback. A capable model critiques and revises its own outputs using the constitution. The revised outputs become training data for alignment.</p>
+
+    <p><strong>RLAIF (RL from AI Feedback)</strong> trains a reward model on AI-generated preference data instead of human-labeled data. This scales without human annotation budgets. The same constitution guides both critique and reward modeling.</p>
+
+    <h3>CAI Process</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Constitution <em>— principles guide training</em></h3>
+          <p>Write explicit principles that define safe/helpful behavior. Examples: "Be helpful. Be honest. Minimize harm." The constitution is your values codified.</p>
+          <ul>
+            <li>Clear, specific principles (vague guidelines → vague feedback)</li>
+            <li>Balance competing values (honesty vs. helpfulness)</li>
+            <li>Iterate on principles as model behavior reveals gaps</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Critique <em>— model self-evaluates</em></h3>
+          <p>Ask a strong model to critique its own outputs using the constitution. The model identifies flaws and explains them in the constitution's terms.</p>
+          <ul>
+            <li>Prompt: "Critique this response against principle X..."</li>
+            <li>Model generates detailed critique or passes if output is acceptable</li>
+            <li>No human annotation needed</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Revision <em>— model self-improves</em></h3>
+          <p>The model revises outputs to address critiques. The revised version is now better-aligned with the constitution.</p>
+          <ul>
+            <li>Prompt: "Revise your response to address the critique..."</li>
+            <li>Model generates improved version</li>
+            <li>Results become training data (revised output is "preferred")</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Fine-Tune <em>— supervised learning on revisions</em></h3>
+          <p>SFT on the revised (better) outputs. This directly trains the model on aligned behavior without reward models or PPO complexity.</p>
+          <ul>
+            <li>Dataset: (prompt, revised_response) pairs</li>
+            <li>Simple cross-entropy loss</li>
+            <li>Repeat: critique/revise cycle → more training data</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="example-box">Constitutional AI critique prompt pattern:
+
+System: "Consider whether the following response is harmful, 
+deceptive, or dishonest according to principle X..."
+
+[assistant response]
+
+Critique: "The response [identifies issue]..."
+
+Revision: "[Improved response that addresses the critique]"</div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>CAI advantages:</strong> Scalable (no human labelers), consistent (same constitution everywhere), auditable (constitution is readable). Claude's values come from its constitution, not just human labels.</span>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>CAI limitations:</strong> Works best for style and behavior alignment. For factual correctness or domain expertise, human feedback is still necessary. You cannot critique what you don't know.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. RED-TEAMING & ADVERSARIAL EVALUATION ── -->
+  <div class="section-block" id="red-teaming">
+    <div class="section-marker">03 — Testing</div>
+    <h2>Red-Teaming and Adversarial Evaluation</h2>
+    <p><strong>Red-teaming</strong> means systematically attempting to elicit harmful outputs before deployment. You attack your own system to find vulnerabilities, then patch them. Red-teaming has two forms: manual (human experts) and automated (LLM-based or gradient-based).</p>
+
+    <h3>Red-Teaming Approaches</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Manual Red-Teaming <em>— expert judgment</em></h3>
+          <p>Human security experts and domain specialists manually probe the model for failure modes in target categories.</p>
+          <ul>
+            <li>High creativity, finds novel attacks</li>
+            <li>Expensive and limited in scale</li>
+            <li>Requires security expertise</li>
+            <li>Best for critical systems</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>PAIR (Prompt Automatic Iterative Refinement) <em>— LLM-based</em></h3>
+          <p>A separate attacker LLM iteratively refines jailbreak prompts. Each iteration, the attacker sees the target model's response and generates a better attack.</p>
+          <ul>
+            <li>Highly scalable (automated)</li>
+            <li>Good at semantic/creative jailbreaks</li>
+            <li>Moderate transferability across models</li>
+            <li>Medium compute cost</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>GCG (Greedy Coordinate Gradient) <em>— gradient-based</em></h3>
+          <p>Optimize adversarial suffix at the token level via gradient descent. Transfer well across models. Finds token-level exploits that semantic methods miss.</p>
+          <ul>
+            <li>High transferability (same suffix works on different models)</li>
+            <li>Finds exploits that semantic attacks miss</li>
+            <li>Medium compute cost</li>
+            <li>Less human-interpretable attacks</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Fuzzing <em>— random perturbations</em></h3>
+          <p>Generate random variations of inputs and check for failures. Low sophistication but catches edge cases that structured tests miss.</p>
+          <ul>
+            <li>Very high scale (generate millions of variants)</li>
+            <li>Finds edge cases and unexpected interactions</li>
+            <li>Low transferability</li>
+            <li>High false-positive rate</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Scale</th><th>Transferability</th><th>Finds</th><th>Effort</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Manual expert</td><td>Low</td><td>N/A</td><td>Creative, novel attacks</td><td>High</td></tr>
+          <tr><td>Automated LLM (PAIR)</td><td>High</td><td>Medium</td><td>Semantic jailbreaks</td><td>Low</td></tr>
+          <tr><td>Gradient-based (GCG)</td><td>Medium</td><td>High (transfers)</td><td>Token-level exploits</td><td>Medium</td></tr>
+          <tr><td>Fuzzing</td><td>Very high</td><td>Low</td><td>Edge cases</td><td>Low</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Best practice:</strong> Combine methods. Manual red-teaming finds creative attacks; PAIR scales semantic attacks; GCG finds transferable exploits; fuzzing catches edge cases. Run all in parallel during development.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. RUNTIME GUARDRAILS ── -->
+  <div class="section-block" id="guardrails">
+    <div class="section-marker">04 — Deployment</div>
+    <h2>Runtime Guardrails</h2>
+    <p>Train-time alignment is necessary but insufficient. Runtime filters provide defense in depth — a safety net that catches violations that slipped through training. Input guardrails catch attacks before they reach the model; output guardrails catch policy violations before they reach users.</p>
+
+    <h3>Guardrail Methods</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Regex & Keyword Filters <em>— fast, brittle</em></h3>
+          <p>Pattern match against known bad inputs/outputs. Zero latency. Easily bypassed by paraphrasing.</p>
+          <ul>
+            <li>Good for: Known patterns (credit card numbers, known slurs)</li>
+            <li>Pros: Fast, deterministic, no model calls</li>
+            <li>Cons: Brittle, high false-positive rate, easy to bypass</li>
+            <li>Use for: First-pass filtering, not primary defense</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>ML Classifiers <em>— learned patterns</em></h3>
+          <p>Train a small BERT-class model to classify harmful intent. Good precision on known categories. Misses novel attacks.</p>
+          <ul>
+            <li>Good for: Toxicity, hate speech, known harm categories</li>
+            <li>Pros: Generalizes beyond exact keywords</li>
+            <li>Cons: Limited to training data; novel attacks slip through</li>
+            <li>Use for: Reliable filtering on known harm types</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>LLM-as-Judge <em>— semantic understanding</em></h3>
+          <p>Use a separate (smaller) LLM to evaluate I/O pairs. High quality understanding. Adds latency + cost.</p>
+          <ul>
+            <li>Good for: Complex policy violations, context-aware harms</li>
+            <li>Pros: Semantic understanding, handles novel cases</li>
+            <li>Cons: Adds 500ms+ latency, increases cost</li>
+            <li>Use for: Critical systems where latency is acceptable</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Prompt Injection Detection <em>— special case</em></h3>
+          <p>Detect instructions embedded in user content or retrieved context attempting to override system prompt.</p>
+          <ul>
+            <li>Techniques: Semantic similarity to system prompt keywords, instruction phrases</li>
+            <li>Tools: Rebuff, Guardrails AI (DAN detection)</li>
+            <li>Challenge: True positives hard to distinguish from legitimate content</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>Guardrail Tools</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LlamaGuard</div>
+        <div class="tool-desc">Meta's safety classifier for input/output toxicity.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">NeMo Guardrails</div>
+        <div class="tool-desc">NVIDIA's guardrail framework with modular rules.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Guardrails AI</div>
+        <div class="tool-desc">Python framework for building structured guardrails.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Specialization</div>
+        <div class="tool-name">Rebuff</div>
+        <div class="tool-desc">Prompt injection detection and mitigation.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">API</div>
+        <div class="tool-name">Azure Content Safety</div>
+        <div class="tool-desc">Managed content classification API.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">API</div>
+        <div class="tool-name">Perspective API</div>
+        <div class="tool-desc">Google's toxicity and bias classifier.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. JAILBREAK PATTERNS & DEFENSES ── -->
+  <div class="section-block" id="jailbreaks">
+    <div class="section-marker">05 — Attacks</div>
+    <h2>Jailbreak Patterns and Defenses</h2>
+    <p>Jailbreaks are creative prompts that bypass safety training. Understanding common patterns helps you defend against them. No single defense is complete — you must defend against multiple categories simultaneously.</p>
+
+    <h3>Major Jailbreak Categories</h3>
+    <p><strong>Role-play attacks:</strong> "Pretend you are DAN (Do Anything Now)" — the model assumes a persona that ignores safety rules. <strong>Indirect injection:</strong> Hide instructions in documents the model is asked to summarize. <strong>Many-shot jailbreaking:</strong> Fill context with examples of the model complying with harmful requests. <strong>Multilingual bypass:</strong> Request harmful content in low-resource languages where safety training is weaker. <strong>Encoding bypass:</strong> ROT13, Base64, or pig Latin to evade keyword filters.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Jailbreak type</th><th>Example</th><th>Defense</th><th>Effectiveness</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Role-play</td><td>"pretend you are DAN"</td><td>Training robustness</td><td>High</td></tr>
+          <tr><td>Indirect injection</td><td>Malicious text in retrieved doc</td><td>Separation of system/user/context</td><td>Medium</td></tr>
+          <tr><td>Many-shot</td><td>100 examples of compliance</td><td>Constitutional training</td><td>Medium</td></tr>
+          <tr><td>Encoding</td><td>Base64 harmful request</td><td>Decode before filtering</td><td>High</td></tr>
+          <tr><td>Multilingual</td><td>Request in Swahili</td><td>Multilingual safety training</td><td>Medium</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Critical:</strong> No single defense is complete. Defense-in-depth is the only robust approach. Train-time alignment + runtime guardrails + monitoring + incident response.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. PRIVACY & MEMORIZATION ── -->
+  <div class="section-block" id="privacy-mem">
+    <div class="section-marker">06 — Data</div>
+    <h2>Privacy and Memorization</h2>
+    <p>LLMs memorize training data. Verbatim reproduction of training text is measurable and extractable. Extraction attacks prompt the model to repeat memorized content. Defenses reduce memorization but don't eliminate it.</p>
+
+    <h3>Extraction Attacks</h3>
+    <p><strong>Prefix attack:</strong> Prompt: "Repeat the following text:" + random prefix. If the model completes with memorized content, the attack succeeds. <strong>Membership inference:</strong> Can an adversary determine if a specific text was in the training set? Yes, at rates above random using perplexity measurements.</p>
+
+    <h3>Memorization Defenses</h3>
+    <p><strong>Deduplication:</strong> Remove duplicate training examples before training. Simple and effective — reduces memorization by 10× (Lee et al. 2022). <strong>Differential privacy:</strong> Add noise during training. More principled but lower impact at scale. <strong>Output filtering:</strong> Detect and filter PII patterns in model outputs. Catches obvious leakage but misses creative extractions.</p>
+
+    <div class="example-box">Memorization measurement:
+
+Exact memorization rate (at scale):
+- Large models: 1-5% of training set reproduced verbatim
+- Smaller models: 0.1-1%
+- Deduplication reduces this by ~10×
+
+Membership inference (probabilistic):
+- Perplexity difference between in-distribution and out
+- Not 100% accurate but above random</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Practical insight:</strong> Deduplication is simpler and more effective than differential privacy at realistic scales. Deduplicate your training data ruthlessly. Differential privacy adds significant training overhead for modest gains.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. SAFETY EVALUATION & RED LINES ── -->
+  <div class="section-block" id="safety-eval">
+    <div class="section-marker">07 — Quality</div>
+    <h2>Safety Evaluation and Red Lines</h2>
+    <p>Safety evaluation requires defining what "safe" means. Absolute red lines (universal violations) are rare. Most policies exist on a spectrum with precision/recall tradeoffs. A model that refuses benign medical questions harms users as much as one that gives harmful advice.</p>
+
+    <h3>Evaluation Benchmarks</h3>
+    <p><strong>HELM (Holistic Evaluation of Language Models):</strong> Includes toxicity, bias, and disinformation benchmarks. Evaluates real use cases with safety constraints. <strong>BBQ (Bias Benchmark for QA):</strong> Measures social bias in question answering across demographic groups. <strong>ToxiGen:</strong> Tests for implicit toxicity and bias against minority groups — harder than explicit toxicity.</p>
+
+    <h3>Policy Framework</h3>
+    <p>Define three levels: <strong>Red lines (universal):</strong> CSAM, detailed synthesis instructions for mass-casualty weapons, targeted harassment campaigns. <strong>High precision:</strong> Requests for harmful instructions; require high confidence before refusal. <strong>Gray area:</strong> Controversial topics; balance informativeness vs. harm. Track refusal rates by category — over-refusal is also a failure.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Key insight:</strong> Over-refusal is a safety failure. If your model refuses benign medical, legal, or educational questions to avoid false positives, you're harming users. Measure refusal rates as a safety metric.</span>
+    </div>
+
+    <h3>Safety Evaluation Tools</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Benchmark</div>
+        <div class="tool-name">HELM</div>
+        <div class="tool-desc">Holistic evaluation including safety constraints.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Benchmark</div>
+        <div class="tool-name">BBQ</div>
+        <div class="tool-desc">Bias benchmark for QA systems.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Benchmark</div>
+        <div class="tool-name">ToxiGen</div>
+        <div class="tool-desc">Implicit toxicity and bias evaluation.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Safety Taxonomy</div>
+        <div class="tool-desc">Custom red lines and policy definitions.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Bai, Y. et al. (2022).
+        <em>Constitutional AI: Harmlessness from AI Feedback.</em>
+        Anthropic. arXiv:2212.08073. —
+        <a href="https://arxiv.org/abs/2212.08073" target="_blank">arxiv:2212.08073 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Pal, A. et al. (2023).
+        <em>LlamaGuard: LLM-based Input-Output Safeguard for Open-Sourced Large Language Models.</em>
+        Meta. arXiv:2312.06674. —
+        <a href="https://arxiv.org/abs/2312.06674" target="_blank">arxiv:2312.06674 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Zou, A. et al. (2023).
+        <em>Universal and Transferable Adversarial Attacks on Aligned Language Models (GCG).</em>
+        arXiv:2307.15043. —
+        <a href="https://arxiv.org/abs/2307.15043" target="_blank">arxiv:2307.15043 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Chao, P. et al. (2023).
+        <em>PAIR: Prompt Automatic Iterative Refinement.</em>
+        arXiv:2310.03684. —
+        <a href="https://arxiv.org/abs/2310.03684" target="_blank">arxiv:2310.03684 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Lee, K. et al. (2022).
+        <em>Deduplicating Training Data Mitigates Privacy Risks in Language Models.</em>
+        arXiv:2202.06539. —
+        <a href="https://arxiv.org/abs/2202.06539" target="_blank">arxiv:2202.06539 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Frameworks &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-guide">Guide</span> Anthropic. <em>Constitutional AI: Harmlessness from AI Feedback.</em> Blog post. <a href="https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback" target="_blank">anthropic.com ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Meta. <em>LlamaGuard: Safety Classifier for LLM Outputs.</em> <a href="https://github.com/facebookresearch/llama-recipes/blob/main/recipes/llamaguard_sample_calls.py" target="_blank">github.com/facebookresearch ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Rebuff. <em>Prompt Injection Detection & Prevention.</em> <a href="https://docs.rebuff.ai" target="_blank">docs.rebuff.ai ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> Guardrails AI. <em>Building Safe LLM Applications.</em> <a href="https://www.guardrailsai.com" target="_blank">guardrailsai.com ↗</a></li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

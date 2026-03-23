@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Benchmarks Explained — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #14532d; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Benchmarks & Leaderboards</span>
+  <h1>LLM <em>Benchmarks</em> Explained</h1>
+  <p class="hero-sub">What MMLU, HumanEval, HELM, and Chatbot Arena actually measure — and where they mislead</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">60+ active benchmarks</span>
+      <span class="stat-label">in circulation</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">contamination risk</span>
+      <span class="stat-label">the core problem</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">arena > static</span>
+      <span class="stat-label">the lesson</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-benchmarks-matter" data-num="1">Why benchmarks matter</a></li>
+      <li><a href="#knowledge-reasoning" data-num="2">Knowledge & reasoning</a></li>
+      <li><a href="#coding-benchmarks" data-num="3">Coding benchmarks</a></li>
+      <li><a href="#math-benchmarks" data-num="4">Math benchmarks</a></li>
+      <li><a href="#holistic-safety" data-num="5">Holistic & safety</a></li>
+      <li><a href="#chatbot-arena" data-num="6">Chatbot Arena</a></li>
+      <li><a href="#benchmark-selection" data-num="7">Selection guide</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY BENCHMARKS MATTER AND WHERE THEY FAIL ── -->
+  <div class="section-block" id="why-benchmarks-matter">
+    <div class="section-marker">01 — Context</div>
+    <h2>Why Benchmarks Matter and Where They Fail</h2>
+    <p>Benchmarks provide standardized comparison across models and over time. Without them, every team uses different test sets, results aren't comparable, and progress is subjective. They're essential infrastructure for the field.</p>
+
+    <p>But benchmarks fail in predictable ways. <strong>Train-test contamination:</strong> benchmark data leaks into training sets (via web crawl or intentional inclusion), inflating scores. <strong>Goodhart's Law:</strong> when a metric becomes the target, it ceases to measure what matters — models optimize the benchmark, not the underlying capability. <strong>Benchmark saturation:</strong> top models all cluster near ceiling, losing discriminative power. <strong>Narrow coverage:</strong> one benchmark doesn't equal general intelligence.</p>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Core risk:</strong> When a benchmark becomes widely used, models start being trained on its data — intentionally or via web crawl. Treat any model scoring >90% on a popular benchmark with skepticism. Frontier model clusters are not all equally capable; saturated benchmarks hide real differences.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. KNOWLEDGE AND REASONING BENCHMARKS ── -->
+  <div class="section-block" id="knowledge-reasoning">
+    <div class="section-marker">02 — Broad Coverage</div>
+    <h2>Knowledge and Reasoning Benchmarks</h2>
+    <p>MMLU, GPQA, HellaSwag, and WinoGrande are the workhorse benchmarks for general capability. Each measures different aspects: breadth of knowledge, common sense, and reasoning.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Benchmark</th><th>What it tests</th><th>Format</th><th>Saturation risk</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>MMLU</td><td>57 subjects, academic knowledge</td><td>4-choice MCQ</td><td>High (frontier >85%)</td></tr>
+          <tr><td>MMLU-Pro</td><td>Harder MMLU with 10 choices</td><td>10-choice MCQ</td><td>Medium</td></tr>
+          <tr><td>ARC (Challenge)</td><td>Grade-school science, needs reasoning</td><td>4-choice MCQ</td><td>High</td></tr>
+          <tr><td>HellaSwag</td><td>Commonsense completion</td><td>4-choice</td><td>High</td></tr>
+          <tr><td>WinoGrande</td><td>Pronoun disambiguation</td><td>Binary</td><td>High</td></tr>
+          <tr><td>GPQA</td><td>Expert-level PhD Q&A</td><td>4-choice</td><td>Low (frontier ~60%)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>MMLU Details</h3>
+    <p>14,000 questions across 57 subjects from elementary to PhD level. Originally hard (GPT-3 scored 43.9%); frontier models now exceed 85%. At this ceiling, small differences in percentage points don't translate to meaningful capability differences. MMLU scores above 85% are largely indistinguishable.</p>
+
+    <h3>GPQA: The Durable Benchmark</h3>
+    <p><strong>Graduate-level Google-Proof Q&A:</strong> questions where expert humans with internet access get right only 65% of the time. Current frontier models score ~60%. This is a genuine hard problem. GPQA is contamination-resistant by design — questions come from recent research papers, so the test set is narrow and hard to memorize.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Signal interpretation:</strong> MMLU scores above 85% are largely indistinguishable in practical terms. When comparing frontier models, focus on GPQA and domain-specific evaluations. MMLU is a table-stakes check, not a differentiator.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. CODING BENCHMARKS ── -->
+  <div class="section-block" id="coding-benchmarks">
+    <div class="section-marker">03 — Programming Tasks</div>
+    <h2>Coding Benchmarks</h2>
+    <p>Coding benchmarks have evolved from simple function completion to real-world issue fixing. HumanEval was the baseline; SWE-Bench is now the gold standard.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Benchmark</th><th>Tasks</th><th>Eval method</th><th>Limitation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HumanEval</td><td>164 Python functions</td><td>Unit tests (pass@k)</td><td>Too easy (frontier >90%)</td></tr>
+          <tr><td>MBPP</td><td>374 crowd-sourced problems</td><td>Unit tests</td><td>Easy</td></tr>
+          <tr><td>SWE-Bench</td><td>Real GitHub issues, 300 repos</td><td>Patch applies + tests pass</td><td>Hard, realistic</td></tr>
+          <tr><td>SWE-Bench Verified</td><td>Human-verified subset of SWE-Bench</td><td>Same</td><td>Gold standard</td></tr>
+          <tr><td>LiveCodeBench</td><td>Ongoing scrape of new LeetCode</td><td>Unit tests</td><td>Contamination-resistant</td></tr>
+          <tr><td>BigCodeBench</td><td>Function-call / library usage</td><td>Unit tests</td><td>Tests real API knowledge</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>SWE-Bench: The Realistic Standard</h3>
+    <p>Fix a real GitHub issue in a real repository with real dependencies. This is the current gold standard for agentic coding. GPT-4 scored 1.7% initially; best agents now exceed 50%. SWE-Bench measures actual engineering capability, not toy problem-solving.</p>
+
+    <h3>LiveCodeBench: Contamination-Resistant</h3>
+    <p>Scrapes new LeetCode problems monthly, keeping the test set fresh. By design, no model can be trained on future problems. LiveCodeBench is the best signal for trending model capability over time without worrying about data contamination.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Reliable signal:</strong> For production coding assistants, SWE-Bench Verified is the benchmark that correlates best with developer satisfaction. Use LiveCodeBench for trend analysis (monthly updates, zero contamination risk).</span>
+    </div>
+  </div>
+
+  <!-- ── 4. MATH BENCHMARKS ── -->
+  <div class="section-block" id="math-benchmarks">
+    <div class="section-marker">04 — Mathematical Reasoning</div>
+    <h2>Math Benchmarks</h2>
+    <p>Math benchmarks range from elementary to research-level, each revealing different reasoning depths.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Benchmark</th><th>Difficulty</th><th>Eval method</th><th>Saturation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GSM8K</td><td>Grade school math (8 steps)</td><td>Exact match</td><td>High (frontier >95%)</td></tr>
+          <tr><td>MATH</td><td>Competition math (AMC, AIME)</td><td>Exact match</td><td>Medium (frontier ~80%)</td></tr>
+          <tr><td>AIME 2024</td><td>Actual 2024 AIME problems</td><td>Exact match</td><td>Low (frontier ~20–50%)</td></tr>
+          <tr><td>FrontierMath</td><td>Research-level, novel problems</td><td>Exact match</td><td>Very low (<5%)</td></tr>
+          <tr><td>OlympiadBench</td><td>8476 multilingual olympiad</td><td>Exact match</td><td>Low</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Saturation Progression</h3>
+    <p>GSM8K: saturated. Frontier models solve 95%+ of elementary problems. MATH: nearly saturated by o1-class models with chain-of-thought. AIME 2024: emerging battleground where frontier models solve 20-50 out of 30 problems, depending on search budget and reasoning depth.</p>
+
+    <h3>FrontierMath: The Unsolved Frontier</h3>
+    <p><strong>Epoch AI benchmark:</strong> Problems posed by research mathematicians, designed to resist contamination. No public model has solved even 5%. This is the true frontier of mathematical reasoning capability.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Watch for gaming:</strong> AIME 2025 problems will be the next battleground as they become public. Monitor contamination risk carefully — models trained on 2024 AIME may appear better on 2025 problems through overlap and pattern matching rather than genuine improvement.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. HOLISTIC AND SAFETY BENCHMARKS ── -->
+  <div class="section-block" id="holistic-safety">
+    <div class="section-marker">05 — Broad & Safety</div>
+    <h2>Holistic and Safety Benchmarks</h2>
+    <p>Some benchmarks go beyond narrow metrics to measure robustness, fairness, and safety across diverse scenarios.</p>
+
+    <p><strong>HELM (Holistic Evaluation):</strong> 42 scenarios with 7 metrics per scenario — accuracy, calibration, robustness, fairness, bias, toxicity, efficiency. Comprehensive but expensive to compute. <strong>BIG-Bench Hard (BBH):</strong> 23 tasks that still challenge frontier models — algorithmic, world knowledge, language understanding. <strong>TruthfulQA:</strong> 817 questions where humans often have false beliefs; tests whether models propagate misconceptions. <strong>MT-Bench:</strong> 80 multi-turn chat questions judged by GPT-4, covering math, coding, reasoning, roleplay, writing, STEM.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Benchmark</th><th>Coverage</th><th>Eval method</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HELM</td><td>Broad (42 scenarios)</td><td>Multi-metric</td><td>Comprehensive comparison</td></tr>
+          <tr><td>BIG-Bench Hard</td><td>Reasoning-focused</td><td>Exact match</td><td>Reasoning capability</td></tr>
+          <tr><td>TruthfulQA</td><td>Factuality</td><td>Judge or MCQ</td><td>Truthfulness</td></tr>
+          <tr><td>MT-Bench</td><td>Chat quality</td><td>LLM judge</td><td>Chat assistant quality</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>These benchmarks provide breadth but sacrifice depth. A single HELM score hides variation across scenarios. Use holistic benchmarks for baseline health checks, not for final model selection.</p>
+  </div>
+
+  <!-- ── 6. CHATBOT ARENA AND HUMAN PREFERENCE ── -->
+  <div class="section-block" id="chatbot-arena">
+    <div class="section-marker">06 — Human Signal</div>
+    <h2>Chatbot Arena and Human Preference</h2>
+    <p><strong>Chatbot Arena (LMSYS):</strong> Real users ask questions, see two anonymous responses, pick the better one. ELO-style rating updated after each battle. Currently the most reliable ranking for overall model quality because contamination is impossible (new questions), coverage is real (millions of votes), and results update in real-time.</p>
+
+    <h3>Why Arena is Better Than Static Benchmarks</h3>
+    <p>Static benchmarks are fixed forever; Arena evolves. Users reveal true preferences; benchmarks measure narrow capabilities. Arena is large (millions of votes); benchmarks are small (thousands of examples). This scale difference matters.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Dimension</th><th>Arena</th><th>Static benchmarks</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Contamination risk</td><td>Zero</td><td>High</td></tr>
+          <tr><td>Coverage</td><td>Real queries (biased)</td><td>Fixed test set (narrow)</td></tr>
+          <tr><td>Speed of update</td><td>Real-time</td><td>Months</td></tr>
+          <tr><td>Reproducibility</td><td>Low (stochastic)</td><td>High</td></tr>
+          <tr><td>Cost to game</td><td>Hard</td><td>Easy</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Arena Limitations</h3>
+    <p><strong>English bias:</strong> Skewed toward English queries. <strong>Chat bias:</strong> Skewed toward chat-style questions (less technical). <strong>Gameable:</strong> Can optimize for superficial features that humans prefer (verbosity, disclaimers) without improving actual reasoning.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Single most trustworthy signal:</strong> Chatbot Arena is the best ranking available, but look at confidence intervals, not just ELO point estimates. Models within 50 points are statistically indistinguishable.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. BENCHMARK SELECTION GUIDE ── -->
+  <div class="section-block" id="benchmark-selection">
+    <div class="section-marker">07 — How to Choose</div>
+    <h2>Benchmark Selection Guide</h2>
+    <p>Different contexts demand different benchmarks. Here's a framework for choosing wisely.</p>
+
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>For general capability comparison <em>— broad signal</em></h3>
+          <p>Use MMLU-Pro + GPQA + MATH + SWE-Bench Verified + Arena ELO. This suite covers reasoning, knowledge, coding, and human preference. Spans breadth and depth.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>For coding products specifically <em>— deep signal</em></h3>
+          <p>HumanEval as a baseline (fast, for quick iteration), SWE-Bench Verified as gold standard (real-world), LiveCodeBench for contamination-resistant trending. Skip MMLU for pure coding comparisons.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>For safety-critical deployments <em>— safety focus</em></h3>
+          <p>TruthfulQA + MT-Bench safety categories + custom red-team suite. Public benchmarks alone are insufficient. Build your own safety evals for domain-specific harms.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>For your own product <em>— task-specific signal</em></h3>
+          <p>Build a task-specific golden set (see evals-practice.html). Public benchmarks measure general capability; your users care about your specific task. Benchmark scores don't translate to product quality.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Reporting Best Practices</h3>
+    <p>Always report benchmark scores with model size, training compute, and inference compute. A small model with 64× test-time search can outperform a large model on math benchmarks — these are not the same capability. Fairness demands full context.</p>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Context is essential:</strong> "Model X scored 90% on MMLU" is meaningless without knowing model size, inference strategy, and whether test-time search was used. Always publish full details.</span>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>MMLU: Measuring Massive Multitask Language Understanding.</em>
+        Hendrycks et al. (2020). arXiv:2009.03300. —
+        <a href="https://arxiv.org/abs/2009.03300" target="_blank">arxiv:2009.03300 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>HumanEval: Evaluating Large Language Models Trained on Code.</em>
+        Chen et al. (2021). arXiv:2107.03374. —
+        <a href="https://arxiv.org/abs/2107.03374" target="_blank">arxiv:2107.03374 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>SWE-Bench: Can Language Models Resolve Real-World GitHub Issues?</em>
+        Jimenez et al. (2023). arXiv:2310.06770. —
+        <a href="https://arxiv.org/abs/2310.06770" target="_blank">arxiv:2310.06770 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>HELM: Holistic Evaluation of Language Models.</em>
+        Liang et al. (2022). arXiv:2211.09110. —
+        <a href="https://arxiv.org/abs/2211.09110" target="_blank">arxiv:2211.09110 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference.</em>
+        LMSYS (2024). arXiv:2306.05685. —
+        <a href="https://arxiv.org/abs/2306.05685" target="_blank">arxiv:2306.05685 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        <em>GPQA: A Graduate-Level Google-Proof Q&A Benchmark.</em>
+        Rein et al. (2023). arXiv:2311.12022. —
+        <a href="https://arxiv.org/abs/2311.12022" target="_blank">arxiv:2311.12022 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Blog Posts & Resources</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        FrontierMath — Epoch AI. Research-level unsolved math problems. —
+        <a href="https://epochai.org/" target="_blank">epochai.org ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        OpenAI Evals Repository. Benchmark datasets and grading code. —
+        <a href="https://github.com/openai/evals" target="_blank">github.com/openai/evals ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        LMSYS Chatbot Arena. Live leaderboard with human preference data. —
+        <a href="https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard" target="_blank">huggingface.co/chatbot-arena ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        SWE-Bench Live Leaderboard. Software engineering benchmark with model results. —
+        <a href="https://www.swebench.com/" target="_blank">swebench.com ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

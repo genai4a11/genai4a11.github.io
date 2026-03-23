@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Alignment Techniques — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Fine-tuning · Concept guide</span>
+  <h1>LLM <em>Alignment</em> Techniques</h1>
+  <p class="hero-sub">RLHF, DPO, and Constitutional AI compared — how each shapes model behaviour, what it costs, and when to use it.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">3</span>
+      <span class="stat-label">main approaches</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">~2×</span>
+      <span class="stat-label">DPO speed vs RLHF</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">KL divergence</span>
+      <span class="stat-label">keeps models grounded</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">SFT</span>
+      <span class="stat-label">first always</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#what-alignment" data-num="1">What alignment means</a></li>
+      <li><a href="#sft-foundation" data-num="2">SFT: the foundation</a></li>
+      <li><a href="#rlhf-workflow" data-num="3">RLHF workflow</a></li>
+      <li><a href="#dpo-path" data-num="4">DPO: the simpler path</a></li>
+      <li><a href="#constitutional-ai" data-num="5">Constitutional AI</a></li>
+      <li><a href="#method-comparison" data-num="6">Method comparison</a></li>
+      <li><a href="#references" data-num="7">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHAT ALIGNMENT MEANS ── -->
+  <div class="section-block" id="what-alignment">
+    <div class="section-marker">01 — Definition</div>
+    <h2>What Alignment Means</h2>
+    <p>A pretrained LLM predicts the next token — it's a completion engine, not an assistant. Alignment is the process of steering that completion engine toward being helpful, honest, and harmless. It happens after pretraining and after SFT.</p>
+    
+    <p>Raw pretraining teaches a model to predict plausible continuations of text. But "plausible" includes offensive, factually wrong, or harmful content if it's statistically likely given the prompt. Alignment techniques layer preferences on top of that statistical foundation — telling the model what humans actually want.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> Alignment is not safety, and safety is not alignment. Alignment steers behaviour toward human preferences. Safety prevents specific harms. They're complementary but distinct.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. SFT FOUNDATION ── -->
+  <div class="section-block" id="sft-foundation">
+    <div class="section-marker">02 — Prerequisite</div>
+    <h2>SFT: The Foundation</h2>
+    <p>Supervised Fine-Tuning on demonstration data always comes first. You show the model (prompt, ideal response) pairs. It's the cheapest alignment step and gives the biggest quality jump. Every downstream alignment technique builds on a well-SFT'd model.</p>
+
+    <p>SFT shifts the base model's entire distribution toward assistant-like outputs. It teaches format, style, instruction following, and reasoning chains. Without good SFT, RLHF or DPO training becomes noisy — you're optimizing on top of a weak foundation.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Never skip SFT.</strong> RLHF or DPO applied to a raw pretrained model is significantly less effective than applied to an SFT checkpoint. Start here always.</span>
+    </div>
+
+    <h3>SFT Best Practices</h3>
+    <p><strong>Data quality:</strong> Even 10,000 high-quality SFT examples beat 100,000 noisy ones. Focus on diversity and clarity. <strong>Diversity:</strong> Cover instruction types, reasoning styles, and edge cases. <strong>Iteration:</strong> SFT early and often — each refinement compounds.</p>
+  </div>
+
+  <!-- ── 3. RLHF WORKFLOW ── -->
+  <div class="section-block" id="rlhf-workflow">
+    <div class="section-marker">03 — Most Complete</div>
+    <h2>RLHF Workflow</h2>
+    <p><strong>RLHF (Reinforcement Learning from Human Feedback)</strong> is the alignment method behind ChatGPT, Claude, and GPT-4. It maximizes a learned reward model via PPO (Proximal Policy Optimization) while penalizing divergence from the SFT checkpoint using KL divergence.</p>
+
+    <h3>The RLHF Pipeline</h3>
+    <div class="methods-list">
+
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Collect Human Preferences <em>— the data</em></h3>
+          <p>Annotators rank model responses (typically A vs B). This is expensive — usually 50–100 examples per prompt, across thousands of prompts, annotated by multiple annotators to ensure quality.</p>
+          <ul>
+            <li>Clear preference definitions (helpfulness, factuality, safety)</li>
+            <li>Multiple annotators per example to measure agreement</li>
+            <li>Iterative calibration sessions to align annotator standards</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Train a Reward Model <em>— learns preferences</em></h3>
+          <p>A separate model learns to score responses. Given (prompt, response A, response B), it predicts which humans prefer. This model becomes the ground truth during PPO training.</p>
+          <ul>
+            <li>Usually a frozen base model + trainable head</li>
+            <li>Trained on pairwise cross-entropy loss</li>
+            <li>Accuracy on held-out test set signals quality</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Run PPO Loop <em>— optimize policy</em></h3>
+          <p>Fine-tune the LLM to maximize reward model scores while staying close to the SFT model via KL divergence penalty. The penalty prevents reward hacking and distribution collapse.</p>
+          <ul>
+            <li>Requires 3 models in VRAM: policy, reference, reward model</li>
+            <li>High compute cost — typically 3–4× SFT</li>
+            <li>Iterative refinement of generation quality</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Iterate <em>— close the loop</em></h3>
+          <p>Collect new preference data on the updated model, retrain the reward model, run PPO again. Each iteration refines preferences and catches reward model drift.</p>
+          <ul>
+            <li>Proportional gains diminish after 3–4 iterations</li>
+            <li>Refresh preference data quarterly</li>
+            <li>Monitor for reward hacking (unwanted shortcuts)</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>RLHF requires 3 models in memory simultaneously during PPO:</strong> the policy, the reference model, and the reward model. This makes it expensive — typically 3–4× the cost of SFT alone. KL divergence penalty is critical: without it, the model learns shortcuts that maximize reward artificially rather than genuinely improving quality.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. DPO PATH ── -->
+  <div class="section-block" id="dpo-path">
+    <div class="section-marker">04 — Modern Simpler</div>
+    <h2>DPO: The Simpler Path</h2>
+    <p><strong>Direct Preference Optimization (DPO)</strong> reformulates RLHF as a classification problem. Instead of training a reward model and running PPO, DPO directly optimizes the policy on preference pairs: given (prompt, chosen, rejected), update the policy to assign higher probability to chosen over rejected.</p>
+
+    <p>No reward model. No PPO. No reference model calls during training. Roughly 2× faster to implement and 2× faster to run. Empirically, DPO matches RLHF quality on many benchmarks.</p>
+
+    <h3>DPO vs RLHF Pipeline</h3>
+    <div class="example-box">RLHF pipeline:           DPO pipeline:
+SFT checkpoint           SFT checkpoint
+→ Reward model training  → DPO training (preferred/rejected pairs)
+→ PPO loop               → Done
+  (policy + ref + RM)
+→ Final policy           → Final policy
+
+Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
+
+    <p>DPO uses implicit reward modeling — the reward is hidden in the loss function. This simplicity comes with tradeoffs: DPO may be less stable than RLHF on very large models, and reward model evaluation is opaque. But for teams without massive annotation budgets or GPU fleets, DPO is often the pragmatic choice.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>When to use DPO:</strong> You have preference data, limited compute, and want to align quickly. Quality is ~95% of RLHF with significantly lower complexity.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. CONSTITUTIONAL AI ── -->
+  <div class="section-block" id="constitutional-ai">
+    <div class="section-marker">05 — Scalable</div>
+    <h2>Constitutional AI</h2>
+    <p><strong>Constitutional AI (CAI)</strong> is Anthropic's approach to replacing human preference labels with AI-generated feedback. A set of principles — the "constitution" — guides a capable model to critique and revise its own outputs. The revised outputs become training data for alignment.</p>
+
+    <p>This scales without human annotation. Instead of paying annotators to rank responses, you craft a constitution and let the model self-improve. But it requires a capable enough base model to self-critique reliably — weak models will generate poor feedback.</p>
+
+    <h3>The CAI Process</h3>
+    <ol style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Constitution:</strong> Write explicit principles (e.g., "Be helpful. Be honest. Minimize harm.")</li>
+      <li style="margin: 0.5rem 0;"><strong>Critique:</strong> Ask a strong model to critique its own outputs using the constitution</li>
+      <li style="margin: 0.5rem 0;"><strong>Revision:</strong> The model revises outputs to address critiques</li>
+      <li style="margin: 0.5rem 0;"><strong>Finetune:</strong> Train on revised (better) outputs using SFT</li>
+    </ol>
+
+    <p>This trades human effort for LLM compute. The constitution must be well-written and aligned with your values — vague principles lead to vague feedback. And the critique model must be strong enough to notice flaws and suggest improvements.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>CAI works best for stylistic and behavioral alignment.</strong> For factual correctness or domain-specific knowledge, human feedback is still necessary. You can't critique what you don't know.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. METHOD COMPARISON ── -->
+  <div class="section-block" id="method-comparison">
+    <div class="section-marker">06 — Tradeoffs</div>
+    <h2>Method Comparison</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Human labels needed</th><th>Compute cost</th><th>Stability</th><th>Best when</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>SFT</strong></td><td>Demonstrations</td><td>Low</td><td>High</td><td>Always — prerequisite</td></tr>
+          <tr><td><strong>RLHF</strong></td><td>Preference pairs + RM</td><td>High</td><td>Medium</td><td>Maximum quality, budget available</td></tr>
+          <tr><td><strong>DPO</strong></td><td>Preference pairs only</td><td>Medium</td><td>High</td><td>Simpler RLHF alternative</td></tr>
+          <tr><td><strong>Constitutional AI</strong></td><td>Minimal</td><td>Medium</td><td>Medium</td><td>Scaling without labellers</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Decision Framework</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3><span class="badge">🎯</span> Goal: Maximum Quality</h3>
+        <ul>
+          <li>Use RLHF if budget allows</li>
+          <li>Invest in diverse preference data</li>
+          <li>Run 3–4 iterations</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">⚡</span> Goal: Fast Iteration</h3>
+        <ul>
+          <li>Start with DPO</li>
+          <li>Requires preference data (existing or synthetic)</li>
+          <li>Faster feedback loop</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">💰</span> Goal: Minimize Labelling</h3>
+        <ul>
+          <li>Constitutional AI if model is strong</li>
+          <li>Write clear constitution</li>
+          <li>Use synthetic preferences for DPO</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">🔬</span> Goal: Research</h3>
+        <ul>
+          <li>Start with DPO (simpler, reproducible)</li>
+          <li>Build RLHF as baseline for comparison</li>
+          <li>Ablate reward model components</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Cost vs Quality Tradeoff</h3>
+    <p>RLHF achieves the highest quality but at high cost. DPO gets 90–95% of RLHF quality at half the compute. Constitutional AI sacrifices quality for annotation savings. Most teams should start with SFT + DPO, only moving to RLHF if quality plateaus and budget is available.</p>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">07 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Ouyang, L. et al. (2022).
+        <em>Training language models to follow instructions with human feedback.</em>
+        OpenAI InstructGPT paper. arXiv:2203.02155. —
+        <a href="https://arxiv.org/abs/2203.02155" target="_blank">arxiv:2203.02155 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Rafailov, R. et al. (2023).
+        <em>Direct Preference Optimization: Your Language Model is Secretly a Reward Model.</em>
+        arXiv:2305.18290. —
+        <a href="https://arxiv.org/abs/2305.18290" target="_blank">arxiv:2305.18290 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Bai, Y. et al. (2022).
+        <em>Constitutional AI: Harmlessness from AI Feedback.</em>
+        Anthropic. arXiv:2212.08073. —
+        <a href="https://arxiv.org/abs/2212.08073" target="_blank">arxiv:2212.08073 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Schulman, J. et al. (2017).
+        <em>Proximal Policy Optimization Algorithms.</em>
+        OpenAI. arXiv:1707.06347. —
+        <a href="https://arxiv.org/abs/1707.06347" target="_blank">arxiv:1707.06347 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace TRL — DPO Trainer. <a href="https://huggingface.co/docs/trl/dpo_trainer" target="_blank">huggingface.co/docs/trl ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace TRL — PPO Trainer (RLHF). <a href="https://huggingface.co/docs/trl/ppo" target="_blank">huggingface.co/docs/trl ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace TRL — SFT Trainer. <a href="https://huggingface.co/docs/trl/sft_trainer" target="_blank">huggingface.co/docs/trl ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> Cohere — Introduction to RLHF. <a href="https://cohere.ai/blog/rlhf-research-summary" target="_blank">cohere.ai ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        HuggingFace. (2024). <em>RLHF: From Zero to ChatGPT.</em> —
+        <a href="https://huggingface.co/blog/rlhf" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Rafailov, R. (2023). <em>DPO Explained: Simpler Reward Model Training.</em> —
+        <a href="https://medium.com/@rafailov/dpo-explained-9b24f3de15c3" target="_blank">medium.com ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Anthropic. (2023). <em>Constitutional AI: Harmlessness from AI Feedback.</em> Blog post accompanying CAI paper. —
+        <a href="https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback" target="_blank">anthropic.com ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Serving & Inference Infrastructure — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9d174d; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .refs-list { list-style: none; padding: 0; }
+    .ref-item {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .refs-list li:last-child { border-bottom: none; }
+    .refs-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .refs-list a:hover { text-decoration: underline; }
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">PRODUCTION INFRASTRUCTURE</span>
+  <h1>LLM Serving & <em>Inference</em> Infrastructure</h1>
+  <p class="hero-sub">Throughput, latency, and cost — how to run LLMs at scale in production</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">TTFT + TBT</span>
+      <span class="stat-label">the two latency metrics</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">tokens/sec/GPU</span>
+      <span class="stat-label">throughput target</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">batch or stream</span>
+      <span class="stat-label">serving modes</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#serving-metrics" data-num="1">The two serving metrics</a></li>
+      <li><a href="#continuous-batching" data-num="2">Continuous batching</a></li>
+      <li><a href="#paged-attention" data-num="3">PagedAttention & memory</a></li>
+      <li><a href="#parallelism" data-num="4">Parallelism strategies</a></li>
+      <li><a href="#speculative" data-num="5">Speculative decoding</a></li>
+      <li><a href="#routing" data-num="6">Routing & load balancing</a></li>
+      <li><a href="#frameworks" data-num="7">Framework comparison</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. THE TWO SERVING METRICS ── -->
+  <div class="section-block" id="serving-metrics">
+    <div class="section-marker">01 — Core Concepts</div>
+    <h2>The Two Serving Metrics</h2>
+    <p><strong>TTFT (Time to First Token):</strong> Latency from request arrival to the first output token. This is what the user perceives — how responsive the system feels. A 500ms TTFT is acceptable. A 5-second TTFT feels slow.</p>
+
+    <p><strong>TBT (Time Between Tokens) / ITL (Inter-Token Latency):</strong> Latency between each subsequent token. This drives the streaming experience. If TBT is 50ms, the user sees about 20 tokens per second on screen — a natural reading pace. If TBT is 200ms, the text appears in bursts, feeling sluggish.</p>
+
+    <p><strong>Throughput:</strong> Total tokens generated per second across all concurrent requests. This drives cost efficiency. Generate 500 tokens/sec/GPU and your GPU is fully utilized. Generate 50 tokens/sec/GPU and you're wasting 90% of its potential.</p>
+
+    <p>The fundamental tension: maximizing throughput requires large batches, which delays responses (high TTFT). Minimizing TTFT requires small batches, which wastes GPU utilization. Production systems must balance all three metrics within SLA bounds.</p>
+
+    <div class="example-box">Target SLAs (typical production):
+
+TTFT: < 500ms for chat, < 5s for batch
+TBT:  < 50ms (20+ tokens/sec for readable streaming)
+Throughput: maximize within SLA bounds    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Understand your tradeoff:</strong> A 7B model with 100ms TTFT is better for chat. The same model with 20ms TTFT but half throughput costs twice as much. Choose based on your use case.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. CONTINUOUS BATCHING ── -->
+  <div class="section-block" id="continuous-batching">
+    <div class="section-marker">02 — Core Optimization</div>
+    <h2>Continuous Batching</h2>
+    <p>Naive batching: collect requests until batch is full (say, 32), run inference together, return all results. Problem: the GPU sits idle while waiting for the batch to fill. Throughput suffers.</p>
+
+    <p><strong>Continuous batching (Orca 2022):</strong> Don't wait. Start processing requests immediately. As one request finishes generating a token, remove it from the active batch. As new requests arrive, add them to fill empty slots. The batch is always full, always moving.</p>
+
+    <p>This is deceptively powerful. All major serving frameworks (vLLM, TGI, TRT-LLM, SGLang) implement continuous batching. Without it, you leave 5–10× throughput on the table.</p>
+
+    <p>Key insight: prefill (processing input tokens) is compute-bound. Decode (generating tokens one-by-one) is memory-bandwidth-bound. Modern systems separate them: prefill on one GPU pool, decode on another. Each optimized independently.</p>
+
+    <p><strong>Disaggregated serving</strong> takes this further: run prefill and decode on completely separate GPU clusters. Prefill gets high-end GPUs with large memory for long prompts. Decode gets bandwidth-optimized GPUs for throughput. Route requests through a scheduler.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">💡</span>
+      <span><strong>Continuous batching is the single highest-leverage optimization for throughput.</strong> Enables 5–10× better GPU utilization vs naive batching. If you're running a custom serving system, implement this first.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. PAGEDATTENTION AND MEMORY MANAGEMENT ── -->
+  <div class="section-block" id="paged-attention">
+    <div class="section-marker">03 — Memory Optimization</div>
+    <h2>PagedAttention and Memory Management</h2>
+    <p>The KV cache — stored key and value tensors for each token in the context — is the primary memory consumer during inference. As sequences get longer (and they do — 8K, 32K, 128K contexts are becoming standard), KV cache dominates.</p>
+
+    <p>With fixed-size KV cache pre-allocated per request, varying sequence lengths cause fragmentation. A request with 1K tokens uses 1K of 4K allocated cache — 3K wasted. Multiply across 100 concurrent requests and you've wasted significant memory.</p>
+
+    <p><strong>PagedAttention (vLLM):</strong> Allocate KV cache in fixed-size "pages" (like OS virtual memory). Each token's key and value go into a page. Pages are dynamically allocated. If a sequence needs more pages, allocate more. No internal fragmentation.</p>
+
+    <p>Benefits cascade: <strong>Prefix sharing:</strong> requests with the same prompt prefix share the same pages. System prompt appears in every request — save 90% of system prompt cache by sharing. <strong>Beam search:</strong> explore multiple hypotheses without memory blowup — each hypothesis shares the prefix.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Approach</th><th>Fragmentation</th><th>Prefix sharing</th><th>Complexity</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Fixed pre-allocated</td><td>High</td><td>No</td><td>Low</td></tr>
+          <tr><td>Dynamic per-request</td><td>Medium</td><td>No</td><td>Medium</td></tr>
+          <tr><td>PagedAttention</td><td>Minimal</td><td>Yes</td><td>High</td></tr>
+          <tr><td>Chunked prefill</td><td>Low</td><td>Partial</td><td>Medium</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>PagedAttention is non-trivial to implement (fancy indexing into pages), but the memory savings are substantial. vLLM's adoption is partly because they got PagedAttention right.</p>
+  </div>
+
+  <!-- ── 4. PARALLELISM STRATEGIES ── -->
+  <div class="section-block" id="parallelism">
+    <div class="section-marker">04 — Scaling Across GPUs</div>
+    <h2>Parallelism Strategies</h2>
+    <p>Most LLMs don't fit on a single GPU. Must split across multiple. Four strategies, each with tradeoffs.</p>
+
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Tensor Parallelism <em>— split weights</em></h3>
+          <p>Split individual weight matrices across GPUs. Each GPU holds partial weights. All GPUs process the same batch in parallel. After each layer, all-reduce to combine results.</p>
+          <ul>
+            <li>Low latency per token (all-reduce happens in parallel)</li>
+            <li>High communication cost — must transfer intermediate activations</li>
+            <li>Best within a single node (NVLink, very low latency interconnect)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Pipeline Parallelism <em>— split layers</em></h3>
+          <p>Split layers across GPUs. GPU 0 does layer 0, GPU 1 does layer 1, etc. Each GPU processes a micro-batch sequentially. Activations flow through the pipeline.</p>
+          <ul>
+            <li>High throughput (can overlap computation on different GPUs)</li>
+            <li>Pipeline bubble latency — some GPUs idle while waiting for previous stage</li>
+            <li>Works across nodes (lower bandwidth requirements)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Data Parallelism <em>— replicate model</em></h3>
+          <p>Replicate full model on each GPU. Each GPU handles a different request (or batch of requests). No inter-GPU communication during forward pass.</p>
+          <ul>
+            <li>Scales throughput linearly (each GPU independent)</li>
+            <li>Requires model to fit on a single GPU</li>
+            <li>Perfect for multi-request inference (chat, batch scoring)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Expert Parallelism <em>— for MoE</em></h3>
+          <p>For Mixture-of-Experts models: route tokens to expert GPUs. Each GPU holds different expert FFN layers. Sparse activation — each token routes to a few experts, not all.</p>
+          <ul>
+            <li>Enables very large models with conditional compute</li>
+            <li>Load balancing complexity — some experts become bottlenecks</li>
+            <li>Specialized for MoE architectures (Mixtral, DeepSeek-MoE)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Strategy</th><th>Model fits GPU?</th><th>Comm overhead</th><th>Good for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>DP</td><td>Yes (per replica)</td><td>Low</td><td>High throughput, multiple replicas</td></tr>
+          <tr><td>TP</td><td>No (splits model)</td><td>High (all-reduce)</td><td>Large models, low latency</td></tr>
+          <tr><td>PP</td><td>No (splits layers)</td><td>Medium</td><td>Very large models</td></tr>
+          <tr><td>TP+PP</td><td>No</td><td>Highest</td><td>Frontier models (175B+)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>In practice, teams use combinations: tensor parallelism within a node (exploiting NVLink), pipeline parallelism across nodes. Larger models need multiple strategies.</p>
+  </div>
+
+  <!-- ── 5. SPECULATIVE DECODING ── -->
+  <div class="section-block" id="speculative">
+    <div class="section-marker">05 — Inference Speedup</div>
+    <h2>Speculative Decoding</h2>
+    <p>Decoding is memory-bandwidth-bound: GPU loads weights, generates one token, waits for next batch of requests. The bottleneck is weight transfer, not compute.</p>
+
+    <p><strong>Speculative decoding:</strong> Use a small, fast draft model to propose the next k tokens. The target (main) model verifies all k tokens in parallel. If all k are accepted, you get k tokens in one round-trip instead of k round-trips. In theory, k× speedup.</p>
+
+    <p>In practice: 70–85% of proposed tokens are accepted (due to distribution mismatch). With N=4 draft tokens and 75% acceptance rate, you get roughly 2–3× speedup with no quality loss (output distribution is identical).</p>
+
+    <p><strong>Variants:</strong> Small draft model (separate model), Medusa (draft heads on the main model, lower overhead), EAGLE (feature-level drafting, higher acceptance rates), prompt lookup decoding (copy from context, minimal compute).</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Variant</th><th>Draft source</th><th>Speedup</th><th>Quality loss</th><th>Setup complexity</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Small draft model</td><td>Separate small LLM</td><td>2–3×</td><td>None (exact)</td><td>Medium</td></tr>
+          <tr><td>Medusa</td><td>Extra draft heads</td><td>1.5–2×</td><td>None (exact)</td><td>Low</td></tr>
+          <tr><td>EAGLE</td><td>Feature-level</td><td>3–4×</td><td>None (exact)</td><td>Medium</td></tr>
+          <tr><td>Prompt lookup</td><td>Copies from prompt</td><td>1.5–2.5×</td><td>None (exact)</td><td>Very low</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Speculative decoding is especially effective for long outputs. Short completions don't benefit as much. Worth measuring on your workload.</p>
+  </div>
+
+  <!-- ── 6. ROUTING AND LOAD BALANCING ── -->
+  <div class="section-block" id="routing">
+    <div class="section-marker">06 — Multi-Replica Systems</div>
+    <h2>Routing and Load Balancing</h2>
+    <p>Production: deploy multiple replicas of your model. Need intelligent routing to maximize cache hit rates and throughput.</p>
+
+    <p><strong>Strategies:</strong> Round-robin (simple, ignores load), least-connections (tracks active requests per replica), <strong>prefix-aware routing</strong> (send requests with same system prompt to same replica — huge cache hit rate improvement).</p>
+
+    <p>For chatbots, prefix-aware routing is critical. System prompt appears in every request. If 100 requests with the same system prompt hit 100 different replicas, each one recomputes the system prompt's KV cache. Route to same replica, compute once, share across 100 requests.</p>
+
+    <p><strong>Autoscaling:</strong> Scale replicas based on queue depth, not CPU/RAM. GPU serving is queue-depth-driven: requests queue up, replicas drain the queue. When queue depth > threshold, scale up. When queue depth < threshold, scale down.</p>
+
+    <p><strong>Model routing by capability:</strong> Easy queries (classification, factual lookup) route to small, fast model. Hard queries (reasoning, analysis) route to large, slow model. A tiny router model classifies difficulty (<100ms), then routes to appropriate model. Maximizes throughput, minimizes cost.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Prefix-aware routing can double KV cache hit rates in production.</strong> Critical optimization for chatbots. Implement a hash of the system prompt, route all requests with same hash to same replica.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. FRAMEWORK COMPARISON ── -->
+  <div class="section-block" id="frameworks">
+    <div class="section-marker">07 — Tools & Selection</div>
+    <h2>Framework Comparison and Selection</h2>
+    <p>Mature open-source and proprietary serving frameworks exist. Each has strengths for different scenarios.</p>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">vLLM</div>
+        <div class="tool-desc">Most popular OSS serving. PagedAttention, continuous batching, tensor parallelism. Supports GPTQ, AWQ, FP8 quantization.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">SGLang</div>
+        <div class="tool-desc">Structured generation + serving. Native support for tree search, constrained generation, agent loops. FP8, GPTQ quantization.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">TensorRT-LLM</div>
+        <div class="tool-desc">NVIDIA's production framework. FP8, INT8 quantization. Complex to use, powerful performance. For teams with NVIDIA resources.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">TGI (Text Generation Inference)</div>
+        <div class="tool-desc">HuggingFace's framework. Built-in continuous batching. AWQ, GPTQ quantization. Solid default choice.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Ollama</div>
+        <div class="tool-desc">Local/dev use only. Easy setup, GGUF quantization. Not suitable for production.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">llama.cpp</div>
+        <div class="tool-desc">C++ inference, CPU-optimized. GGUF format. Good for edge and local deployment.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Triton Inference Server</div>
+        <div class="tool-desc">NVIDIA's orchestration layer. Supports multiple backends. Complex setup, powerful for large deployments.</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Framework</th><th>Best for</th><th>Quantization</th><th>Multi-GPU</th><th>Production-ready</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>vLLM</td><td>General OSS serving</td><td>GPTQ, AWQ, FP8</td><td>TP + PP</td><td>Yes</td></tr>
+          <tr><td>SGLang</td><td>Structured outputs, agents</td><td>FP8, GPTQ</td><td>TP</td><td>Yes</td></tr>
+          <tr><td>TRT-LLM</td><td>NVIDIA production</td><td>FP8, INT8</td><td>TP + PP</td><td>Yes (complex)</td></tr>
+          <tr><td>TGI</td><td>HuggingFace models</td><td>AWQ, GPTQ</td><td>TP</td><td>Yes</td></tr>
+          <tr><td>Ollama</td><td>Local/dev use</td><td>GGUF</td><td>Limited</td><td>No (dev only)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Selection Guide</h3>
+    <p><strong>Starting point:</strong> vLLM. Default choice. Mature, well-documented, supports most models and quantizations.</p>
+
+    <p><strong>Need structured outputs:</strong> SGLang. Native grammar constraints, agents, tree search.</p>
+
+    <p><strong>Maximum performance on NVIDIA:</strong> TensorRT-LLM. Complex, but squeezes every bit of performance.</p>
+
+    <p><strong>Already using HuggingFace pipeline:</strong> TGI. Integrates naturally.</p>
+
+    <p><strong>Local development:</strong> Ollama. Easy setup, not for production.</p>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="refs-list">
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Lee, J. W. et al. (2022).
+        <em>Orca: A Distributed Serving System for Transformer-Based Generative Models.</em>
+        arXiv:2306.02212. —
+        <a href="https://arxiv.org/abs/2306.02212" target="_blank">arxiv:2306.02212 ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Zhou, W. et al. (2023).
+        <em>vLLM: Easy, Fast, and Cheap LLM Serving with PagedAttention.</em>
+        arXiv:2309.06180. —
+        <a href="https://arxiv.org/abs/2309.06180" target="_blank">arxiv:2309.06180 ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Leviathan, Y. et al. (2022).
+        <em>Fast Transformer Decoding: One Write-Head is All You Need.</em>
+        Speculative decoding. arXiv:2211.17192. —
+        <a href="https://arxiv.org/abs/2211.17192" target="_blank">arxiv:2211.17192 ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Zhang, S. et al. (2024).
+        <em>EAGLE: Speculative Sampling Requires Rethinking Feature Prediction.</em>
+        arXiv:2401.15077. —
+        <a href="https://arxiv.org/abs/2401.15077" target="_blank">arxiv:2401.15077 ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Lian, X. et al. (2023).
+        <em>SGLang: Efficient Execution of Structured Language Model Programs.</em>
+        arXiv:2312.07104. —
+        <a href="https://arxiv.org/abs/2312.07104" target="_blank">arxiv:2312.07104 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="refs-list">
+      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> vLLM Official Documentation. <a href="https://docs.vllm.ai" target="_blank">docs.vllm.ai ↗</a></li>
+      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> SGLang Documentation. <a href="https://sgl-project.github.io" target="_blank">sgl-project.github.io ↗</a></li>
+      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> TensorRT-LLM. <a href="https://nvidia.github.io/TensorRT-LLM" target="_blank">nvidia.github.io/TensorRT-LLM ↗</a></li>
+      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> HuggingFace Text Generation Inference. <a href="https://huggingface.co/docs/text-generation-inference" target="_blank">huggingface.co/docs ↗</a></li>
+      <li class="ref-item"><span class="ref-badge badge-guide">Guide</span> NVIDIA Triton Inference Server. <a href="https://developer.nvidia.com/triton-inference-server" target="_blank">developer.nvidia.com ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Resources</div>
+    <ul class="refs-list">
+      <li class="ref-item">
+        <span class="ref-badge badge-blog">Blog</span>
+        NVIDIA. (2023). <em>Efficient LLM Inference with vLLM and PagedAttention.</em> —
+        <a href="https://nvidia.com/blog" target="_blank">nvidia.com/blog ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-blog">Blog</span>
+        Together AI. (2024). <em>LLM Inference Cost and Performance Guide.</em> —
+        <a href="https://www.together.ai/blog" target="_blank">together.ai/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

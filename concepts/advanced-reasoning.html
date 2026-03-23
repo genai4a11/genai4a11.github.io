@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Reasoning in LLMs — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9d174d; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .refs-list { list-style: none; padding: 0; }
+    .ref-item {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .refs-list li:last-child { border-bottom: none; }
+    .refs-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .refs-list a:hover { text-decoration: underline; }
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">REASONING & INFERENCE</span>
+  <h1>Advanced <em>Reasoning</em> in LLMs</h1>
+  <p class="hero-sub">Chain-of-thought, tree search, and test-time compute scaling — how models think step by step</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">CoT → o1 → R1</span>
+      <span class="stat-label">evolution of reasoning</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">think before answering</span>
+      <span class="stat-label">the core insight</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">scale inference not just training</span>
+      <span class="stat-label">the paradigm shift</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#what-reasoning" data-num="1">What is reasoning</a></li>
+      <li><a href="#chain-thought" data-num="2">Chain-of-thought prompting</a></li>
+      <li><a href="#scratchpad" data-num="3">Scratchpad training & PRM</a></li>
+      <li><a href="#tree-search" data-num="4">Tree search at inference</a></li>
+      <li><a href="#deepseek-r1" data-num="5">DeepSeek-R1 & GRPO</a></li>
+      <li><a href="#test-time-compute" data-num="6">Test-time compute scaling</a></li>
+      <li><a href="#implementation" data-num="7">Practical implementation</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHAT IS REASONING IN LLMS ── -->
+  <div class="section-block" id="what-reasoning">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>What Is Reasoning in LLMs?</h2>
+    <p>A standard LLM operates in one forward pass: input → output. No intermediate deliberation. The model generates the final answer directly, token by token, in a single left-to-right pass.</p>
+
+    <p>Reasoning LLMs fundamentally change this: they generate explicit intermediate steps (tokens) before the final answer. These intermediate tokens represent "thinking" — the model shows its work, explores paths, checks assumptions, and validates logic before committing to a conclusion.</p>
+
+    <p>Two axes define reasoning approaches: <strong>where it happens</strong> (in the prompt via CoT, in model weights from training, or via search algorithms) and <strong>when it happens</strong> (during training time with special loss functions, or at inference time with compute budget).</p>
+
+    <p>The key insight: <strong>more thinking tokens = better answers on hard tasks, at the cost of latency and token spend.</strong> This trades inference compute for quality — a new scaling dimension beyond just model size and pretraining tokens.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Reasoning models trade latency for accuracy.</strong> Always benchmark both metrics before choosing. A 50-second reasoning model is useless in a latency-critical chat interface, but essential in batch scoring or research contexts.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. CHAIN-OF-THOUGHT PROMPTING ── -->
+  <div class="section-block" id="chain-thought">
+    <div class="section-marker">02 — Prompting Method</div>
+    <h2>Chain-of-Thought Prompting</h2>
+    <p>Wei et al. 2022 showed a simple discovery: appending "Let's think step by step" to a prompt unlocks multi-step reasoning in large models. This cost nearly nothing — no retraining, no new data. Just better prompting.</p>
+
+    <p><strong>Zero-shot CoT:</strong> Append "Let's think step by step" to any prompt. Works reliably on models ≥ ~100B parameters. The model's training has naturally learned reasoning, just not by default.</p>
+
+    <p><strong>Few-shot CoT:</strong> Provide worked examples showing explicit reasoning chains. More expensive to construct, but more reliable. Show the model a question, then step-by-step reasoning, then the answer. Few-shot versions reliably outperform zero-shot.</p>
+
+    <p><strong>Self-consistency:</strong> Don't just sample one CoT chain. Sample multiple independent chains (typically 5–10), let the model reason differently each time, then take a majority vote on the final answer. Adds 3–5% accuracy on math benchmarks with just sampling cost.</p>
+
+    <div class="example-box">Direct answer vs CoT:
+
+Direct: Q: If 3 items cost $4.50 each and you have $20, what's left?
+        A: $6.50
+
+CoT:    Q: [same question] Let's think step by step.
+        Step 1: Cost = 3 × 4.50 = 13.50
+        Step 2: Change = 20 - 13.50 = 6.50
+        A: $6.50 <span class="verdict-pass">✓</span> (same answer, but auditable)
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>CoT helps mainly on multi-step math, logic, and code.</strong> It rarely helps on factual recall or single-lookup tasks. Don't use CoT for everything — measure the impact on your specific task.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. SCRATCHPAD TRAINING AND PRM ── -->
+  <div class="section-block" id="scratchpad">
+    <div class="section-marker">03 — Training Method</div>
+    <h2>Scratchpad Training and Process Reward Models</h2>
+    <p>Instead of prompting for CoT, train the model to produce reasoning as part of its learned output distribution. OpenAI's o1 approach: train on long CoT traces, then hide the reasoning scratchpad from users at inference time.</p>
+
+    <p>This shifts reasoning from a prompting trick to a learned behavior. The model learns when to reason, how deep to reason, and how to validate its own work.</p>
+
+    <p>Two reward modeling approaches exist: <strong>Outcome Reward Model (ORM)</strong> scores only the final answer — correct or incorrect. Simple to label. But it can't distinguish between wrong-answer steps that luckily arrive at the right conclusion.</p>
+
+    <p><strong>Process Reward Model (PRM)</strong> annotates every reasoning step, scoring each independently. Much more expensive to label (each solution requires dozens of step annotations). But dramatically better for hard math — it teaches the model which intermediate reasoning paths are sound, not just whether the final answer is right.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>ORM</th><th>PRM</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>What it scores</strong></td><td>Final answer</td><td>Each step</td></tr>
+          <tr><td><strong>Data needed</strong></td><td>(prompt, answer) pairs</td><td>Step-by-step annotations</td></tr>
+          <tr><td><strong>Good for</strong></td><td>General tasks</td><td>Math, code, logic</td></tr>
+          <tr><td><strong>Weakness</strong></td><td>Can't catch wrong steps that luck into right answer</td><td>Expensive to label</td></tr>
+          <tr><td><strong>Used by</strong></td><td>Most RLHF pipelines</td><td>DeepMind, OpenAI o1 (rumored)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>PRMs represent the frontier of reasoning supervision. DeepSeek's o1 successor and OpenAI's research papers hint at using PRMs to unlock significantly higher accuracy on competition-level mathematics and formal proofs.</p>
+  </div>
+
+  <!-- ── 4. TREE SEARCH AT INFERENCE TIME ── -->
+  <div class="section-block" id="tree-search">
+    <div class="section-marker">04 — Search Methods</div>
+    <h2>Tree Search at Inference Time</h2>
+    <p>Instead of one left-to-right reasoning chain, explore a tree of possible reasoning paths. Different intermediate steps lead to different continuations. Some paths are correct; some are dead ends.</p>
+
+    <p><strong>Best-of-N (BoN):</strong> Generate N independent solutions, run each through a verifier (e.g., "does the code run?", "does the math check out?"), pick the highest-scored. Simple, embarrassingly parallel, but expensive — N=16 means 16× compute.</p>
+
+    <p><strong>Beam search over reasoning steps:</strong> Maintain a fixed set of k "active" partial chains. At each reasoning step, expand each chain, score all branches, prune to top k. More efficient than BoN but harder to parallelize within a single request.</p>
+
+    <p><strong>Monte Carlo Tree Search (MCTS):</strong> Sample reasoning paths, backpropagate outcome rewards through the tree structure. Focuses compute on promising branches. Used in AlphaCode 2, rStar-Math, and other competition systems. Highest quality but requires 50–200× compute.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Compute</th><th>Quality</th><th>Parallelizable</th><th>When to use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Greedy (no search)</td><td>1×</td><td>Baseline</td><td>N/A</td><td>Latency-critical</td></tr>
+          <tr><td>Best-of-N (N=16)</td><td>16×</td><td>+5–15% on math</td><td>Yes</td><td>Offline eval, high accuracy</td></tr>
+          <tr><td>Beam search (k=4)</td><td>4×</td><td>+3–8%</td><td>Partial</td><td>Batch inference</td></tr>
+          <tr><td>MCTS</td><td>50–200×</td><td>+15–25%</td><td>Partial</td><td>Research, competition math</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>MCTS at inference time is only practical for tasks where a verifier exists.</strong> Math with sympy, code with test suites, formal proofs with automated checkers. For open-ended tasks (essay writing, creative fiction), you have no verifier, so search has no signal.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. DEEPSEEK-R1 AND GRPO ── -->
+  <div class="section-block" id="deepseek-r1">
+    <div class="section-marker">05 — Pure RL Approach</div>
+    <h2>DeepSeek-R1 and GRPO</h2>
+    <p>DeepSeek-R1 demonstrated a profound finding: you can train reasoning capability via pure reinforcement learning, <strong>without</strong> supervised CoT traces. Start from a base model. Apply a simple RL algorithm. Reasoning emerges.</p>
+
+    <p><strong>GRPO (Group Relative Policy Optimization):</strong> Sample a group of G responses. Score each with a rule-based reward (e.g., 1 if final answer correct). Compute advantage for each response relative to the group mean, not global baseline. Update policy to increase likelihood of high-advantage responses.</p>
+
+    <p>GRPO avoids reward model collapse seen in PPO — where the reward model starts overfitting and giving inflated scores. It's simpler: no separate reward model, no reference model, just group-relative advantage. And empirically, it works: DeepSeek-R1 shows reasoning ability without ever seeing annotated CoT data during training.</p>
+
+    <p>A key emergent phenomenon: the model develops an "aha moment" behavior — spontaneously re-examining its work mid-chain when it notices a mistake, then correcting course. This self-correction emerges purely from the RL signal, not from explicit training.</p>
+
+    <div class="example-box">GRPO update rule (pseudocode):
+
+For each prompt p, sample G responses {r_1, ..., r_G}
+score_i = reward_fn(r_i)          # e.g., 1 if final answer correct
+advantage_i = (score_i - mean) / std
+loss = -E[advantage_i * log π(r_i | p)]    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Needs reward model</th><th>Sample efficiency</th><th>Reasoning quality</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>PPO</td><td>Yes</td><td>Medium</td><td>High</td></tr>
+          <tr><td>GRPO</td><td>No (rule-based reward)</td><td>High</td><td>High (DeepSeek-R1)</td></tr>
+          <tr><td>DPO</td><td>No</td><td>High</td><td>Medium (better for alignment than reasoning)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>GRPO's success suggests reasoning doesn't need supervised annotations — just a clear outcome signal and enough RL iterations. This is a major paradigm shift in alignment.</p>
+  </div>
+
+  <!-- ── 6. TEST-TIME COMPUTE SCALING ── -->
+  <div class="section-block" id="test-time-compute">
+    <div class="section-marker">06 — Scaling Laws</div>
+    <h2>Test-Time Compute Scaling</h2>
+    <p>Historical scaling laws focused on training compute: more parameters, more tokens, better model. But for reasoning tasks, scaling inference compute yields a different curve.</p>
+
+    <p>Snell et al. 2024 showed: a smaller model with 16× more inference compute can match a much larger model on math benchmarks. You can spend compute at inference time to compensate for model size. This creates a new product dimension.</p>
+
+    <p>Instead of training one massive model, train a smaller base and route queries intelligently: easy queries go to a cheap, fast model. Hard queries route to a reasoning-heavy path with more thinking tokens. High-stakes queries get maximum compute. Each query's difficulty is matched to appropriate resources.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Approach</th><th>Model</th><th>Tokens per answer</th><th>Latency</th><th>Cost/query</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Standard</td><td>GPT-4o</td><td>~300</td><td>2s</td><td>Low</td></tr>
+          <tr><td>Reasoning</td><td>o1-mini</td><td>~2000</td><td>15s</td><td>Medium</td></tr>
+          <tr><td>Heavy reasoning</td><td>o1</td><td>~5000</td><td>40s</td><td>High</td></tr>
+          <tr><td>Hybrid</td><td>Route by difficulty</td><td>varies</td><td>varies</td><td>Optimal</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">💡</span>
+      <span><strong>The emerging pattern: use a fast model to classify query difficulty, then route hard queries to reasoning model.</strong> This optimizes total cost while maintaining quality SLAs. A 10-token classifier on every request costs almost nothing but determines the full inference strategy downstream.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. PRACTICAL IMPLEMENTATION ── -->
+  <div class="section-block" id="implementation">
+    <div class="section-marker">07 — Production</div>
+    <h2>Practical Implementation</h2>
+    <p>Reasoning models are now production-ready. The ecosystem has matured rapidly. Multiple options exist for different budget and latency constraints.</p>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Hosted API</div>
+        <div class="tool-name">OpenAI o1 / o3</div>
+        <div class="tool-desc">Fully trained reasoning models. Highest quality on benchmarks. High latency (40s+), high cost. State-of-the-art.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Hosted API</div>
+        <div class="tool-name">DeepSeek-R1</div>
+        <div class="tool-desc">Open-source reasoning via API. Strong math/code performance. Lower cost than o1. GRPO-trained.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Open Source</div>
+        <div class="tool-name">QwQ-32B</div>
+        <div class="tool-desc">Alibaba's reasoning model. Can run locally. Smaller than o1 but solid performance on logic puzzles.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Hosted API</div>
+        <div class="tool-name">Gemini 2.0 Flash Thinking</div>
+        <div class="tool-desc">Google's reasoning model. Extended thinking mode reveals step-by-step work. Good cost/performance ratio.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">vLLM</div>
+        <div class="tool-desc">Open-source serving for reasoning models locally. Handles long reasoning chains efficiently.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">SGLang</div>
+        <div class="tool-desc">Structured generation framework. Supports tree search APIs and reasoning workflows.</div>
+      </div>
+    </div>
+
+    <h3>When to Use Reasoning Models</h3>
+    <p><strong>Multi-step math:</strong> Algebra, calculus, probability. Reasoning models excel. Include a verifier (sympy) when possible.</p>
+
+    <p><strong>Code debugging:</strong> The model can trace execution, identify the bug, propose a fix. Better than prompt engineering alone.</p>
+
+    <p><strong>Logical deduction:</strong> Logic puzzles, constraint satisfaction. Reasoning helps systematically explore the solution space.</p>
+
+    <p><strong>Long legal/medical analysis:</strong> Complex documents with many dependencies. Reasoning helps track constraints and cross-references.</p>
+
+    <h3>When NOT to Use</h3>
+    <p><strong>Simple retrieval:</strong> "What is the capital of France?" No reasoning needed. 100ms model beats 10s reasoning model.</p>
+
+    <p><strong>Summarization:</strong> Reasoning adds latency with no quality gain. SFT-optimized models are faster and sufficient.</p>
+
+    <p><strong>Classification:</strong> Is this email spam? Reasoning is overkill. A small classifier or few-shot prompt is faster and cheaper.</p>
+
+    <p>Measure the impact: add reasoning only where it measurably improves accuracy or enables capabilities you can't otherwise achieve.</p>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="refs-list">
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Wei, J. et al. (2022).
+        <em>Chain-of-Thought Prompting Elicits Reasoning in Large Language Models.</em>
+        arXiv:2201.11903. —
+        <a href="https://arxiv.org/abs/2201.11903" target="_blank">arxiv:2201.11903 ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Wang, X. et al. (2022).
+        <em>Self-Consistency Improves Chain of Thought Reasoning in Language Models.</em>
+        arXiv:2203.11171. —
+        <a href="https://arxiv.org/abs/2203.11171" target="_blank">arxiv:2203.11171 ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        DeepSeek-AI. (2025).
+        <em>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning.</em>
+        arXiv:2501.12948. —
+        <a href="https://arxiv.org/abs/2501.12948" target="_blank">arxiv:2501.12948 ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Snell, C. et al. (2024).
+        <em>Scaling LLM Test-Time Compute Optimally can Mitigate Loss of In-Context Learning.</em>
+        arXiv:2408.03314. —
+        <a href="https://arxiv.org/abs/2408.03314" target="_blank">arxiv:2408.03314 ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-paper">Paper</span>
+        Lightman, H. et al. (2023).
+        <em>Let's Verify Step by Step.</em>
+        OpenAI. PRM800K dataset. arXiv:2305.20050. —
+        <a href="https://arxiv.org/abs/2305.20050" target="_blank">arxiv:2305.20050 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="refs-list">
+      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> OpenAI. o1 Model Documentation. <a href="https://platform.openai.com/docs/models" target="_blank">platform.openai.com/docs ↗</a></li>
+      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> DeepSeek. R1 API Reference. <a href="https://api-docs.deepseek.com" target="_blank">api-docs.deepseek.com ↗</a></li>
+      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> vLLM Documentation. <a href="https://docs.vllm.ai" target="_blank">docs.vllm.ai ↗</a></li>
+      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> SGLang. Structured Generation Language. <a href="https://sgl-project.github.io" target="_blank">sgl-project.github.io ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Resources</div>
+    <ul class="refs-list">
+      <li class="ref-item">
+        <span class="ref-badge badge-blog">Blog</span>
+        OpenAI. (2024). <em>Reasoning with o1.</em> Architectural insights and benchmark results. —
+        <a href="https://openai.com/research" target="_blank">openai.com/research ↗</a>
+      </li>
+      <li class="ref-item">
+        <span class="ref-badge badge-blog">Blog</span>
+        DeepSeek. (2025). <em>DeepSeek-R1: Our Reasoning Model.</em> Technical blog post with performance analysis. —
+        <a href="https://www.deepseek.com/blog" target="_blank">deepseek.com/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

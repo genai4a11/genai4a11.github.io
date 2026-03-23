@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KV Cache Mechanics — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9d174d; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Inference Optimization</span>
+  <h1>KV <em>Cache</em> Mechanics</h1>
+  <p class="hero-sub">How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">O(n²) → O(n)</span>
+      <span class="stat-label">attention complexity</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">tokens saved</span>
+      <span class="stat-label">per token after prefill</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">memory vs speed</span>
+      <span class="stat-label">the core tension</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#what-is-kv" data-num="1">What is the KV cache?</a></li>
+      <li><a href="#cache-growth" data-num="2">Cache growth and memory</a></li>
+      <li><a href="#gqa-mla" data-num="3">GQA and MLA variants</a></li>
+      <li><a href="#eviction" data-num="4">Cache eviction strategies</a></li>
+      <li><a href="#prefix-cache" data-num="5">Prefix caching</a></li>
+      <li><a href="#speculative" data-num="6">Speculative decoding</a></li>
+      <li><a href="#production-knobs" data-num="7">Production knobs</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHAT IS THE KV CACHE? ── -->
+  <div class="section-block" id="what-is-kv">
+    <div class="section-marker">01 — Definition</div>
+    <h2>What Is the KV Cache?</h2>
+    <p>In transformer attention, every token computes Q (query), K (key), and V (value) matrices. On each decoding step, the model must compute attention over all previous tokens and the current token. Without caching, this means recomputing K and V for every token that has already been processed — O(n²) computation for a sequence of length n.</p>
+
+    <p>The KV cache stores pre-computed K and V matrices from all previous tokens. When a new token arrives, the model only computes its K and V, then attends over the cached KV from all past steps. This reduces the second and subsequent decoding steps from O(n) complexity to O(1) per token, making the amortized cost O(n).</p>
+
+    <p>The cache lives in GPU VRAM and is evicted when the context window fills or memory runs out. It is the primary bottleneck for long-context inference, often consuming more memory than the model weights themselves.</p>
+
+    <div class="example-box"><span class="verdict-dim">## KV Cache in Action</span>
+
+<span class="verdict-dim">## Prefill phase (all input tokens at once):</span>
+keys   = []
+values = []
+for token in input_tokens:
+    k, v = compute_k_v(token)
+    keys.append(k)
+    values.append(v)
+output = attention(queries, keys, values)  <span class="verdict-pass">← all at once, high throughput</span>
+
+<span class="verdict-dim">## Decoding phase (one token at a time):</span>
+for each new_token:
+    k_new, v_new = compute_k_v(new_token)  <span class="verdict-pass">← only for new token</span>
+    keys.append(k_new)                    <span class="verdict-pass">← cache grows</span>
+    values.append(v_new)
+    output = attention(query_new, keys, values)  <span class="verdict-pass">← reuse all cached KV</span></div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>The speedup is enormous:</strong> without KV cache, decoding a 100-token sequence would require ~10,000 forward passes (1 + 2 + 3 + ... + 100). With cache, it's 100 forward passes (one per token). That's 100× faster.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. CACHE GROWTH AND MEMORY BUDGET ── -->
+  <div class="section-block" id="cache-growth">
+    <div class="section-marker">02 — Memory Scaling</div>
+    <h2>Cache Growth and Memory Budget</h2>
+    <p>The KV cache grows linearly with sequence length. The formula for cache memory is:</p>
+
+    <p style="font-family: 'Fira Code', monospace; margin: 1rem 0; padding: 0.8rem; background: #f8fafc; border-left: 3px solid #4f46e5;">cache_bytes = 2 × layers × heads × head_dim × seq_len × 2 (for fp16)</p>
+
+    <p>The 2× factor accounts for both K and V. The final 2 is the byte size of fp16. For a 7B model with 32 layers, 32 heads, and 128-dim heads, caching a 2K-token sequence costs ~0.5 GB. At 128K tokens, it's 32 GB — larger than the model weights.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Model</th><th>Seq 2K</th><th>Seq 8K</th><th>Seq 32K</th><th>Seq 128K</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>7B (32L, 32H)</strong></td><td>0.5 GB</td><td>2 GB</td><td>8 GB</td><td>32 GB</td></tr>
+          <tr><td><strong>13B (40L, 40H)</strong></td><td>0.8 GB</td><td>3.2 GB</td><td>12.8 GB</td><td>51 GB</td></tr>
+          <tr><td><strong>70B (80L, 64H)</strong></td><td>3 GB</td><td>12 GB</td><td>48 GB</td><td>192 GB</td></tr>
+          <tr><td><strong>405B (126L, 128H)</strong></td><td>24 GB</td><td>96 GB</td><td>384 GB</td><td>OOM</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>This is why long-context requests are expensive and why serving systems enforce max_batch_tokens. A single batch of 16 requests × 128K-token context for a 70B model requires ~3 TB of GPU VRAM just for cache. Even sharding across multiple GPUs becomes challenging.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Budget VRAM for cache first, model second.</strong> A 70B model in fp16 is ~140 GB. If your GPU cluster has 320 GB total, that leaves only 180 GB for cache across the batch — enough for ~24 2K-token requests, but only 1-2 at 128K tokens.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. GROUPED QUERY ATTENTION AND MLA ── -->
+  <div class="section-block" id="gqa-mla">
+    <div class="section-marker">03 — Attention Compression</div>
+    <h2>Grouped Query Attention and MLA</h2>
+    <p><strong>Grouped Query Attention (GQA)</strong> reduces cache size by sharing K and V heads across multiple Q heads. Instead of one K/V head per Q head (Full Multi-Head Attention), GQA uses one K/V head per group of Q heads — typically a group size of 8. This shrinks cache by 8×.</p>
+
+    <p><strong>Multi-Query Attention (MQA)</strong> is the extreme case: a single K/V head shared by all Q heads. Early models like Falcon and PaLM used MQA and saw modest quality drops but dramatic cache savings.</p>
+
+    <p><strong>MLA (Multi-Head Latent Attention, DeepSeek)</strong> takes compression further by projecting K/V into a low-rank latent space before caching. Only the compressed latent is stored, then decompressed at attention time. This can achieve 2–4× additional cache reduction compared to GQA.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Variant</th><th>K/V heads (for 32 Q heads)</th><th>Cache size vs MHA</th><th>Quality vs MHA</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Full MHA</strong></td><td>32</td><td>100%</td><td>Baseline</td></tr>
+          <tr><td><strong>GQA (g=8)</strong></td><td>4</td><td>12.5%</td><td>≈ same</td></tr>
+          <tr><td><strong>MQA</strong></td><td>1</td><td>3.1%</td><td>Slight drop (≈1%)</td></tr>
+          <tr><td><strong>MLA (DeepSeek)</strong></td><td>1 (compressed)</td><td>5–8%</td><td>No drop (same quality)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Most modern frontier models (Llama 3, Mistral, Gemma) use GQA as default.</strong> It's the sweet spot: cache savings of 8–12× with no measurable quality loss. MQA is rarely used now; MLA is promising but newer.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. CACHE EVICTION STRATEGIES ── -->
+  <div class="section-block" id="eviction">
+    <div class="section-marker">04 — Memory Management</div>
+    <h2>Cache Eviction Strategies</h2>
+    <p>When context exceeds the window or cache fills up, something must be evicted. The strategy matters: drop the wrong tokens and the model loses crucial context (like the system prompt). Drop the right tokens and quality barely changes.</p>
+
+    <div class="methods-list">
+
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>FIFO / Sliding Window <em>— oldest out</em></h3>
+          <p>When cache fills, discard the oldest tokens. Simplest to implement: just a circular buffer. But you lose document history and system prompts evaporate quickly.</p>
+          <ul>
+            <li>Pros: Trivial to implement, minimal overhead</li>
+            <li>Cons: Loses system prompt, hurts long-context tasks</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Heavy Hitter Oracle (H2O) <em>— attention-aware</em></h3>
+          <p>Track which tokens accumulated the highest cumulative attention scores across all layers. Keep those tokens, discard the rest. Retains "important" tokens automatically.</p>
+          <ul>
+            <li>Pros: Preserves semantically important tokens</li>
+            <li>Cons: Tracking attention scores adds overhead, may miss subtle dependencies</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>StreamingLLM <em>— anchored window</em></h3>
+          <p>Always keep the first N tokens (system prompt, preamble) plus a sliding window of recent tokens. Combines both preservation of critical context and recent information.</p>
+          <ul>
+            <li>Pros: Preserves system prompt, recent context intact</li>
+            <li>Cons: Requires tuning window size and anchor size</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>PagedAttention (vLLM) <em>— virtual memory</em></h3>
+          <p>Treat cache as virtual memory, organizing it into logical blocks that map to physical GPU/CPU memory. Supports swapping, sharing between requests, and zero-copy transfers.</p>
+          <ul>
+            <li>Pros: No fragmentation, enables prefix sharing, efficient batch packing</li>
+            <li>Cons: Implementation complexity, requires special software support</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <h3>Eviction Strategy Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Strategy</th><th>Impl. Complexity</th><th>Memory Efficiency</th><th>Quality Preservation</th><th>Production Use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>FIFO</strong></td><td>Very low</td><td>Good</td><td>Poor (loses context)</td><td>Legacy systems</td></tr>
+          <tr><td><strong>H2O</strong></td><td>Medium</td><td>Very good</td><td>Good</td><td>Research</td></tr>
+          <tr><td><strong>StreamingLLM</strong></td><td>Low</td><td>Good</td><td>Excellent</td><td>Emerging</td></tr>
+          <tr><td><strong>PagedAttention</strong></td><td>High</td><td>Excellent</td><td>Excellent</td><td>vLLM, state-of-art</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>PagedAttention (vLLM) is now the industry standard. Its virtual memory approach eliminates fragmentation and enables sharing of cache blocks across concurrent requests — crucial for batching efficiency.</p>
+  </div>
+
+  <!-- ── 5. PREFIX CACHING AND PROMPT REUSE ── -->
+  <div class="section-block" id="prefix-cache">
+    <div class="section-marker">05 — Amortization</div>
+    <h2>Prefix Caching and Prompt Reuse</h2>
+    <p>When many requests share an identical prefix (system prompt, few-shot examples, shared document), compute K/V once and reuse it across all requests. This amortizes the prefill cost and can reduce total tokens processed by 50–90% depending on prefix length.</p>
+
+    <p>SGLang, vLLM, and TensorRT-LLM all implement prefix cache (SGLang calls it "radix cache"). At scale, the savings are dramatic: a 100-token system prompt at 1000 requests/sec = 100K free tokens/sec that never need recomputation.</p>
+
+    <div class="example-box"><span class="verdict-dim">## Prefix Cache Hit Example</span>
+
+<span class="verdict-dim">Request 1:</span>
+System prompt (100 tokens) → compute K/V → cache hash
+Few-shot examples (50 tokens) → compute K/V → cache hash
+User query 1 (20 tokens) → compute K/V
+Output: 200 tokens
+<span class="verdict-pass">Total compute: 170 prefill tokens</span>
+
+<span class="verdict-dim">Request 2 (same system + examples, different query):</span>
+System prompt (100 tokens) → CACHE HIT! reuse stored K/V
+Few-shot examples (50 tokens) → CACHE HIT! reuse stored K/V
+User query 2 (15 tokens) → compute K/V
+Output: 150 tokens
+<span class="verdict-pass">Total compute: 15 prefill tokens (89% saved!)</span></div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Prefix cache hit rate depends on prefix consistency:</strong> vary the suffix (user query), keep the prefix identical. A system prompt that changes per request ruins caching. Design your prompts to maximize reusable prefixes.</span>
+    </div>
+
+    <h3>Prefix Cache Implementation</h3>
+    <p>The cache is keyed by a hash of the token sequence (e.g., SHA256 of concatenated embeddings). When a new prefix arrives, compute the hash; if it matches a prior request, retrieve the cached K/V blocks directly. Prefix caches are stored in a distributed KV store (Redis, Memcached) or local GPU cache depending on scale.</p>
+  </div>
+
+  <!-- ── 6. SPECULATIVE DECODING AND CACHE INTERACTION ── -->
+  <div class="section-block" id="speculative">
+    <div class="section-marker">06 — Latency Reduction</div>
+    <h2>Speculative Decoding and Cache Interaction</h2>
+    <p>Speculative decoding uses a smaller, faster draft model to propose k tokens. The target model then verifies all k+1 tokens (k proposed + 1 from the target) in a single forward pass. Tokens that match the draft are accepted; those that don't are discarded and resampled.</p>
+
+    <p>The KV cache interacts subtly: during the verification pass, the target model processes k+1 tokens in parallel, building cache for all of them. Accepted tokens' cache gets written; rejected tokens' cache is thrown away. This means you compute forward passes on tokens you ultimately discard, but the verification batch processes multiple tokens at once (higher GPU utilization).</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Regular Decoding</th><th>Speculative (k=4)</th><th>Speedup</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Forward passes per output token</td><td>1</td><td>~1.1–1.25</td><td>0.8–0.9×</td></tr>
+          <tr><td>Latency (wall-clock)</td><td>1.0×</td><td>0.7–0.85×</td><td>1.2–1.4×</td></tr>
+          <tr><td>Throughput (tokens/sec)</td><td>1.0×</td><td>1.0–1.1×</td><td>1.0–1.1×</td></tr>
+          <tr><td>KV cache overhead</td><td>Baseline</td><td>+5–10% (temp buffers)</td><td>Acceptable</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Speculative decoding trades a small increase in compute (wasted on rejected tokens) for much lower latency. It's effective when the draft model is fast (e.g., a 1B model as draft, 70B as target) and when the acceptance rate is high (>70%, which happens with well-calibrated models). Streaming applications benefit significantly.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Speculative decoding is production-ready in vLLM, SGLang, and LM Studio.</strong> Use it for latency-sensitive workloads (chatbots, real-time APIs) with compatible model pairs (both models must share the same tokenizer).</span>
+    </div>
+  </div>
+
+  <!-- ── 7. PRODUCTION KNOBS ── -->
+  <div class="section-block" id="production-knobs">
+    <div class="section-marker">07 — Practical Tuning</div>
+    <h2>Production Knobs</h2>
+    <p>In production serving systems, KV cache behavior is controlled by a handful of key parameters. Understanding these lets you trade off throughput, latency, and quality for your workload.</p>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-name">vLLM</div>
+        <div class="tool-category">Inference</div>
+        <div class="tool-desc">--max-model-len, --gpu-memory-utilization, --enable-prefix-caching, --num-gpu-blocks-override</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">SGLang</div>
+        <div class="tool-category">Inference</div>
+        <div class="tool-desc">mem_fraction, enable_prefix_cache, max_seq_len, disable_flashinfer</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">TensorRT-LLM</div>
+        <div class="tool-category">Inference</div>
+        <div class="tool-desc">--max_batch_size, --builder-opt-level, KV cache quantization</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">llama.cpp</div>
+        <div class="tool-category">Local</div>
+        <div class="tool-desc">-c (context size), --cache-type-k, --cache-type-v</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">MLC LLM</div>
+        <div class="tool-category">Inference</div>
+        <div class="tool-desc">kv_cache_quantization, flashinfer backend</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">Ollama</div>
+        <div class="tool-category">Local</div>
+        <div class="tool-desc">OLLAMA_NUM_GPU (GPU memory allocation)</div>
+      </div>
+    </div>
+
+    <h3>Key Tuning Parameters</h3>
+    <p><strong>--max-model-len:</strong> The maximum sequence length. Larger values allow longer contexts but consume more cache. Set based on your longest expected request + prefill buffer.</p>
+
+    <p><strong>--gpu-memory-utilization:</strong> Fraction of GPU VRAM to allocate to cache (typically 0.8–0.95). Higher = more concurrent requests, but risks OOM on bursts.</p>
+
+    <p><strong>--enable-prefix-caching:</strong> Enable automatic caching and reuse of identical prefixes. Essential for workloads with shared system prompts.</p>
+
+    <p><strong>--num-gpu-blocks-override:</strong> Manually specify cache block count. Useful for tuning to your VRAM constraints.</p>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Increasing max_model_len without reducing batch size causes OOM.</strong> Always budget VRAM for KV cache first. If you want longer contexts, reduce batch size or increase GPU count proportionally. The formula: VRAM_needed = model_weights + (batch_size × seq_len × cache_bytes_per_token).</span>
+    </div>
+
+    <h3>Common Pitfalls</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">Setting max_model_len to 128K when your GPU has only 80GB VRAM and model is 70B. Result: OOM on first long request.</li>
+      <li style="margin: 0.5rem 0;">Using FIFO eviction (default in some old systems) and losing system prompts in long sessions.</li>
+      <li style="margin: 0.5rem 0;">Not enabling prefix caching when 80% of requests share the same system prompt.</li>
+      <li style="margin: 0.5rem 0;">Batching requests with vastly different sequence lengths (e.g., 100 tokens + 8K tokens). The cache pads to the longest, wasting VRAM on short requests.</li>
+    </ul>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Zhou, Y. et al. (2023).
+        <em>Efficient Memory Management for Large Language Model Serving with PagedAttention.</em>
+        arXiv:2309.06180. —
+        <a href="https://arxiv.org/abs/2309.06180" target="_blank">arxiv:2309.06180 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Dao, T., Fu, D., et al. (2023).
+        <em>FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning.</em>
+        arXiv:2307.08691. —
+        <a href="https://arxiv.org/abs/2307.08691" target="_blank">arxiv:2307.08691 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Xiao, G., et al. (2024).
+        <em>Streaming LLM: Efficient Streaming Language Models with Attention Sinks.</em>
+        arXiv:2309.17453. —
+        <a href="https://arxiv.org/abs/2309.17453" target="_blank">arxiv:2309.17453 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Zhang, W., et al. (2024).
+        <em>H2O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models.</em>
+        arXiv:2306.14048. —
+        <a href="https://arxiv.org/abs/2306.14048" target="_blank">arxiv:2306.14048 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Leviathan, Y., et al. (2023).
+        <em>Fast Transformer Decoding: One Write-Head is All You Need.</em>
+        arXiv:2211.15297. —
+        <a href="https://arxiv.org/abs/2211.15297" target="_blank">arxiv:2211.15297 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Blogs</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> vLLM PagedAttention. <a href="https://docs.vllm.ai/en/latest/models/supported_models.html" target="_blank">vllm.ai ↗</a></li>
+      <li><span class="ref-badge badge-blog">Blog</span> SGLang RadixAttention: Efficient Prefix Caching. <a href="https://lmsys.org/blog/2024-01-17-sglang/" target="_blank">lmsys.org ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Text Generation Inference KV Cache. <a href="https://huggingface.co/docs/text-generation-inference/conceptual/kvcache" target="_blank">huggingface.co ↗</a></li>
+      <li><span class="ref-badge badge-blog">Blog</span> Together AI: KV Cache Quantization for Efficient Serving. <a href="https://www.together.ai/blog/kv-cache-quantization" target="_blank">together.ai ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Open Source Tools</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-guide">Guide</span> vLLM GitHub. <a href="https://github.com/vllm-project/vllm" target="_blank">github.com/vllm-project ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> SGLang GitHub. <a href="https://github.com/hiyouga/LLaMA-Factory" target="_blank">github.com/hiyouga ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> llama.cpp. <a href="https://github.com/ggerganov/llama.cpp" target="_blank">github.com/ggerganov ↗</a></li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

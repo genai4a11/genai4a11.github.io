@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced RAG Patterns — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 800px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">RETRIEVAL-AUGMENTED GENERATION</span>
+  <h1>Advanced <em>RAG</em> Patterns</h1>
+  <p class="hero-sub">Beyond naive chunking — reranking, fusion, multi-hop, and agentic retrieval for production systems</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">retrieve → rerank → generate</span>
+      <span class="stat-label">the full pipeline</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">MRR & NDCG</span>
+      <span class="stat-label">retrieval quality metrics</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">naive vs agentic</span>
+      <span class="stat-label">the spectrum</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-naive-fails" data-num="1">Why naive RAG fails</a></li>
+      <li><a href="#query-transform" data-num="2">Query transformation</a></li>
+      <li><a href="#chunking-strats" data-num="3">Chunking strategies</a></li>
+      <li><a href="#reranking" data-num="4">Reranking</a></li>
+      <li><a href="#fusion-hybrid" data-num="5">Fusion & hybrid search</a></li>
+      <li><a href="#multi-hop" data-num="6">Multi-hop & agentic RAG</a></li>
+      <li><a href="#eval-framework" data-num="7">Evaluation framework</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY NAIVE RAG FAILS ── -->
+  <div class="section-block" id="why-naive-fails">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>Why Naive RAG Fails</h2>
+    <p>Naive RAG follows a simple linear pattern: chunk document → embed → store in vector DB → retrieve top-k → send to LLM. This works for straightforward factual Q&A, but production systems expose critical failure modes.</p>
+    
+    <p>The naive assumption is that one query → one retrieval → answer. But real-world tasks rarely work this way. Users ask multi-hop questions, the best answer spans multiple documents, or the user's phrasing drifts far from the actual concept in your documents.</p>
+
+    <h3>Failure Modes</h3>
+    <p><strong>Poor recall:</strong> Relevant chunks are missed because semantic drift in embeddings causes them to have low dot-product with the query. <strong>Poor precision:</strong> Top-k retrieval floods the context with borderline-relevant chunks that confuse the LLM. <strong>Lost context:</strong> Fixed chunk sizes break paragraphs, splitting concepts across boundaries. <strong>Context window overload:</strong> Sending too many chunks to the LLM increases latency and confusion.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Failure</th><th>Cause</th><th>Fix</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Missed relevant chunks</td><td>Semantic drift in embedding</td><td>HyDE, query expansion</td></tr>
+          <tr><td>Irrelevant chunks in context</td><td>Top-k too large, low precision</td><td>Reranking</td></tr>
+          <tr><td>Split concepts</td><td>Fixed chunk size breaks paragraphs</td><td>Semantic chunking</td></tr>
+          <tr><td>Stale answers</td><td>Vector DB not updated</td><td>Incremental indexing</td></tr>
+          <tr><td>Multi-hop needed</td><td>One chunk can't answer question</td><td>Multi-hop / agentic RAG</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> Naive RAG treats retrieval as a solved problem. Production RAG treats it as an optimization problem with many levers: query transformation, chunking, ranking, fusion, and iteration.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. QUERY TRANSFORMATION ── -->
+  <div class="section-block" id="query-transform">
+    <div class="section-marker">02 — Retrieval</div>
+    <h2>Query Transformation</h2>
+    <p>The user's query is not always the best form of the question for retrieval. Your embedding model was trained on diverse text; the user's question is just one phrasing. Query transformation bridges that gap by regenerating the query in forms more similar to your documents.</p>
+
+    <h3>Transformation Methods</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>HyDE <em>— Hypothetical Document Embeddings</em></h3>
+          <p>Generate a hypothetical answer to the query, embed that → closer to document embeddings than the question itself.</p>
+          <ul>
+            <li>LLM generates a plausible 150-token answer to the query</li>
+            <li>Embed the hypothetical answer</li>
+            <li>Retrieve against document corpus</li>
+            <li>Documents about the topic appear more similar to hypothetical answers than to questions</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Multi-Query <em>— Diversity via rephrasing</em></h3>
+          <p>Generate 3–5 rephrasings of the question, retrieve for each, union results.</p>
+          <ul>
+            <li>LLM rewrites question in different styles and perspectives</li>
+            <li>Retrieve for each rephrasing independently</li>
+            <li>Merge result lists (union or RRF)</li>
+            <li>Higher recall at cost of multiple retrievals</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Step-Back Prompting <em>— Hierarchical retrieval</em></h3>
+          <p>Ask a more general background question first, retrieve that, then answer the original.</p>
+          <ul>
+            <li>Generate abstract version of question first</li>
+            <li>Retrieve background context on the general topic</li>
+            <li>Then retrieve specifics for the original question</li>
+            <li>Useful for complex technical questions</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Query Decomposition <em>— Sub-question fusion</em></h3>
+          <p>Break complex question into sub-questions, answer each independently, synthesize.</p>
+          <ul>
+            <li>Decompose query into atomic sub-questions</li>
+            <li>Retrieve and answer each sub-question</li>
+            <li>LLM synthesizes answers into final response</li>
+            <li>Best for relational and multi-aspect questions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="example-box">User query: "What causes transformer attention to fail at long contexts?"
+
+HyDE step:
+LLM generates hypothetical answer paragraph (~150 tokens):
+"Transformer attention fails at long contexts because..."
+
+Embed the hypothetical answer.
+
+Result: Documents about attention and long context appear more similar 
+to your hypothetical answer than to the question itself.
+
+(vs. embedding the question directly → might retrieve "what is attention?" content)</div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>HyDE works best when:</strong> Your queries and documents live in different embedding spaces — questions vs. statements. If your corpus is all technical papers and users ask conversational questions, HyDE closes that gap.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. CHUNKING STRATEGIES ── -->
+  <div class="section-block" id="chunking-strats">
+    <div class="section-marker">03 — Indexing</div>
+    <h2>Chunking Strategies</h2>
+    <p>Chunk size and overlap are not hyperparameters to tune blindly — they depend entirely on document type, query length, and retrieval precision goals. Larger chunks preserve context but reduce precision; smaller chunks improve precision but lose coherence.</p>
+
+    <h3>Chunking Methods</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Fixed-Size Chunking <em>— Simple baseline</em></h3>
+          <p>Split every N tokens with M token overlap. Fast. Breaks mid-sentence. Good baseline.</p>
+          <ul>
+            <li>Implementation: split_into_chunks(text, 512, 100)</li>
+            <li>Pros: Simple, deterministic, fast</li>
+            <li>Cons: Breaks mid-sentence, loses paragraph structure</li>
+            <li>Best for: Quick prototypes, diverse document types</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Semantic Chunking <em>— Respects boundaries</em></h3>
+          <p>Split at sentence/paragraph boundaries, merge until chunk reaches target size. Better coherence.</p>
+          <ul>
+            <li>Split on sentence/paragraph boundaries first</li>
+            <li>Merge chunks until byte size ≈ target</li>
+            <li>Preserves semantic units</li>
+            <li>Slightly more complex but cleaner chunks</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Hierarchical (Parent-Child) <em>— Best of both</em></h3>
+          <p>Index small chunks for retrieval precision; fetch parent chunk for context. High quality at retrieval + context time.</p>
+          <ul>
+            <li>Small child chunks (e.g., 256 tokens) for retrieval</li>
+            <li>Retrieve child, fetch parent (e.g., 1024 tokens) for context</li>
+            <li>High precision on retrieval, full context in generation</li>
+            <li>Requires document structure awareness</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Late Chunking <em>— Preserve cross-chunk context</em></h3>
+          <p>Embed full document first, then pool embeddings per chunk. Preserves cross-chunk context in embeddings.</p>
+          <ul>
+            <li>Embed full document as sequence</li>
+            <li>Pool embeddings by chunk boundary</li>
+            <li>Highest quality embeddings</li>
+            <li>Compute-intensive, requires full document in VRAM</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Retrieval precision</th><th>Context coherence</th><th>Complexity</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Fixed-size</td><td>Medium</td><td>Low</td><td>Low</td><td>Quick prototypes</td></tr>
+          <tr><td>Semantic</td><td>Medium-high</td><td>High</td><td>Medium</td><td>General docs</td></tr>
+          <tr><td>Parent-child</td><td>High</td><td>High</td><td>Medium</td><td>Long documents</td></tr>
+          <tr><td>Late chunking</td><td>High</td><td>Highest</td><td>High</td><td>Technical docs, code</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 4. RERANKING ── -->
+  <div class="section-block" id="reranking">
+    <div class="section-marker">04 — Ranking</div>
+    <h2>Reranking</h2>
+    <p>Vector similarity is a fast but imprecise proxy for relevance. Reranking solves this: after retrieving top-k candidates (e.g., 50), score each against the query using a cross-encoder → re-sort → send top-n (e.g., 5) to LLM. This two-stage approach combines speed and quality.</p>
+
+    <h3>Retrieval Models Comparison</h3>
+    <p><strong>Bi-encoder (FAISS):</strong> Embed query and passages separately in parallel. Very fast initial retrieval but coarse similarity. <strong>ColBERT:</strong> Compute token-level embeddings for both, max-sim pooling. Faster than cross-encoder, better than bi-encoder. <strong>Cross-encoder:</strong> See (query, passage) together → much more accurate but too slow for large corpora. Perfect for reranking.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Model type</th><th>Speed</th><th>Quality</th><th>Can retrieve from large corpus?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Bi-encoder (FAISS)</td><td>Very fast</td><td>Good</td><td>Yes</td></tr>
+          <tr><td>ColBERT</td><td>Fast</td><td>Better</td><td>Yes (with PLAID)</td></tr>
+          <tr><td>Cross-encoder</td><td>Slow</td><td>Best</td><td>No (rerank only)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Reranking Tools</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Reranker</div>
+        <div class="tool-name">Cohere Rerank</div>
+        <div class="tool-desc">API-based cross-encoder reranker with semantic understanding.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Reranker</div>
+        <div class="tool-name">BGE-Reranker</div>
+        <div class="tool-desc">Open-source multilingual cross-encoder from BAAI.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Reranker</div>
+        <div class="tool-name">Jina Reranker</div>
+        <div class="tool-desc">Zero-shot reranker optimized for speed and quality.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Reranker</div>
+        <div class="tool-name">FlashRank</div>
+        <div class="tool-desc">Lightweight reranker for edge deployment.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Dense Retriever</div>
+        <div class="tool-name">ColBERT / RAGatouille</div>
+        <div class="tool-desc">Token-level dense retrieval with late interaction scoring.</div>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Reranking latency:</strong> Cross-encoder reranking adds ~100–500ms per query depending on corpus size. For interactive systems, test whether precision gains justify latency trade-off.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. FUSION & HYBRID SEARCH ── -->
+  <div class="section-block" id="fusion-hybrid">
+    <div class="section-marker">05 — Fusion</div>
+    <h2>Fusion and Hybrid Search</h2>
+    <p>Dense retrieval (embeddings) excels at semantic similarity but misses keyword-exact matches. Sparse retrieval (BM25) catches exact matches but misses semantic similarity. Hybrid search combines both rankings via fusion — typically Reciprocal Rank Fusion (RRF).</p>
+
+    <p>RRF (Reciprocal Rank Fusion) is a parameter-free fusion method: <code>RRF_score = Σ 1/(k + rank_i)</code>. It's simple, robust, and works well in practice. No need to normalize scores or tune weights.</p>
+
+    <div class="example-box">Query: "RLHF instability"
+
+BM25 results: [doc_A rank 1, doc_C rank 2, doc_B rank 3]
+Dense results: [doc_B rank 1, doc_A rank 2, doc_D rank 3]
+
+RRF (k=60):
+doc_A: 1/(60+1) + 1/(60+2) = 0.0164 + 0.0161 = 0.0325
+doc_B: 1/(60+3) + 1/(60+1) = 0.0159 + 0.0164 = 0.0323
+doc_C: 1/(60+2) = 0.0161
+doc_D: 1/(60+3) = 0.0159
+
+Final order: doc_A > doc_B > doc_C > doc_D</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>For domain-specific corpora:</strong> With precise terminology (legal, medical, code), BM25 often outperforms pure dense retrieval. Always test hybrid before committing to dense-only.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. MULTI-HOP & AGENTIC RAG ── -->
+  <div class="section-block" id="multi-hop">
+    <div class="section-marker">06 — Reasoning</div>
+    <h2>Multi-Hop and Agentic RAG</h2>
+    <p>Some questions require chaining multiple retrievals: "What did the author of X say about Y?" You must retrieve X, identify the author, then retrieve on the author's name. Multi-hop RAG handles this by iterating: retrieve → read → formulate follow-up query → retrieve again → synthesize.</p>
+
+    <p>Agentic RAG goes further: the LLM decides when to retrieve, what to query, whether to search again, whether to use a calculator or code execution. Retrieval is just one tool in a larger decision-making loop.</p>
+
+    <h3>Architectural Patterns</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Architecture</th><th>Retrieval calls</th><th>Complexity</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Naive RAG</td><td>1</td><td>Low</td><td>Simple factual Q&A</td></tr>
+          <tr><td>Query-expanded RAG</td><td>3–5</td><td>Low</td><td>Better recall</td></tr>
+          <tr><td>Multi-hop RAG</td><td>2–5</td><td>Medium</td><td>Relational questions</td></tr>
+          <tr><td>Agentic RAG</td><td>Dynamic</td><td>High</td><td>Complex research tasks</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>IRCoT (Interleaving Retrieval with Chain-of-Thought)</h3>
+    <p>IRCoT retrieves at each reasoning step, not just at the start. The model reasons, decides it needs information, retrieves, reasons again. This is closer to how humans research — iterative reasoning with strategic lookups.</p>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Agentic RAG latency is unpredictable:</strong> Multiple retrieval calls and LLM reasoning loops compound latency. Always set max_iterations and timeouts to prevent runaway loops.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. EVALUATION FRAMEWORK ── -->
+  <div class="section-block" id="eval-framework">
+    <div class="section-marker">07 — Quality</div>
+    <h2>Evaluation Framework</h2>
+    <p>RAG quality has multiple dimensions: retrieval quality (did we get relevant documents?), answer quality (is the final answer correct?), grounding (is the answer supported by context?). A single metric doesn't capture all three.</p>
+
+    <h3>Evaluation Tools & Frameworks</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">RAGAS</div>
+        <div class="tool-desc">Metrics: faithfulness, answer relevancy, context precision/recall.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">TruLens</div>
+        <div class="tool-desc">Instrumentation for tracing and evaluating RAG chains.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangChain Eval</div>
+        <div class="tool-desc">Built-in evaluators for retrieval and generation quality.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">DeepEval</div>
+        <div class="tool-desc">Python framework for synthetic test generation and RAG metrics.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Observability</div>
+        <div class="tool-name">Arize Phoenix</div>
+        <div class="tool-desc">Production monitoring for RAG systems.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LlamaIndex Eval</div>
+        <div class="tool-desc">Evaluation suite for RAG retrieval and generation.</div>
+      </div>
+    </div>
+
+    <h3>RAGAS Metrics</h3>
+    <p><strong>Faithfulness:</strong> Is the answer grounded in the retrieved context? (# claims supported by context / total claims) <strong>Answer Relevancy:</strong> Does the answer address the query? <strong>Context Precision:</strong> What fraction of retrieved chunks are actually relevant? (# relevant chunks / k) <strong>Context Recall:</strong> What fraction of ground-truth facts are covered by retrieved context?</p>
+
+    <div class="example-box">RAGAS metric formulas:
+
+Faithfulness = # claims in answer supported by context / total claims
+
+Context Precision = # relevant chunks in top-k / k
+
+Context Recall = # ground-truth facts covered by context / total facts</div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Best practice:</strong> Use RAGAS in continuous evaluation. Track each metric separately — precision and recall often trade off. A system with high context precision but low recall is missing important information.</span>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Gao, L. et al. (2023).
+        <em>Hypothetical Document Embeddings (HyDE).</em>
+        arXiv:2212.10496. —
+        <a href="https://arxiv.org/abs/2212.10496" target="_blank">arxiv:2212.10496 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Es, S. et al. (2023).
+        <em>RAGAS: A Reference-Free Evaluation Metric for Retrieval-Augmented Generation.</em>
+        arXiv:2309.15217. —
+        <a href="https://arxiv.org/abs/2309.15217" target="_blank">arxiv:2309.15217 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Khattab, O. et al. (2021).
+        <em>ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction.</em>
+        arXiv:2004.12832. —
+        <a href="https://arxiv.org/abs/2004.12832" target="_blank">arxiv:2004.12832 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Trivedi, H. et al. (2022).
+        <em>Interleaving Retrieval with Chain-of-Thought Reasoning (IRCoT).</em>
+        arXiv:2212.10509. —
+        <a href="https://arxiv.org/abs/2212.10509" target="_blank">arxiv:2212.10509 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        JinaAI. (2024).
+        <em>Late Chunking: Embedding Long Documents with Large Context Windows.</em> —
+        <a href="https://jina.ai/blog/late-chunking/" target="_blank">jina.ai/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>
