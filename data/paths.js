@@ -88,7 +88,9 @@ const PATHS={
   agent_planning:[
     {id:'react_agent',note:'The foundation — Reason, Act, Observe loop for all tool-using agents'},
     {id:'plan_execute',note:'Separate upfront planning from execution for complex multi-step tasks'},
-    {id:'reflection',note:'Add self-critique: agent reviews its own output before finishing'}
+    {id:'reflection',note:'Add self-critique: agent reviews its own output before finishing'},
+    {id:'agentic_reasoning',note:'Sketch a reasoning structure before acting — reduces hallucinations on complex tasks'},
+    {id:'plano',note:'LLM planning framework with dependency tracking for multi-step task execution'}
   ],
   agent_memory:[
     {id:'st_memory',note:'Start here — sliding window conversation buffer (simplest)'},
@@ -99,14 +101,18 @@ const PATHS={
     {id:'fc_api',note:'JSON schema defines your tools — model decides when and how to call them'},
     {id:'mcp',note:'Anthropic open standard — write once, works in Claude, Cursor, and more'},
     {id:'tool_selection',note:'RAG-over-tools pattern for agents with many available functions'},
-    {id:'code_mode',note:'LLM writes code against a typed SDK; Dynamic Worker Loader runs it safely — context-efficient alternative to per-call JSON tool dispatch'}
+    {id:'code_mode',note:'LLM writes code against a typed SDK; Dynamic Worker Loader runs it safely — context-efficient alternative to per-call JSON tool dispatch'},
+    {id:'agent_skills',note:'Modular skill bundles — extend agent capabilities at runtime without retraining'}
   ],
   agent_frameworks:[
     {id:'langchain',note:'Start here for prototyping — huge ecosystem, LCEL pipe syntax'},
     {id:'langgraph',note:'Graduate to this for production — stateful graphs with loops'},
     {id:'crewai',note:'Role-based multi-agent teams with task delegation'},
     {id:'autogen',note:'Microsoft conversable agents — great for code execution workflows'},
-    {id:'smolagents',note:'HuggingFace minimal framework — best for simple code-first agents'}
+    {id:'smolagents',note:'HuggingFace minimal framework — best for simple code-first agents'},
+    {id:'pydantic_ai',note:'Type-safe agents with Pydantic validation — top pick in 2026 job postings'},
+    {id:'dify',note:'Low-code agentic platform — 130k stars, fastest way to ship RAG + agent apps'},
+    {id:'langflow',note:'Visual builder for agent pipelines — design in UI, export to Python'}
   ],
   multi_agent:[
     {id:'sequential_chain',note:'Start here — linear pipelines are the simplest agentic workflow'},
@@ -168,7 +174,9 @@ const PATHS={
     {id:'llm_router',note:'Route to cheap model for simple queries — 70% cost reduction'},
     {id:'semantic_cache',note:'Cache semantically similar queries — massive savings for high traffic'},
     {id:'batch_api',note:'50% off for async workloads — evals, labelling, bulk generation'},
-    {id:'streaming',note:'Stream tokens for responsive UX — essential for chat interfaces'}
+    {id:'streaming',note:'Stream tokens for responsive UX — essential for chat interfaces'},
+    {id:'constrained_decoding',note:'Force valid JSON or schema-structured output every time — no parsing errors'},
+    {id:'openrouter',note:'One API for 200+ LLMs — fallbacks and cost comparison built in'}
   ],
   safety_tech:[
     {id:'prompt_injection',note:'Understand the attack — then build privilege separation defences'},
@@ -233,7 +241,8 @@ const PATHS={
     {id:'data_ingestion',note:'Design metadata schemas and ingestion pipelines before writing any model code'},
     {id:'data_labeling',note:'Build annotation workflows with Label Studio or Argilla for eval and FT data'},
     {id:'synthetic_data',note:'Use GPT-4o to generate and filter training data at scale'},
-    {id:'data_governance',note:'Version datasets with DVC, enforce contracts at ingestion boundaries'}
+    {id:'data_governance',note:'Version datasets with DVC, enforce contracts at ingestion boundaries'},
+    {id:'data_centric',note:'Better data beats bigger models — deduplication and quality scoring first'}
   ],
   data_ingestion:[
     {id:'metadata_design',note:'Schema design is the highest-leverage data decision — do it first'},
