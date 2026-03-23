@@ -203,12 +203,12 @@ function sp(d){
     linksEl.querySelectorAll('.panel-pill').forEach(pill=>pill.addEventListener('click',()=>{const t=N.find(n=>n.id===pill.dataset.target);if(t){sn(t);sp(t)}}));
     document.getElementById('ps-links').style.display='block';
   } else document.getElementById('ps-links').style.display='none';
-  p.classList.add('open');document.getElementById('graph-container').style.paddingRight=p.offsetWidth+'px';
+  p.classList.add('open');if(window.innerWidth>768)document.getElementById('graph-container').style.paddingRight=p.offsetWidth+'px';
   // location.hash works on file:// and https:// alike
   location.hash=d.id;
 }
 document.getElementById('panel-close').addEventListener('click',()=>{document.getElementById('panel').classList.remove('open');document.getElementById('graph-container').style.paddingRight='0';document.body.classList.remove('focus-mode');s=null;svg.selectAll('.node-card').classed('selected',false);try{history.replaceState(null,'',location.pathname+location.search);}catch(e){location.hash='';}});
-document.getElementById('panel-focus').addEventListener('click',()=>{const fm=document.body.classList.toggle('focus-mode');document.getElementById('panel-focus').title=fm?'Back to map':'Focus mode — expand to full screen';document.getElementById('panel-focus').textContent=fm?'⊠':'⛶';if(!fm)document.getElementById('graph-container').style.paddingRight=document.getElementById('panel').offsetWidth+'px';});
+document.getElementById('panel-focus').addEventListener('click',()=>{const fm=document.body.classList.toggle('focus-mode');document.getElementById('panel-focus').title=fm?'Back to map':'Focus mode — expand to full screen';document.getElementById('panel-focus').textContent=fm?'⊠':'⛶';if(!fm&&window.innerWidth>768)document.getElementById('graph-container').style.paddingRight=document.getElementById('panel').offsetWidth+'px';});
 // [Clusters] — show only the 5 meta-cluster nodes (collapse everything, expand root only)
 document.getElementById('btn-domains').addEventListener('click',()=>{N.forEach(n=>n.expanded=false);const r=N.find(n=>n.g===0);if(r)r.expanded=true;rg();if(typeof gtag==='function')gtag('event','toolbar_click',{button:'clusters_only'})});
 // [+Domains] — show meta-clusters + domain nodes (expand root + all meta-clusters)
@@ -255,7 +255,7 @@ document.getElementById('topbar-search').addEventListener('input',(e)=>{const q=
     const delta=startX-e.clientX;
     const newW=Math.min(Math.max(startW+delta,320),window.innerWidth*0.85);
     panel.style.width=newW+'px';
-    document.getElementById('graph-container').style.paddingRight=panel.classList.contains('open')?newW+'px':'0';
+    if(window.innerWidth>768)document.getElementById('graph-container').style.paddingRight=panel.classList.contains('open')?newW+'px':'0';
   });
   document.addEventListener('mouseup',()=>{
     if(!dragging)return;
@@ -422,4 +422,19 @@ document.getElementById('panel-share').addEventListener('click',()=>{
 
   // Clicking anywhere on the graph while searching selects + opens panel normally
   // (search-fade nodes have pointer-events:none so only matches are clickable)
+})();
+
+// ── Mobile: swipe-down on drag handle to dismiss panel ──────────
+(function(){
+  const handle=document.getElementById('panel-drag-handle');
+  const panel=document.getElementById('panel');
+  const closeBtn=document.getElementById('panel-close');
+  if(!handle||!panel)return;
+  let startY=0,startT=0;
+  handle.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;startT=Date.now();},{passive:true});
+  handle.addEventListener('touchend',e=>{
+    const dy=e.changedTouches[0].clientY-startY;
+    const dt=Date.now()-startT;
+    if(dy>60&&dt<400)closeBtn.click(); // swipe down > 60px in < 400ms = dismiss
+  },{passive:true});
 })();
