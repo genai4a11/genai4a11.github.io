@@ -1,3 +1,29 @@
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  CHECKLIST — Adding a new node                                   ║
+// ║                                                                   ║
+// ║  1. data/nodes.js   ← YOU ARE HERE                               ║
+// ║     Add: {id, label, cat, g, p, desc}                            ║
+// ║     - id:    snake_case, unique                                   ║
+// ║     - cat:   must match a key in data/cats.js                    ║
+// ║     - g:     depth (1=domain, 2=topic, 3=tool/concept)           ║
+// ║     - p:     parent node id (controls where it appears)          ║
+// ║     - desc:  one-line Feynman-style description                  ║
+// ║                                                                   ║
+// ║  2. data/snippets.js                                              ║
+// ║     Add: id: { use, diag, code, tip, refs }                      ║
+// ║     - use:  why it matters (paragraphs, split on \n\n)           ║
+// ║     - diag: ASCII diagram (template literal)                     ║
+// ║     - code: working Python example (template literal)            ║
+// ║     - tip:  structured rules + "where to start" (use \n\n)      ║
+// ║     - refs: [{label, url}] — 4-6 links                          ║
+// ║                                                                   ║
+// ║  3. data/paths.js                                                 ║
+// ║     Add the node to the parent's learning path array             ║
+// ║     e.g. retrieval_tech: [..., {id:'your_node', note:'...'}]     ║
+// ║                                                                   ║
+// ║  4. Hard refresh browser (Cmd+Shift+R) to verify                 ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
 const DN=[
 {id:'root',label:'GenAI',cat:'root',g:0,p:null,desc:'The complete GenAI ecosystem — from math foundations to production deployment.'},
 // ── META-CLUSTER NODES ────────────────────────────────────────────────────────
