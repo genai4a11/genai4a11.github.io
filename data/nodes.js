@@ -21,7 +21,11 @@
 // ║     Add the node to the parent's learning path array             ║
 // ║     e.g. retrieval_tech: [..., {id:'your_node', note:'...'}]     ║
 // ║                                                                   ║
-// ║  4. Hard refresh browser (Cmd+Shift+R) to verify                 ║
+// ║  4. data/snippets.js — parent node diagram                       ║
+// ║     If the parent has a diag that lists its children             ║
+// ║     (e.g. a decision tree), add the new node there too          ║
+// ║                                                                   ║
+// ║  5. Hard refresh browser (Cmd+Shift+R) to verify                 ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
 const DN=[
