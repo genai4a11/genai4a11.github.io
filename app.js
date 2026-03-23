@@ -218,6 +218,8 @@ function sp(d){
     linksEl.querySelectorAll('.panel-pill').forEach(pill=>pill.addEventListener('click',()=>{const t=N.find(n=>n.id===pill.dataset.target);if(t){sn(t);sp(t)}}));
     document.getElementById('ps-links').style.display='block';
   } else document.getElementById('ps-links').style.display='none';
+  // Restore saved panel width before opening so graph-container padding is correct
+  const _sw=localStorage.getItem('panel_width');if(_sw){const _w=parseInt(_sw);if(_w>=320&&_w<=window.innerWidth*0.85)p.style.width=_w+'px';}
   p.classList.add('open');if(window.innerWidth>768)document.getElementById('graph-container').style.paddingRight=p.offsetWidth+'px';
   // location.hash works on file:// and https:// alike
   location.hash=d.id;
@@ -258,10 +260,18 @@ document.getElementById('topbar-search').addEventListener('input',(e)=>{const q=
 (function(){
   const handle=document.getElementById('panel-resize');
   const panel=document.getElementById('panel');
+  const gc=document.getElementById('graph-container');
+  const SAVED_KEY='panel_width';
+  // Restore saved width
+  const saved=localStorage.getItem(SAVED_KEY);
+  if(saved){const w=parseInt(saved);if(w>=320&&w<=window.innerWidth*0.85){panel.style.width=w+'px';}}
+  function syncGC(){if(window.innerWidth>768)gc.style.paddingRight=panel.classList.contains('open')?panel.offsetWidth+'px':'0';}
   let dragging=false, startX=0, startW=0;
   handle.addEventListener('mousedown',(e)=>{
+    e.preventDefault();
     dragging=true; startX=e.clientX; startW=panel.offsetWidth;
     handle.classList.add('dragging');
+    panel.classList.add('resizing');
     document.body.style.userSelect='none';
     document.body.style.cursor='col-resize';
   });
@@ -270,14 +280,17 @@ document.getElementById('topbar-search').addEventListener('input',(e)=>{const q=
     const delta=startX-e.clientX;
     const newW=Math.min(Math.max(startW+delta,320),window.innerWidth*0.85);
     panel.style.width=newW+'px';
-    if(window.innerWidth>768)document.getElementById('graph-container').style.paddingRight=panel.classList.contains('open')?newW+'px':'0';
+    syncGC();
   });
   document.addEventListener('mouseup',()=>{
     if(!dragging)return;
     dragging=false;
     handle.classList.remove('dragging');
+    panel.classList.remove('resizing');
     document.body.style.userSelect='';
     document.body.style.cursor='';
+    localStorage.setItem(SAVED_KEY,panel.offsetWidth);
+    syncGC();
   });
 })();
 ifs();ig();bl();rg();
