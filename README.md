@@ -35,6 +35,12 @@ Thanks to the following people for their early feedback and suggestions — your
 
 ---
 
+## License
+
+This project is licensed under the [MIT License](LICENSE) — free to use, share, and modify with attribution.
+
+---
+
 ## Built by
 
 [Deepak Mehta](https://www.linkedin.com/in/deepakmehta79) — built as a personal learning resource, open to the community.
