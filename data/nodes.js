@@ -114,6 +114,7 @@ const DN=[
 {id:'bm25',label:'BM25',cat:'rag',g:3,p:'retrieval_tech',desc:'Probabilistic keyword retrieval — excellent for exact term matching.'},
 {id:'hybrid_search',label:'Hybrid Search',cat:'rag',g:3,p:'retrieval_tech',desc:'Combine dense + sparse scores via RRF for best-of-both retrieval.'},
 {id:'hyde',label:'HyDE',cat:'rag',g:3,p:'retrieval_tech',desc:'Generate hypothetical doc with LLM, embed it for better retrieval.'},
+{id:'colbert',label:'ColBERT',cat:'rag',g:3,p:'retrieval_tech',desc:'Late-interaction retrieval — keep one embedding per token, score with MaxSim. More accurate than bi-encoders, faster than cross-encoders.'},
 {id:'multi_query',label:'Multi-Query',cat:'rag',g:3,p:'retrieval_tech',desc:'Generate N query rewrites, union results for broader recall.'},
 {id:'rerank',label:'Reranking',cat:'rag',g:3,p:'post_retrieval',desc:'Cross-encoder or Cohere Rerank rescores top-k chunks for precision.'},
 {id:'ctx_compress',label:'Context Compression',cat:'rag',g:3,p:'post_retrieval',desc:'LLMLingua and selective extraction reduce token cost by 20×.'},

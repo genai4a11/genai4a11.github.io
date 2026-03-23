@@ -3792,5 +3792,58 @@ flash_attention: true
 gradient_checkpointing: true
 bf16: true
 output_dir: ./axolotl-output
-wandb_project: axolotl-runs`,tip:'Set train_on_inputs: false to compute loss on completions only — the most impactful single flag for instruction-tuning quality. Also set eval_sample_packing: false separately; leaving it enabled causes eval hangs even when training packing is on.',refs:[{label:'\ud83d\udcd6 Full Guide',url:'concepts/axolotl.html'},{label:'Axolotl GitHub',url:'https://github.com/axolotl-ai-cloud/axolotl'},{label:'Axolotl Docs',url:'https://axolotl-ai-cloud.github.io/axolotl/docs/'}]}
+wandb_project: axolotl-runs`,tip:'Set train_on_inputs: false to compute loss on completions only — the most impactful single flag for instruction-tuning quality. Also set eval_sample_packing: false separately; leaving it enabled causes eval hangs even when training packing is on.',refs:[{label:'\ud83d\udcd6 Full Guide',url:'concepts/axolotl.html'},{label:'Axolotl GitHub',url:'https://github.com/axolotl-ai-cloud/axolotl'},{label:'Axolotl Docs',url:'https://axolotl-ai-cloud.github.io/axolotl/docs/'}]},
+colbert:{use:'Dense retrieval crushes your entire document into one vector — one dot on a map. Then it compares your query\'s dot to every document dot and picks the closest ones. Simple and fast, but lossy: squeezing 500 words into a single point throws away a lot of detail.\n\nColBERT keeps one vector per token. A 100-word document becomes 100 vectors. A 10-word query becomes 10 vectors. Then it does something called MaxSim: for each query token, find the single best-matching document token and record that score. Sum up those best scores across all query tokens. That\'s the final relevance score.\n\nResult: ColBERT catches nuances bi-encoders miss. "return policy for electronics" will score a document mentioning both concepts in the right context much higher — not just one that happens to contain both words anywhere. Think of it as bi-encoder\'s smarter sibling: same offline pre-encoding speed, cross-encoder-level understanding, without the cross-encoder\'s expensive query-time cost.',diag:`  BI-ENCODER vs ColBERT LATE INTERACTION
+
+  BI-ENCODER (standard dense retrieval):
+
+  Query: "order late"          Doc: "shipment delay"
+  [Bi-encoder Model]           [Bi-encoder Model]
+          │                            │
+          ▼                            ▼
+       [q_vec]  ──── cosine ────  [d_vec]
+       (1 vector per query)       (1 vector per doc)
+
+  ──────────────────────────────────────────────────
+
+  ColBERT (late interaction):
+
+  Query: "order  late"         Doc: "shipment  delay  backlog"
+  [ColBERT Encoder]            [ColBERT Encoder]
+      │       │                  │        │        │
+      ▼       ▼                  ▼        ▼        ▼
+    [q₁]   [q₂]              [d₁]     [d₂]     [d₃]
+
+  MaxSim scoring:
+    q₁ → max( cos(q₁,d₁), cos(q₁,d₂), cos(q₁,d₃) )  ← best match
+    q₂ → max( cos(q₂,d₁), cos(q₂,d₂), cos(q₂,d₃) )  ← best match
+    score = sum of each query token's best match
+
+  Each query token finds its own best-matching doc token.`,code:`# ColBERT retrieval with RAGatouille
+# pip install ragatouille
+
+from ragatouille import RAGPretrainedModel
+
+# Load ColBERT v2 — best open-source checkpoint
+RAG = RAGPretrainedModel.from_pretrained("colbert-ir/colbertv2.0")
+
+documents = [
+    "Your shipment is delayed due to warehouse backlog.",
+    "Order #12345 is out for delivery today.",
+    "We apologise for the delay in processing your return request.",
+    "Electronics return policy: 30 days for unopened items.",
+]
+
+# Index offline — each doc stored as token-level vectors (not one per doc)
+RAG.index(
+    collection=documents,
+    index_name="orders_index",
+    max_document_length=256,
+    split_documents=False,
+)
+
+# Query — MaxSim scores each query token against doc tokens
+results = RAG.search(query="my order hasn't arrived yet", k=3)
+for r in results:
+    print(f"Score: {r['score']:.3f}  |  {r['content'][:70]}")`,tip:'Three rules for choosing ColBERT:\n1. Pick ColBERT over bi-encoders when accuracy matters more than index size — ColBERT indexes are ≈4× larger (one vector per token, not per document).\n2. Pick ColBERT over cross-encoders when retrieving from large collections — cross-encoders compare query+doc together at query time, too slow for millions of docs.\n3. Use ColBERT as a reranker when you already have a bi-encoder pipeline — retrieve 100 candidates fast, then rerank with ColBERT for precision.\n\nWhere to start:\n- Library: RAGatouille — one-line ColBERT indexing and search in Python\n- Model: colbert-ir/colbertv2.0 — best open-source checkpoint on HuggingFace',refs:[{label:'\ud83d\udcd6 ColBERT Paper (2020)',url:'https://arxiv.org/abs/2004.12832'},{label:'\ud83d\udcd6 ColBERTv2 Paper (2021)',url:'https://arxiv.org/abs/2112.01488'},{label:'RAGatouille Library',url:'https://github.com/bclavie/RAGatouille'},{label:'colbert-ir/colbertv2.0',url:'https://huggingface.co/colbert-ir/colbertv2.0'},{label:'Stanford ColBERT Blog',url:'https://hazyresearch.stanford.edu/blog/2022-06-20-colbert'}]}
 };
