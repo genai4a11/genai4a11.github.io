@@ -155,6 +155,7 @@ const PATHS={
     {id:'bm25',note:'Keyword matching — essential for product names, codes, exact terms'},
     {id:'hybrid_search',note:'Dense + BM25 fused via RRF — best recall in production'},
     {id:'hyde',note:'Generate a hypothetical answer first, then embed it — boosts recall'},
+    {id:'colbert',note:'Late interaction — token-level MaxSim for better accuracy than bi-encoders'},
     {id:'multi_query',note:'Rewrite query N ways, union results — broader coverage'}
   ],
   programmatic_prompting:[
