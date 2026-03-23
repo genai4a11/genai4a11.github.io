@@ -1881,9 +1881,13 @@ retrieval_tech:{use:'The retriever is the most important component in a RAG pipe
         │   ("LLM latency tricks")     Generate hypothetical
         │                              answer, embed that
         │
+        ├── Need better accuracy     → ColBERT
+        │   than bi-encoders but       Token-level MaxSim —
+        │   can't afford cross-enc     late interaction model
+        │
         └── One query isn't enough  → Multi-Query
             (complex questions)        Rewrite into 3 variants,
-                                       retrieve for each, merge`,tip:'Start with Hybrid Search (BM25 + dense) in production — it consistently outperforms either method alone. Add HyDE or Multi-Query only if recall is still low after adding a reranker.'},
+                                       retrieve for each, merge`,tip:'Start with Hybrid Search (BM25 + dense) in production — it consistently outperforms either method alone. Add HyDE or Multi-Query only if recall is still low after adding a reranker. Upgrade to ColBERT when you need cross-encoder-level accuracy without the query-time cost.'},
 advanced_reasoning:{use:'When a model gives a wrong or shallow answer to a complex question, the problem is usually that it answered too fast. Advanced reasoning techniques force the model to slow down and show its work — improving accuracy on multi-step problems.',diag:`  Problem complexity
         │
         ▼
