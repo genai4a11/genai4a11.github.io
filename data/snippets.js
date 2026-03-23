@@ -4132,6 +4132,74 @@ for i, ex in enumerate(ds.take(10_000)):
         lsh.insert(key, m)
         unique.append(ex["text"])
 
-print(f"Kept {len(unique):,} / 10,000 unique documents")`,tip:'Run deduplication before quality filtering — cheaper and removes the most noise. Use both exact (SHA-256) and fuzzy (MinHash) dedup. Read the Dolma and RedPajama papers — full pipelines are published.',refs:[{label:'Dolma dataset pipeline',url:'https://arxiv.org/abs/2402.00159'},{label:'RedPajama data',url:'https://github.com/togethercomputer/RedPajama-Data'},{label:'Data-centric AI (Andrew Ng)',url:'https://datacentricai.org'},{label:'Datasketch library',url:'https://github.com/ekzhu/datasketch'}]}
+print(f"Kept {len(unique):,} / 10,000 unique documents")`,tip:'Run deduplication before quality filtering — cheaper and removes the most noise. Use both exact (SHA-256) and fuzzy (MinHash) dedup. Read the Dolma and RedPajama papers — full pipelines are published.',refs:[{label:'Dolma dataset pipeline',url:'https://arxiv.org/abs/2402.00159'},{label:'RedPajama data',url:'https://github.com/togethercomputer/RedPajama-Data'},{label:'Data-centric AI (Andrew Ng)',url:'https://datacentricai.org'},{label:'Datasketch library',url:'https://github.com/ekzhu/datasketch'}]},
 
+meta_foundations:{use:'Everything in GenAI rests on three layers: the math that defines how models learn, the architecture choices that determine what models can do, and the model zoo that defines what you can use off the shelf. Understanding these foundations helps you make better decisions about when to use, adapt, or replace models.',diag:`  The Foundations stack
+  ────────────────────────────────────────────────────
+  ┌──────────────────────────────────────────────────┐
+  │  Frontier & Open Models                          │
+  │  GPT-4o · Claude · Llama 3 · Mistral · Qwen     │
+  ├──────────────────────────────────────────────────┤
+  │  Architectures                                   │
+  │  Transformer · Mamba/SSM · Encoder/Decoder       │
+  │  Attention · KV Cache · Positional Encoding      │
+  ├──────────────────────────────────────────────────┤
+  │  Training & Learning                             │
+  │  Backprop · Optimizers · Regularisation          │
+  │  Mixed Precision · DeepSpeed · Scaling Laws      │
+  ├──────────────────────────────────────────────────┤
+  │  Math & Code                                     │
+  │  Linear Algebra · Calculus · Probability         │
+  │  NumPy · PyTorch · HF Datasets                   │
+  └──────────────────────────────────────────────────┘`,tip:'You don\'t need to master every layer before building. Most engineers operate primarily at the model and architecture level. Understand attention and the transformer block deeply — everything else in GenAI builds on those two concepts.',questions:{
+    leader:['How much of our team needs to understand the underlying math vs. just the APIs — and does that gap create product risk?','When does deeper theoretical knowledge translate into better product decisions, and when is API-level understanding sufficient?','What is the ROI of investing in ML foundations training vs. hiring specialists vs. relying on model providers?'],
+    pm:['How do I evaluate whether we are using the right model architecture for our use case without a deep ML background?','Which foundational gaps in the team are causing the most production issues — and how do I surface those gaps?','How do I prioritize which foundational concepts the team needs to learn first given our specific product roadmap?'],
+    eng:['How do I know when to implement something from scratch vs. use a pretrained model — where is the boundary?','How do I read and evaluate an ML paper quickly enough to decide if a new technique is worth implementing?','What foundational debugging skills do I need to diagnose model failures — gradient issues, distribution shift, tokenization bugs?'],
+  }},
+meta_production:{use:'Running GenAI in production is harder than running regular software. Models are slow, expensive, non-deterministic, and depend on external providers. This cluster covers how to make them reliable, cost-efficient, and observable at scale.',diag:`  The Production stack
+  ────────────────────────────────────────────────────
+  ┌──────────────────────────────────────────────────┐
+  │  System Design                                   │
+  │  Architecture patterns · Build vs Buy            │
+  │  Compound AI · Fallback chains · Evals-first     │
+  ├──────────────────────────────────────────────────┤
+  │  Serving & Infra                                 │
+  │  vLLM · TGI · Ollama · OpenRouter               │
+  │  GPU/CPU · Quantisation · Cloud deploy           │
+  ├──────────────────────────────────────────────────┤
+  │  Prod Engineering                                │
+  │  Streaming · Rate limiting · Budget guards       │
+  │  Circuit breakers · Retry / backoff              │
+  ├──────────────────────────────────────────────────┤
+  │  MLOps                                           │
+  │  Experiment tracking · Model registry            │
+  │  Dataset versioning · CI/CD for models           │
+  └──────────────────────────────────────────────────┘`,tip:'The two biggest surprises in LLM production: (1) latency is 10-100× higher than a database call — design your UX around streaming from day one. (2) Cost scales with tokens, not requests — audit your prompt lengths before optimising anything else.',questions:{
+    leader:['What is our operational readiness for running LLMs in production — what are the gaps vs. a standard software service?','How do we ensure business continuity when a model provider has an outage — what is the fallback and who owns it?','What is the total cost of ownership for our production AI stack, and what levers do we have to reduce it?'],
+    pm:['How do I spec non-functional requirements — latency, availability, cost per call — for an AI feature so engineering has a clear bar?','What does production-ready mean for an AI system — what checklist separates a demo from something we can launch?','How do I prioritise reliability improvements vs. new capability work given the current production failure modes?'],
+    eng:['How do I build an LLM system that degrades gracefully — returning a fallback or cached response — rather than failing hard?','What observability stack do I need to diagnose production incidents in real time: latency spikes, cost anomalies, quality drops?','How do I architect for model swappability so I can upgrade the underlying model without rewriting the integration layer?'],
+  }},
+meta_applications:{use:'The final layer: where GenAI capability meets user value. This cluster covers the application patterns that repeatedly work in production — RAG systems, code assistants, structured extraction, voice agents, and document processing.',diag:`  The Applications stack
+  ────────────────────────────────────────────────────
+  ┌──────────────────────────────────────────────────┐
+  │  RAG Systems                                     │
+  │  Knowledge-grounded Q&A, enterprise search       │
+  ├──────────────────────────────────────────────────┤
+  │  Code Assistants                                 │
+  │  Cursor · Copilot · Aider · custom tooling       │
+  ├──────────────────────────────────────────────────┤
+  │  Structured Output                               │
+  │  Instructor · Outlines · Marvin                  │
+  │  Text-to-SQL · form extraction · classification  │
+  ├──────────────────────────────────────────────────┤
+  │  Voice Agents                                    │
+  │  STT → LLM → TTS · LiveKit · ElevenLabs          │
+  ├──────────────────────────────────────────────────┤
+  │  Document Processing                             │
+  │  Unstructured.io · Docling · OCR pipelines       │
+  └──────────────────────────────────────────────────┘`,tip:'Start with the pattern that solves your user\'s most painful problem, not the most technically interesting one. RAG and structured output cover 70% of enterprise GenAI use cases with the lowest operational risk.',questions:{
+    leader:['Which GenAI application patterns have the highest ROI for our business context — where should we invest first?','How do I evaluate build vs. buy vs. integrate for specific application use cases — what are the decision criteria?','What does a successful GenAI application rollout look like — what are the milestones and success signals at 30/60/90 days?'],
+    pm:['How do I identify which existing user workflows are best suited for GenAI augmentation vs. net-new AI-native features?','What product surfaces should we enhance with GenAI first, and how do I sequence them for maximum learning and minimum risk?','How do I measure the business impact of a GenAI application beyond usage metrics — what outcomes actually matter?'],
+    eng:['How do I choose between RAG, structured output, agents, and code assist patterns for a given product requirement?','What is the integration complexity of adding GenAI to an existing product vs. building greenfield — what are the hidden costs?','How do I ensure the application pattern I choose can scale with the product roadmap without a full re-architecture?'],
+  }},
 };
