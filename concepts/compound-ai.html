@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compound AI Systems — GenAI Mindmap</title>
+  <meta name="description" content="Compound AI systems beyond single-model calls — routing, verifier chains, retrieve-then-generate, LM programs, and production orchestration patterns." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Compound AI Systems" />
+  <meta property="og:description" content="Compound AI systems beyond single-model calls — routing, verifier chains, retrieve-then-generate, LM programs, and production orchestration patterns." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/compound-ai.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Compound AI Systems" />
+  <meta name="twitter:description" content="Compound AI systems beyond single-model calls — routing, verifier chains, retrieve-then-generate, LM programs, and production orchestration patterns." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/compound-ai.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-Y9590EJKQX');</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── PRACTICE GRID ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Architecture · Systems</span>
+  <h1>Compound <em>AI</em> Systems</h1>
+  <p class="hero-sub">Combining LLMs with retrieval, tools, and verifiers — LMQL, DSPy, and production system patterns</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">4</span>
+      <span class="stat-label">patterns</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">7</span>
+      <span class="stat-label">tools</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#what-is-compound" data-num="1">What is compound AI</a></li>
+      <li><a href="#core-patterns" data-num="2">Core patterns</a></li>
+      <li><a href="#lm-programming" data-num="3">LM programming</a></li>
+      <li><a href="#routing" data-num="4">Router patterns</a></li>
+      <li><a href="#verifiers" data-num="5">Verifier loops</a></li>
+      <li><a href="#production" data-num="6">Production considerations</a></li>
+      <li><a href="#tools" data-num="7">Tools &amp; frameworks</a></li>
+      <li><a href="#references" data-num="8">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHAT IS COMPOUND ── -->
+  <div class="section-block" id="what-is-compound">
+    <div class="section-marker">01 — Definition</div>
+    <h2>What Is Compound AI</h2>
+    <p>A single LLM call is rarely enough for production systems. Compound AI combines multiple LLMs, retrieval engines, tool calls, and verification loops into unified workflows.</p>
+
+    <p><strong>Single LLM limitations:</strong> No access to real-time data. No ability to use external tools. No correction loop if output is wrong. Context window constraints for long documents. High latency if you need reasoning before responding.</p>
+
+    <p><strong>Compound patterns solve this:</strong> Chain retrieval before generation (RAG). Route different queries to different models. Call tools and integrate results. Verify outputs and retry if wrong. Decompose problems into multi-step LLM calls.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Compound AI is the norm in production.</strong> Most shipped LLM systems aren't a single model. They're orchestrations of retrieval, routing, verification, and tool use.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. CORE PATTERNS ── -->
+  <div class="section-block" id="core-patterns">
+    <div class="section-marker">02 — Architectures</div>
+    <h2>Core Patterns</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Pattern</th><th>Use Case</th><th>Complexity</th><th>Latency</th><th>Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>RAG</strong><br/>(Retrieve then Generate)</td><td>QA over docs, facts from external source</td><td>Low</td><td>Medium</td><td>Low</td></tr>
+          <tr><td><strong>Tool-augmented</strong><br/>(Agent + tools)</td><td>Calculator, search, API calls, reasoning</td><td>Medium</td><td>High</td><td>Medium</td></tr>
+          <tr><td><strong>Verifier chains</strong><br/>(Generate + verify)</td><td>Code generation, math, factual outputs</td><td>Medium</td><td>High</td><td>Medium</td></tr>
+          <tr><td><strong>Ensemble</strong><br/>(Multiple models)</td><td>High-stakes decisions, diversity of views</td><td>Medium</td><td>High</td><td>High</td></tr>
+          <tr><td><strong>Multi-step</strong><br/>(Decompose problem)</td><td>Complex reasoning, hierarchical planning</td><td>High</td><td>High</td><td>Medium</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>When to Use Each</h3>
+    <p><strong>RAG:</strong> Static knowledge, document search, Q&A. Simplest, lowest cost. <strong>Tool-augmented:</strong> Need real-time info, calculations, or external APIs. <strong>Verifiers:</strong> Correctness matters; easy to validate output. <strong>Ensemble:</strong> High stakes; need consensus. <strong>Multi-step:</strong> Complex decomposition; clear subtasks.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Composition adds latency.</strong> Each LLM call adds 500ms–2s. RAG adds retrieval time. Tool calls wait for external APIs. Design for your latency budget.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. LM PROGRAMMING ── -->
+  <div class="section-block" id="lm-programming">
+    <div class="section-marker">03 — Abstraction</div>
+    <h2>LM Programming Frameworks</h2>
+    <p>Tools like DSPy and LMQL provide higher-level abstractions for building compound systems. Instead of managing prompts and parsing, you define the computation graph.</p>
+
+    <h3>DSPy: Modular LLM Programs</h3>
+    <p>DSPy treats LLM calls as modules with typed signatures. Chain modules together. Optimize prompts automatically via demonstrations. Composable and testable.</p>
+
+    <div class="example-box">from dspy.functional import ChainOfThought
+
+class GenerateAnswer(dspy.Signature):
+    """Answer a question about the document."""
+    context = dspy.InputField(desc="may contain relevant facts")
+    question = dspy.InputField()
+    answer = dspy.OutputField(desc="short, factual answer")
+
+class RAGSystem(dspy.Module):
+    def __init__(self, num_passages=3):
+        super().__init__()
+        self.retrieve = dspy.Retrieve(k=num_passages)
+        self.generate_answer = ChainOfThought(GenerateAnswer)
+
+    def forward(self, question):
+        context = self.retrieve(question).passages
+        prediction = self.generate_answer(
+            context="\n".join(context),
+            question=question
+        )
+        return prediction
+
+# Usage
+rag = RAGSystem()
+result = rag.forward("What is RAG?")
+print(result.answer)
+
+    <p><strong>Key benefits:</strong> Type-safe. Modular. Composable. Automatic optimization via in-context learning. Great for research and structured problems.</p>
+  </div>
+
+  <!-- ── 4. ROUTING ── -->
+  <div class="section-block" id="routing">
+    <div class="section-marker">04 — Smart Dispatch</div>
+    <h2>Router Patterns</h2>
+    <p>Not all queries need the same model or workflow. Smart routing dispatches based on query characteristics.</p>
+
+    <h3>Routing Strategies</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3>Semantic Routing</h3>
+        <ul>
+          <li>Embed query, compare to examples</li>
+          <li>Route to specialized handler</li>
+          <li>Use for domain-specific tasks</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>LLM Routing</h3>
+        <ul>
+          <li>LLM classifies query type</li>
+          <li>Route to best handler</li>
+          <li>More flexible, slower</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>Capability Routing</h3>
+        <ul>
+          <li>Route to model that excels at task</li>
+          <li>Fast model for simple, slow for complex</li>
+          <li>Minimize cost</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>Load Routing</h3>
+        <ul>
+          <li>Route to least busy endpoint</li>
+          <li>Balance across multiple replicas</li>
+          <li>Maximize throughput</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Router Example</h3>
+    <div class="example-box">def route_query(query: str) -> str:
+    """Route query to appropriate handler."""
+    # Semantic routing: embed and classify
+    embedding = embed_model.encode(query)
+    
+    if similarity(embedding, math_examples) > 0.7:
+        return "math_handler"
+    elif similarity(embedding, qa_examples) > 0.7:
+        return "rag_handler"
+    else:
+        return "general_chat"
+
+def process(query: str):
+    handler = route_query(query)
+    
+    if handler == "math_handler":
+        return math_solver(query)
+    elif handler == "rag_handler":
+        docs = retriever(query)
+        return llm_generate(query, context=docs)
+    else:
+        return llm_generate(query)
+  </div>
+
+  <!-- ── 5. VERIFIERS ── -->
+  <div class="section-block" id="verifiers">
+    <div class="section-marker">05 — Validation</div>
+    <h2>Verifier &amp; Self-Check Loops</h2>
+    <p>Generate output, then verify. If wrong, retry or refine. Useful for code, math, and factual claims.</p>
+
+    <h3>Patterns</h3>
+    <p><strong>Self-check:</strong> Same model judges its own output. Cheaper but less reliable. <strong>Critic model:</strong> Separate model critiques. More reliable but higher cost. <strong>External validators:</strong> Run code, check facts against DB, validate structure.</p>
+
+    <h3>Workflow</h3>
+    <div class="workflow">
+      <div class="workflow-step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Generate.</strong> LLM produces output (code, answer, plan)</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Validate.</strong> External check or LLM critique. Pass/fail signal.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Decide.</strong> If pass, return. If fail, try again or collect feedback.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">4</div>
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Refine.</strong> Feed error back to LLM, retry with better context.</div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Verifiers multiply latency but improve quality.</strong> For latency-critical systems, balance with budgets. For correctness-critical (code, finance), verifiers are essential.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. PRODUCTION ── -->
+  <div class="section-block" id="production">
+    <div class="section-marker">06 — Operations</div>
+    <h2>Production Considerations</h2>
+
+    <h3>Latency Budget</h3>
+    <p>Compound systems add latency. Each LLM call: 500ms–2s. Each retrieval: 50–500ms. Each tool call: 100ms–10s. Design within your budget. For interactive systems, target <1s for standard requests.</p>
+
+    <h3>Cost Tracking</h3>
+    <p>Compound systems multiply costs. RAG: retrieval + generation. Routing: classification + handling. Verification: multiple LLM calls. Track cost per query. Optimize hot paths. Use cheaper models where acceptable.</p>
+
+    <h3>Observability</h3>
+    <p>Log every LLM call, tool invocation, and decision point. Track latency and cost breakdown. Identify bottlenecks. Monitor error rates by component. Alert on high-latency or high-cost queries.</p>
+
+    <h3>Failure Modes</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3>Hallucination</h3>
+        <ul>
+          <li>LLM invents facts</li>
+          <li>Mitigation: verify, cite sources</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>Bad Routing</h3>
+        <ul>
+          <li>Wrong handler called</li>
+          <li>Mitigation: test routing</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>Tool Failures</h3>
+        <ul>
+          <li>API down, network error</li>
+          <li>Mitigation: graceful degradation</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>Context Collapse</h3>
+        <ul>
+          <li>Too much data, model loses signal</li>
+          <li>Mitigation: compression, top-k</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. TOOLS ── -->
+  <div class="section-block" id="tools">
+    <div class="section-marker">07 — Ecosystem</div>
+    <h2>Tools &amp; Frameworks</h2>
+    
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">DSPy</div>
+        <div class="tool-desc">Modular LLM programs. Type-safe. Automatic prompt optimization. Research-friendly.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Language</div>
+        <div class="tool-name">LMQL</div>
+        <div class="tool-desc">Language for LM interaction. Constrained decoding. Control flow integration.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangChain</div>
+        <div class="tool-desc">Agent framework. Tool use, retrieval, chains. Large ecosystem.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Marvin</div>
+        <div class="tool-desc">Pythonic AI. Function calls, structured outputs. Built on Pydantic.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Library</div>
+        <div class="tool-name">Outlines</div>
+        <div class="tool-desc">Constrained decoding. Guided generation. JSON, regex, grammar.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Semantic Router</div>
+        <div class="tool-desc">Semantic routing layer. Route to handlers. Lightweight.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Library</div>
+        <div class="tool-name">Guidance</div>
+        <div class="tool-desc">LLM control via templating. Constrained generation. Verbose output.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Router</div>
+        <div class="tool-name">LiteLLM</div>
+        <div class="tool-desc">Unified API across LLMs. Routing, fallbacks, caching.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Research &amp; Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Pourreza, M., &amp; Raffel, C. (2024).
+        <em>DSPy: Compiling Declarative Language Model Calls into State-of-the-Art Pipelines.</em>
+        arXiv:2310.03714. —
+        <a href="https://arxiv.org/abs/2310.03714" target="_blank">arxiv:2310.03714 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Wallace, E., et al. (2021).
+        <em>Eliciting Task-Relevant Properties from Large Language Models with Self-Supervision.</em>
+        arXiv:2011.05316. —
+        <a href="https://arxiv.org/abs/2011.05316" target="_blank">arxiv:2011.05316 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Frameworks &amp; Tools</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> DSPy GitHub. <a href="https://github.com/stanfordnlp/dspy" target="_blank">github.com/stanfordnlp/dspy ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> LMQL. <a href="https://lmql.ai" target="_blank">lmql.ai ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> LangChain. <a href="https://python.langchain.com" target="_blank">python.langchain.com ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Marvin. <a href="https://askmarvin.ai" target="_blank">askmarvin.ai ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Outlines. <a href="https://outlines-dev.github.io" target="_blank">outlines-dev.github.io ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Varun Chandrasekaran (Berkeley). <em>Compound AI Systems.</em> —
+        <a href="https://bair.berkeley.edu/blog/2024/02/20/compound-ai" target="_blank">bair.berkeley.edu ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        LLM Orchestration Patterns. <em>Building Production LLM Systems.</em> —
+        <a href="https://huggingface.co/blog" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

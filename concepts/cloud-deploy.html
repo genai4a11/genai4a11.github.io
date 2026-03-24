@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloud Deployment for LLMs — GenAI Mindmap</title>
+  <meta name="description" content="Deploying LLMs on AWS, GCP, and Azure — SageMaker vs Vertex AI vs Azure OpenAI, container serving, auto-scaling, and cost comparison." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Cloud Deployment for LLMs" />
+  <meta property="og:description" content="Deploying LLMs on AWS, GCP, and Azure — SageMaker vs Vertex AI vs Azure OpenAI, container serving, auto-scaling, and cost comparison." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/cloud-deploy.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Cloud Deployment for LLMs" />
+  <meta name="twitter:description" content="Deploying LLMs on AWS, GCP, and Azure — SageMaker vs Vertex AI vs Azure OpenAI, container serving, auto-scaling, and cost comparison." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/cloud-deploy.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    .tools-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem; margin-top: 1.5rem;
+    }
+    .tool-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .tool-card:hover {
+      border-color: var(--indigo);
+      box-shadow: 0 4px 12px rgba(79,70,229,0.12);
+    }
+    .tool-card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .tool-card p {
+      margin: 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+      .tools-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<div class="hero">
+  <span class="hero-tag">Production · Infrastructure</span>
+  <h1>Cloud <em>Deployment</em> for LLMs</h1>
+  <p class="hero-sub">AWS, GCP, and Azure model serving — managed APIs vs self-hosted, auto-scaling, and cost optimisation</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">3</span>
+      <span class="stat-label">clouds</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">9</span>
+      <span class="stat-label">services</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#managed-vs-self" data-num="1">Managed API vs self-hosted</a></li>
+      <li><a href="#aws-options" data-num="2">AWS options</a></li>
+      <li><a href="#gcp-options" data-num="3">GCP options</a></li>
+      <li><a href="#azure-options" data-num="4">Azure options</a></li>
+      <li><a href="#auto-scaling" data-num="5">Auto-scaling patterns</a></li>
+      <li><a href="#cost-optim" data-num="6">Cost optimisation</a></li>
+      <li><a href="#tools" data-num="7">Tools & platforms</a></li>
+      <li><a href="#references" data-num="8">References</a></li>
+    </ol>
+  </div>
+
+  <div class="section-block" id="managed-vs-self">
+    <div class="section-marker">01 — Architecture</div>
+    <h2>Managed API vs Self-Hosted</h2>
+    <p>Managed LLM APIs (OpenAI, Anthropic, Bedrock) trade control for simplicity. You send a request; they handle infrastructure, scaling, model updates. Self-hosted models (LLaMA, Mistral) run on your infrastructure. You control fine-tuning, caching, data residency, cost.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Option</th><th>Latency SLA</th><th>Cost model</th><th>Control</th><th>Cold start</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Managed API</strong></td><td>50–300ms</td><td>Per-token</td><td>Model & params only</td><td>None</td></tr>
+          <tr><td><strong>Container on GPU</strong></td><td>500–2000ms</td><td>Hourly instance</td><td>Full (infra + model)</td><td>1–2 min</td></tr>
+          <tr><td><strong>Serverless GPU</strong></td><td>2–10sec</td><td>Per-second</td><td>Full (model only)</td><td>2–5 sec</td></tr>
+          <tr><td><strong>Spot cluster</strong></td><td>1–5sec</td><td>Spot rate (50–80% off)</td><td>Full</td><td>30 sec–1 min</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Decision rule:</strong> Use managed API if privacy is not critical and cost per request is < $0.01. Use self-hosted if you need sub-100ms latency, custom fine-tuning, or full data control.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="aws-options">
+    <div class="section-marker">02 — AWS Ecosystem</div>
+    <h2>AWS Options</h2>
+
+    <h3>1. SageMaker Real-Time Endpoints</h3>
+    <p>Managed endpoint serving. Deploy any model; SageMaker handles autoscaling and load balancing. Good for production workloads with consistent traffic. Pricing: you pay for instance time (e.g., ml.p4d.24xlarge at $37/hour). Cold starts are fast; scaling is automatic.</p>
+
+    <h3>2. EKS + vLLM</h3>
+    <p>Kubernetes on AWS. Deploy vLLM (high-throughput LLM inference engine) on EKS clusters. More control; scales via Karpenter. Better for burstable traffic and cost-sensitive workloads. Requires DevOps expertise.</p>
+
+    <h3>3. Inferentia2 Chips</h3>
+    <p>AWS custom silicon. Optimized for inference; ~70% cheaper than GPUs for throughput workloads. Tradeoff: limited model compatibility. Good for specific models (BERT, smaller LLMs).</p>
+
+    <h3>4. AWS Bedrock</h3>
+    <p>Managed API. Claude, Llama, Mixtral available via API. No infrastructure to manage. Per-token pricing. Best for teams wanting API convenience with data residency on AWS.</p>
+
+    <h3>Python boto3 Example</h3>
+    <div class="example-box">import boto3
+
+sm_client = boto3.client('sagemaker-runtime')
+response = sm_client.invoke_endpoint(
+    EndpointName='my-llm-endpoint',
+    Body=json.dumps({'messages': [...]}),
+    ContentType='application/json'
+)
+result = json.loads(response['Body'].read().decode())
+print(result['generated_text'])</div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>SageMaker vs Bedrock:</strong> SageMaker for production inference; Bedrock for third-party models. Bedrock is simpler but has less flexibility.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="gcp-options">
+    <div class="section-marker">03 — GCP Ecosystem</div>
+    <h2>GCP Options</h2>
+
+    <h3>1. Vertex AI Model Garden</h3>
+    <p>GCP's hosted LLM platform. Deploy fine-tuned versions of Claude, Gemini, Llama. Autoscaling, monitoring included. Simpler than raw GKE; less control than containers.</p>
+
+    <h3>2. GKE + vLLM</h3>
+    <p>Google Kubernetes Engine. Deploy vLLM for maximum throughput and cost control. Scale with Workload Identity for IAM. Good for high-volume batch inference and real-time serving.</p>
+
+    <h3>3. TPU v4/v5e</h3>
+    <p>Google custom silicon. Extremely fast for LLMs optimized for TPUs. v5e is newer, cheaper; v4 is proven. Requires model optimization; not all models support TPUs well.</p>
+
+    <h3>4. Cloud Run with Models</h3>
+    <p>Serverless containers. Deploy lightweight models (ORCA, fine-tuned small models) to Cloud Run for autoscaling without managing servers. Cold starts ~5 sec.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>TPU commitment:</strong> TPU blocks require 1-year commitment. Good for stable workloads; risky for experimental projects. Start with on-demand A100 GPUs on Compute Engine, move to TPU after 3 months of stable demand.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="azure-options">
+    <div class="section-marker">04 — Azure Ecosystem</div>
+    <h2>Azure Options</h2>
+
+    <h3>1. Azure OpenAI Service</h3>
+    <p>Managed API for GPT-4, GPT-3.5, embeddings. HIPAA/FedRAMP compliant. Per-token pricing. No infrastructure to manage. Best for enterprises needing Microsoft integration and compliance.</p>
+
+    <h3>2. AKS + Triton</h3>
+    <p>Azure Kubernetes Service with NVIDIA Triton Inference Server. Full control over model serving, batching, GPU optimization. Good for complex serving pipelines and custom kernels.</p>
+
+    <h3>3. NC-series (H100) VMs</h3>
+    <p>Virtual machines with H100 GPUs. Pay-as-you-go or reserved instances (30% discount). Deploy vLLM or TGI. More expensive than AWS/GCP but with Azure ecosystem integration.</p>
+
+    <h3>4. Azure Machine Learning</h3>
+    <p>Managed inference endpoints. Deploy Hugging Face models, fine-tuned models, ONNX. Autoscaling, monitoring included. Simpler than raw VMs; less flexible than AKS.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Azure for enterprise:</strong> If you're already in the Microsoft ecosystem (Entra ID, Dynamics, Power BI), Azure's integrated auth and compliance make it compelling despite slightly higher costs.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="auto-scaling">
+    <div class="section-marker">05 — Scaling Patterns</div>
+    <h2>Auto-Scaling Patterns</h2>
+
+    <h3>Horizontal Pod Autoscaler (HPA)</h3>
+    <p>Scale based on GPU utilization. If average GPU use > 70%, spawn new pods. Works well for steady traffic; slower for traffic spikes (30–60 sec to provision).</p>
+
+    <h3>Queue-Depth Scaling</h3>
+    <p>Scale based on request queue length, not resource use. If queue length > 10, scale out. Faster response to spikes but requires queue implementation (AWS SQS, Kubernetes custom metric).</p>
+
+    <h3>Karpenter for Node Provisioning</h3>
+    <p>Open-source auto-scaler for Kubernetes. Provisions optimal node types (GPU, CPU, spot). Faster than HPA; integrates with spot instances for 50–80% cost savings. Requires AWS or GCP.</p>
+
+    <h3>YAML Example: HPA on GPU Utilization</h3>
+    <div class="example-box">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: llm-server-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: llm-server
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Scaling latency:</strong> HPA adds 30–60 sec to spin up new pods. For bursty traffic, pre-scale or use spot instances with Karpenter. For real-time, maintain headroom (run at 50% capacity).</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="cost-optim">
+    <div class="section-marker">06 — Cost Optimisation</div>
+    <h2>Cost Optimisation</h2>
+
+    <h3>Spot Instances & Preemptible VMs</h3>
+    <p>AWS spot / GCP preemptible instances cost 50–80% less than on-demand. Tradeoff: can be terminated with 2-min notice. Works for stateless inference; use with Karpenter for seamless failover.</p>
+
+    <h3>Reserved Instances</h3>
+    <p>Commit to 1-year or 3-year terms; save 30–50% on instance costs. Lock in capacity; requires demand forecasting. Good for baseline traffic.</p>
+
+    <h3>Right-Sizing</h3>
+    <p>Use smallest GPU type that meets latency SLA. A100 is overkill for many models; try H100, L40S, or even A10G. Monitor GPU utilization; oversized instances waste money.</p>
+
+    <h3>Batching Requests</h3>
+    <p>Batch inference multiplies throughput. Instead of 10 sequential requests (10 sec), batch them (1 sec for 100 requests). Trade latency for throughput; good for async workloads.</p>
+
+    <h3>Speculative Decoding & Caching</h3>
+    <p>Speculative decoding reduces tokens generated (faster, cheaper). Prompt caching (Claude, Gemini) reuses computation on repeated context (30–50% token savings).</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Cost math:</strong> 100K requests/day, $0.01/request = $1000/day. Optimize model routing (40% to cheap model): $0.007/avg = $700/day. Implement caching: $490/day. Spot instances: $245/day. Total: 75% savings.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="tools">
+    <div class="section-marker">07 — Ecosystem</div>
+    <h2>Tools & Platforms</h2>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <h3>SageMaker</h3>
+        <p>AWS managed endpoints. Deploy, scale, monitor LLMs. Native integration with AWS ecosytem.</p>
+      </div>
+      <div class="tool-card">
+        <h3>Vertex AI</h3>
+        <p>GCP managed platform. Fine-tune, deploy, monitor. Native for Gemini, Claude.</p>
+      </div>
+      <div class="tool-card">
+        <h3>Azure OpenAI</h3>
+        <p>Managed API on Azure. GPT-4, compliance, Entra ID integration.</p>
+      </div>
+      <div class="tool-card">
+        <h3>vLLM</h3>
+        <p>High-throughput LLM inference. Deploy on any cloud. PagedAttention for efficiency.</p>
+      </div>
+      <div class="tool-card">
+        <h3>Triton</h3>
+        <p>NVIDIA inference server. Multi-model, batching, custom kernels. Complex but powerful.</p>
+      </div>
+      <div class="tool-card">
+        <h3>KServe</h3>
+        <p>Kubernetes-native serving. Model registry, traffic splitting, autoscaling.</p>
+      </div>
+      <div class="tool-card">
+        <h3>Karpenter</h3>
+        <p>Fast node provisioning for Kubernetes. Spot instance support, cost optimization.</p>
+      </div>
+      <div class="tool-card">
+        <h3>Kubernetes</h3>
+        <p>Container orchestration. Industry standard; steep learning curve but full control.</p>
+      </div>
+      <div class="tool-card">
+        <h3>Modal</h3>
+        <p>Serverless GPU. Deploy functions; autoscale serverlessly. Simple; less control.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> AWS SageMaker — Real-time Endpoints. <a href="https://aws.amazon.com/sagemaker" target="_blank">aws.amazon.com/sagemaker ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> GCP Vertex AI — Model Serving. <a href="https://cloud.google.com/vertex-ai" target="_blank">cloud.google.com/vertex-ai ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Azure ML — Inference Endpoints. <a href="https://azure.microsoft.com/en-us/products/machine-learning" target="_blank">azure.microsoft.com/ml ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> vLLM — LLM Inference Library. <a href="https://docs.vllm.ai" target="_blank">docs.vllm.ai ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Karpenter — Auto-scaling for K8s. <a href="https://karpenter.sh" target="_blank">karpenter.sh ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Together.ai. (2024). <em>Deploying LLMs Cost-Effectively.</em> —
+        <a href="https://www.together.ai" target="_blank">together.ai ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Hugging Face. (2023). <em>Inference at Scale: LLM Deployment Strategies.</em> —
+        <a href="https://huggingface.co/blog" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

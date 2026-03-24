@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Positional Encoding in Transformers — GenAI Mindmap</title>
+  <meta name="description" content="Positional encoding in transformers — sinusoidal vs learned positions, RoPE rotary embeddings, ALiBi linear bias, YaRN and LongRoPE for context extension, and NTK-aware scaling." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Positional Encoding in Transformers" />
+  <meta property="og:description" content="Positional encoding in transformers — sinusoidal vs learned positions, RoPE rotary embeddings, ALiBi linear bias, YaRN and LongRoPE for context extension, and NTK-aware scaling." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/pos-encoding.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Positional Encoding in Transformers" />
+  <meta name="twitter:description" content="Positional encoding methods for transformers — sinusoidal, RoPE, ALiBi, context extension." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/pos-encoding.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Transformers · Architecture</span>
+  <h1>Positional <em>Encoding</em></h1>
+  <p class="hero-sub">How transformers know token order — sinusoidal, learned, RoPE, ALiBi, and YaRN context extension</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">5</span>
+      <span class="stat-label">methods</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">maths-heavy</span>
+      <span class="stat-label">theory</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-position" data-num="1">Why position matters</a></li>
+      <li><a href="#methods-table" data-num="2">5 methods</a></li>
+      <li><a href="#sinusoidal" data-num="3">Sinusoidal</a></li>
+      <li><a href="#rope" data-num="4">RoPE</a></li>
+      <li><a href="#alibi" data-num="5">ALiBi</a></li>
+      <li><a href="#context-extension" data-num="6">Context extension</a></li>
+      <li><a href="#references" data-num="7">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY POSITION MATTERS ── -->
+  <div class="section-block" id="why-position">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>Why Position Matters</h2>
+
+    <p><strong>The problem:</strong> Transformers use self-attention: each token attends to all other tokens with weighted sums. Attention is permutation-invariant — the order of tokens doesn't matter to the mechanism. "Alice ate an apple" and "apple an ate Alice" have identical attention scores.</p>
+
+    <p>But order is crucial to meaning. Position encoding injects order information into the model.</p>
+
+    <p><strong>Absolute position:</strong> Token 1 is "Alice", token 2 is "ate". Token position is distinct information.</p>
+
+    <p><strong>Relative position:</strong> Token j is 5 positions after token i. The distance (gap) between tokens matters. This is more generalizable: a model trained on sequences ≤1000 tokens struggles on 2000-token sequences because positions are out-of-distribution.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> Good positional encodings enable length generalisation: train on short sequences, test on longer ones. ALiBi and RoPE are superior because they encode relative position naturally.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. METHODS TABLE ── -->
+  <div class="section-block" id="methods-table">
+    <div class="section-marker">02 — Comparison</div>
+    <h2>Positional Encoding Methods</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Extrapolation</th>
+            <th>Memory</th>
+            <th>Relative</th>
+            <th>Used in</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Sinusoidal</strong></td>
+            <td>Poor</td>
+            <td>O(1)</td>
+            <td>No</td>
+            <td>BERT, original Transformer</td>
+          </tr>
+          <tr>
+            <td><strong>Learned absolute</strong></td>
+            <td>Poor</td>
+            <td>O(max_len)</td>
+            <td>No</td>
+            <td>Early LLMs</td>
+          </tr>
+          <tr>
+            <td><strong>RoPE</strong></td>
+            <td>Excellent</td>
+            <td>O(1)</td>
+            <td>Yes (implicit)</td>
+            <td>LLaMA, GPT-3.5+</td>
+          </tr>
+          <tr>
+            <td><strong>ALiBi</strong></td>
+            <td>Excellent</td>
+            <td>O(1)</td>
+            <td>Yes (explicit)</td>
+            <td>BLOOM, modern LLMs</td>
+          </tr>
+          <tr>
+            <td><strong>NoPE</strong></td>
+            <td>Good (with extrapolation)</td>
+            <td>O(1)</td>
+            <td>Implicit in data</td>
+            <td>Research (not production)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Extrapolation:</strong> Can the model generalise to longer sequences than training? Sinusoidal + learned absolute: no. RoPE + ALiBi: yes, but with some quality degradation.</p>
+
+    <p><strong>Memory:</strong> Does the method require storing large tables? Sinusoidal and RoPE: no (computed on-the-fly). Learned: yes (embedding table grows with max_len).</p>
+  </div>
+
+  <!-- ── 3. SINUSOIDAL ENCODING ── -->
+  <div class="section-block" id="sinusoidal">
+    <div class="section-marker">03 — Classic</div>
+    <h2>Sinusoidal Encoding</h2>
+
+    <p>Vaswani et al. (2017): encode position m in dimension d using sine/cosine functions at different frequencies:</p>
+
+    <p><strong>Formula:</strong><br>PE(m, 2i) = sin(m / 10000^(2i/d))<br>PE(m, 2i+1) = cos(m / 10000^(2i/d))</p>
+
+    <p>For position m and dimension index i, compute either sine (even indices) or cosine (odd indices) at a frequency that decreases with dimension.</p>
+
+    <p><strong>Why sinusoids:</strong> Different dimensions oscillate at different rates. Dim 0 completes a cycle every 1 token, dim 2 every ~100, dim d-1 every ~10000. This creates unique signatures for each position.</p>
+
+    <p><strong>Linear transformation property:</strong> Sinusoidal embeddings can be expressed as linear transformations: PE(m+k) = f(PE(m), k) for some function f. This allows extrapolation, but it's not perfect.</p>
+
+    <h3>Python: Sinusoidal PE (Numpy)</h3>
+    <div class="example-box">import numpy as np
+
+def sinusoidal_pe(seq_len, d_model):
+    position = np.arange(seq_len).reshape(-1, 1)
+    dim = np.arange(0, d_model, 2)
+    
+    # Frequency: 10000^(2i/d)
+    div_term = 10000.0 ** (2 * dim / d_model)
+    
+    pe = np.zeros((seq_len, d_model))
+    pe[:, 0::2] = np.sin(position / div_term)      # even dims: sin
+    pe[:, 1::2] = np.cos(position / div_term)      # odd dims: cos
+    
+    return pe
+
+pe = sinusoidal_pe(100, 512)  # 100 tokens, 512 dims
+# Shape: (100, 512)</div>
+
+    <h3>Limitations</h3>
+    <p>Extrapolation is weak: a model trained on sequences ≤1024 will see PE values at new positions during inference on longer sequences. The learned patterns don't transfer well.</p>
+  </div>
+
+  <!-- ── 4. RoPE (ROTARY POSITION EMBEDDING) ── -->
+  <div class="section-block" id="rope">
+    <div class="section-marker">04 — Modern</div>
+    <h2>Rotary Position Embedding (RoPE)</h2>
+
+    <p><strong>Core idea:</strong> Represent positions as rotations in 2D complex planes. Query and key vectors are rotated by an angle proportional to their position.</p>
+
+    <p>For position m and dimension d, group d dimensions into d/2 pairs. Each pair (x_{2i}, x_{2i+1}) is treated as a complex number x_{2i} + i·x_{2i+1}. Rotate by angle θ_m = m·θ_0, where θ_0 is the base frequency.</p>
+
+    <p><strong>Formula (per 2D block):</strong><br>[cos(m·θ) -sin(m·θ)] [q_{2i}  ]<br>[sin(m·θ)  cos(m·θ)] [q_{2i+1}]</p>
+
+    <p><strong>Why it works:</strong> The angle difference between position m and n is (m-n)·θ. When attention computes q_m · k_n^T, the rotation matrices interact to encode relative position in the similarity score. Relative position information is baked into the dot product.</p>
+
+    <h3>Key Advantages</h3>
+    <p><strong>Extrapolation:</strong> If trained with context 4k, can handle 8k by extrapolating the base frequency. Quality degrades but much more graceful than sinusoidal.</p>
+
+    <p><strong>Memory efficient:</strong> No embedding table. Rotations are applied on-the-fly.</p>
+
+    <p><strong>Relative position implicit:</strong> Attention dot product naturally encodes (m - n).</p>
+
+    <h3>Python: RoPE Implementation</h3>
+    <div class="example-box">import torch
+import math
+
+def rope_rotations(seq_len, d_model, theta_0=10000):
+    inv_freq = 1.0 / (
+        theta_0 ** (torch.arange(0, d_model, 2).float() / d_model)
+    )
+    t = torch.arange(seq_len, dtype=inv_freq.dtype)
+    freqs = torch.einsum("i,j->ij", t, inv_freq)
+    
+    # Expand to full d_model (cos and sin both)
+    emb = torch.cat([freqs, freqs], dim=-1)
+    cos_val = emb.cos()
+    sin_val = emb.sin()
+    
+    return cos_val, sin_val
+
+def apply_rope(q, k, cos, sin):
+    # Reshape for 2D pairs: (..., d_model) -> (..., d/2, 2)
+    d = q.shape[-1]
+    q_rot = torch.cat([q[..., :d//2:2], q[..., 1:d//2:2]], dim=-1)
+    k_rot = torch.cat([k[..., :d//2:2], k[..., 1:d//2:2]], dim=-1)
+    
+    # Apply rotation: (x, y) -> (x*cos - y*sin, x*sin + y*cos)
+    q_out = q_rot * cos + rotate_half(q_rot) * sin
+    k_out = k_rot * cos + rotate_half(k_rot) * sin
+    
+    return q_out, k_out</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>RoPE base frequency:</strong> The θ_0 (often 10000) determines extrapolation range. Larger θ_0 → longer natural context. For 32k context, use θ_0 ≈ 1M. For dynamic context, use NTK-aware scaling (see Context Extension).</span>
+    </div>
+  </div>
+
+  <!-- ── 5. ALiBi ── -->
+  <div class="section-block" id="alibi">
+    <div class="section-marker">05 — Linear Bias</div>
+    <h2>ALiBi: Attention with Linear Biases</h2>
+
+    <p><strong>Simplest idea:</strong> Don't embed position. Instead, bias attention scores by the distance between tokens.</p>
+
+    <p>Compute attention normally: scores = (Q·K^T) / √d. But before softmax, add a linear bias penalty:</p>
+
+    <p><strong>scores[i, j] ← scores[i, j] - α|i - j|</strong></p>
+
+    <p>The penalty α is a constant (e.g., 1/16 for LLaMA). Tokens far apart get reduced attention. No position vectors needed.</p>
+
+    <p><strong>Advantages:</strong></p>
+    <ul style="padding-left: 1.2rem; margin: 0.8rem 0;">
+      <li style="margin: 0.3rem 0;">Excellent length generalisation: α is independent of sequence length</li>
+      <li style="margin: 0.3rem 0;">No learnable position embeddings → simpler</li>
+      <li style="margin: 0.3rem 0;">Multi-head variant: each head has different α value</li>
+    </ul>
+
+    <h3>Python: ALiBi in Attention</h3>
+    <div class="example-box">import torch
+import torch.nn.functional as F
+
+def apply_alibi(scores, batch, n_heads, seq_len):
+    # scores shape: (batch, n_heads, seq_len, seq_len)
+    # Create distance matrix: |i - j|
+    i = torch.arange(seq_len, device=scores.device)
+    j = torch.arange(seq_len, device=scores.device)
+    distance = torch.abs(i.unsqueeze(1) - j.unsqueeze(0))
+    
+    # Head-specific bias: smaller α for higher heads
+    # This allows variable attention ranges per head
+    head_id = torch.arange(1, n_heads + 1, device=scores.device)
+    alpha = -1.0 / (2 ** (8 * head_id / n_heads))
+    
+    bias = alpha.unsqueeze(-1).unsqueeze(-1) * distance
+    scores = scores + bias
+    
+    return scores</div>
+
+    <h3>When to Use ALiBi</h3>
+    <p>ALiBi is excellent for long-context models. It's the standard in BLOOM, PaLM 2, and others. Empirically, ALiBi generalises better than sinusoidal/learned for extrapolation but slightly worse than RoPE in some benchmarks.</p>
+  </div>
+
+  <!-- ── 6. CONTEXT LENGTH EXTENSION ── -->
+  <div class="section-block" id="context-extension">
+    <div class="section-marker">06 — Scaling</div>
+    <h2>Context Length Extension Methods</h2>
+
+    <p>The problem: a model trained on 4k tokens can't handle 8k without position information going out-of-distribution. How do we extend?</p>
+
+    <h3>NTK-Aware Scaling (YaRN)</h3>
+    <p>For RoPE, the base frequency θ_0 controls the maximum context. Scaling it up allows longer sequences. But training stability is critical.</p>
+
+    <p><strong>YaRN (Yet Another RoPE extension):</strong> Dynamically scale the base frequency based on context length. If training context was 4k and we need 8k, scale θ_0 by a factor β ≈ √2.</p>
+
+    <p><strong>Formula:</strong> θ' = θ · scale, where scale depends on desired context vs training context.</p>
+
+    <p><strong>Why it works:</strong> Rotations are still meaningful but compressed into the original position range. The model's attention patterns (learned on 4k) can extrapolate.</p>
+
+    <h3>LongRoPE: Dynamic Scaling</h3>
+    <p>Extends further by selectively scaling different dimensions. Low frequencies (long-range) are scaled more aggressively, high frequencies (local) less. Fine-tuning on a sample of long sequences refines the scaling.</p>
+
+    <h3>Comparison: Extension Methods</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Base → Target</th>
+            <th>Perplexity Degradation</th>
+            <th>Fine-tuning Required</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>No extension</strong></td>
+            <td>4k → 8k</td>
+            <td>2–5% (severe)</td>
+            <td>Not helpful</td>
+          </tr>
+          <tr>
+            <td><strong>NTK scaling</strong></td>
+            <td>4k → 8k</td>
+            <td>0.5–1%</td>
+            <td>No (but improves)</td>
+          </tr>
+          <tr>
+            <td><strong>YaRN</strong></td>
+            <td>4k → 32k</td>
+            <td>< 0.5%</td>
+            <td>Optional</td>
+          </tr>
+          <tr>
+            <td><strong>LongRoPE</strong></td>
+            <td>4k → 128k</td>
+            <td>< 0.3%</td>
+            <td>Recommended</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Practical recommendation:</strong> For 2–4× extension, NTK scaling works. For 8–32× extension, use YaRN + fine-tuning. For 32×+ extension, use LongRoPE.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Research frontier:</strong> Context length extension is an active area. The next generation of LLMs will have native 100k+ context windows via architectural changes (sparse attention, memory augmentation) rather than position encoding tricks.</span>
+    </div>
+  </div>
+
+  <!-- ── TOOLS GRID ── -->
+  <div class="section-block">
+    <div class="section-marker">07 — Ecosystem</div>
+    <h2>Tools & Libraries</h2>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">HuggingFace Transformers</div>
+        <div class="tool-desc">Standard implementations of RoPE, ALiBi, sinusoidal. Easy swapping.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Inference</div>
+        <div class="tool-name">llama.cpp</div>
+        <div class="tool-desc">Optimised inference. Built-in RoPE scaling for long context.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Inference</div>
+        <div class="tool-name">vLLM</div>
+        <div class="tool-desc">High-throughput serving. Supports RoPE extension natively.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Inference</div>
+        <div class="tool-name">ExLlamaV2</div>
+        <div class="tool-desc">Fast LLaMA inference. RoPE optimisations.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Training</div>
+        <div class="tool-name">MegaBlocks</div>
+        <div class="tool-desc">Efficient sparse attention. Alternative to dense position encodings.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Training</div>
+        <div class="tool-name">FlexAttention (PyTorch)</div>
+        <div class="tool-desc">Custom attention kernels. Implement custom position encodings easily.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Fine-tuning</div>
+        <div class="tool-name">torchtune</div>
+        <div class="tool-desc">Meta's fine-tuning framework. YaRN context extension built-in.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Vaswani, A. et al. (2017). <em>Attention Is All You Need.</em>
+        Original Transformer, sinusoidal PE. arXiv:1706.03762. —
+        <a href="https://arxiv.org/abs/1706.03762" target="_blank">arxiv:1706.03762 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Su, J. et al. (2021). <em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em>
+        arXiv:2104.09864. —
+        <a href="https://arxiv.org/abs/2104.09864" target="_blank">arxiv:2104.09864 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Press, O. et al. (2022). <em>Train Short, Test Long: Attention with Linear Biases.</em>
+        ALiBi. arXiv:2108.12284. —
+        <a href="https://arxiv.org/abs/2108.12284" target="_blank">arxiv:2108.12284 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Peng, B. et al. (2024). <em>YaRN: Efficient Context Window Extension of Large Language Models.</em>
+        arXiv:2309.00071. —
+        <a href="https://arxiv.org/abs/2309.00071" target="_blank">arxiv:2309.00071 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Jin, Y. et al. (2024). <em>LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens.</em>
+        arXiv:2402.13753. —
+        <a href="https://arxiv.org/abs/2402.13753" target="_blank">arxiv:2402.13753 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Positional Embedding Guide. <a href="https://huggingface.co/docs/transformers/glossary#position-ids" target="_blank">huggingface.co ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> PyTorch FlexAttention. <a href="https://pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html" target="_blank">pytorch.org ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> vLLM Context Length Handling. <a href="https://docs.vllm.ai/en/latest/" target="_blank">vllm.ai ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> torchtune Fine-tuning. <a href="https://github.com/pytorch/torchtune" target="_blank">github.com/pytorch/torchtune ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Jimmy Lei Ba. (2021). <em>Position Embeddings: The Good, the Bad, and the Ugly.</em> —
+        <a href="https://blog.eleuther.ai/rotary-embeddings/" target="_blank">eleuther.ai ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Meta. (2024). <em>torchtune: Native PyTorch Fine-tuning.</em> —
+        <a href="https://pytorch.org/blog/" target="_blank">pytorch.org/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio & Speech AI Models — GenAI Mindmap</title>
+  <meta name="description" content="Audio AI models explained — Whisper for ASR, Wav2Vec 2.0 for self-supervised speech, MusicGen and AudioLM for generation, speaker diarisation, and audio embeddings." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Audio & Speech AI Models" />
+  <meta property="og:description" content="Audio AI models explained — Whisper for ASR, Wav2Vec 2.0 for self-supervised speech, MusicGen and AudioLM for generation, speaker diarisation, and audio embeddings." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/audio-models.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Audio & Speech AI Models" />
+  <meta name="twitter:description" content="Audio models for ASR, TTS, diarisation, music generation, and speech understanding." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/audio-models.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Multimodal · Audio</span>
+  <h1>Audio & <em>Speech</em> AI Models</h1>
+  <p class="hero-sub">Whisper, Wav2Vec, MusicGen, and AudioLM — architectures and pipelines for speech, music, and audio generation</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">3</span>
+      <span class="stat-label">task types</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">8</span>
+      <span class="stat-label">models</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#task-taxonomy" data-num="1">Task taxonomy</a></li>
+      <li><a href="#representations" data-num="2">Representations</a></li>
+      <li><a href="#speech-recognition" data-num="3">Speech recognition</a></li>
+      <li><a href="#text-to-speech" data-num="4">Text-to-speech</a></li>
+      <li><a href="#audio-generation" data-num="5">Audio generation</a></li>
+      <li><a href="#diarisation" data-num="6">Diarisation & Q&A</a></li>
+      <li><a href="#references" data-num="7">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. TASK TAXONOMY ── -->
+  <div class="section-block" id="task-taxonomy">
+    <div class="section-marker">01 — Landscape</div>
+    <h2>Audio Task Taxonomy</h2>
+
+    <p><strong>Automatic Speech Recognition (ASR):</strong> Audio → text. Transcription. Whisper is the standard. Works across languages, accents, noise levels.</p>
+
+    <p><strong>Text-to-Speech (TTS):</strong> Text → audio. Synthesis. Focus on naturalness, speed, voice control (speaker, pitch, rate).</p>
+
+    <p><strong>Speaker Diarisation:</strong> Who spoke when? Segment audio by speaker identity. Answers "which person said what."</p>
+
+    <p><strong>Music Generation:</strong> Text/melody → audio. MusicGen, AudioLM. Conditional or unconditional synthesis.</p>
+
+    <p><strong>Audio Q&A:</strong> Audio + question → answer. Multimodal understanding. Emerging with AudioGPT, Qwen-Audio.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key distinction:</strong> ASR and TTS are inverse: ASR removes redundancy (audio → symbolic text), TTS adds it back (text → detailed audio). Diarisation is alignment (who + when). Generation is unconditional synthesis (from nothing or seed).</span>
+    </div>
+  </div>
+
+  <!-- ── 2. AUDIO REPRESENTATIONS ── -->
+  <div class="section-block" id="representations">
+    <div class="section-marker">02 — Encodings</div>
+    <h2>Audio Representations</h2>
+
+    <p>Raw audio is continuous time-domain samples (44.1 kHz = 44,100 samples/sec). Transforms make it usable:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Representation</th>
+            <th>Method</th>
+            <th>Pros</th>
+            <th>Cons</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Mel spectrogram</strong></td>
+            <td>STFT → log scale</td>
+            <td>Human perceptual scale</td>
+            <td>Lossy, fixed time resolution</td>
+          </tr>
+          <tr>
+            <td><strong>Log-mel</strong></td>
+            <td>Mel + log amplitude</td>
+            <td>Good dynamic range</td>
+            <td>Sensitive to noise floor</td>
+          </tr>
+          <tr>
+            <td><strong>MFCC</strong></td>
+            <td>Mel → DCT reduction</td>
+            <td>Compact, traditional</td>
+            <td>Information loss, outdated</td>
+          </tr>
+          <tr>
+            <td><strong>Raw waveform</strong></td>
+            <td>No transform</td>
+            <td>Full fidelity</td>
+            <td>High dimensionality, slow</td>
+          </tr>
+          <tr>
+            <td><strong>Codec tokens</strong></td>
+            <td>EnCodec quantisation</td>
+            <td>Compact, preserves info</td>
+            <td>Requires pre-trained codec</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Modern approach:</strong> Use mel spectrograms for ASR, codec tokens for generation (AudioLM, MusicGen), raw waveform for fine-grained synthesis.</p>
+  </div>
+
+  <!-- ── 3. SPEECH RECOGNITION ── -->
+  <div class="section-block" id="speech-recognition">
+    <div class="section-marker">03 — ASR</div>
+    <h2>Speech Recognition</h2>
+
+    <p><strong>Whisper (OpenAI):</strong> Transformer encoder-decoder. Encoder processes mel spectrograms, decoder generates text tokens. Trained on 680k hours of multilingual audio. Robust to accents, background noise, technical language.</p>
+
+    <p><strong>Architecture:</strong> Mel spectrogram → Conv downsampler → Transformer encoder (24 layers, 1024 hidden) → Decoder (24 layers) → text. Decoding is autoregressive.</p>
+
+    <p><strong>Wav2Vec 2.0 (Meta):</strong> Self-supervised learning on raw waveforms. No labels needed for pretraining — learns latent representations by contrastive learning. Then fine-tune on ASR (with labels) for excellent performance.</p>
+
+    <h3>Python: Whisper ASR</h3>
+    <div class="example-box">import whisper
+
+model = whisper.load_model("base")  # tiny, base, small, medium, large
+
+result = model.transcribe(
+    "audio.mp3",
+    language="en",
+    task="transcribe",  # or "translate" (to English)
+)
+
+print(result["text"])  # Full transcript
+# result["segments"] = [{"text": "...", "start": 0, "end": 2.5}]</div>
+
+    <h3>Whisper Performance</h3>
+    <p>Base model (74M params): ~4% error on clean English, ~10% on noisy. Larger models improve ~1–2% per doubling. Speed: base model ~10× realtime on CPU, 100× on GPU.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Whisper quirk:</strong> Often hallucinates repeated text or entire sentences. Use longer audio segments (batch processing) to reduce hallucination. For critical applications, validate output or use Wav2Vec fine-tuned on domain-specific data.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. TEXT-TO-SPEECH ── -->
+  <div class="section-block" id="text-to-speech">
+    <div class="section-marker">04 — TTS</div>
+    <h2>Text-to-Speech Models</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Naturalness</th>
+            <th>Speed</th>
+            <th>Voice Control</th>
+            <th>Best For</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>SpeechT5</strong></td>
+            <td>High</td>
+            <td>Fast (mel)</td>
+            <td>Speaker embedding</td>
+            <td>General purpose, voice cloning</td>
+          </tr>
+          <tr>
+            <td><strong>Bark</strong></td>
+            <td>Very high</td>
+            <td>Slow (diffusion)</td>
+            <td>Multilingual, emotions</td>
+            <td>High quality, non-realtime</td>
+          </tr>
+          <tr>
+            <td><strong>XTTS</strong></td>
+            <td>High</td>
+            <td>Medium</td>
+            <td>Voice clone (6s sample)</td>
+            <td>Multilingual voice cloning</td>
+          </tr>
+          <tr>
+            <td><strong>Parler TTS</strong></td>
+            <td>Very high</td>
+            <td>Fast</td>
+            <td>Pitch, speed, emotion</td>
+            <td>Controllable speech</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Attention:</strong> TTS models trade quality for speed. Diffusion-based (Bark) sounds best but is slow (10–30s for 10s audio). Feed-forward (XTTS, Parler) is faster but slightly less natural.</p>
+
+    <h3>Voice Cloning</h3>
+    <p>SpeechT5, XTTS: Give 6–10 second sample of target voice, model learns speaker embedding, synthesises new text in that voice. Works across speakers with minimal data.</p>
+  </div>
+
+  <!-- ── 5. AUDIO GENERATION ── -->
+  <div class="section-block" id="audio-generation">
+    <div class="section-marker">05 — Generation</div>
+    <h2>Audio & Music Generation</h2>
+
+    <p><strong>MusicGen (Meta):</strong> Transformer language model on codec tokens. Text description → music. "Upbeat piano jazz, 120 BPM" → audio. Also supports melody conditioning (hum → full arrangement).</p>
+
+    <p><strong>AudioLM (Google):</strong> Language model on codec tokens. Unconditional generation from seed. Can continue partial audio. Very flexible.</p>
+
+    <p><strong>Architecture:</strong> Audio → EnCodec (learned codec) → discrete tokens (integers, like text). Transformer predicts next token. Decode tokens → waveform. Inference is auto-regressive: ~2–5 seconds per forward pass.</p>
+
+    <h3>Python: MusicGen</h3>
+    <div class="example-box">from audiocraft.models import MusicGen
+
+model = MusicGen.get_pretrained('facebook/musicgen-large')
+model.set_generation_params(duration=8)  # seconds
+
+descriptions = [
+    "upbeat electronic dance",
+    "classical piano, sad"
+]
+
+wav = model.generate(descriptions)
+# wav shape: (batch=2, channels=1, samples=32000*8)</div>
+
+    <h3>Quality & Control</h3>
+    <p>MusicGen achieves reasonable diversity and structure (~8–30 second clips). Quality degrades with length — conditioning (text + melody) helps. Unconditional is lower quality but faster.</p>
+  </div>
+
+  <!-- ── 6. DIARISATION & Q&A ── -->
+  <div class="section-block" id="diarisation">
+    <div class="section-marker">06 — Understanding</div>
+    <h2>Diarisation & Audio Q&A</h2>
+
+    <p><strong>PyAnnote (Herve Bredin):</strong> Speaker diarisation. Segments audio, labels each segment by speaker ID. Pipeline: voice activity detection → speaker embedding → clustering. No labels needed.</p>
+
+    <p><strong>Use case:</strong> Meeting transcript. Input: audio. Output: "Speaker 1 [0:00–0:15]: ..., Speaker 2 [0:15–0:30]: ..." Enables structured meeting minutes.</p>
+
+    <h3>Python: PyAnnote Diarisation</h3>
+    <div class="example-box">from pyannote.audio import Pipeline
+
+pipeline = Pipeline.from_pretrained(
+    "pyannote/speaker-diarization-3.0"
+)
+
+diarization = pipeline("audio.wav")
+
+for turn, _, speaker in diarization.itertracks(yield_label=True):
+    print(f"{turn.start:.2f}s {turn.end:.2f}s: {speaker}")</div>
+
+    <h3>Audio Q&A (Emerging)</h3>
+    <p><strong>Qwen-Audio, AudioGPT:</strong> Multimodal LLMs that understand audio. "What instrument plays at 0:30?" → answer. Audio + text prompt → text answer.</p>
+
+    <p>Still early, but combined with ASR enables end-to-end audio understanding: transcribe → embed → question answering, all in one system.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Audio is underexplored:</strong> While vision and text have massive multimodal models, audio-LLM systems are nascent. Opportunity: combine Whisper (ASR) + LLM (reasoning) + TTS (output) for voice assistants.</span>
+    </div>
+  </div>
+
+  <!-- ── TOOLS GRID ── -->
+  <div class="section-block">
+    <div class="section-marker">07 — Ecosystem</div>
+    <h2>Tools & Libraries</h2>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">ASR</div>
+        <div class="tool-name">Whisper</div>
+        <div class="tool-desc">OpenAI's speech recognition. Multilingual, robust, easy to use.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">ASR</div>
+        <div class="tool-name">faster-whisper</div>
+        <div class="tool-desc">CTransformers + quantisation. ~4× faster than Whisper.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Speech</div>
+        <div class="tool-name">SpeechBrain</div>
+        <div class="tool-desc">PyTorch toolkit. ASR, speaker ID, speech enhancement.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Diarisation</div>
+        <div class="tool-name">PyAnnote</div>
+        <div class="tool-desc">Speaker diarisation. State-of-the-art, easy API.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">TTS</div>
+        <div class="tool-name">Bark</div>
+        <div class="tool-desc">Text-to-speech with emotion. High quality, HF compatible.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">TTS</div>
+        <div class="tool-name">MusicGen</div>
+        <div class="tool-desc">Meta's music generation. Text-to-music, multitrack.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Audio</div>
+        <div class="tool-name">EnCodec</div>
+        <div class="tool-desc">Neural codec. Compress audio losslessly to tokens.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Audio</div>
+        <div class="tool-name">Transformers</div>
+        <div class="tool-desc">HuggingFace audio models. Whisper, MusicGen, etc.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Radford, A. et al. (2022). <em>Robust Speech Recognition via Large-Scale Weak Supervision.</em>
+        OpenAI Whisper. arXiv:2212.04356. —
+        <a href="https://arxiv.org/abs/2212.04356" target="_blank">arxiv:2212.04356 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Baevski, A. et al. (2020). <em>wav2vec 2.0: A Framework for Self-Supervised Learning of Speech Representations.</em>
+        Meta. arXiv:2006.11477. —
+        <a href="https://arxiv.org/abs/2006.11477" target="_blank">arxiv:2006.11477 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Copet, J. et al. (2023). <em>Simple and Controllable Music Generation by Exploiting the Prior Network Latent Space.</em>
+        MusicGen. arXiv:2306.05284. —
+        <a href="https://arxiv.org/abs/2306.05284" target="_blank">arxiv:2306.05284 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Bredin, H. &amp; Laurent, A. (2021). <em>End-to-end speaker segmentation for overlap-aware resegmentation.</em>
+        PyAnnote. arXiv:2104.04045. —
+        <a href="https://arxiv.org/abs/2104.04045" target="_blank">arxiv:2104.04045 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Tools</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> Whisper (OpenAI GitHub). <a href="https://github.com/openai/whisper" target="_blank">github.com ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> AudioCraft (Meta). <a href="https://github.com/facebookresearch/audiocraft" target="_blank">github.com ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> PyAnnote Diarisation. <a href="https://github.com/pyannote/pyannote-audio" target="_blank">github.com ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> HuggingFace Audio Documentation. <a href="https://huggingface.co/docs/transformers/tasks/audio" target="_blank">huggingface.co ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        OpenAI. (2022). <em>Introducing Whisper.</em> —
+        <a href="https://openai.com/blog/whisper/" target="_blank">openai.com ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Meta. (2023). <em>Introducing MusicGen: Simple and Controllable Music Generation.</em> —
+        <a href="https://ai.facebook.com/blog/musicgen-simple-and-controllable-music-generation-with-meta-ai/" target="_blank">meta.com ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post-Retrieval Processing — GenAI Mindmap</title>
+  <meta name="description" content="Post-retrieval processing for RAG — cross-encoder reranking with Cohere Rerank, LLMLingua context compression, reciprocal rank fusion, context window management, and lost-in-the-middle mitigation." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Post-Retrieval Processing" />
+  <meta property="og:description" content="Post-retrieval processing for RAG — cross-encoder reranking with Cohere Rerank, LLMLingua context compression, reciprocal rank fusion, context window management, and lost-in-the-middle mitigation." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/post-retrieval.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Post-Retrieval Processing" />
+  <meta name="twitter:description" content="Post-retrieval processing for RAG — cross-encoder reranking with Cohere Rerank, LLMLingua context compression, reciprocal rank fusion, context window management, and lost-in-the-middle mitigation." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/post-retrieval.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">RAG · Retrieval</span>
+  <h1>Post-Retrieval <em>Processing</em></h1>
+  <p class="hero-sub">What happens between retrieval and generation — reranking, context compression, and fusion strategies</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">4</span>
+      <span class="stat-label">techniques</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Python</span>
+      <span class="stat-label">first</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#post-retrieval-gap" data-num="1">Post-retrieval gap</a></li>
+      <li><a href="#techniques-table" data-num="2">Techniques overview</a></li>
+      <li><a href="#cross-encoder" data-num="3">Cross-encoder reranking</a></li>
+      <li><a href="#compression" data-num="4">Context compression</a></li>
+      <li><a href="#rrf" data-num="5">Reciprocal rank fusion</a></li>
+      <li><a href="#context-window" data-num="6">Context window management</a></li>
+      <li><a href="#evaluation" data-num="7">Evaluation metrics</a></li>
+      <li><a href="#tools" data-num="8">Tools & resources</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. POST-RETRIEVAL GAP ── -->
+  <div class="section-block" id="post-retrieval-gap">
+    <div class="section-marker">01 — The Problem</div>
+    <h2>The Post-Retrieval Gap</h2>
+    <p>Retrieval gives you candidates; it doesn't guarantee they're the best ones for generation. A dense retriever may return semantically similar documents that are actually tangential. Sparse (BM25) retrievers excel at keyword matching but miss semantic nuance. And the <strong>lost-in-the-middle effect</strong> (Liu et al. 2023) shows that LLMs attend worst to content in the middle of their context — best at the start and end.</p>
+    
+    <p>Post-retrieval processing closes this gap: rerank for relevance, compress to remove noise, reorder to put critical context at the edges.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Retrieval gets candidates; post-retrieval makes the final cut.</strong> Top-k retrieved chunks ≠ best chunks for generation. A second pass adds precision.</span>
+    </div>
+
+    <h3>Key Distinctions</h3>
+    <p><strong>Relevance vs Faithfulness:</strong> A chunk may be relevant to the query but contradict other retrieved chunks. Reranking optimizes for relevance; compression and ordering handle consistency.</p>
+  </div>
+
+  <!-- ── 2. TECHNIQUES TABLE ── -->
+  <div class="section-block" id="techniques-table">
+    <div class="section-marker">02 — Overview</div>
+    <h2>Post-Retrieval Techniques</h2>
+    <p>Each technique addresses a different bottleneck:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Technique</th><th>Purpose</th><th>Latency added</th><th>Quality gain</th><th>Complexity</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Cross-encoder reranking</strong></td><td>Precision boost</td><td>+50–200ms</td><td>High</td><td>Medium</td></tr>
+          <tr><td><strong>Context compression</strong></td><td>Reduce noise/tokens</td><td>+100–500ms</td><td>Medium</td><td>Medium</td></tr>
+          <tr><td><strong>RRF fusion</strong></td><td>Combine sparse+dense</td><td>+5ms</td><td>Medium</td><td>Low</td></tr>
+          <tr><td><strong>Relevance filtering</strong></td><td>Remove irrelevant</td><td>+5ms</td><td>Low–medium</td><td>Low</td></tr>
+          <tr><td><strong>Ordering optimisation</strong></td><td>Reduce lost-in-middle</td><td>+1ms</td><td>Medium</td><td>Low</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 3. CROSS-ENCODER RERANKING ── -->
+  <div class="section-block" id="cross-encoder">
+    <div class="section-marker">03 — Precision</div>
+    <h2>Cross-Encoder Reranking</h2>
+    <p><strong>Bi-encoder:</strong> Embed query and documents separately, compute similarity via dot product. Fast at retrieval time. But embeddings ignore document context — similarity is shallow.</p>
+
+    <p><strong>Cross-encoder:</strong> Pass query + document as a pair to the model. The model attends to both, producing a relevance score. Slower (no pre-computed embeddings) but more accurate for reranking.</p>
+
+    <h3>Popular Cross-Encoder Models</h3>
+    <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+      <li style="margin: 0.4rem 0;"><strong>Cohere Rerank API:</strong> Managed service, lowest latency, best for production.</li>
+      <li style="margin: 0.4rem 0;"><strong>BGE Reranker:</strong> Open-source BERT-based model; good quality, self-hosted.</li>
+      <li style="margin: 0.4rem 0;"><strong>FlashRank:</strong> Lightweight local model; fast inference on CPU.</li>
+    </ul>
+
+    <h3>Using Cohere Rerank</h3>
+
+    <div class="example-box">from cohere import Client
+
+co = Client(api_key="...")
+
+# Retrieve 10 candidates with dense retriever
+retrieved = [
+    "Document A content...",
+    "Document B content...",
+    # ... 8 more
+]
+
+# Rerank
+results = co.rerank(
+    query="How do I train a language model?",
+    documents=retrieved,
+    top_n=3,  # Return top 3
+    model="rerank-english-v2.0"
+)
+
+# Results ordered by relevance score
+for result in results:
+    print(f"Index: {result.index}, Score: {result.relevance_score}")
+    print(retrieved[result.index])</div>
+
+    <h3>Score Calibration</h3>
+    <p>Reranker scores aren't directly comparable across queries. A score of 0.8 on one query doesn't mean the same relevance as 0.8 on another. Use scores only to rank within a query, not across queries.</p>
+
+    <h3>When to Skip Reranking</h3>
+    <p>Reranking adds 50–200ms latency. Skip if: (1) latency budget is tight, (2) retrieval quality is already high, (3) you're doing real-time interactive search (< 100ms required).</p>
+  </div>
+
+  <!-- ── 4. CONTEXT COMPRESSION ── -->
+  <div class="section-block" id="compression">
+    <div class="section-marker">04 — Efficiency</div>
+    <h2>Context Compression</h2>
+    <p>Retrieved chunks often contain noise — irrelevant sentences, metadata, boilerplate. Compression removes it, keeping only salient content. Two approaches:</p>
+
+    <h3>Extractive Compression</h3>
+    <p>Select key sentences from each chunk. Fast (no LLM call), but may break narrative flow.</p>
+
+    <div class="example-box">from sumy.parsers import PlaintextParser
+from sumy.nlp.tokenizer import Tokenizer
+from sumy.summarizers.text_rank import TextRankSummarizer
+
+def compress_extract(text: str, ratio=0.5) -> str:
+    """Extract top ratio of sentences."""
+    parser = PlaintextParser.from_string(text, Tokenizer("english"))
+    summarizer = TextRankSummarizer()
+    summary = summarizer(parser.document, sentences_count=int(len(parser.document.sentences) * ratio))
+    return " ".join(str(s) for s in summary)</div>
+
+    <h3>Abstractive Compression with LLMLingua</h3>
+    <p>LLMLingua uses targeted token pruning. It identifies tokens that are least important to the query, removes them, and keeps the compressed text coherent.</p>
+
+    <div class="example-box">from llmlingua import LanguageModel
+
+llm_lingua = LanguageModel("gpt-3.5-turbo")
+
+context = "This is a long document that contains..."
+query = "What is the main topic?"
+
+# Compress to 50% of original length
+compressed = llm_lingua.compress(
+    context=context,
+    question=query,
+    target_token_len=150,
+    iterative_size=200
+)
+
+print(f"Original: {len(context.split())} words")
+print(f"Compressed: {len(compressed.split())} words")
+print(compressed)</div>
+
+    <h3>LongLLMLingua for Very Long Contexts</h3>
+    <p>For documents >10K tokens, split into chunks, compress each, then summarize. Avoids exceeding model context limits during compression.</p>
+
+    <h3>Compression Ratio Tradeoffs</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3><span class="badge">🎯</span> 70% compression</h3>
+        <ul>
+          <li>Minimal quality loss</li>
+          <li>30% token savings</li>
+          <li>Safe default</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">⚡</span> 50% compression</h3>
+        <ul>
+          <li>Half the tokens</li>
+          <li>Some context loss</li>
+          <li>Use for long docs</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. RECIPROCAL RANK FUSION ── -->
+  <div class="section-block" id="rrf">
+    <div class="section-marker">05 — Fusion</div>
+    <h2>Reciprocal Rank Fusion</h2>
+    <p>Combine results from multiple retrievers (dense, sparse, metadata search) using Reciprocal Rank Fusion (RRF). Each retriever votes on relevance; documents ranked high in multiple retrievers bubble to top.</p>
+
+    <h3>RRF Formula</h3>
+    <p style="text-align: center; font-family: 'Fira Code', monospace; margin: 1rem 0;">score(d) = Σ 1/(k + rank_i)</p>
+    <p style="text-align: center; font-size: 0.9rem; color: #64748b; margin-bottom: 1rem;">where k=60 (constant), rank_i = position in retriever i's results</p>
+
+    <h3>Python Implementation</h3>
+
+    <div class="example-box">def reciprocal_rank_fusion(results_list, k=60):
+    """
+    results_list: list of [doc_ids] from each retriever
+    Returns: dict of doc_id -> RRF score
+    """
+    rrf_scores = {}
+    
+    for retriever_idx, results in enumerate(results_list):
+        for rank, doc_id in enumerate(results, start=1):
+            score = 1 / (k + rank)
+            rrf_scores[doc_id] = rrf_scores.get(doc_id, 0) + score
+    
+    # Sort by score, descending
+    return sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
+
+# Example: combine BM25 + dense retriever + metadata search
+bm25_results = ["doc_5", "doc_12", "doc_3", ...]
+dense_results = ["doc_3", "doc_9", "doc_5", ...]
+metadata_results = ["doc_9", "doc_1", "doc_12", ...]
+
+fused = reciprocal_rank_fusion(
+    [bm25_results, dense_results, metadata_results]
+)
+
+# Result: [(doc_id, score), ...]
+for doc_id, score in fused[:5]:
+    print(f"{doc_id}: {score:.4f}")</div>
+
+    <h3>Advantages</h3>
+    <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+      <li style="margin: 0.4rem 0;">No re-retrieval needed; combines existing results</li>
+      <li style="margin: 0.4rem 0;">Latency: negligible (~5ms)</li>
+      <li style="margin: 0.4rem 0;">Works with any number of retrievers</li>
+      <li style="margin: 0.4rem 0;">Empirically improves over single retrievers</li>
+    </ul>
+  </div>
+
+  <!-- ── 6. CONTEXT WINDOW MANAGEMENT ── -->
+  <div class="section-block" id="context-window">
+    <div class="section-marker">06 — Optimization</div>
+    <h2>Context Window Management</h2>
+    <p>Your token budget is fixed: query tokens + history + context + response. Allocate wisely.</p>
+
+    <h3>The Lost-in-the-Middle Effect</h3>
+    <p>LLMs attend least to content in the middle of context windows. Most important information should be at the start (right after the query) or at the very end, just before the generation prompt.</p>
+
+    <h3>Chunk Ordering Strategy</h3>
+    <p><strong>Best position (start):</strong> Most relevant 1–2 chunks. <strong>Middle (worst):</strong> Least critical supporting docs. <strong>End (strong):</strong> Second-most relevant chunks.</p>
+
+    <div class="example-box">def arrange_context(chunks, scores):
+    """Order chunks to minimize lost-in-the-middle."""
+    # Sort by score
+    ranked = sorted(zip(chunks, scores), key=lambda x: x[1], reverse=True)
+    
+    # Arrange: best, middle, second-best
+    if len(ranked) == 0:
+        return []
+    if len(ranked) == 1:
+        return [ranked[0][0]]
+    
+    best = ranked[0][0]
+    rest = ranked[1:]
+    
+    # Put best first, rest in ascending then descending score
+    half = len(rest) // 2
+    middle = rest[half:]
+    end = rest[:half]
+    end.reverse()  # Reverse to get descending
+    
+    return [best] + middle + end
+
+# Usage
+context_string = "\n\n".join(arrange_context(
+    chunks=retrieved_docs,
+    scores=rerank_scores
+))</div>
+
+    <h3>Metadata Injection</h3>
+    <p>Prepend each chunk with metadata: document title, section, date. Helps the model understand context and filter:</p>
+
+    <div class="example-box">[Document: "AI Safety" | Section: "Alignment" | Date: 2026-03-24]
+The alignment problem refers to ensuring AI systems behave
+according to human values...</div>
+
+    <h3>Token Budget Allocation</h3>
+    <p>Example for 4K token limit:</p>
+    <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+      <li style="margin: 0.4rem 0;">Query + system: 300 tokens</li>
+      <li style="margin: 0.4rem 0;">Conversation history: 500 tokens</li>
+      <li style="margin: 0.4rem 0;">Retrieved context: 2000 tokens (5–10 chunks)</li>
+      <li style="margin: 0.4rem 0;">Response space (reserved): 1200 tokens</li>
+    </ul>
+
+    <h3>max_context_tokens Parameter</h3>
+    <p>Set dynamically based on query complexity:</p>
+
+    <div class="example-box">def estimate_tokens(query: str) -> int:
+    """Estimate query complexity; allocate context tokens."""
+    import tiktoken
+    enc = tiktoken.get_encoding("cl100k_base")
+    query_tokens = len(enc.encode(query))
+    
+    # Simple queries get less context (faster inference)
+    # Complex queries get more (better coverage)
+    if query_tokens < 20:
+        return 1500  # Short, likely FAQ
+    elif query_tokens < 50:
+        return 2500  # Medium complexity
+    else:
+        return 4000  # Deep research question
+
+max_ctx = estimate_tokens("What is machine learning?")</div>
+  </div>
+
+  <!-- ── 7. EVALUATION ── -->
+  <div class="section-block" id="evaluation">
+    <div class="section-marker">07 — Metrics</div>
+    <h2>Evaluation</h2>
+    <p>Measure the impact of post-retrieval processing on RAG quality.</p>
+
+    <h3>Ranking Metrics: MRR@k, NDCG@k</h3>
+    <p><strong>MRR (Mean Reciprocal Rank):</strong> Position of first relevant result. Rewards putting relevant docs high.</p>
+
+    <div class="example-box">def mrr(retrieved_docs, relevant_doc_ids, k=5):
+    """Mean reciprocal rank@k."""
+    for rank, doc_id in enumerate(retrieved_docs[:k], start=1):
+        if doc_id in relevant_doc_ids:
+            return 1.0 / rank
+    return 0.0
+
+# Example: relevant doc at position 2
+mrr(["doc_5", "doc_3", "doc_9", ...], ["doc_3"], k=5)
+# Returns 1/2 = 0.5</div>
+
+    <p><strong>NDCG (Normalized Discounted Cumulative Gain):</strong> Discounts lower-ranked relevant docs; normalized against perfect ranking.</p>
+
+    <div class="example-box">def ndcg(retrieved_scores, relevant_doc_ids, k=5):
+    """NDCG@k: penalizes relevant docs appearing late."""
+    dcg = 0.0
+    for rank, (doc_id, score) in enumerate(retrieved_scores[:k], start=1):
+        if doc_id in relevant_doc_ids:
+            dcg += 1.0 / log2(rank + 1)
+    
+    # Ideal DCG: all relevant docs ranked first
+    idcg = sum(1.0 / log2(i + 1) for i in range(1, min(k, len(relevant_doc_ids)) + 1))
+    
+    return dcg / idcg if idcg > 0 else 0.0</div>
+
+    <h3>Faithfulness Score</h3>
+    <p>After compression, evaluate if compressed context still supports the answer:</p>
+
+    <div class="example-box">def check_faithfulness(compressed_context: str, original_context: str, answer: str):
+    """Ask LLM if answer is faithful to both versions."""
+    prompt = f"""
+    Original context: {original_context}
+    Compressed context: {compressed_context}
+    Generated answer: {answer}
+    
+    Is the answer faithfully supported by the compressed context?
+    Answer: yes/no
+    Confidence: 0-100
+    """
+    response = llm(prompt)
+    return response
+
+    <h3>Ablation Study</h3>
+    <p>Measure incremental gains from each post-retrieval step:</p>
+
+    <div class="example-box">Results on benchmark: answer_relevance_f1
+
+Baseline (retrieval only):             0.72
++ Reranking:                            0.78  (+6 points)
++ Reranking + Compression:              0.80  (+2 points)
++ Reranking + Compression + Reorder:    0.82  (+2 points)
+
+Conclusion: Reranking dominates; compression and ordering add marginal but consistent gains.</div>
+  </div>
+
+  <!-- ── 8. TOOLS & REFERENCES ── -->
+  <div class="section-block" id="tools">
+    <div class="section-marker">08 — Ecosystem</div>
+    <h2>Tools & Resources</h2>
+
+    <h3>Post-Retrieval Processing Stack</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">API Service</div>
+        <div class="tool-name">Cohere Rerank</div>
+        <div class="tool-desc">Managed cross-encoder reranking; lowest latency; production-ready</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Model</div>
+        <div class="tool-name">BGE Reranker</div>
+        <div class="tool-desc">Open-source BERT cross-encoder; self-hosted; good quality</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Model</div>
+        <div class="tool-name">FlashRank</div>
+        <div class="tool-desc">Lightweight local reranker; runs on CPU; fast inference</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Library</div>
+        <div class="tool-name">LLMLingua</div>
+        <div class="tool-desc">Token-level context compression; selective pruning; preserves meaning</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Library</div>
+        <div class="tool-name">LongLLMLingua</div>
+        <div class="tool-desc">Compression for very long contexts; hierarchical summarization</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangChain</div>
+        <div class="tool-desc">RAG pipeline orchestration; integrations with retrievers, rerankers, compression</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LlamaIndex</div>
+        <div class="tool-desc">Document indexing and retrieval; post-retrieval node processing</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Evaluation</div>
+        <div class="tool-name">RAGAS</div>
+        <div class="tool-desc">RAG evaluation suite; faithfulness, relevance, answer quality metrics</div>
+      </div>
+    </div>
+
+    <div class="ref-group-title">Papers & Research</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Ong, M. et al. (2023). <em>LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models.</em>
+        arXiv:2310.05736 — <a href="https://arxiv.org/abs/2310.05736" target="_blank">arxiv.org ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Liu, N. F. et al. (2023). <em>Lost in the Middle: How Language Models Use Long Contexts.</em>
+        arXiv:2307.03172 — <a href="https://arxiv.org/abs/2307.03172" target="_blank">arxiv.org ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation & Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> Cohere Rerank API — <a href="https://docs.cohere.com/docs/rerank" target="_blank">docs.cohere.com/docs/rerank ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> LLMLingua — <a href="https://github.com/microsoft/LLMLingua" target="_blank">github.com/microsoft/LLMLingua ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> FlashRank — <a href="https://github.com/PrithivirajDamodaran/FlashRank" target="_blank">github.com/PrithivirajDamodaran/FlashRank ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> RAGAS — <a href="https://docs.ragas.io/" target="_blank">docs.ragas.io ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Guides</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        FlashRank GitHub. <em>Fast, Efficient Cross-Encoder Reranking.</em> —
+        <a href="https://github.com/PrithivirajDamodaran/FlashRank" target="_blank">github.com ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

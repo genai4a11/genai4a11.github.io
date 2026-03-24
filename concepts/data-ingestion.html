@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Ingestion & Pipelines for RAG — GenAI Mindmap</title>
+  <meta name="description" content="Data ingestion pipelines for RAG — PDF parsing with Docling, web scraping, database connectors, API ingestion, document normalisation, incremental updates, and pipeline orchestration." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Data Ingestion & Pipelines for RAG" />
+  <meta property="og:description" content="PDF, HTML, database, and API ingestion — building reliable document processing pipelines at scale." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/data-ingestion.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Data Ingestion & Pipelines for RAG" />
+  <meta name="twitter:description" content="Building reliable document processing pipelines at scale." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/data-ingestion.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Data Engineering · RAG</span>
+  <h1>Data Ingestion <em>& Pipelines</em></h1>
+  <p class="hero-sub">PDF, HTML, database, and API ingestion — building reliable document processing pipelines at scale.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">5</span>
+      <span class="stat-label">Source types</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Docling</span>
+      <span class="stat-label">PDF parsing</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Incremental</span>
+      <span class="stat-label">Updates</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#source-types" data-num="1">Source types & challenges</a></li>
+      <li><a href="#pdf-ingestion" data-num="2">PDF ingestion</a></li>
+      <li><a href="#web-ingestion" data-num="3">Web & HTML</a></li>
+      <li><a href="#database-api" data-num="4">Database & API</a></li>
+      <li><a href="#normalization" data-num="5">Normalization</a></li>
+      <li><a href="#incremental" data-num="6">Incremental updates</a></li>
+      <li><a href="#orchestration" data-num="7">Pipeline orchestration</a></li>
+      <li><a href="#tools" data-num="8">Tools & references</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. SOURCE TYPES ── -->
+  <div class="section-block" id="source-types">
+    <div class="section-marker">01 — Context</div>
+    <h2>Source Types & Challenges</h2>
+    <p>RAG systems need to ingest data from diverse sources. Each format has different challenges: PDFs lose structure, web pages contain boilerplate, databases are large, APIs are transient. A good ingestion pipeline abstracts these differences.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Source</th><th>Extraction difficulty</th><th>Structure loss</th><th>Update frequency</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>PDF</strong></td>
+            <td>High (tables, images)</td>
+            <td>Significant</td>
+            <td>Quarterly</td>
+            <td>Technical docs, papers, reports</td>
+          </tr>
+          <tr>
+            <td><strong>HTML/Web</strong></td>
+            <td>Medium (JS rendering)</td>
+            <td>Boilerplate noise</td>
+            <td>Daily</td>
+            <td>Help centers, blogs, documentation</td>
+          </tr>
+          <tr>
+            <td><strong>DOCX/XLSX</strong></td>
+            <td>Low (structured)</td>
+            <td>Minor</td>
+            <td>Monthly</td>
+            <td>Internal docs, spreadsheets</td>
+          </tr>
+          <tr>
+            <td><strong>Database</strong></td>
+            <td>Low (queryable)</td>
+            <td>None</td>
+            <td>Real-time</td>
+            <td>Customer data, transactions, logs</td>
+          </tr>
+          <tr>
+            <td><strong>API/Email</strong></td>
+            <td>Low (structured JSON)</td>
+            <td>None</td>
+            <td>Streaming</td>
+            <td>Live events, messages, feeds</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Start with the highest-value source first.</strong> Usually documentation or internal knowledge bases. Once that's working, add others incrementally.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. PDF INGESTION ── -->
+  <div class="section-block" id="pdf-ingestion">
+    <div class="section-marker">02 — PDFs</div>
+    <h2>PDF Extraction</h2>
+    <p>PDF parsing is the most common ingestion task but also the hardest. Libraries range from simple text extraction (loses structure) to intelligent layout analysis (preserves structure).</p>
+
+    <h3>Library Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Library</th><th>Text extraction</th><th>Tables</th><th>Layout</th><th>Speed</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>PyPDF2</strong></td>
+            <td>Basic</td>
+            <td>Difficult</td>
+            <td>Lost</td>
+            <td>Fast</td>
+          </tr>
+          <tr>
+            <td><strong>pdfplumber</strong></td>
+            <td>Good</td>
+            <td>Excellent</td>
+            <td>Preserved</td>
+            <td>Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Docling</strong></td>
+            <td>Excellent</td>
+            <td>Excellent</td>
+            <td>Excellent</td>
+            <td>Slow</td>
+          </tr>
+          <tr>
+            <td><strong>LlamaParse</strong></td>
+            <td>Excellent</td>
+            <td>Excellent</td>
+            <td>Excellent</td>
+            <td>API-based</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Docling Example</h3>
+    <p>Docling is the newest and best option. It uses deep learning for layout analysis and handles complex PDFs (tables, images, equations) well.</p>
+
+    <div class="example-box">from docling.document_converter import DocumentConverter
+from docling.pipeline.standard_pipeline import StandardPipeline
+
+# Initialize converter
+converter = DocumentConverter()
+
+# Convert PDF
+source = "path/to/document.pdf"
+result = converter.convert(source)
+
+# Access structured content
+document = result.document
+for block in document.blocks:
+    if block.is_heading:
+        print(f"Heading: {block.text}")
+    elif block.is_table:
+        # Tables are structured
+        for row in block.table.rows:
+            cells = [c.text for c in row.cells]
+            print(cells)
+    elif block.is_paragraph:
+        print(f"Para: {block.text}")
+
+# Markdown export preserves structure
+markdown_text = result.document.export_to_markdown()
+print(markdown_text)</div>
+
+    <h3>When to Use Each</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>PyPDF2:</strong> Simple text extraction only. Fast for large batches.</li>
+      <li style="margin: 0.5rem 0;"><strong>pdfplumber:</strong> Tables are important and PDFs are mostly clean.</li>
+      <li style="margin: 0.5rem 0;"><strong>Docling:</strong> Production use. Complex PDFs. Layout is crucial. Best for knowledge graphs.</li>
+      <li style="margin: 0.5rem 0;"><strong>LlamaParse:</strong> Can't process locally (commercial). Complex academic papers, scanned PDFs.</li>
+    </ul>
+  </div>
+
+  <!-- ── 3. WEB INGESTION ── -->
+  <div class="section-block" id="web-ingestion">
+    <div class="section-marker">03 — Web</div>
+    <h2>Web & HTML Ingestion</h2>
+    <p>Extracting content from web pages requires dealing with JavaScript rendering, navigation menus, ads, and other boilerplate. Simple HTML parsing often pulls too much noise.</p>
+
+    <h3>Extraction Strategies</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Tool</th><th>JS Rendering</th><th>Boilerplate removal</th><th>Use case</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>BeautifulSoup</strong></td>
+            <td>No</td>
+            <td>Manual CSS selectors</td>
+            <td>Static HTML, known structure</td>
+          </tr>
+          <tr>
+            <td><strong>Trafilatura</strong></td>
+            <td>No</td>
+            <td>Automatic</td>
+            <td>Articles, blog posts</td>
+          </tr>
+          <tr>
+            <td><strong>Jina Reader API</strong></td>
+            <td>Yes</td>
+            <td>Automatic</td>
+            <td>Any URL, simple API</td>
+          </tr>
+          <tr>
+            <td><strong>Selenium/Playwright</strong></td>
+            <td>Yes</td>
+            <td>Manual</td>
+            <td>Complex SPAs, custom logic</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Using Trafilatura</h3>
+    <div class="example-box">import trafilatura
+
+# Fetch and parse
+url = "https://example.com/article"
+downloaded = trafilatura.fetch_url(url)
+result = trafilatura.extract(
+    downloaded,
+    include_comments=False,
+    favor_precision=True
+)
+
+# Get clean text
+print(result)
+
+# Or use LangChain
+from langchain.document_loaders import UnstructuredURLLoader
+
+loader = UnstructuredURLLoader(urls=[url])
+docs = loader.load()
+print(docs[0].page_content)</div>
+
+    <h3>Jina Reader API</h3>
+    <p>For maximum simplicity, Jina Reader converts any URL to markdown with a single API call:</p>
+
+    <div class="example-box">import httpx
+
+response = httpx.get(
+    "https://r.jina.ai/https://example.com/article"
+)
+markdown_content = response.text
+print(markdown_content)</div>
+  </div>
+
+  <!-- ── 4. DATABASE & API ── -->
+  <div class="section-block" id="database-api">
+    <div class="section-marker">04 — Structured Sources</div>
+    <h2>Database & API Sources</h2>
+    <p>Databases and APIs are already structured. The challenge is scaling: how do you sync large datasets? How do you detect changes?</p>
+
+    <h3>Database Connectors</h3>
+    <div class="example-box">from sqlalchemy import create_engine, text
+from langchain.document_loaders import SQLDatabaseLoader
+
+# Create engine
+engine = create_engine(
+    "postgresql://user:pass@localhost/mydb"
+)
+
+# Load from table
+loader = SQLDatabaseLoader(
+    engine=engine,
+    query="SELECT id, title, content FROM articles"
+)
+documents = loader.load()
+
+# Each row becomes a document
+for doc in documents:
+    print(doc.page_content)
+    print(doc.metadata)  # includes column values</div>
+
+    <h3>REST API Ingestion</h3>
+    <p>For APIs, handle pagination and rate limiting. Store the last_updated timestamp to detect changes:</p>
+
+    <div class="example-box">import httpx
+import json
+from datetime import datetime, timedelta
+
+class APIIngester:
+    def __init__(self, base_url, api_key):
+        self.base_url = base_url
+        self.api_key = api_key
+        self.last_sync = None
+    
+    def fetch_paginated(self, endpoint, params=None):
+        """Fetch all pages of results."""
+        documents = []
+        page = 1
+        
+        while True:
+            params = params or {}
+            params['page'] = page
+            
+            response = httpx.get(
+                f"{self.base_url}/{endpoint}",
+                params=params,
+                headers={'Authorization': f'Bearer {self.api_key}'}
+            )
+            data = response.json()
+            
+            if not data.get('results'):
+                break
+            
+            documents.extend(data['results'])
+            page += 1
+        
+        return documents
+    
+    def sync_incremental(self, endpoint):
+        """Sync only changed documents."""
+        params = {}
+        if self.last_sync:
+            params['updated_after'] = self.last_sync.isoformat()
+        
+        docs = self.fetch_paginated(endpoint, params)
+        self.last_sync = datetime.now()
+        return docs
+
+ingester = APIIngester(
+    "https://api.example.com",
+    api_key="sk-..."
+)
+articles = ingester.sync_incremental("articles")</div>
+  </div>
+
+  <!-- ── 5. NORMALIZATION ── -->
+  <div class="section-block" id="normalization">
+    <div class="section-marker">05 — Cleaning</div>
+    <h2>Document Normalisation</h2>
+    <p>After extraction, normalize the content. Remove junk, fix encoding, standardize whitespace, detect sections and metadata.</p>
+
+    <h3>Normalization Checklist</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Whitespace:</strong> Replace multiple spaces/newlines with singles.</li>
+      <li style="margin: 0.5rem 0;"><strong>Encoding:</strong> Fix unicode errors, handle different charsets.</li>
+      <li style="margin: 0.5rem 0;"><strong>HTML entities:</strong> Convert &nbsp; → space, &lt; → &lt;.</li>
+      <li style="margin: 0.5rem 0;"><strong>Sections:</strong> Detect headers, split into chunks, preserve hierarchy.</li>
+      <li style="margin: 0.5rem 0;"><strong>Metadata:</strong> Extract title, date, author, source URL.</li>
+      <li style="margin: 0.5rem 0;"><strong>Code blocks:</strong> Preserve indentation, syntax highlighting hints.</li>
+    </ul>
+
+    <div class="example-box">import re
+from html import unescape
+
+def normalize_document(text):
+    """Normalize extracted text."""
+    # Decode HTML entities
+    text = unescape(text)
+    
+    # Remove excess whitespace
+    text = re.sub(r'\n\s*\n+', '\n\n', text)
+    text = re.sub(r'[ ]{2,}', ' ', text)
+    
+    # Fix unicode
+    text = text.encode('utf-8', errors='ignore').decode('utf-8')
+    
+    return text.strip()
+
+def extract_sections(text):
+    """Split by headers, preserve structure."""
+    sections = []
+    current_section = {"title": "Introduction", "content": []}
+    
+    for line in text.split('\n'):
+        # Detect headers (lines in ALL CAPS or with ###)
+        if line.startswith('#') or line.isupper():
+            sections.append(current_section)
+            current_section = {
+                "title": line.strip('# '),
+                "content": []
+            }
+        else:
+            current_section["content"].append(line)
+    
+    sections.append(current_section)
+    return sections
+
+text = "Messy\n\n\nHTML   text  &nbsp; with  <br/>stuff"
+clean = normalize_document(text)
+sections = extract_sections(clean)</div>
+  </div>
+
+  <!-- ── 6. INCREMENTAL UPDATES ── -->
+  <div class="section-block" id="incremental">
+    <div class="section-marker">06 — Scaling</div>
+    <h2>Incremental & Scheduled Updates</h2>
+    <p>Most RAG systems need fresh data. Reprocessing everything weekly is wasteful. Detect changes and only process deltas.</p>
+
+    <h3>Change Detection Patterns</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Pattern</th><th>Mechanism</th><th>Latency</th><th>Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Timestamps</strong></td>
+            <td>Track last_modified, check before processing</td>
+            <td>Minutes</td>
+            <td>Low</td>
+          </tr>
+          <tr>
+            <td><strong>Fingerprinting</strong></td>
+            <td>Hash content, compare to stored hash</td>
+            <td>Minutes</td>
+            <td>Low</td>
+          </tr>
+          <tr>
+            <td><strong>Change Data Capture</strong></td>
+            <td>Database triggers emit change events</td>
+            <td>Seconds</td>
+            <td>Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Webhooks</strong></td>
+            <td>Source notifies on updates</td>
+            <td>Seconds</td>
+            <td>Low (source handles it)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Incremental Ingestion with Airflow</h3>
+    <p>Use Airflow or Prefect to orchestrate scheduled ingestion with change detection:</p>
+
+    <div class="example-box">from airflow import DAG
+from airflow.operators.python import PythonOperator
+from datetime import datetime, timedelta
+
+def fetch_docs(**context):
+    """Fetch documents modified since last run."""
+    last_run = context['task_instance'].xcom_pull(
+        task_ids='mark_success',
+        key='last_update'
+    )
+    # Fetch only newer docs
+    docs = api.fetch(updated_after=last_run)
+    return [d['id'] for d in docs]
+
+def process_docs(doc_ids, **context):
+    """Process and index new docs."""
+    for doc_id in doc_ids:
+        doc = api.get(doc_id)
+        content = extract_text(doc)
+        index_doc(content)
+
+default_args = {
+    'owner': 'data',
+    'start_date': datetime(2024, 1, 1),
+    'email_on_failure': True,
+}
+
+with DAG('ingestion_pipeline', default_args=default_args,
+         schedule_interval='@daily', catchup=False) as dag:
+    
+    fetch = PythonOperator(task_id='fetch', python_callable=fetch_docs)
+    process = PythonOperator(task_id='process', python_callable=process_docs)
+    
+    fetch >> process</div>
+  </div>
+
+  <!-- ── 7. ORCHESTRATION ── -->
+  <div class="section-block" id="orchestration">
+    <div class="section-marker">07 — Integration</div>
+    <h2>Pipeline Orchestration</h2>
+    <p>Most teams start with LangChain or LlamaIndex document loaders (simple, limited). As complexity grows, move to dedicated data pipelines (Airflow, Prefect, Dagster).</p>
+
+    <h3>LangChain Document Loaders</h3>
+    <p>Good for getting started. Abstracts different sources under a common interface:</p>
+
+    <div class="example-box">from langchain.document_loaders import (
+    PyPDFLoader,
+    UnstructuredURLLoader,
+    CSVLoader,
+    DirectoryLoader
+)
+
+# Single file
+pdf_loader = PyPDFLoader("document.pdf")
+docs = pdf_loader.load()
+
+# Directory of files
+dir_loader = DirectoryLoader(
+    "./documents",
+    glob="**/*.pdf",
+    loader_cls=PyPDFLoader
+)
+docs = dir_loader.load()
+
+# URLs
+url_loader = UnstructuredURLLoader(
+    urls=["https://example.com"]
+)
+docs = url_loader.load()
+
+# Custom pipeline with retry
+loader = DirectoryLoader(
+    "./docs",
+    loader_cls=PyPDFLoader,
+    recursive=True
+)
+
+documents = loader.load()
+print(f"Loaded {len(documents)} documents")</div>
+
+    <h3>LlamaIndex Readers</h3>
+    <p>LlamaIndex offers a similar abstraction. Pick whichever fits your setup better.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Start simple, scale later.</strong> Use LangChain loaders until you hit limits (performance, custom sources). Then move to Airflow/Prefect.</span>
+    </div>
+  </div>
+
+  <!-- ── 8. TOOLS GRID ── -->
+  <div class="section-block" id="tools">
+    <div class="section-marker">08 — Ecosystem</div>
+    <h2>Ingestion Tools</h2>
+    
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-name">Docling</div>
+        <div class="tool-category">PDF Parsing</div>
+        <div class="tool-desc">State-of-the-art PDF extraction with layout analysis. Handles tables, images, complex layouts.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Unstructured.io</div>
+        <div class="tool-category">Document Processing</div>
+        <div class="tool-desc">Unified API for PDFs, images, documents. Self-hosted and cloud options.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">LlamaParse</div>
+        <div class="tool-category">PDF Parsing API</div>
+        <div class="tool-desc">Commercial PDF parsing. Excellent for scanned PDFs and complex layouts.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Trafilatura</div>
+        <div class="tool-category">Web Extraction</div>
+        <div class="tool-desc">Extract article text from HTML. Automatic boilerplate removal.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Apache Airflow</div>
+        <div class="tool-category">Workflow Orchestration</div>
+        <div class="tool-desc">Industry-standard DAG-based pipeline orchestration. Mature, scalable.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Prefect</div>
+        <div class="tool-category">Workflow Orchestration</div>
+        <div class="tool-desc">Modern alternative to Airflow. Easier syntax, better debugging.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">pdfplumber</div>
+        <div class="tool-category">PDF Extraction</div>
+        <div class="tool-desc">Python library for PDF tables and text. Lightweight, good for most PDFs.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">LangChain Loaders</div>
+        <div class="tool-category">Document Loading</div>
+        <div class="tool-desc">Unified interface for 100+ document types. Great for getting started.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">09 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Nassar, M. et al. (2023).
+        <em>Docling: Fast and Accurate Document Conversion with Machine Learning.</em>
+        IBM Research. —
+        <a href="https://github.com/DS4SD/docling" target="_blank">github.com/DS4SD/docling ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Kocoń, J. et al. (2023).
+        <em>Trafilatura: A Web Scraping Library and Boilerplate Removal Engine.</em>
+        ACL. —
+        <a href="https://trafilatura.readthedocs.io/" target="_blank">trafilatura.readthedocs.io ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> Docling documentation. <a href="https://ds4sd.github.io/docling/" target="_blank">ds4sd.github.io/docling ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> pdfplumber — Extract text and tables. <a href="https://github.com/jsvine/pdfplumber" target="_blank">github.com/jsvine/pdfplumber ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Apache Airflow DAG basics. <a href="https://airflow.apache.org/docs/" target="_blank">airflow.apache.org/docs ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> LangChain document loaders. <a href="https://python.langchain.com/docs/modules/data_connection/document_loaders/" target="_blank">langchain.com/docs ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Hugging Face. (2023). <em>Document Loading at Scale.</em> —
+        <a href="https://huggingface.co/blog/document-loading" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        LlamaIndex. (2024). <em>Ingestion Best Practices.</em> —
+        <a href="https://docs.llamaindex.ai/en/stable/use_cases/ingestion_pipeline/" target="_blank">llamaindex.ai ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Evaluation — GenAI Mindmap</title>
+  <meta name="description" content="RAG evaluation frameworks — RAGAS context precision/recall, answer faithfulness, answer relevance, TruLens RAG triad, DeepEval, and component-level vs end-to-end evaluation strategy." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="RAG Evaluation" />
+  <meta property="og:description" content="RAGAS, TruLens, and DeepEval — measuring retrieval quality, answer faithfulness, and end-to-end RAG performance." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/rag-eval.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="RAG Evaluation" />
+  <meta name="twitter:description" content="Measuring retrieval quality, answer faithfulness, and end-to-end RAG performance." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/rag-eval.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">RAG · Evaluation</span>
+  <h1>RAG <em>Evaluation</em></h1>
+  <p class="hero-sub">RAGAS, TruLens, and DeepEval — measuring retrieval quality, answer faithfulness, and end-to-end RAG performance.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">5</span>
+      <span class="stat-label">Core metrics</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Automated + Human</span>
+      <span class="stat-label">Evaluation loop</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">RAG Triad</span>
+      <span class="stat-label">TruLens framework</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#dimensions" data-num="1">Evaluation dimensions</a></li>
+      <li><a href="#core-metrics" data-num="2">Core metrics</a></li>
+      <li><a href="#ragas" data-num="3">RAGAS framework</a></li>
+      <li><a href="#component-level" data-num="4">Component evaluation</a></li>
+      <li><a href="#alternatives" data-num="5">TruLens & DeepEval</a></li>
+      <li><a href="#eval-dataset" data-num="6">Building eval datasets</a></li>
+      <li><a href="#cicd" data-num="7">CI/CD for RAG</a></li>
+      <li><a href="#tools" data-num="8">Tools & references</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. EVALUATION DIMENSIONS ── -->
+  <div class="section-block" id="dimensions">
+    <div class="section-marker">01 — Framework</div>
+    <h2>RAG Evaluation Dimensions</h2>
+    <p>RAG systems have multiple failure points: the retriever might return irrelevant chunks, the generator might hallucinate, or the combination might be incoherent. You need metrics at three levels: retrieval, generation, and end-to-end.</p>
+
+    <h3>Three Evaluation Levels</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Retrieval quality:</strong> Are the chunks returned by the retriever actually relevant? Measured by precision, recall, MRR, NDCG.</li>
+      <li style="margin: 0.5rem 0;"><strong>Generation quality:</strong> Is the LLM answer faithful to the retrieved context and factually correct? Measured by faithfulness, relevance, ROUGE, BERTScore.</li>
+      <li style="margin: 0.5rem 0;"><strong>End-to-end:</strong> Does the full pipeline produce useful outputs? Measured by task-specific metrics and human judgment.</li>
+    </ul>
+
+    <p>Most teams optimize retrieval heavily but neglect generation metrics. A perfect retriever with a hallucinating LLM is still broken. Measure all three.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Automate what you can; human-evaluate what matters.</strong> Automated metrics are fast and reproducible but can mislead. Reserve human evaluation for the final 10% of improvements and quarterly validation.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. CORE METRICS ── -->
+  <div class="section-block" id="core-metrics">
+    <div class="section-marker">02 — Metrics</div>
+    <h2>Core Metrics Explained</h2>
+    <p>RAGAS (RAG Assessment) defines five core metrics that work across retrieval and generation. These are automated metrics computed using LLM scoring.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Measures</th><th>Range</th><th>Computation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Context Precision</strong></td>
+            <td>% of retrieved chunks actually relevant</td>
+            <td>0–1</td>
+            <td>LLM ranks chunks; precision@k</td>
+          </tr>
+          <tr>
+            <td><strong>Context Recall</strong></td>
+            <td>% of needed info present in chunks</td>
+            <td>0–1</td>
+            <td>LLM checks if chunks contain answer</td>
+          </tr>
+          <tr>
+            <td><strong>Faithfulness</strong></td>
+            <td>Answer supported by context</td>
+            <td>0–1</td>
+            <td>LLM extracts claims; checks support</td>
+          </tr>
+          <tr>
+            <td><strong>Answer Relevance</strong></td>
+            <td>Answer addresses the question</td>
+            <td>0–1</td>
+            <td>LLM scores question-answer alignment</td>
+          </tr>
+          <tr>
+            <td><strong>Answer Correctness</strong></td>
+            <td>Answer is factually accurate</td>
+            <td>0–1</td>
+            <td>LLM or human comparison to golden answer</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Metric Interpretation</h3>
+    <p><strong>Context Precision (0.8+):</strong> 80% of chunks are useful. Good retrieval quality. <strong>Context Recall (0.7+):</strong> 70% of needed information is present. May need denser chunks or better retrieval. <strong>Faithfulness (0.8+):</strong> Answers mostly grounded in context. Some hallucination still present. <strong>Answer Relevance (0.85+):</strong> Answers address questions directly. <strong>Answer Correctness:</strong> Requires gold standard; hardest to automate.</p>
+  </div>
+
+  <!-- ── 3. RAGAS ── -->
+  <div class="section-block" id="ragas">
+    <div class="section-marker">03 — Framework</div>
+    <h2>RAGAS Framework</h2>
+    <p>RAGAS (Retrieval-Augmented Generation Assessment) is the standard evaluation framework. It provides automated LLM-based metrics and synthetic test set generation. Install via <code>pip install ragas</code>.</p>
+
+    <h3>RAGAS Evaluation Pipeline</h3>
+    <div class="example-box">from ragas import evaluate
+from ragas.metrics import (
+    context_precision,
+    context_recall,
+    faithfulness,
+    answer_relevance
+)
+from datasets import Dataset
+
+# Your RAG outputs
+rag_results = {
+    "question": [q1, q2, ...],
+    "answer": [a1, a2, ...],
+    "contexts": [[c1, c2, ...], ...],  # retrieved chunks
+    "ground_truth": [gt1, gt2, ...]    # optional
+}
+
+dataset = Dataset.from_dict(rag_results)
+
+# Run evaluation
+results = evaluate(
+    dataset,
+    metrics=[
+        context_precision,
+        context_recall,
+        faithfulness,
+        answer_relevance
+    ],
+    llm=ChatOpenAI(model="gpt-4")
+)
+
+print(results)
+# Output:
+# context_precision: 0.82
+# context_recall: 0.75
+# faithfulness: 0.88
+# answer_relevance: 0.91</div>
+
+    <h3>Synthetic Test Set Generation</h3>
+    <p>RAGAS can generate test questions and golden answers from your documents:</p>
+
+    <div class="example-box">from ragas.testset_generator import TestsetGenerator
+from langchain.document_loaders import DirectoryLoader
+
+# Load your documents
+loader = DirectoryLoader("./docs")
+documents = loader.load()
+
+# Generate test set
+generator = TestsetGenerator.with_openai()
+testset = generator.generate_with_llamaindex(
+    documents,
+    test_size=100,  # num questions to generate
+    distributions={
+        "simple": 0.5,
+        "reasoning": 0.3,
+        "multi_context": 0.2
+    }
+)
+
+# Export
+testset.to_csv("test_set.csv")
+testset.to_json("test_set.json")</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Synthetic test sets bias toward easy questions.</strong> LLMs tend to generate questions they can answer. Supplement with human-written questions, especially for edge cases.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. COMPONENT-LEVEL EVALUATION ── -->
+  <div class="section-block" id="component-level">
+    <div class="section-marker">04 — Component Metrics</div>
+    <h2>Component-Level Evaluation</h2>
+    <p>Beyond RAGAS, evaluate each component separately. Retriever and generator have distinct failure modes.</p>
+
+    <h3>Retriever Metrics</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Definition</th><th>Good Value</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>MRR</strong></td>
+            <td>Mean Reciprocal Rank — position of first relevant</td>
+            <td>0.8+</td>
+          </tr>
+          <tr>
+            <td><strong>NDCG@10</strong></td>
+            <td>Normalized Discounted Cumulative Gain</td>
+            <td>0.75+</td>
+          </tr>
+          <tr>
+            <td><strong>Recall@k</strong></td>
+            <td>% of gold chunks in top k results</td>
+            <td>Recall@5 > 0.6</td>
+          </tr>
+          <tr>
+            <td><strong>Precision@k</strong></td>
+            <td>% of returned chunks are relevant</td>
+            <td>Precision@5 > 0.5</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Generator Metrics</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Measures</th><th>Method</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ROUGE</strong></td>
+            <td>Lexical overlap with reference</td>
+            <td>F1 score on n-grams</td>
+          </tr>
+          <tr>
+            <td><strong>BERTScore</strong></td>
+            <td>Semantic similarity</td>
+            <td>Contextual embeddings</td>
+          </tr>
+          <tr>
+            <td><strong>LLM-Judge</strong></td>
+            <td>Quality per criteria</td>
+            <td>Pairwise comparison</td>
+          </tr>
+          <tr>
+            <td><strong>Human Eval</strong></td>
+            <td>Correctness, usefulness</td>
+            <td>Annotation by domain experts</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="example-box">from rouge import Rouge
+from bert_score import score as bert_score
+
+# ROUGE
+rouge = Rouge()
+scores = rouge.get_scores(
+    generated_answer,
+    reference_answer
+)
+print(scores[0]['rouge1'])  # ROUGE-1 F1
+
+# BERTScore
+P, R, F1 = bert_score(
+    [generated_answer],
+    [reference_answer],
+    lang="en"
+)
+print(F"BERTScore F1: {F1.item():.3f}")</div>
+  </div>
+
+  <!-- ── 5. ALTERNATIVES ── -->
+  <div class="section-block" id="alternatives">
+    <div class="section-marker">05 — Alternatives</div>
+    <h2>TruLens & DeepEval</h2>
+    <p>RAGAS is great for retrieval-augmented tasks. For broader application monitoring, TruLens and DeepEval offer frameworks beyond RAG.</p>
+
+    <h3>TruLens RAG Triad</h3>
+    <p>TruLens proposes the RAG Triad: answer relevance, context relevance, and groundedness. Think of it as a simplified alternative to RAGAS.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>TruLens Metric</th><th>What it measures</th><th>vs RAGAS</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Answer Relevance</strong></td>
+            <td>Does answer address question?</td>
+            <td>Same as RAGAS answer_relevance</td>
+          </tr>
+          <tr>
+            <td><strong>Context Relevance</strong></td>
+            <td>Is context relevant to question?</td>
+            <td>Similar to context_precision</td>
+          </tr>
+          <tr>
+            <td><strong>Groundedness</strong></td>
+            <td>Is answer grounded in context?</td>
+            <td>Same as RAGAS faithfulness</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="example-box">from trulens_eval import Tru, TruChain
+from trulens_eval.feedback import Groundedness, 
+  AnswerRelevance, ContextRelevance
+
+tru = Tru()
+
+# Define feedback functions
+groundedness = Groundedness(model_endpoint=openai_endpoint)
+answer_relevance = AnswerRelevance(model_endpoint=openai_endpoint)
+context_relevance = ContextRelevance(model_endpoint=openai_endpoint)
+
+# Wrap your RAG chain
+tru_chain = TruChain(
+    rag_chain,
+    app_id="my_rag_app",
+    feedback_functions=[
+        groundedness.groundedness_measure_refusal,
+        answer_relevance.answer_relevance,
+        context_relevance.context_relevance
+    ]
+)
+
+# Run and get feedback
+with tru_context():
+    response = tru_chain(question)
+
+tru.run_dashboard()  # View results</div>
+
+    <h3>DeepEval</h3>
+    <p>DeepEval is lightweight and modular. Good for teams wanting minimal dependencies.</p>
+
+    <div class="example-box">from deepeval import evaluate
+from deepeval.metrics import Faithfulness, Relevance
+
+# Run tests
+test_cases = [
+    {"question": q, "answer": a, "context": c}
+    for q, a, c in zip(questions, answers, contexts)
+]
+
+metrics = [
+    Faithfulness(threshold=0.8),
+    Relevance(threshold=0.85)
+]
+
+results = evaluate(test_cases, metrics)
+print(f"Pass rate: {results['pass_rate']:.2%}")</div>
+  </div>
+
+  <!-- ── 6. EVAL DATASET ── -->
+  <div class="section-block" id="eval-dataset">
+    <div class="section-marker">06 — Data</div>
+    <h2>Building Evaluation Datasets</h2>
+    <p>Good evaluation datasets have golden Q&A pairs, retrieval groundtruth, and coverage of edge cases. Build incrementally as you find failures in production.</p>
+
+    <h3>Dataset Structure</h3>
+    <div class="example-box">{
+  "question": "What is the difference between RAGAS and TruLens?",
+  "answer": "RAGAS is more comprehensive with 5 metrics...",
+  "contexts": [
+    "RAGAS measures context precision and recall...",
+    "TruLens uses the RAG triad framework..."
+  ],
+  "ground_truth": "RAGAS has more granular metrics for retrieval",
+  "retrieval_groundtruth": [0, 1],  # which chunks are relevant
+  "difficulty": "medium",
+  "category": "comparison"
+}</div>
+
+    <h3>Building Strategy</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Start with 50 golden examples:</strong> High-quality, hand-verified Q&A pairs from your domain.</li>
+      <li style="margin: 0.5rem 0;"><strong>Expand with synthetic data:</strong> Use RAGAS to generate 200–500 test questions from your corpus.</li>
+      <li style="margin: 0.5rem 0;"><strong>Add production failures:</strong> Monitor live queries; add ones where RAG fails to evaluation set.</li>
+      <li style="margin: 0.5rem 0;"><strong>Cover edge cases:</strong> Multi-hop reasoning, temporal constraints, negations, out-of-domain questions.</li>
+    </ul>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Use stratified sampling.</strong> Ensure evaluation set reflects category/difficulty distribution of real queries. Random sampling misses rare but important cases.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. CI/CD ── -->
+  <div class="section-block" id="cicd">
+    <div class="section-marker">07 — Automation</div>
+    <h2>CI/CD for RAG Evals</h2>
+    <p>Integrate evaluation into your deployment pipeline. Run evals on every PR; track metrics over time; alert on regressions.</p>
+
+    <h3>GitHub Actions Example</h3>
+    <div class="example-box">name: RAG Evaluation
+on: [pull_request]
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          pip install ragas datasets langchain
+      
+      - name: Run RAG evaluation
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python scripts/evaluate_rag.py
+      
+      - name: Check for regressions
+        run: |
+          python scripts/check_regressions.py \
+            --baseline results/main.json \
+            --current results/current.json \
+            --threshold 0.02  # 2% drop allowed
+      
+      - name: Comment on PR
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ RAG evaluation shows regression. Check results.'
+            })</div>
+
+    <h3>Metrics Dashboard</h3>
+    <p>Use tools like Arize, Weights & Biases, or LangSmith to track eval metrics over time. Watch for:</p>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Context precision drift:</strong> If retriever quality degrades, update embeddings or re-index.</li>
+      <li style="margin: 0.5rem 0;"><strong>Faithfulness drop:</strong> May indicate model is hallucinating more; retune temperature or add guardrails.</li>
+      <li style="margin: 0.5rem 0;"><strong>Answer relevance variance:</strong> Questions becoming harder? Check user query distribution changes.</li>
+    </ul>
+  </div>
+
+  <!-- ── 8. TOOLS GRID ── -->
+  <div class="section-block" id="tools">
+    <div class="section-marker">08 — Ecosystem</div>
+    <h2>Evaluation Tools</h2>
+    
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-name">RAGAS</div>
+        <div class="tool-category">RAG Evaluation</div>
+        <div class="tool-desc">Standard RAG evaluation framework. 5 core metrics, synthetic test set generation, LLM-based scoring.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">TruLens</div>
+        <div class="tool-category">Application Monitoring</div>
+        <div class="tool-desc">Lightweight feedback framework. RAG triad metrics, explainability, production monitoring dashboard.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">DeepEval</div>
+        <div class="tool-category">LLM Testing</div>
+        <div class="tool-desc">Modular evaluation library. Minimal dependencies, supports RAG + general LLM metrics.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">LangSmith</div>
+        <div class="tool-category">Debugging & Monitoring</div>
+        <div class="tool-desc">LangChain's evaluation platform. Trace runs, evaluate on datasets, track metrics in production.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">UpTrain</div>
+        <div class="tool-category">Data Quality</div>
+        <div class="tool-desc">Open-source data quality framework. Checks for data leakage, semantic drift, factuality.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">BERTScore</div>
+        <div class="tool-category">Generation Metrics</div>
+        <div class="tool-desc">Semantic similarity scoring. Contextual embeddings; works for any language pair.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Arize Phoenix</div>
+        <div class="tool-category">LLM Observability</div>
+        <div class="tool-desc">Production monitoring. Traces, embeddings, retrieval evaluation, drift detection.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Continuous Eval</div>
+        <div class="tool-category">Workflow Integration</div>
+        <div class="tool-desc">Drop-in evaluation for any pipeline. Supports batch and streaming eval modes.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">09 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Es, S. et al. (2023).
+        <em>RAGAS: A Unified Framework for Evaluating Retrieval-Augmented Generation.</em>
+        arXiv:2309.15217. —
+        <a href="https://arxiv.org/abs/2309.15217" target="_blank">arxiv:2309.15217 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Gao, T. et al. (2023).
+        <em>Towards Question-Answering as an Automatic Metric for Evaluating the Content Quality of a Summary.</em>
+        arXiv:2010.00490. —
+        <a href="https://arxiv.org/abs/2010.00490" target="_blank">arxiv:2010.00490 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Zhang, T. et al. (2019).
+        <em>BERTScore: Evaluating Text Generation with BERT.</em>
+        ICLR. —
+        <a href="https://arxiv.org/abs/1904.09675" target="_blank">arxiv:1904.09675 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> RAGAS Documentation. <a href="https://docs.ragas.io/" target="_blank">docs.ragas.io ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> TruLens Feedback Functions. <a href="https://www.trulens.org/" target="_blank">trulens.org ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> DeepEval Metrics. <a href="https://github.com/confident-ai/deepeval" target="_blank">github.com/confident-ai/deepeval ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> LangChain — Evaluation guide. <a href="https://python.langchain.com/docs/guides/evaluation/" target="_blank">langchain.com/docs ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Cohere. (2023). <em>Evaluating Retrieval Systems.</em> —
+        <a href="https://cohere.ai/blog/evaluating-retrieval" target="_blank">cohere.ai/blog ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Hugging Face. (2024). <em>RAG Evaluation Best Practices.</em> —
+        <a href="https://huggingface.co/blog/rag-evaluation" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>
