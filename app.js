@@ -233,6 +233,17 @@ const CONCEPT_PAGES={
   streaming_arch:'concepts/streaming-arch.html',
   retry_backoff:'concepts/retry-backoff.html',
   rate_limiting:'concepts/rate-limiting.html',
+  // batch 17 — infra(5) + eval(4) + multimodal(1)
+  tgi:'concepts/tgi.html',
+  sglang:'concepts/sglang.html',
+  gptq:'concepts/gptq.html',
+  awq:'concepts/awq.html',
+  bnb:'concepts/bitsandbytes.html',
+  wandb:'concepts/wandb.html',
+  langfuse:'concepts/langfuse.html',
+  deepeval:'concepts/deepeval.html',
+  trulens:'concepts/trulens.html',
+  whisper:'concepts/whisper.html',
 };
 let N=JSON.parse(JSON.stringify(DN)),X=JSON.parse(JSON.stringify(DX)),e=false,s=null;
 function ifs(){const c=document.getElementById('starfield'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;const t=[];for(let i=0;i<100;i++)t.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,v:Math.random()*0.3+0.1});function a(){x.fillStyle='#030a1a';x.fillRect(0,0,c.width,c.height);x.fillStyle='#a78bfa';t.forEach(d=>{d.r+=d.v*0.01;if(d.r>2.5)d.r=0;x.beginPath();x.arc(d.x,d.y,d.r,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight})}

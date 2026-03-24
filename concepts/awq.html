@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AWQ | GenAI Mindmap</title>
+  <meta name="description" content="Activation-aware Weight Quantisation — state-of-the-art 4-bit LLM compression that preserves the 1% of salient weights identified via activation magnitudes. Better perplexity than GPTQ at the same bit-width." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="AWQ" />
+  <meta property="og:description" content="Activation-aware Weight Quantisation — state-of-the-art 4-bit LLM compression that preserves the 1% of salient weights identified via activation magnitudes. Better perplexity than GPTQ at the same bit-width." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/awq.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/awq.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "AWQ | GenAI Mindmap",
+  "description": "Activation-aware Weight Quantisation \u2014 state-of-the-art 4-bit LLM compression that preserves the 1% of salient weights identified via activation magnitudes. Better perplexity than GPTQ at the same bit-width.",
+  "url": "https://genai4a11.github.io/concepts/awq.html",
+  "dateModified": "2026-03-24T23:35:16.283584",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "AWQ | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/awq.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #7c3aed;
+      --accent-dark: #6d28d9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/quantisation.html" class="nav-back">← Quantisation</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Quantisation</span>
+    <h1><em>AWQ</em></h1>
+    <p class="hero-sub">Activation-aware Weight Quantisation — state-of-the-art 4-bit LLM compression that preserves the 1% of salient weights identified via activation magnitudes. Better perplexity than GPTQ at the same bit-width.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">4-bit</div><div class="stat-label">Target precision</div></div>
+      <div><div class="stat-num">Salient</div><div class="stat-label">Weight protection</div></div>
+      <div><div class="stat-num">3× faster</div><div class="stat-label">than fp16 on edge</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">AWQ algorithm</a></li>
+        <li><a href="#s2" data-num="02">Quantising with llm-awq</a></li>
+        <li><a href="#s3" data-num="03">Serving AWQ models</a></li>
+        <li><a href="#s4" data-num="04">AWQ vs GPTQ quality comparison</a></li>
+        <li><a href="#s5" data-num="05">AutoAWQ library</a></li>
+        <li><a href="#s6" data-num="06">WQA: weight-only vs activation quantisation</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>AWQ algorithm</h2>
+<p>AWQ (Lin et al. 2023) addresses a key observation: not all LLM weights are equally important. A small fraction (~1%) of weights — those corresponding to channels with large activation magnitudes — have disproportionate impact on model quality. Quantising these with more precision (or protecting them) preserves most of the model's capability.</p>
+<p>Rather than keeping those weights in fp16 (which wastes memory), AWQ finds a per-channel scale factor that makes salient channels "easier to quantise" — by rescaling them before quantisation and rescaling back after, effectively giving them finer quantisation granularity without extra storage. The scale factors are determined by a grid search over activation-calibrated candidates.</p>
+<p>This calibration step is fast (minutes vs hours for GPTQ) and doesn't require backprop. The result is a 4-bit model that typically outperforms GPTQ-4bit on standard benchmarks, especially on instruction following and reasoning tasks.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Quantising with llm-awq</h2>
+<pre><code class="language-python">from awq import AutoAWQForCausalLM
+from transformers import AutoTokenizer
+
+model_path = "meta-llama/Meta-Llama-3-8B-Instruct"
+quant_path = "llama3-8b-awq"
+
+tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+model = AutoAWQForCausalLM.from_pretrained(
+    model_path,
+    low_cpu_mem_usage=True,
+    use_cache=False,
+)
+
+quant_config = {
+    "zero_point": True,   # asymmetric quantisation (better quality)
+    "q_group_size": 128,  # group size for scale factors
+    "w_bit": 4,           # 4-bit weights
+    "version": "GEMM",    # GEMM or GEMV kernel (GEMM for batch>1)
+}
+
+# Calibration data
+calib_data = ["AWQ quantisation uses calibration data to find optimal scales.",
+              "The quick brown fox jumps over the lazy dog."]  # use 128+ diverse samples
+
+model.quantize(tokenizer, quant_config=quant_config, calib_data=calib_data)
+model.save_quantized(quant_path, safetensors=True)
+tokenizer.save_pretrained(quant_path)
+print("AWQ quantisation done!")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Serving AWQ models</h2>
+<pre><code class="language-python"># Load and run inference with AutoAWQ
+from awq import AutoAWQForCausalLM
+from transformers import AutoTokenizer
+
+model = AutoAWQForCausalLM.from_quantized(
+    "llama3-8b-awq",
+    fuse_layers=True,    # fuse QKV + FFN layers for 1.5× speedup
+    trust_remote_code=False,
+)
+tokenizer = AutoTokenizer.from_pretrained("llama3-8b-awq")
+
+inputs = tokenizer("Explain gradient descent in one sentence:", return_tensors="pt").to("cuda")
+out = model.generate(**inputs, max_new_tokens=100)
+print(tokenizer.decode(out[0], skip_special_tokens=True))
+</code></pre>
+<pre><code class="language-bash"># Via vLLM (recommended for production)
+vllm serve ./llama3-8b-awq --quantization awq --dtype half
+
+# Via TGI
+docker run --gpus all -p 8080:80   ghcr.io/huggingface/text-generation-inference   --model-id ./llama3-8b-awq --quantize awq
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>AWQ vs GPTQ quality comparison</h2>
+<p>On standard benchmarks (MMLU, HumanEval, MT-Bench), AWQ-4bit consistently outperforms GPTQ-4bit by 1–3 percentage points. The difference is larger for smaller models (7B) than larger ones (70B), likely because larger models have more redundancy and are more robust to quantisation noise.</p>
+<p>Both methods significantly outperform naive round-to-nearest (RTN) quantisation, which degrades heavily below 6-bit. At 3-bit, AWQ still maintains reasonable quality while GPTQ-3bit degrades more.</p>
+<p>For production deployment, if a pre-quantised AWQ model exists for your chosen base model, use it. The quality advantage over GPTQ is real and costs nothing.</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>AutoAWQ library</h2>
+<p>AutoAWQ is the main Python library for AWQ quantisation. Key features:</p>
+<ul>
+<li><strong>GEMM kernel</strong>: Optimised for batch sizes &gt; 1 (typical serving scenario). Use <code>version="GEMM"</code>.</li>
+<li><strong>GEMV kernel</strong>: Optimised for batch size = 1 (decode step, edge deployment). Fastest for single-token generation.</li>
+<li><strong>Fused layers</strong>: <code>fuse_layers=True</code> merges QKV projections and FFN into single CUDA ops. Requires <code>version="GEMM"</code>. Gives ~1.5× speedup.</li>
+<li><strong>ExLlamaV2 support</strong>: For even faster inference, combine AWQ weights with ExLlamaV2 kernels.</li>
+</ul>
+<pre><code class="language-bash">pip install autoawq autoawq-kernels
+# Or install from source for latest features:
+pip install git+https://github.com/casper-hansen/AutoAWQ.git
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Weight-only vs activation quantisation</h2>
+<p>AWQ and GPTQ are <strong>weight-only</strong> quantisation: weights are stored in 4-bit, but activations (the layer outputs computed during inference) remain in fp16. This is the dominant approach for LLMs because: (1) activations have much larger dynamic range than weights and are harder to quantise, (2) computing activations in fp16 uses the GPU's fast fp16 tensor cores, (3) the memory bottleneck in autoregressive generation is weight loading, not activation storage.</p>
+<p>In contrast, <strong>W8A8 quantisation</strong> (SmoothQuant, LLM.int8) quantises both weights and activations to int8, using integer tensor cores that can be 2× faster on supported hardware. This is more complex but gives higher throughput on datacenter GPUs with strong int8 support (A100, H100).</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Version compatibility</strong>: AutoAWQ versions don't always stay compatible with transformers updates. Pin both versions together.</p>
+<p><strong>GEMM vs GEMV kernel selection</strong>: If you're running single-request inference (batch=1), use <code>version="GEMV"</code> for 20–30% faster generation. For batched serving, use <code>version="GEMM"</code>.</p>
+<p><strong>Fused layers break some features</strong>: <code>fuse_layers=True</code> is incompatible with output_hidden_states and some attention visualization tools. Disable for debugging.</p>
+<p><strong>Pre-quantised model quality</strong>: The quality of a pre-quantised model depends on the calibration data used. Models quantised with domain-specific data will perform better on that domain. Check the model card for calibration details.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/quantisation.html" style="color:var(--accent)">Quantisation</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
