@@ -3,312 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LLM Tool Use & Function Calling — GenAI Mindmap</title>
-  <meta name="description" content="How LLMs call functions, select tools, handle results, and chain tool calls to complete complex tasks" />
+  <title>Tool Use | GenAI Mindmap</title>
+  <meta name="description" content="The mechanism by which LLMs call external functions — defining tools as JSON schemas, receiving structured call requests from the model, executing them, and returning results." />
   <meta property="og:type" content="article" />
-  <meta property="og:title" content="LLM Tool Use &amp; Function Calling" />
-  <meta property="og:description" content="How LLMs call functions, select tools, handle results, and chain tool calls to complete complex tasks" />
+  <meta property="og:title" content="Tool Use" />
+  <meta property="og:description" content="The mechanism by which LLMs call external functions — defining tools as JSON schemas, receiving structured call requests from the model, executing them, and returning results." />
   <meta property="og:url" content="https://genai4a11.github.io/concepts/tool-use.html" />
   <meta property="og:site_name" content="GenAI Mindmap" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="LLM Tool Use &amp; Function Calling" />
-  <meta name="twitter:description" content="How LLMs call functions, select tools, handle results, and chain tool calls to complete complex tasks" />
   <link rel="canonical" href="https://genai4a11.github.io/concepts/tool-use.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --indigo:    #4f46e5;
-      --indigo-dk: #3730a3;
-      --indigo-lt: #eef2ff;
-      --blue:      #2563eb;
-      --sky:       #38bdf8;
-      --green:     #22c55e;
-      --rose:      #f43f5e;
-      --amber:     #f59e0b;
-      --text:      #0f172a;
-      --muted:     #64748b;
-      --border:    #e2e8f0;
-      --bg:        #f8fafc;
-      --bg-white:  #ffffff;
-      --code-bg:   #1e293b;
-      --hero-from: #0f172a;
-      --hero-to:   #1e1b4b;
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 16px;
-      line-height: 1.75;
-      color: var(--text);
-      background: var(--bg);
-    }
-
-    /* ── NAV ── */
-    nav {
-      position: sticky; top: 0; z-index: 200;
-      background: rgba(15,23,42,0.96);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      padding: 0 2rem; height: 54px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .nav-brand {
-      font-size: 0.88rem; font-weight: 700;
-      color: #e2e8f0; text-decoration: none;
-      display: flex; align-items: center; gap: 0.5rem;
-      letter-spacing: -0.01em;
-    }
-    .nav-brand .dot {
-      width: 22px; height: 22px; border-radius: 6px;
-      background: linear-gradient(135deg, var(--indigo), var(--sky));
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 12px;
-    }
-    .nav-back {
-      font-size: 0.82rem; font-weight: 500;
-      color: #94a3b8; text-decoration: none;
-      display: flex; align-items: center; gap: 0.35rem;
-      transition: color 0.15s;
-    }
-    .nav-back:hover { color: #e2e8f0; }
-
-    /* ── HERO ── */
-    .hero {
-      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
-      padding: 4rem 2rem 3.5rem;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
-                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
-      pointer-events: none;
-    }
-    .hero-tag {
-      display: inline-block; font-size: 0.72rem; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: #818cf8; background: rgba(99,102,241,0.15);
-      border: 1px solid rgba(99,102,241,0.3);
-      padding: 0.3rem 0.8rem; border-radius: 20px;
-      margin-bottom: 1.2rem;
-    }
-    .hero h1 {
-      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
-      color: #f1f5f9; line-height: 1.2;
-      letter-spacing: -0.02em; margin-bottom: 0.9rem;
-    }
-    .hero h1 em { font-style: normal; color: #818cf8; }
-    .hero-sub {
-      font-size: 1.05rem; color: #94a3b8;
-      max-width: 560px; margin: 0 auto 2rem;
-    }
-    .hero-stats {
-      display: inline-flex; gap: 2rem;
-      flex-wrap: wrap; justify-content: center;
-    }
-    .stat {
-      text-align: center;
-    }
-    .stat-num {
-      display: block; font-size: 1.5rem; font-weight: 800;
-      color: #e2e8f0; letter-spacing: -0.02em;
-    }
-    .stat-label {
-      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
-      letter-spacing: 0.07em;
-    }
-
-    /* ── LAYOUT ── */
-    .page-wrap {
-      max-width: 1040px; margin: 0 auto;
-      padding: 3rem 2rem 5rem;
-    }
-
-    /* ── TOC CARD ── */
-    .toc-card {
-      background: var(--bg-white);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.4rem 1.8rem;
-      margin-bottom: 3rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    }
-    .toc-heading {
-      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
-      text-transform: uppercase; color: var(--muted);
-      margin-bottom: 0.8rem;
-    }
-    .toc-list {
-      list-style: none; padding: 0;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
-    }
-    .toc-list li a {
-      font-size: 0.88rem; color: var(--indigo);
-      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
-      transition: color 0.15s;
-    }
-    .toc-list li a:hover { color: var(--blue); }
-    .toc-list li a::before {
-      content: attr(data-num);
-      font-size: 0.7rem; font-weight: 700;
-      color: var(--bg-white); background: var(--indigo);
-      width: 18px; height: 18px; border-radius: 50%;
-      display: inline-flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-
-    /* ── SECTION HEADINGS ── */
-    .section-marker {
-      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
-      text-transform: uppercase; color: var(--indigo);
-      margin-bottom: 0.4rem;
-    }
-    h2 {
-      font-size: 1.45rem; font-weight: 800;
-      color: var(--text); letter-spacing: -0.02em;
-      margin-bottom: 1rem;
-    }
-    h3 {
-      font-size: 1rem; font-weight: 700;
-      color: var(--text); margin: 1.6rem 0 0.5rem;
-    }
-    p { margin-bottom: 1rem; color: #334155; }
-
-    /* ── SECTION DIVIDER ── */
-    .section-block {
-      background: var(--bg-white);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2rem 2rem 1.5rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    /* ── COMPARISON TABLE ── */
-    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-    thead th {
-      background: var(--text); color: #f1f5f9;
-      padding: 0.7rem 1rem; text-align: left;
-      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
-    }
-    thead th:first-child { border-radius: 8px 0 0 0; }
-    thead th:last-child { border-radius: 0 8px 0 0; }
-    tbody tr:nth-child(even) td { background: var(--bg); }
-    tbody td {
-      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
-      vertical-align: top; color: #334155;
-    }
-    tbody tr:last-child td { border-bottom: none; }
-
-    /* ── EXAMPLE BOX ── */
-    .example-box {
-      background: var(--code-bg);
-      border-radius: 10px;
-      padding: 1.2rem 1.4rem;
-      margin: 1rem 0 1.5rem;
-      font-family: 'Fira Code', 'SF Mono', monospace;
-      font-size: 0.82rem;
-      line-height: 1.7;
-      white-space: pre-wrap;
-      color: #cbd5e1;
-    }
-
-    /* ── CALLOUT ── */
-    .callout {
-      border-radius: 10px;
-      padding: 1rem 1.2rem;
-      margin: 1.2rem 0;
-      font-size: 0.92rem;
-      display: flex; gap: 0.8rem; align-items: flex-start;
-    }
-    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
-    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
-    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
-    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
-    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #be123c; }
-    .callout strong { font-weight: 700; }
-
-    /* ── TOOLS GRID ── */
-    .tools-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 0.8rem; margin-top: 1rem;
-    }
-    .tool-card {
-      border: 1px solid var(--border);
-      border-radius: 10px; padding: 1rem 1.1rem;
-      background: var(--bg-white);
-      transition: box-shadow 0.15s, border-color 0.15s;
-    }
-    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
-    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
-    .tool-category {
-      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
-      text-transform: uppercase; color: var(--indigo);
-      margin-bottom: 0.4rem;
-    }
-    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
-
-    /* ── REFERENCES ── */
-    .ref-group-title {
-      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
-      text-transform: uppercase; color: var(--muted);
-      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
-      margin: 1.5rem 0 0.8rem;
-    }
-    .ref-group-title:first-child { margin-top: 0; }
-    .ref-list { list-style: none; padding: 0; }
-    .ref-list li {
-      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
-      font-size: 0.87rem; line-height: 1.55; color: #334155;
-    }
-    .ref-list li:last-child { border-bottom: none; }
-    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
-    .ref-list a:hover { text-decoration: underline; }
-
-    /* ── FOOTER ── */
-    .page-footer {
-      margin-top: 3.5rem; padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: 0.82rem; color: var(--muted);
-      flex-wrap: wrap; gap: 0.5rem;
-    }
-    .page-footer a { color: var(--indigo); text-decoration: none; }
-    .page-footer a:hover { text-decoration: underline; }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 600px) {
-      .hero { padding: 3rem 1.5rem 2.5rem; }
-      .page-wrap { padding: 2rem 1.25rem 4rem; }
-      .hero-stats { gap: 1.2rem; }
-      .toc-list { grid-template-columns: 1fr; }
-    }
-  </style>
-<style id="concept-nav-css">
-.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
-.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
-.concept-nav a:hover{color:#a78bfa;}
-.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
-</style>
-<script type="application/ld+json">
+  <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "LLM Tool Use & Function Calling",
-  "description": "How LLMs call functions, select tools, handle results, and chain tool calls to complete complex tasks",
+  "headline": "Tool Use | GenAI Mindmap",
+  "description": "The mechanism by which LLMs call external functions \u2014 defining tools as JSON schemas, receiving structured call requests from the model, executing them, and returning results.",
   "url": "https://genai4a11.github.io/concepts/tool-use.html",
-  "dateModified": "2026-03-24T15:18:21+00:00",
+  "dateModified": "2026-03-24T16:58:24+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -342,347 +55,342 @@
       {
         "@type": "ListItem",
         "position": 3,
-        "name": "LLM Tool Use & Function Calling",
+        "name": "Tool Use | GenAI Mindmap",
         "item": "https://genai4a11.github.io/concepts/tool-use.html"
       }
     ]
   }
 }
 </script>
+  <style>
+    :root {
+      --accent: #059669;
+      --accent-dark: #047857;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
 </head>
 <body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/agent-patterns.html" class="nav-back">← Agent Patterns</a>
+  </nav>
 
-<nav>
-  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
-  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
-</nav>
-<script>
-  (function(){
-    const from=new URLSearchParams(location.search).get('from');
-    if(from){
-      const url='../index.html#'+from;
-      document.getElementById('back-link').href=url;
-      document.getElementById('back-brand').href=url;
-    }
-  })();
-</script>
-
-<!-- ── HERO ── -->
-<div class="hero">
-  <span class="hero-tag">Tool Use</span>
-  <h1>Tool Use & <em>Function Calling</em></h1>
-  <p class="hero-sub">How LLMs call functions, select tools, handle results, and chain tool calls to complete complex tasks</p>
-  <div class="hero-stats">
-    <div class="stat">
-      <span class="stat-num">define → call → observe</span>
-      <span class="stat-label">the tool loop</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">parallel tool calls</span>
-      <span class="stat-label">OpenAI + Anthropic support</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">strict schema mode</span>
-      <span class="stat-label">for reliable JSON</span>
+  <div class="hero">
+    <span class="hero-tag">Agent Patterns</span>
+    <h1><em>Tool Use</em></h1>
+    <p class="hero-sub">The mechanism by which LLMs call external functions — defining tools as JSON schemas, receiving structured call requests from the model, executing them, and returning results.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Structured</div><div class="stat-label">JSON schema input</div></div>
+      <div><div class="stat-num">Parallel</div><div class="stat-label">Multi-tool calls</div></div>
+      <div><div class="stat-num">Provider-native</div><div class="stat-label">API support</div></div>
     </div>
   </div>
-</div>
 
-<!-- ── CONTENT ── -->
-<div class="page-wrap">
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Tool use vs prompt engineering</a></li>
+        <li><a href="#s2" data-num="02">How tool calling works at the API level</a></li>
+        <li><a href="#s3" data-num="03">Defining tools with Anthropic</a></li>
+        <li><a href="#s4" data-num="04">Handling tool results</a></li>
+        <li><a href="#s5" data-num="05">Parallel tool calls</a></li>
+        <li><a href="#s6" data-num="06">Tool use with OpenAI</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
 
-<!-- TOC -->
-<div class="toc-card">
-  <div class="toc-heading">Sections</div>
-  <ul class="toc-list">
-    <li><a href="#section1" data-num="1">What is Function Calling</a></li>
-    <li><a href="#section2" data-num="2">The Tool Loop</a></li>
-    <li><a href="#section3" data-num="3">Schema Design</a></li>
-    <li><a href="#section4" data-num="4">Parallel Calls</a></li>
-    <li><a href="#section5" data-num="5">Structured Outputs</a></li>
-    <li><a href="#section6" data-num="6">Failure Modes</a></li>
-    <li><a href="#section7" data-num="7">Production Toolkits</a></li>
-  </ul>
-</div>
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Tool use vs prompt engineering</h2>
+<p>Before tool use existed, people would put instructions like "respond with JSON in format {action: ..., args: ...}" in the prompt and then parse the output with regex. It worked sometimes and broke spectacularly other times.</p>
+<p><strong>Native tool use</strong> (also called function calling) is different: you define tools as structured JSON schemas, and the model returns a structured call object — not free text it asks you to parse, but a first-class API type designed for reliable machine parsing. The model knows the exact set of available tools and their input requirements, reducing hallucinated tool calls dramatically.</p>
+    </div>
 
-<!-- Section 1 -->
-<div class="section-block" id="section1">
-  <div class="section-marker">Section 1</div>
-  <h2>What is Function Calling?</h2>
-  <p><strong>Function calling (tool use):</strong> LLM generates a structured call to an external function instead of a text response. The system executes the function and feeds the result back into context.</p>
-  <p><strong>The model does not execute code</strong> — it generates JSON describing which function to call and with what arguments. Your code does the execution.</p>
-  <p><strong>Three formats:</strong> OpenAI tools API, Anthropic tool_use blocks, and open-source models via system prompt engineering</p>
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>How tool calling works at the API level</h2>
+<p>The flow:</p>
+<ol>
+<li>You send a message with a <code>tools</code> array defining available functions.</li>
+<li>The model responds with a <code>tool_use</code> content block containing the tool name and input arguments.</li>
+<li>You execute the tool in your code and get the result.</li>
+<li>You send a follow-up message with the tool result in a <code>tool_result</code> block.</li>
+<li>The model continues (possibly calling more tools, or generating a final response).</li>
+</ol>
+<p>Your code is the runtime. The model is the planner. The API is the communication channel between them.</p>
+    </div>
 
-  <p style="margin-top: 1.5rem;"><strong>Example: define a tool and handle its call (OpenAI)</strong></p>
-  <div class="example-box">from openai import OpenAI
-import json
-client = OpenAI()
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Defining tools with Anthropic</h2>
+<pre><code class="language-python">import anthropic, json
 
-tools = [{
-    "type": "function",
-    "function": {
+client = anthropic.Anthropic()
+
+# Define tools as JSON schema objects
+tools = [
+    {
         "name": "get_weather",
-        "description": "Get the current weather for a city",
-        "parameters": {
+        "description": "Get the current weather for a location. Returns temperature in Celsius and conditions.",
+        "input_schema": {
             "type": "object",
             "properties": {
-                "city": {"type": "string", "description": "City name"},
-                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]}
+                "location": {
+                    "type": "string",
+                    "description": "City name, e.g. 'London' or 'New York, NY'"
+                },
+                "unit": {
+                    "type": "string",
+                    "enum": ["celsius", "fahrenheit"],
+                    "description": "Temperature unit. Defaults to celsius."
+                }
             },
-            "required": ["city"]
+            "required": ["location"]
+        }
+    },
+    {
+        "name": "get_stock_price",
+        "description": "Get the current stock price for a ticker symbol.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "ticker": {"type": "string", "description": "Stock ticker, e.g. AAPL, MSFT"}
+            },
+            "required": ["ticker"]
         }
     }
-}]
+]
 
-response = client.chat.completions.create(
-    model="gpt-4o", messages=[{"role":"user","content":"What's the weather in Paris?"}],
-    tools=tools, tool_choice="auto"
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    tools=tools,
+    messages=[{"role": "user", "content": "What's the weather like in Paris and London?"}]
 )
 
-if response.choices[0].message.tool_calls:
-    call = response.choices[0].message.tool_calls[0]
-    args = json.loads(call.function.arguments)
-    result = get_weather(args["city"], args.get("unit", "celsius"))</div>
-</div>
+print(response.stop_reason)   # "tool_use"
+for block in response.content:
+    if block.type == "tool_use":
+        print(f"Tool: {block.name}, Input: {block.input}")
+# Tool: get_weather, Input: {'location': 'Paris', 'unit': 'celsius'}
+# Tool: get_weather, Input: {'location': 'London', 'unit': 'celsius'}
+</code></pre>
+    </div>
 
-<!-- Section 2 -->
-<div class="section-block" id="section2">
-  <div class="section-marker">Section 2</div>
-  <h2>The Tool Loop</h2>
-  <p><strong>Single-turn tool call:</strong> user message → model generates tool call → your code executes → result fed back → model generates final answer</p>
-  <p><strong>Multi-turn:</strong> model may chain multiple tool calls before generating final answer</p>
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Handling tool results</h2>
+<pre><code class="language-python">import anthropic
 
-  <p style="margin-top: 1.5rem;"><strong>Example: full tool loop implementation</strong></p>
-  <div class="example-box">def run_tool_loop(messages, tools, max_iterations=10):
-    for _ in range(max_iterations):
-        response = client.chat.completions.create(
-            model="gpt-4o", messages=messages, tools=tools)
-        msg = response.choices[0].message
-        messages.append(msg)
+client = anthropic.Anthropic()
 
-        if not msg.tool_calls:  # model is done
-            return msg.content
+def get_weather(location: str, unit: str = "celsius") -> dict:
+    '''Mock weather API — replace with real implementation.'''
+    data = {"Paris": {"temp": 18, "conditions": "Partly cloudy"},
+            "London": {"temp": 14, "conditions": "Overcast"}}
+    d = data.get(location, {"temp": 20, "conditions": "Unknown"})
+    return {"location": location, "temperature": d["temp"], "unit": unit, "conditions": d["conditions"]}
 
-        for tool_call in msg.tool_calls:
-            result = dispatch_tool(tool_call.function.name,
-                                  json.loads(tool_call.function.arguments))
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": json.dumps(result)
-            })
-    return "Max iterations reached"</div>
+def run_with_tools(user_message: str) -> str:
+    messages = [{"role": "user", "content": user_message}]
 
-  <div class="callout green">
-    <span class="callout-icon">✓</span>
-    <div><strong>Always wrap tool execution in try/except.</strong> Feed the error message back to the model in the tool result — models can recover from errors and try a different approach.</div>
-  </div>
-</div>
+    while True:
+        response = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1024,
+            tools=tools,    # defined in previous section
+            messages=messages
+        )
 
-<!-- Section 3 -->
-<div class="section-block" id="section3">
-  <div class="section-marker">Section 3</div>
-  <h2>Tool Schema Design</h2>
-  <p><strong>Tool description quality directly determines call accuracy.</strong> Vague descriptions → wrong tool selection.</p>
+        if response.stop_reason == "end_turn":
+            # No more tool calls — extract text response
+            return next(b.text for b in response.content if hasattr(b, "text"))
 
-  <p><strong>Principles:</strong></p>
-  <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-    <li>Name is a verb phrase ("search_web", not "web")</li>
-    <li>Description explains WHEN to use it, not just what it does</li>
-    <li>Parameters have description + examples for non-obvious args</li>
-    <li>Use enum for categorical values</li>
-  </ul>
+        if response.stop_reason == "tool_use":
+            # Add assistant's response (including tool_use blocks) to history
+            messages.append({"role": "assistant", "content": response.content})
 
-  <p style="margin-top: 1rem;"><strong>Example: good vs bad tool descriptions</strong></p>
-  <div class="example-box"># BAD: vague, no guidance on when to use
-{"name": "search", "description": "Search for things"}
+            # Execute all tool calls and collect results
+            tool_results = []
+            for block in response.content:
+                if block.type == "tool_use":
+                    if block.name == "get_weather":
+                        result = get_weather(**block.input)
+                    elif block.name == "get_stock_price":
+                        result = {"ticker": block.input["ticker"], "price": 189.42}
+                    else:
+                        result = {"error": f"Unknown tool: {block.name}"}
 
-# GOOD: specific, with when-to-use context
-{"name": "web_search",
- "description": "Search the internet for current information, news, or facts that may have changed since training. Use when the user asks about recent events, current prices, or anything time-sensitive.",
- "parameters": {
-     "query": {"type": "string", "description": "Specific search query. Be specific — 'Tesla stock price today' not just 'Tesla'"},
-     "num_results": {"type": "integer", "default": 5, "description": "Number of results to return (1-10)"}
- }}</div>
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": str(result)
+                    })
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Aspect</th>
-          <th>Bad</th>
-          <th>Good</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Name</td>
-          <td>"data"</td>
-          <td>"fetch_user_profile"</td>
-        </tr>
-        <tr>
-          <td>Description</td>
-          <td>"Gets data"</td>
-          <td>"Retrieve user profile by ID. Use when you need name, email, or account status."</td>
-        </tr>
-        <tr>
-          <td>Parameter desc</td>
-          <td>"id"</td>
-          <td>"user_id: UUID string from the users table, e.g. '550e8400-e29b-41d4-a716'"</td>
-        </tr>
-        <tr>
-          <td>When to use</td>
-          <td>Not stated</td>
-          <td>Explicitly stated</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+            # Return tool results to the model
+            messages.append({"role": "user", "content": tool_results})
 
-<!-- Section 4 -->
-<div class="section-block" id="section4">
-  <div class="section-marker">Section 4</div>
-  <h2>Parallel Tool Calls</h2>
-  <p><strong>GPT-4o and Claude 3+ support parallel tool calls:</strong> model generates multiple tool calls in one response</p>
-  <p><strong>Use case:</strong> independent queries that can be executed simultaneously</p>
+result = run_with_tools("Compare the weather in Paris and London.")
+print(result)
+</code></pre>
+    </div>
 
-  <p style="margin-top: 1.5rem;"><strong>Example: parallel tool call handling</strong></p>
-  <div class="example-box"># Model may return multiple tool calls at once
-tool_calls = response.choices[0].message.tool_calls
-# e.g. [get_weather("Paris"), get_weather("London"), get_time("Paris")]
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Parallel tool calls</h2>
+<p>Claude can request multiple tools in a single turn. This is efficient — all tool calls in one response can be executed concurrently:</p>
+<pre><code class="language-python">import asyncio, anthropic
 
-import asyncio
-async def execute_all(tool_calls):
-    tasks = [dispatch_tool_async(tc.function.name,
-             json.loads(tc.function.arguments)) for tc in tool_calls]
-    return await asyncio.gather(*tasks)
+client = anthropic.Anthropic()
 
-results = asyncio.run(execute_all(tool_calls))</div>
+async def get_weather_async(location: str) -> dict:
+    await asyncio.sleep(0.1)   # simulate API latency
+    return {"location": location, "temp": 18}
 
-  <div class="callout amber">
-    <span class="callout-icon">⚠</span>
-    <div><strong>Parallel tool calls require your executor to handle concurrent requests correctly.</strong> If tools touch shared state (e.g., database writes), handle conflicts explicitly.</div>
-  </div>
-</div>
+async def execute_tool_calls_parallel(tool_use_blocks):
+    '''Execute all tool calls concurrently.'''
+    tasks = []
+    for block in tool_use_blocks:
+        if block.name == "get_weather":
+            tasks.append((block.id, get_weather_async(block.input["location"])))
 
-<!-- Section 5 -->
-<div class="section-block" id="section5">
-  <div class="section-marker">Section 5</div>
-  <h2>Structured Outputs and Strict Mode</h2>
-  <p><strong>Strict mode (OpenAI):</strong> guarantees model output exactly matches your JSON schema. No extra fields, no missing required fields.</p>
-  <p><strong>Anthropic tool_use:</strong> similar guarantee — model always returns valid tool_use blocks matching the schema</p>
-  <p><strong>When to use strict:</strong> any time you need to parse the output programmatically (>95% of production use cases)</p>
+    results = await asyncio.gather(*[t[1] for t in tasks])
+    return [
+        {"type": "tool_result", "tool_use_id": tasks[i][0], "content": str(r)}
+        for i, r in enumerate(results)
+    ]
 
-  <p style="margin-top: 1.5rem;"><strong>Example: OpenAI strict structured output</strong></p>
-  <div class="example-box">from openai import OpenAI
-from pydantic import BaseModel
+# If Claude calls get_weather for Paris AND London in one response,
+# we execute both API calls simultaneously — 2× faster than sequential
+</code></pre>
+<p>Always execute parallel tool calls concurrently. Sequential execution unnecessarily doubles your latency — Claude grouped them in one response precisely because they're independent.</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Tool use with OpenAI</h2>
+<pre><code class="language-python">from openai import OpenAI
+import json
+
 client = OpenAI()
 
-class ResearchResult(BaseModel):
-    title: str
-    summary: str
-    confidence: float
-    sources: list[str]
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get current weather for a city.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string", "description": "City name"},
+                    "unit":     {"type": "string", "enum": ["celsius", "fahrenheit"]}
+                },
+                "required": ["location"]
+            }
+        }
+    }
+]
 
-response = client.beta.chat.completions.parse(
+response = client.chat.completions.create(
     model="gpt-4o",
-    messages=[{"role":"user","content":"Research quantum computing"}],
-    response_format=ResearchResult
+    tools=tools,
+    messages=[{"role": "user", "content": "Weather in Tokyo?"}]
 )
-result = response.choices[0].message.parsed  # typed ResearchResult object</div>
-</div>
 
-<!-- Section 6 -->
-<div class="section-block" id="section6">
-  <div class="section-marker">Section 6</div>
-  <h2>Tool Selection Failure Modes</h2>
+# Parse tool call
+tool_call = response.choices[0].message.tool_calls[0]
+args = json.loads(tool_call.function.arguments)
 
-  <h3>Wrong tool selected</h3>
-  <p>Model calls "search" when it should call "database_lookup". Fix: improve tool descriptions, add "do NOT use for X" guidance, reduce total tool count.</p>
+# Execute and return result
+weather_result = get_weather(**args)
 
-  <h3>Hallucinated arguments</h3>
-  <p>Model generates a plausible-looking but invalid argument (non-existent ID, wrong enum value). Fix: strict schema mode + validate before execution.</p>
-
-  <h3>Infinite tool loop</h3>
-  <p>Model keeps calling tools without reaching a final answer. Fix: max_iterations guard, explicit "finish" tool, or detect repeated identical calls.</p>
-
-  <h3>Tool result ignored</h3>
-  <p>Model generates final answer before incorporating tool result. Fix: use tool_choice="required" when tools are mandatory, or structure the prompt to force tool use.</p>
-</div>
-
-<!-- Section 7 -->
-<div class="section-block" id="section7">
-  <div class="section-marker">Section 7</div>
-  <h2>Production Toolkits</h2>
-
-  <div class="tools-grid">
-    <div class="tool-card">
-      <div class="tool-category">API Standards</div>
-      <div class="tool-name">OpenAI</div>
-      <div class="tool-desc">Native function calling guide</div>
+messages = [
+    {"role": "user", "content": "Weather in Tokyo?"},
+    response.choices[0].message,   # include assistant's tool_call message
+    {"role": "tool", "tool_call_id": tool_call.id, "content": str(weather_result)}
+]
+final = client.chat.completions.create(model="gpt-4o", messages=messages)
+print(final.choices[0].message.content)
+</code></pre>
     </div>
-    <div class="tool-card">
-      <div class="tool-category">API Standards</div>
-      <div class="tool-name">Anthropic</div>
-      <div class="tool-desc">Tool use guide</div>
-    </div>
-    <div class="tool-card">
-      <div class="tool-category">Framework</div>
-      <div class="tool-name">LangChain</div>
-      <div class="tool-desc">Tool definition and routing</div>
-    </div>
-    <div class="tool-card">
-      <div class="tool-category">Framework</div>
-      <div class="tool-name">LangGraph</div>
-      <div class="tool-desc">Tool node orchestration</div>
-    </div>
-    <div class="tool-card">
-      <div class="tool-category">Framework</div>
-      <div class="tool-name">Pydantic AI</div>
-      <div class="tool-desc">Type-safe tool definitions</div>
-    </div>
-    <div class="tool-card">
-      <div class="tool-category">Library</div>
-      <div class="tool-name">instructor</div>
-      <div class="tool-desc">Structured outputs for any model</div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Always handle <code>stop_reason == "tool_use"</code> explicitly.</strong> If you check for <code>"end_turn"</code> only and return early, you silently discard tool calls and the user gets a truncated response with no explanation.</p>
+<p><strong>Tool results must reference the correct <code>tool_use_id</code>.</strong> If you have 3 parallel tool calls and only return 2 results (mismatching IDs), the API returns a 400 error. Always return one result per tool call, in the correct ID order.</p>
+<p><strong>Keep descriptions accurate and specific.</strong> The model decides which tool to call based on descriptions alone. Vague descriptions ("process input") lead to wrong selections. Specific descriptions ("Search the web for current news and factual information; use for questions about recent events") lead to correct ones.</p>
+<p><strong>Tool schemas are part of your prompt budget.</strong> Complex schemas with many fields and long descriptions consume significant tokens on every call. Audit your schema for verbosity — a 2,000-token tool definition repeated across 1,000 requests is 2M tokens of overhead per day.</p>
     </div>
   </div>
 
-  <p style="margin-top: 1.5rem;"><strong>Best practices for production:</strong></p>
-  <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
-    <li><strong>Rate limiting:</strong> cache frequent identical tool calls (same weather query per city per hour)</li>
-    <li><strong>Tool versioning:</strong> tools are part of your API contract with the model. Schema changes can break existing deployments.</li>
-    <li><strong>Observability:</strong> log every tool call (name, args, result, latency) to your trace store</li>
-  </ul>
-</div>
-
-<!-- REFERENCES -->
-<div style="margin-top: 2.5rem;">
-  <h2>References</h2>
-  <div class="ref-group-title">Official Guides</div>
-  <ul class="ref-list">
-    <li><a href="https://platform.openai.com/docs/guides/function-calling" target="_blank">OpenAI function calling guide</a></li>
-    <li><a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use" target="_blank">Anthropic tool use guide</a></li>
-  </ul>
-  <div class="ref-group-title">Frameworks & Tools</div>
-  <ul class="ref-list">
-    <li><a href="https://langchain-ai.github.io/langgraph" target="_blank">LangGraph tool node docs</a></li>
-    <li><a href="https://python.useinstructor.com" target="_blank">instructor library</a></li>
-  </ul>
-</div>
-
-<div class="page-footer">
-  <span>GenAI Mindmap</span>
-  <span>Updated March 2026</span>
-</div>
-
-</div>
-
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/agent-patterns.html" style="color:var(--accent)">Agent Patterns</a> &bull; Last updated March 2026</p>
+  </footer>
 <nav class="concept-nav">
-  <a class="concept-nav-prev" href="execution-models.html">← LLM Execution Models</a>
+  <a class="concept-nav-prev" href="state-sessions.html">← State & Session Management for LLM Apps</a>
   <span class="concept-nav-cat">Agents & Orchestration</span>
-  <a class="concept-nav-next" href="multi-agent.html">→ Multi-Agent Systems</a>
+  <span></span>
 </nav>
 </body>
 </html>

@@ -1,18 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LangGraph - GenAI Mindmap</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LangGraph | GenAI Mindmap</title>
+  <meta name="description" content="A library for building stateful, graph-based agent workflows where nodes are LLM calls or tools and edges are control flow decisions, enabling complex cyclical agent patterns." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="LangGraph" />
+  <meta property="og:description" content="A library for building stateful, graph-based agent workflows where nodes are LLM calls or tools and edges are control flow decisions, enabling complex cyclical agent patterns." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/langgraph.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/langgraph.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "LangGraph | GenAI Mindmap",
+  "description": "A library for building stateful, graph-based agent workflows where nodes are LLM calls or tools and edges are control flow decisions, enabling complex cyclical agent patterns.",
+  "url": "https://genai4a11.github.io/concepts/langgraph.html",
+  "dateModified": "2026-03-24T04:34:54+00:00",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "LangGraph | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/langgraph.html"
+      }
+    ]
+  }
+}
+</script>
   <style>
     :root {
-      --indigo: #4f46e5;
-      --blue: #2563eb;
-      --sky: #38bdf8;
-      --green: #22c55e;
-      --rose: #f43f5e;
-      --amber: #f59e0b;
+      --accent: #059669;
+      --accent-dark: #047857;
       --text: #0f172a;
       --muted: #64748b;
       --border: #e2e8f0;
@@ -20,349 +73,68 @@
       --bg-white: #ffffff;
       --code-bg: #1e293b;
     }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      line-height: 1.6;
-    }
-
-    nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem 2rem;
-      background: #1a1f36;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      max-width: 100%;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .nav-brand {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: white;
-      text-decoration: none;
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    .nav-brand:hover {
-      color: var(--sky);
-    }
-
-    .nav-back {
-      font-size: 0.95rem;
-      color: #a0aec0;
-      text-decoration: none;
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    .nav-back:hover {
-      color: white;
-    }
-
-    .hero {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 4rem 2rem;
-      text-align: center;
-    }
-
-    .hero-tag {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.2);
-      padding: 0.5rem 1rem;
-      border-radius: 999px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      margin-bottom: 1rem;
-    }
-
-    .hero h1 {
-      font-size: 3rem;
-      font-weight: 700;
-      margin: 1rem 0;
-      line-height: 1.2;
-    }
-
-    .hero h1 em {
-      font-style: italic;
-      color: #c7d2fe;
-    }
-
-    .hero-sub {
-      font-size: 1.25rem;
-      opacity: 0.95;
-      max-width: 700px;
-      margin: 1.5rem auto;
-    }
-
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-      margin-top: 3rem;
-      max-width: 700px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .stat-num {
-      font-size: 1.75rem;
-      font-weight: 700;
-    }
-
-    .stat-label {
-      font-size: 0.875rem;
-      opacity: 0.9;
-    }
-
-    .page-wrap {
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: 3rem 2rem;
-    }
-
-    .toc-card {
-      background: var(--bg-white);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      padding: 2rem;
-      margin-bottom: 3rem;
-    }
-
-    .toc-card h3 {
-      font-size: 1.25rem;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-    }
-
-    .toc-list {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-    }
-
-    .toc-list li {
-      list-style: none;
-    }
-
-    .toc-list a {
-      display: block;
-      padding: 1rem;
-      border-radius: 0.5rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      text-decoration: none;
-      color: var(--text);
-      font-size: 0.95rem;
-      transition: all 0.2s;
-    }
-
-    .toc-list a:hover {
-      background: var(--indigo);
-      color: white;
-      border-color: var(--indigo);
-    }
-
-    .toc-list a::before {
-      content: attr(data-num);
-      font-weight: 700;
-      color: var(--indigo);
-      margin-right: 0.75rem;
-      display: inline-block;
-      width: 24px;
-      height: 24px;
-      line-height: 24px;
-      background: rgba(79, 70, 229, 0.1);
-      border-radius: 50%;
-      text-align: center;
-      font-size: 0.75rem;
-    }
-
-    .toc-list a:hover::before {
-      background: rgba(255, 255, 255, 0.3);
-      color: white;
-    }
-
-    .section-block {
-      background: var(--bg-white);
-      border: 1px solid var(--border);
-      border-radius: 1rem;
-      padding: 2.5rem;
-      margin-bottom: 3rem;
-    }
-
-    .section-marker {
-      display: inline-block;
-      color: var(--indigo);
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      margin-bottom: 1rem;
-    }
-
-    .section-block h2 {
-      font-size: 2rem;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-    }
-
-    .section-block p {
-      margin-bottom: 1rem;
-      line-height: 1.8;
-      color: var(--text);
-    }
-
-    .section-block ul, .section-block ol {
-      margin-left: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .section-block li {
-      margin-bottom: 0.75rem;
-      color: var(--text);
-      line-height: 1.7;
-    }
-
-    .example-box {
-      background: var(--code-bg);
-      color: #cbd5e1;
-      padding: 1.5rem;
-      border-radius: 0.5rem;
-      border-left: 4px solid var(--indigo);
-      margin: 1.5rem 0;
-      font-family: 'Fira Code', monospace;
-      font-size: 0.875rem;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      line-height: 1.5;
-    }
-
-    .callout {
-      padding: 1.5rem;
-      border-radius: 0.5rem;
-      margin: 1.5rem 0;
-      border-left: 4px solid;
-    }
-
-    .callout.blue {
-      background: #eff6ff;
-      border-left-color: var(--blue);
-      color: var(--text);
-    }
-
-    .callout.amber {
-      background: #fffbeb;
-      border-left-color: var(--amber);
-      color: var(--text);
-    }
-
-    .callout.green {
-      background: #f0fdf4;
-      border-left-color: var(--green);
-      color: var(--text);
-    }
-
-    .callout.rose {
-      background: #ffe4e6;
-      border-left-color: var(--rose);
-      color: var(--text);
-    }
-
-    .callout strong {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-      margin: 1.5rem 0;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--bg-white);
-      border: 1px solid var(--border);
-      border-radius: 0.5rem;
-      overflow: hidden;
-    }
-
-    table th {
-      background: var(--indigo);
-      color: white;
-      padding: 1rem;
-      text-align: left;
-      font-weight: 600;
-    }
-
-    table td {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border);
-      color: var(--text);
-    }
-
-    table tr:last-child td {
-      border-bottom: none;
-    }
-
-    table tr:hover {
-      background: var(--bg);
-    }
-
-    footer {
-      background: var(--bg-white);
-      border-top: 1px solid var(--border);
-      padding: 2rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.875rem;
-    }
-
-    strong {
-      color: var(--indigo);
-      font-weight: 600;
-    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
 </head>
 <body>
   <nav>
     <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
+    <a href="/concepts/agent-frameworks.html" class="nav-back">← Agent Frameworks</a>
   </nav>
 
   <div class="hero">
-    <span class="hero-tag">Agents & Orchestration</span>
+    <span class="hero-tag">Agent Frameworks</span>
     <h1><em>LangGraph</em></h1>
-    <p class="hero-sub">Build agentic systems as stateful graphs with cycles, branching, persistence, and human-in-the-loop capabilities.</p>
+    <p class="hero-sub">A library for building stateful, graph-based agent workflows where nodes are LLM calls or tools and edges are control flow decisions, enabling complex cyclical agent patterns.</p>
     <div class="hero-stats">
-      <div>
-        <div class="stat-num">Graph-Based</div>
-        <div class="stat-label">Architecture</div>
-      </div>
-      <div>
-        <div class="stat-num">Cyclic</div>
-        <div class="stat-label">Execution</div>
-      </div>
-      <div>
-        <div class="stat-num">Built-in</div>
-        <div class="stat-label">Persistence</div>
-      </div>
+      <div><div class="stat-num">Graph-based</div><div class="stat-label">Workflow</div></div>
+      <div><div class="stat-num">Stateful</div><div class="stat-label">Checkpointing</div></div>
+      <div><div class="stat-num">Cycles</div><div class="stat-label">Supported</div></div>
     </div>
   </div>
 
@@ -370,492 +142,226 @@
     <div class="toc-card">
       <h3>Table of Contents</h3>
       <ul class="toc-list">
-        <li><a href="#section-1" data-num="01">Why LangGraph</a></li>
-        <li><a href="#section-2" data-num="02">Core Concepts</a></li>
-        <li><a href="#section-3" data-num="03">Building Your First Graph</a></li>
-        <li><a href="#section-4" data-num="04">Persistence & Memory</a></li>
-        <li><a href="#section-5" data-num="05">Human-in-the-Loop</a></li>
-        <li><a href="#section-6" data-num="06">Multi-Agent Graphs</a></li>
-        <li><a href="#section-7" data-num="07">LangGraph vs Alternatives</a></li>
+        <li><a href="#s1" data-num="01">Why graphs for agents</a></li>
+        <li><a href="#s2" data-num="02">Core concepts: nodes, edges, state</a></li>
+        <li><a href="#s3" data-num="03">Building a simple agent</a></li>
+        <li><a href="#s4" data-num="04">Conditional edges and branching</a></li>
+        <li><a href="#s5" data-num="05">Human-in-the-loop with checkpoints</a></li>
+        <li><a href="#s6" data-num="06">Multi-agent graphs</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
       </ul>
     </div>
 
-    <div class="section-block" id="section-1">
+    <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-      <h2>Why LangGraph</h2>
-      <p>LangChain chains are fundamentally acyclic—they represent linear pipelines: input → model → output → next step → output. This works for RAG, simple chains, and tools but breaks down when you need agents that can make decisions, loop back, branch conditionally, or maintain complex state across multiple turns.</p>
-
-      <p><strong>The Problem with Linear Chains</strong></p>
-      <ul>
-        <li>No loops: Agent can't iterate—"Did my tool call work? Should I try again?"</li>
-        <li>No branching: Can't conditionally route based on runtime values</li>
-        <li>No explicit state: State flows implicitly through function returns</li>
-        <li>Hard to debug: Unclear what's happening at each step</li>
-        <li>No built-in checkpointing: Can't pause, inspect, resume, or audit long-running executions</li>
-      </ul>
-
-      <p><strong>LangGraph Solution</strong> LangGraph models agentic systems as directed graphs where nodes are functions and edges are state transitions. This enables:</p>
-      <ul>
-        <li><strong>Cycles:</strong> Loop until stopping condition (agent decides to stop, max iterations, error)</li>
-        <li><strong>Conditional routing:</strong> "If X, go to node A; else go to node B"</li>
-        <li><strong>Explicit state:</strong> All data flows through a structured state schema</li>
-        <li><strong>Persistence:</strong> Checkpoint after each node—resume from any point</li>
-        <li><strong>Human approval:</strong> Pause execution, get human input, resume with new state</li>
-        <li><strong>Observability:</strong> Each node and edge is visible for debugging and monitoring</li>
-      </ul>
-
-      <div class="callout blue">
-        <strong>Core Insight:</strong> Agents are just state machines. LangGraph lets you define them explicitly as graphs rather than hiding control flow inside nested loops and conditionals.
-      </div>
+<h2>Why graphs for agents</h2>
+<p>LangChain chains are DAGs: the control flow goes in one direction. ReAct agents can loop, but the loop structure is implicit — it's encoded in the prompt, not the framework. This makes them hard to visualise, debug, and extend.</p>
+<p>LangGraph makes the control flow <em>explicit</em>: you define a graph where each node is a computation (an LLM call, a tool, a human review step) and each edge is a transition rule (go to node B after node A; or go to B if condition is true, C otherwise). The graph can have cycles — that's the point.</p>
+<p>Result: you can draw your agent as a diagram, see exactly where it is at any moment, and add branches and loops without touching the LLM prompt.</p>
     </div>
 
-    <div class="section-block" id="section-2">
+    <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-      <h2>Core Concepts</h2>
-      <p>LangGraph has a few key building blocks:</p>
-
-      <p><strong>1. StateGraph</strong></p>
-      <p>The container for your graph. You define a state schema (a TypedDict or Pydantic model) that flows through all nodes.</p>
-
-      <p><strong>2. State Schema</strong></p>
-      <p>A Python TypedDict or Pydantic model defining what data moves through the graph:</p>
-      <div class="example-box">
+<h2>Core concepts: nodes, edges, state</h2>
+<pre><code class="language-python">from langgraph.graph import StateGraph, END
 from typing import TypedDict, Annotated
-from langgraph.graph import StateGraph
+import operator
 
+# State: what persists across nodes
 class AgentState(TypedDict):
-    messages: Annotated[list, "conversation history"]
-    user_query: str
-    tools_used: list[str]
+    messages: Annotated[list, operator.add]   # list that accumulates
+    step_count: int
     final_answer: str
-    iterations: int
 
-# Now you build a graph with this state
+# Node: a function that takes state and returns state updates
+def planner_node(state: AgentState) -> dict:
+    # ... call LLM ...
+    return {"messages": [{"role": "assistant", "content": "Step 1: Search for X"}]}
+
+def executor_node(state: AgentState) -> dict:
+    # ... execute tool ...
+    return {"messages": [{"role": "tool", "content": "Result: Y"}],
+            "step_count": state["step_count"] + 1}
+
+# Conditional edge: decide which node to go to next
+def should_continue(state: AgentState) -> str:
+    if state["step_count"] >= 5 or state.get("final_answer"):
+        return "end"
+    return "executor"   # loop back
+
+# Build the graph
 graph = StateGraph(AgentState)
-      </div>
+graph.add_node("planner",  planner_node)
+graph.add_node("executor", executor_node)
 
-      <p><strong>3. Nodes</strong></p>
-      <p>Functions that take state and return updated state. Each node runs a step of your system:</p>
-      <div class="example-box">
-def agent_node(state: AgentState) -> AgentState:
-    """LLM decides what to do next."""
-    messages = state["messages"]
-    response = model.invoke(messages)
-    return {
-        **state,
-        "messages": messages + [response],
-        "iterations": state["iterations"] + 1
-    }
+graph.set_entry_point("planner")
+graph.add_edge("planner", "executor")
+graph.add_conditional_edges("executor", should_continue, {
+    "executor": "executor",   # loop
+    "end":      END
+})
 
-def tool_node(state: AgentState) -> AgentState:
-    """Execute the tool the agent chose."""
-    last_message = state["messages"][-1]
-    tool_name = last_message.tool_calls[0]["name"]
-    tool = tools_by_name[tool_name]
-    result = tool.invoke(...)
-    return {
-        **state,
-        "messages": messages + [result],
-        "tools_used": state["tools_used"] + [tool_name]
-    }
-      </div>
-
-      <p><strong>4. Edges</strong></p>
-      <p>Transitions between nodes. Can be static (always go to B after A) or conditional (if X go to B, else go to C):</p>
-      <div class="example-box">
-# Static edge
-graph.add_edge("agent", "tools")
-
-# Conditional routing
-def should_continue(state: AgentState):
-    messages = state["messages"]
-    last_message = messages[-1]
-    if "tool_calls" in last_message:
-        return "tools"  # Go to tools node
-    else:
-        return "end"  # End execution
-
-graph.add_conditional_edges(
-    "agent",
-    should_continue,
-    {
-        "tools": "tools",
-        "end": END
-    }
-)
-      </div>
-
-      <p><strong>5. Compilation & Execution</strong></p>
-      <p>Once you build the graph, compile it and invoke with initial state:</p>
-      <div class="example-box">
-compiled_graph = graph.compile()
-
-initial_state = AgentState(
-    messages=[],
-    user_query="What's the weather?",
-    tools_used=[],
-    final_answer="",
-    iterations=0
-)
-
-result = compiled_graph.invoke(initial_state)
-print(result["final_answer"])
-      </div>
-
-      <div class="callout green">
-        <strong>Philosophy:</strong> Graphs are explicit. You can draw them on paper, understand the flow, and reason about behavior. This clarity is essential for agents in production.
-      </div>
+app = graph.compile()
+</code></pre>
     </div>
 
-    <div class="section-block" id="section-3">
+    <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-      <h2>Building Your First Graph</h2>
-      <p>Let's build a complete research agent using LangGraph:</p>
-
-      <div class="example-box">
-from langgraph.graph import StateGraph, END
+<h2>Building a simple agent</h2>
+<pre><code class="language-python">from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolNode
+from langchain_anthropic import ChatAnthropic
+from langchain.tools import tool
 from typing import TypedDict, Annotated
-from langchain_openai import ChatOpenAI
+import operator
 
-class ResearchState(TypedDict):
-    query: str
-    web_results: str
-    analysis: str
-    final_report: str
+@tool
+def search(query: str) -> str:
+    '''Search for information.'''
+    return f"Results for: {query}"
 
-graph = StateGraph(ResearchState)
-model = ChatOpenAI(model="gpt-4")
+tools = [search]
+llm = ChatAnthropic(model="claude-3-5-sonnet-20241022").bind_tools(tools)
 
-def research_node(state: ResearchState) -> ResearchState:
-    """Search the web for information."""
-    web_results = search_web(state["query"])
-    return {...state, "web_results": web_results}
+class State(TypedDict):
+    messages: Annotated[list, operator.add]
 
-def analyze_node(state: ResearchState) -> ResearchState:
-    """Analyze the search results."""
-    prompt = f"Analyze: {state['web_results']}"
-    analysis = model.invoke(prompt).content
-    return {...state, "analysis": analysis}
+def call_model(state: State) -> dict:
+    response = llm.invoke(state["messages"])
+    return {"messages": [response]}
 
-def report_node(state: ResearchState) -> ResearchState:
-    """Generate final report."""
-    prompt = f"Write report: {state['analysis']}"
-    report = model.invoke(prompt).content
-    return {...state, "final_report": report}
+def should_use_tools(state: State) -> str:
+    last = state["messages"][-1]
+    return "tools" if last.tool_calls else "end"
 
-# Build graph
-graph.add_node("research", research_node)
-graph.add_node("analyze", analyze_node)
-graph.add_node("report", report_node)
+graph = StateGraph(State)
+graph.add_node("model", call_model)
+graph.add_node("tools", ToolNode(tools))
 
-graph.add_edge("research", "analyze")
-graph.add_edge("analyze", "report")
-graph.add_edge("report", END)
+graph.set_entry_point("model")
+graph.add_conditional_edges("model", should_use_tools, {
+    "tools": "tools",
+    "end":   END
+})
+graph.add_edge("tools", "model")   # tool output goes back to model
 
-graph.set_entry_point("research")
-
-# Compile and run
-compiled = graph.compile()
-result = compiled.invoke({"query": "Latest AI breakthroughs"})
-print(result["final_report"])
-      </div>
-
-      <p><strong>Streaming Output</strong></p>
-      <p>For long-running graphs, stream intermediate results:</p>
-      <div class="example-box">
-for output in compiled.stream(initial_state):
-    for node_name, node_output in output.items():
-        print(f"{node_name}: {node_output}")
-        # Print each node's state as it completes
-      </div>
-
-      <div class="callout amber">
-        <strong>Tip:</strong> Use .stream() during development to see what's happening at each step. Use .invoke() in production when you only care about the final result.
-      </div>
+app = graph.compile()
+result = app.invoke({"messages": [{"role": "user", "content": "Search for Python web frameworks."}]})
+print(result["messages"][-1].content)
+</code></pre>
     </div>
 
-    <div class="section-block" id="section-4">
+    <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-      <h2>Persistence & Memory</h2>
-      <p>One of LangGraph's killer features: built-in checkpointing. Save state after every node, then resume from any point.</p>
+<h2>Conditional edges and branching</h2>
+<pre><code class="language-python">def route_based_on_intent(state: State) -> str:
+    '''Route to different agent based on query intent.'''
+    last_msg = state["messages"][-1].content.lower()
+    if any(w in last_msg for w in ["code", "python", "script", "function"]):
+        return "coding_agent"
+    elif any(w in last_msg for w in ["search", "find", "what is", "who is"]):
+        return "research_agent"
+    else:
+        return "general_agent"
 
-      <p><strong>SqliteSaver: Local Checkpointing</strong></p>
-      <div class="example-box">
-from langgraph.checkpoint.sqlite import SqliteSaver
+graph = StateGraph(State)
+graph.add_node("router",         lambda s: s)      # pass-through router node
+graph.add_node("coding_agent",   coding_agent_fn)
+graph.add_node("research_agent", research_agent_fn)
+graph.add_node("general_agent",  general_agent_fn)
 
-checkpointer = SqliteSaver(db_path="./langgraph.db")
-compiled = graph.compile(checkpointer=checkpointer)
-
-# First run
-result = compiled.invoke(
-    initial_state,
-    config={"configurable": {"thread_id": "user-123"}}
-)
-
-# Later: resume from where we left off
-result = compiled.invoke(
-    initial_state,
-    config={"configurable": {"thread_id": "user-123"}}
-)
-# Automatically picks up from last checkpoint
-      </div>
-
-      <p><strong>Thread-Based Conversation Memory</strong></p>
-      <p>Each user/conversation gets a unique thread_id. All checkpoints for that thread are saved and retrievable:</p>
-      <div class="example-box">
-# User 1's conversation thread
-config_1 = {"configurable": {"thread_id": "alice-thread-1"}}
-compiled.invoke(initial_state, config=config_1)
-
-# User 2's conversation thread
-config_2 = {"configurable": {"thread_id": "bob-thread-1"}}
-compiled.invoke(initial_state, config=config_2)
-
-# Get history of user 1's execution
-checkpointer = SqliteSaver(db_path="./langgraph.db")
-states = checkpointer.get_tuple("alice-thread-1")
-# → List of (config, values, next, checkpoint_id) tuples
-      </div>
-
-      <p><strong>PostgreSQL for Production</strong></p>
-      <p>For scaling to multiple workers, use PostgresSaver:</p>
-      <div class="example-box">
-from langgraph.checkpoint.postgres import PostgresSaver
-
-checkpointer = PostgresSaver(
-    conn_string="postgresql://user:pw@localhost:5432/langgraph"
-)
-compiled = graph.compile(checkpointer=checkpointer)
-# All checkpoints saved to shared DB
-# Multiple workers can resume same thread
-      </div>
-
-      <div class="callout blue">
-        <strong>Why Checkpointing Matters:</strong> If your LLM API times out, network drops, or you want to pause for human review mid-execution, you can resume exactly where you left off. No re-running expensive steps.
-      </div>
+graph.set_entry_point("router")
+graph.add_conditional_edges("router", route_based_on_intent, {
+    "coding_agent":   "coding_agent",
+    "research_agent": "research_agent",
+    "general_agent":  "general_agent",
+})
+# All paths converge to END
+graph.add_edge("coding_agent",   END)
+graph.add_edge("research_agent", END)
+graph.add_edge("general_agent",  END)
+</code></pre>
     </div>
 
-    <div class="section-block" id="section-5">
+    <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-      <h2>Human-in-the-Loop</h2>
-      <p>LangGraph natively supports pausing execution to get human approval, feedback, or correction.</p>
+<h2>Human-in-the-loop with checkpoints</h2>
+<pre><code class="language-python">from langgraph.checkpoint.memory import MemorySaver
 
-      <p><strong>interrupt_before: Pause Before a Node</strong></p>
-      <div class="example-box">
-compiled = graph.compile(
-    checkpointer=SqliteSaver(db_path="./langgraph.db"),
-    interrupt_before=["approve_node"]  # Pause before approve_node runs
-)
+# Checkpointer persists state between runs
+checkpointer = MemorySaver()   # or use SqliteSaver for persistence
 
-# Client submits request
-result = compiled.invoke(
-    initial_state,
-    config={"configurable": {"thread_id": "user-1"}}
-)
-# Execution pauses right before approve_node
-
-# Meanwhile, human reviews and approves in UI
-# Client resumes with human input
-human_input = {"approval": True, "feedback": "Looks good"}
-result = compiled.invoke(
-    human_input,  # New input merged with checkpointed state
-    config={"configurable": {"thread_id": "user-1"}}
-)
-      </div>
-
-      <p><strong>interrupt_after: Pause After a Node</strong></p>
-      <div class="example-box">
-compiled = graph.compile(
+app = graph.compile(
     checkpointer=checkpointer,
-    interrupt_after=["generate_node"]  # Pause after generating output
+    interrupt_before=["human_review"]   # pause before this node
 )
 
-# Execution pauses after generate_node completes
-# State includes the generated content
-# Human can review and decide next action
-      </div>
+# First run — executes up to human_review, then stops
+config = {"configurable": {"thread_id": "thread-42"}}
+result = app.invoke(
+    {"messages": [{"role": "user", "content": "Draft a blog post about LangGraph."}]},
+    config=config
+)
+print("Draft ready for review:")
+print(result["messages"][-1].content)
 
-      <p><strong>Streaming with Interrupts</strong></p>
-      <p>Stream events and pause for human decision:</p>
-      <div class="example-box">
-for event in compiled.stream(
-    initial_state,
-    config={"configurable": {"thread_id": "user-1"}}
-):
-    print(event)
-    # Node completes, pause for human
-    # Server sends "paused" event to UI
-    # UI shows human the state and waits for input
-    # Client resumes: invoke() again with thread_id
-      </div>
-
-      <div class="callout rose">
-        <strong>Common Pattern:</strong> Run agent, pause before critical action (send email, update database), show human the state, get approval, then resume. This is how you add guardrails to autonomous agents.
-      </div>
+# Human reviews, then resumes
+human_feedback = "Good, but add a section on checkpointing."
+result = app.invoke(
+    {"messages": [{"role": "user", "content": human_feedback}]},
+    config=config   # same thread_id = resume from checkpoint
+)
+</code></pre>
     </div>
 
-    <div class="section-block" id="section-6">
+    <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-      <h2>Multi-Agent Graphs</h2>
-      <p>LangGraph shines with multi-agent systems. Compose subgraphs, implement supervisor patterns, and route between specialists.</p>
+<h2>Multi-agent graphs</h2>
+<pre><code class="language-python">from langgraph.graph import StateGraph, END
 
-      <p><strong>Supervisor Pattern</strong></p>
-      <p>One agent acts as supervisor, deciding which specialist agent handles each task:</p>
-      <div class="example-box">
-# Specialist agents
-researcher_agent = build_agent("researcher_tools")
-analyst_agent = build_agent("analyst_tools")
-writer_agent = build_agent("writer_tools")
+# Build specialist subgraphs
+def build_research_subgraph():
+    sg = StateGraph(State)
+    sg.add_node("search", search_node)
+    sg.add_node("summarise", summarise_node)
+    sg.add_edge("search", "summarise")
+    sg.add_edge("summarise", END)
+    return sg.compile()
 
-agents = {
-    "researcher": researcher_agent,
-    "analyst": analyst_agent,
-    "writer": writer_agent
-}
+def build_writing_subgraph():
+    sg = StateGraph(State)
+    sg.add_node("outline", outline_node)
+    sg.add_node("write",   write_node)
+    sg.add_node("edit",    edit_node)
+    sg.add_edge("outline", "write")
+    sg.add_edge("write",   "edit")
+    sg.add_edge("edit",    END)
+    return sg.compile()
 
-class SupervisorState(TypedDict):
-    messages: list
-    next_agent: str  # supervisor chooses who goes next
+# Orchestrator graph uses subgraphs as nodes
+orchestrator = StateGraph(State)
+orchestrator.add_node("research", build_research_subgraph())
+orchestrator.add_node("writing",  build_writing_subgraph())
+orchestrator.set_entry_point("research")
+orchestrator.add_edge("research", "writing")
+orchestrator.add_edge("writing",  END)
 
-def supervisor_node(state: SupervisorState) -> SupervisorState:
-    """Route to appropriate specialist."""
-    messages = state["messages"]
-    # LLM decides: "The researcher should search, then analyst review"
-    decision = model.invoke(messages).content
-    return {...state, "next_agent": decision}
-
-graph = StateGraph(SupervisorState)
-graph.add_node("supervisor", supervisor_node)
-
-# Add all specialist agents as nodes
-for name, agent in agents.items():
-    graph.add_node(name, agent)
-
-# Supervisor decides routing
-def route_to_agent(state):
-    return state["next_agent"]
-
-graph.add_conditional_edges(
-    "supervisor",
-    route_to_agent,
-    {name: name for name in agents.keys()} | {"supervisor": "supervisor"}
-)
-
-# Everyone loops back to supervisor
-for name in agents.keys():
-    graph.add_edge(name, "supervisor")
-
-graph.set_entry_point("supervisor")
-      </div>
-
-      <p><strong>Subgraphs: Compose Graphs</strong></p>
-      <p>Reuse a graph as a node in another graph:</p>
-      <div class="example-box">
-# Build inner graph
-inner_graph = StateGraph(SomeState).compile()
-
-# Use as node in outer graph
-outer_graph = StateGraph(OuterState)
-outer_graph.add_node("subgraph", inner_graph.invoke)
-# When outer runs "subgraph" node, it invokes the entire inner graph
-      </div>
-
-      <p><strong>Team of Agents</strong></p>
-      <p>Multiple agents working in parallel on subtasks, then a coordinator combines results:</p>
-      <div class="example-box">
-from concurrent.futures import ThreadPoolExecutor
-
-def parallel_agents_node(state: TeamState) -> TeamState:
-    """Run multiple agents in parallel."""
-    subtasks = state["subtasks"]
-    
-    with ThreadPoolExecutor() as executor:
-        futures = {
-            executor.submit(agent.invoke, task): task
-            for task in subtasks
-        }
-        results = {task: future.result() for task, future in futures.items()}
-    
-    return {...state, "agent_results": results}
-      </div>
-
-      <div class="callout green">
-        <strong>Why Graphs for Multi-Agent:</strong> Instead of hand-coding orchestration logic, let LangGraph manage agent lifecycle, state passing, and retries. The graph is your spec.
-      </div>
+app = orchestrator.compile()
+</code></pre>
     </div>
 
-    <div class="section-block" id="section-7">
+    <div class="section-block" id="s7">
       <div class="section-marker">SECTION 07</div>
-      <h2>LangGraph vs Alternatives</h2>
-      <p>How does LangGraph compare to other agent frameworks?</p>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Framework</th>
-              <th>Model</th>
-              <th>State</th>
-              <th>Persistence</th>
-              <th>Best For</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>LangGraph</strong></td>
-              <td>Explicit state graph</td>
-              <td>Typed schema (TypedDict/Pydantic)</td>
-              <td>Built-in checkpointing (SQLite/Postgres)</td>
-              <td>Complex agents, production systems, transparency</td>
-            </tr>
-            <tr>
-              <td><strong>CrewAI</strong></td>
-              <td>Role-based agents with tools</td>
-              <td>Implicit (task → agent → output)</td>
-              <td>Limited</td>
-              <td>Simple multi-agent teams, quick prototypes</td>
-            </tr>
-            <tr>
-              <td><strong>AutoGen</strong></td>
-              <td>Conversational agents, human-in-loop</td>
-              <td>Implicit conversation history</td>
-              <td>None built-in</td>
-              <td>Multi-agent debate, interactive systems</td>
-            </tr>
-            <tr>
-              <td><strong>Raw LangChain</strong></td>
-              <td>Chains (acyclic)</td>
-              <td>Implicit (flow through chain)</td>
-              <td>None</td>
-              <td>Simple RAG, linear pipelines</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p><strong>When to Choose LangGraph:</strong></p>
-      <ul>
-        <li>You need explicit control over agent behavior (loops, branches, state)</li>
-        <li>Production requirements: resumability, auditability, human approval</li>
-        <li>Multi-agent systems where explicit routing and specialization matter</li>
-        <li>You want to test and debug agent behavior step by step</li>
-      </ul>
-
-      <p><strong>When to Choose Alternatives:</strong></p>
-      <ul>
-        <li><strong>CrewAI:</strong> Quick prototypes, simple "run N agents in sequence" patterns</li>
-        <li><strong>AutoGen:</strong> Interactive multi-agent debate or user-facing conversation</li>
-        <li><strong>Raw LangChain:</strong> Simple RAG or chains without agentic loops</li>
-      </ul>
-
-      <div class="callout blue">
-        <strong>Trend:</strong> As agents move to production, explicit state graphs (like LangGraph) win over implicit orchestration. You need visibility and control.
-      </div>
+<h2>Gotchas</h2>
+<p><strong>State schema must be consistent.</strong> All nodes must return updates that match the defined State TypedDict. A missing key or wrong type causes a runtime error that's hard to debug. Define your State carefully before building nodes.</p>
+<p><strong>Cycles require explicit termination conditions.</strong> A graph with a loop but no termination condition will run forever (until you hit max recursion or token limits). Always pair a cycle with a conditional edge that has an END path, and add a step counter as a safety net.</p>
+<p><strong>MemorySaver is not persistent.</strong> It stores state in RAM. For production, use <code>SqliteSaver</code> or <code>PostgresSaver</code> so checkpoints survive process restarts.</p>
+<p><strong>Streaming is different from invocation.</strong> <code>app.invoke()</code> returns the final state. <code>app.stream()</code> yields state after each node. For long-running agents, streaming lets you show progress to the user. Always use streaming for user-facing applications.</p>
     </div>
   </div>
 
   <footer>
-    <p>GenAI Mindmap • Concept Index • Last updated March 2026</p>
+    <p>GenAI Mindmap &bull; <a href="/concepts/agent-frameworks.html" style="color:var(--accent)">Agent Frameworks</a> &bull; Last updated March 2026</p>
   </footer>
 </body>
 </html>
