@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Output Control — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Structured Generation</span>
+  <h1>LLM <em>Output Control</em></h1>
+  <p class="hero-sub">JSON mode, constrained decoding, grammar-guided generation, and structured output libraries</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">prompt → schema → validated output</span>
+      <span class="stat-label">the guarantee chain</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">logit masking</span>
+      <span class="stat-label">how constraints work</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Pydantic + LLM</span>
+      <span class="stat-label">the production standard</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#problem-free-text" data-num="1">The problem with free-text output</a></li>
+      <li><a href="#native-structured" data-num="2">Native structured output modes</a></li>
+      <li><a href="#instructor-library" data-num="3">Instructor library</a></li>
+      <li><a href="#constrained-decoding" data-num="4">Constrained decoding with Outlines</a></li>
+      <li><a href="#grammar-lmql" data-num="5">Grammar-guided generation and LMQL</a></li>
+      <li><a href="#classification-choice" data-num="6">Classification and choice constraints</a></li>
+      <li><a href="#production-patterns" data-num="7">Production patterns</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. THE PROBLEM WITH FREE-TEXT OUTPUT ── -->
+  <div class="section-block" id="problem-free-text">
+    <div class="section-marker">01 — Core Challenge</div>
+    <h2>The Problem with Free-Text Output</h2>
+    <p>LLMs produce free text by default. Production systems need structured data: JSON objects, typed fields, validated schemas.</p>
+    
+    <p>Three approaches in order of reliability: (1) prompt engineering ("respond only in JSON"), (2) native structured output modes (OpenAI/Anthropic), (3) constrained decoding (grammar-guided token sampling).</p>
+    
+    <p>Why prompting alone fails: model can still produce preamble ("Sure! Here's the JSON: ..."), truncate mid-object, or add trailing text. Brittle at scale.</p>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Never use json.loads() on raw LLM output in production</strong> without a try/except and retry loop. Even "JSON mode" can produce subtly malformed output on edge cases.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. NATIVE STRUCTURED OUTPUT MODES ── -->
+  <div class="section-block" id="native-structured">
+    <div class="section-marker">02 — Provider-Native</div>
+    <h2>Native Structured Output Modes</h2>
+    <p><strong>OpenAI response_format:</strong> set to {"type": "json_object"} for best-effort JSON, or use response_format=MyPydanticModel with beta.chat.completions.parse for strict schema enforcement</p>
+    
+    <p><strong>Anthropic:</strong> pass tool definitions — model always returns valid tool_use blocks matching the schema</p>
+    
+    <p><strong>Strict mode (OpenAI):</strong> guarantees output exactly matches your JSON Schema. No extra fields, no missing required fields. Uses constrained decoding under the hood.</p>
+
+    <h3>OpenAI Strict Structured Output</h3>
+    <div class="example-box">from openai import OpenAI
+from pydantic import BaseModel
+from typing import Literal
+client = OpenAI()
+
+class DocumentAnalysis(BaseModel):
+    title: str
+    sentiment: Literal["positive", "negative", "neutral"]
+    key_points: list[str]
+    confidence: float
+    requires_human_review: bool
+
+response = client.beta.chat.completions.parse(
+    model="gpt-4o-2024-08-06",
+    messages=[
+        {"role": "system", "content": "Analyze the document and extract structured information."},
+        {"role": "user", "content": document_text}
+    ],
+    response_format=DocumentAnalysis
+)
+result: DocumentAnalysis = response.choices[0].message.parsed
+# result is a typed Pydantic object — no parsing needed</div>
+
+    <h3>Structured Output Methods Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Reliability</th><th>Schema support</th><th>Retry needed</th><th>Library</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Prompt ("return JSON")</td><td>Low</td><td>Informal</td><td>Often</td><td>None</td></tr>
+          <tr><td>json_object mode</td><td>Medium</td><td>None (any JSON)</td><td>Sometimes</td><td>OpenAI</td></tr>
+          <tr><td>Strict parse (Pydantic)</td><td>High</td><td>Full Pydantic</td><td>Rarely</td><td>OpenAI beta</td></tr>
+          <tr><td>Tool/function calling</td><td>High</td><td>JSON Schema</td><td>Rarely</td><td>OpenAI/Anthropic</td></tr>
+          <tr><td>Outlines (constrained)</td><td>Very high</td><td>Regex/EBNF/JSON</td><td>Almost never</td><td>Outlines</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 3. INSTRUCTOR LIBRARY ── -->
+  <div class="section-block" id="instructor-library">
+    <div class="section-marker">03 — Cross-Provider</div>
+    <h2>Instructor Library</h2>
+    <p><strong>instructor</strong> wraps any LLM (OpenAI, Anthropic, Gemini, local) and adds Pydantic validation + automatic retries. On validation failure: feeds the error back to the model with the original request — model self-corrects.</p>
+    
+    <p>Works across providers: single API, swap model without changing structured output code.</p>
+
+    <h3>Instructor Example</h3>
+    <div class="example-box">import instructor
+from anthropic import Anthropic
+from pydantic import BaseModel, validator
+
+client = instructor.from_anthropic(Anthropic())
+
+class ExtractedEntity(BaseModel):
+    name: str
+    entity_type: str
+    confidence: float
+    
+    @validator("confidence")
+    def confidence_range(cls, v):
+        assert 0 <= v <= 1, "confidence must be 0-1"
+        return v
+
+class ExtractionResult(BaseModel):
+    entities: list[ExtractedEntity]
+    summary: str
+
+# instructor handles validation + retries automatically
+result = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    response_model=ExtractionResult,
+    messages=[{"role": "user", "content": f"Extract entities from: {text}"}]
+)
+# result.entities is a validated list[ExtractedEntity]</div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>instructor's max_retries=3 parameter</strong> means the model gets up to 3 attempts to fix validation errors. For complex nested schemas, this dramatically reduces production failures.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. CONSTRAINED DECODING WITH OUTLINES ── -->
+  <div class="section-block" id="constrained-decoding">
+    <div class="section-marker">04 — Token-Level</div>
+    <h2>Constrained Decoding with Outlines</h2>
+    <p><strong>Constrained decoding:</strong> instead of sampling freely from the full vocabulary, mask out tokens that would violate the schema at each generation step</p>
+    
+    <p><strong>Outlines:</strong> open-source library that intercepts token logits and zeroes out invalid tokens before sampling. Works with any local model (Transformers, vLLM).</p>
+    
+    <p><strong>Supported constraints:</strong> JSON Schema, Pydantic models, regex patterns, EBNF grammars, choice from a list</p>
+
+    <h3>Outlines with Local Model</h3>
+    <div class="example-box">import outlines
+from pydantic import BaseModel
+
+model = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.2")
+
+class Movie(BaseModel):
+    title: str
+    director: str
+    year: int
+    genre: list[str]
+
+# Constrained generation — guaranteed valid JSON matching Movie schema
+generator = outlines.generate.json(model, Movie)
+movie = generator("Extract movie details from: The Godfather (1972) directed by Coppola")
+# movie is a Movie object — no parsing, no retries needed
+
+# Regex constraint
+phone_gen = outlines.generate.regex(model, r"\d{3}-\d{3}-\d{4}")
+phone = phone_gen("What's the phone number? Area code 555, number 867-5309")
+# guaranteed to produce NNN-NNN-NNNN format</div>
+
+    <h3>Outlines vs Native Structured Output</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>OpenAI strict mode</th><th>Outlines (local)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Guarantee</td><td>Schema-level</td><td>Token-level (absolute)</td></tr>
+          <tr><td>Latency</td><td>API round-trip</td><td>Local GPU</td></tr>
+          <tr><td>Model</td><td>GPT-4o only</td><td>Any GGUF/HF model</td></tr>
+          <tr><td>Grammar support</td><td>JSON Schema only</td><td>JSON, regex, EBNF</td></tr>
+          <tr><td>Cost</td><td>Per token</td><td>Infrastructure only</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 5. GRAMMAR-GUIDED GENERATION AND LMQL ── -->
+  <div class="section-block" id="grammar-lmql">
+    <div class="section-marker">05 — Grammar Approach</div>
+    <h2>Grammar-Guided Generation and LMQL</h2>
+    <p><strong>EBNF grammars:</strong> define the exact syntax of valid outputs. Any context-free grammar can be enforced.</p>
+    
+    <p><strong>llama.cpp grammar:</strong> --grammar or --grammar-file flag to enforce output format at inference time</p>
+    
+    <p><strong>LMQL (Language Model Query Language):</strong> SQL-like language for constrained generation with variables, conditionals, and loops</p>
+    
+    <p><strong>Guidance:</strong> Microsoft library for interleaving Python control flow with LLM generation. Template with {{gen ...}} blocks.</p>
+
+    <h3>llama.cpp Grammar for Structured Address</h3>
+    <div class="example-box"># address.gbnf
+root ::= city "," ws state ws zip
+city ::= [a-zA-Z ]+
+state ::= [A-Z][A-Z]
+zip ::= [0-9][0-9][0-9][0-9][0-9]
+ws ::= " "?
+
+# Usage:
+# ./llama-cli -m model.gguf --grammar-file address.gbnf \
+#   -p "What city is the Eiffel Tower in? Answer:"</div>
+  </div>
+
+  <!-- ── 6. CLASSIFICATION AND CHOICE CONSTRAINTS ── -->
+  <div class="section-block" id="classification-choice">
+    <div class="section-marker">06 — Specialized</div>
+    <h2>Classification and Choice Constraints</h2>
+    <p><strong>Multiple-choice:</strong> constrain output to exactly one of N options — eliminates ambiguous paraphrasing</p>
+    
+    <p><strong>Outlines generate.choice:</strong> guarantees output is one of the provided strings, no variations</p>
+
+    <h3>Choice Constraint for Classification</h3>
+    <div class="example-box">import outlines
+
+model = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.2")
+
+# Guarantee exactly one of these labels — no "Positive.", "POSITIVE", etc.
+sentiment = outlines.generate.choice(
+    model, ["positive", "negative", "neutral", "mixed"]
+)
+label = sentiment("Classify: 'The product works but shipping was slow'")
+# label is guaranteed to be one of the four strings
+
+# Token efficiency: first-token decoding for binary choices
+# Only one forward pass needed when choices diverge at token 1</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>For classification with >2 classes, constrained decoding is almost always more reliable</strong> than parsing free text. The latency cost is negligible compared to the reliability gain.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. PRODUCTION PATTERNS ── -->
+  <div class="section-block" id="production-patterns">
+    <div class="section-marker">07 — Deployment</div>
+    <h2>Production Patterns</h2>
+
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3><span class="badge">✓</span> Validate at the boundary</h3>
+        <ul>
+          <li>Always validate LLM output at the application layer with Pydantic, even when using strict mode</li>
+          <li>Defense in depth</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">⟲</span> Retry with error context</h3>
+        <ul>
+          <li>On validation failure, send the error message back to the model: "Your previous output failed validation: {error}. Please fix it."</li>
+          <li>Up to 3 retries</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">📋</span> Schema versioning</h3>
+        <ul>
+          <li>Treat your output schema as part of your API contract</li>
+          <li>Schema changes should be versioned</li>
+          <li>Test new schemas against your golden eval set before deploying</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">⚡</span> Graceful degradation</h3>
+        <ul>
+          <li>When structured output fails after retries, fall back to a simpler schema or return a "parsing failed" sentinel</li>
+          <li>Log failures for schema analysis</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Tools & Libraries</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Validation</div>
+        <div class="tool-name">instructor</div>
+        <div class="tool-desc">Cross-provider structured outputs with auto-retry</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Local</div>
+        <div class="tool-name">Outlines</div>
+        <div class="tool-desc">Constrained decoding for local models</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Generation</div>
+        <div class="tool-name">Guidance</div>
+        <div class="tool-desc">Interleave Python control flow with generation</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Query</div>
+        <div class="tool-name">LMQL</div>
+        <div class="tool-desc">SQL-like constrained generation language</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Schema</div>
+        <div class="tool-name">Pydantic</div>
+        <div class="tool-desc">Data validation and serialization</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangChain</div>
+        <div class="tool-desc">Output parsers and chains</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Inference</div>
+        <div class="tool-name">vLLM</div>
+        <div class="tool-desc">Guided decoding for batch inference</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Patterns</div>
+        <div class="tool-name">Marvin</div>
+        <div class="tool-desc">Pydantic integration for structured outputs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> instructor docs — <a href="https://python.useinstructor.com" target="_blank">python.useinstructor.com ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Outlines docs — <a href="https://outlines-dev.github.io/outlines" target="_blank">outlines-dev.github.io/outlines ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> OpenAI structured outputs guide — <a href="https://platform.openai.com/docs/guides/structured-outputs" target="_blank">platform.openai.com/docs ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Guidance — <a href="https://github.com/guidance-ai/guidance" target="_blank">github.com/guidance-ai/guidance ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> LMQL — <a href="https://lmql.ai" target="_blank">lmql.ai ↗</a></li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

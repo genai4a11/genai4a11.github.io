@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Training Techniques — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg); color: #e2e8f0;
+      border-radius: 10px; padding: 1.2rem;
+      margin: 1.2rem 0 1.5rem;
+      font-family: 'Fira Code', monospace; font-size: 0.8rem;
+      overflow-x: auto; line-height: 1.5;
+    }
+    .example-box code { color: #e2e8f0; }
+    .example-box em { color: #818cf8; font-style: italic; }
+
+    /* ── METHOD CARD ── */
+    .methods-list {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .methods-list { grid-template-columns: 1fr; } }
+    .method-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      display: flex; gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout strong { font-weight: 700; }
+
+    /* ── PRACTICE GRID ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">TRAINING INFRASTRUCTURE</span>
+  <h1>LLM <em>Training Techniques</em></h1>
+  <p class="hero-sub">Mixed precision, gradient checkpointing, distributed training, and the engineering that makes large-scale training tractable</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">BF16 + FP32 master weights</span>
+      <span class="stat-label">the standard setup</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">ZeRO Stage 1/2/3</span>
+      <span class="stat-label">DeepSpeed's progression</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">10–40× memory savings</span>
+      <span class="stat-label">checkpointing vs recompute</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#memory-problem" data-num="1">The memory problem</a></li>
+      <li><a href="#mixed-precision" data-num="2">Mixed precision</a></li>
+      <li><a href="#checkpointing" data-num="3">Gradient checkpointing</a></li>
+      <li><a href="#data-parallel" data-num="4">Data parallelism</a></li>
+      <li><a href="#zero-optimizer" data-num="5">ZeRO optimizer</a></li>
+      <li><a href="#tensor-pipeline" data-num="6">Tensor & pipeline</a></li>
+      <li><a href="#scheduling" data-num="7">Learning rate</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. MEMORY PROBLEM ── -->
+  <div class="section-block" id="memory-problem">
+    <div class="section-marker">01 — Challenge</div>
+    <h2>The Memory Problem</h2>
+    <p>Training a 7B model in FP32 requires: 7B × 4 bytes = 28 GB for weights alone. Add gradients (28 GB) + optimizer states (56 GB for Adam) = 112 GB minimum — exceeding a single A100's 80 GB VRAM. Solutions include mixed precision (halve weight memory), gradient checkpointing (trade compute for activation memory), and distributed training (spread across GPUs).</p>
+
+    <h3>Memory Breakdown for 7B Model Training</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Component</th><th>FP32</th><th>BF16 mixed precision</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Weights</strong></td><td>28 GB</td><td>14 GB (BF16) + 28 GB (FP32 master)</td></tr>
+          <tr><td><strong>Gradients</strong></td><td>28 GB</td><td>14 GB (BF16)</td></tr>
+          <tr><td><strong>Adam optimizer states</strong></td><td>56 GB</td><td>56 GB (FP32 always)</td></tr>
+          <tr><td><strong>Activations (seq 2K)</strong></td><td>20–40 GB</td><td>10–20 GB</td></tr>
+          <tr><td><strong>Total (rough)</strong></td><td>132–172 GB</td><td>102–122 GB</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Adam optimizer states are always FP32 regardless of mixed precision.</strong> They consume 2× the model size by themselves. This is why optimizer state sharding (ZeRO) is critical for scaling.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. MIXED PRECISION ── -->
+  <div class="section-block" id="mixed-precision">
+    <div class="section-marker">02 — Optimization</div>
+    <h2>Mixed Precision Training</h2>
+    <p><strong>BF16 vs FP16:</strong> BF16 has the same dynamic range as FP32 (8 exponent bits) while FP16 has a smaller range → overflow/underflow more likely. Use BF16 on A100/H100; FP16 on older V100s. FP8 (H100) halves memory again vs BF16 but requires per-tensor scaling.</p>
+
+    <p>The mixed precision recipe: (1) forward pass in BF16, (2) compute loss in FP32, (3) backward pass in BF16, (4) update FP32 master weights, (5) copy BF16 for next forward pass.</p>
+
+    <h3>PyTorch torch.amp Setup</h3>
+    <div class="example-box">
+import torch
+from torch.cuda.amp import GradScaler, autocast
+
+model = MyModel().cuda()
+optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4)
+scaler = GradScaler()  # only needed for FP16, not BF16
+
+for batch in dataloader:
+    optimizer.zero_grad()
+    # Forward pass in BF16
+    with autocast(dtype=torch.bfloat16):
+        outputs = model(batch["input_ids"])
+        loss = outputs.loss
+    # Backward pass
+    loss.backward()  # BF16 grads automatically upcast
+    # Gradient clipping (essential for stability)
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+    optimizer.step()
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Always use gradient clipping (max_norm=1.0) with mixed precision.</strong> Without it, a single large gradient can corrupt training.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. CHECKPOINTING ── -->
+  <div class="section-block" id="checkpointing">
+    <div class="section-marker">03 — Memory Trade-off</div>
+    <h2>Gradient Checkpointing</h2>
+    <p>A transformer's activations (intermediate outputs saved for backward pass) consume 10–40 GB for long sequences. Gradient checkpointing trades 30–40% extra compute for 5–10× less activation memory by recomputing activations during backward instead of saving them.</p>
+
+    <p>Selective checkpointing works well: only checkpoint expensive layers (attention, MLP). These are the main culprits for memory consumption.</p>
+
+    <h3>Checkpointing Example</h3>
+    <div class="example-box">
+from torch.utils.checkpoint import checkpoint
+
+# Without checkpointing: saves all activations (~40 GB for 7B)
+outputs = model(input_ids)
+
+# With gradient checkpointing (HuggingFace):
+model.gradient_checkpointing_enable()
+outputs = model(input_ids)  # activations recomputed during backward
+
+# Manual per-layer checkpointing:
+def forward(self, x):
+    x = checkpoint(self.attention_layer, x)  # recompute in backward
+    x = checkpoint(self.mlp_layer, x)
+    return x
+    </div>
+
+    <h3>Checkpointing Trade-offs</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Strategy</th><th>Memory saved</th><th>Compute overhead</th><th>Use case</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>None</strong></td><td>0%</td><td>0%</td><td>Fits in VRAM, inference</td></tr>
+          <tr><td><strong>Full (all layers)</strong></td><td>~60%</td><td>+30–40%</td><td>Always recommended for training</td></tr>
+          <tr><td><strong>Selective (attn only)</strong></td><td>~40%</td><td>+15–20%</td><td>When compute is the bottleneck</td></tr>
+          <tr><td><strong>Activation offload</strong></td><td>~80%</td><td>+50%</td><td>Extreme memory pressure</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 4. DATA PARALLELISM ── -->
+  <div class="section-block" id="data-parallel">
+    <div class="section-marker">04 — Distribution</div>
+    <h2>Data Parallelism: DDP and FSDP</h2>
+    <p><strong>Data parallelism:</strong> Each GPU holds a full copy of the model, processes a different mini-batch, gradients are averaged (all-reduce) across GPUs. <strong>DDP (Distributed Data Parallel)</strong> is PyTorch's standard. Each GPU: full model copy + full gradient copy + full optimizer state. Limited by single-GPU memory.</p>
+
+    <p><strong>FSDP (Fully Sharded Data Parallel)</strong> shards model weights + gradients + optimizer states across all GPUs. Each GPU holds 1/N of everything. Enables training models larger than single-GPU memory.</p>
+
+    <h3>FSDP Training Setup</h3>
+    <div class="example-box">
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp import ShardingStrategy
+
+model = MyTransformer()
+# Shard weights, gradients, AND optimizer states across all GPUs
+model = FSDP(
+    model,
+    sharding_strategy=ShardingStrategy.FULL_SHARD,  # ZeRO-3 equivalent
+    mixed_precision=MixedPrecision(
+        param_dtype=torch.bfloat16,
+        reduce_dtype=torch.bfloat16,
+        buffer_dtype=torch.bfloat16,
+    )
+)
+    </div>
+
+    <h3>DDP vs FSDP vs DeepSpeed ZeRO</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Memory savings</th><th>Communication overhead</th><th>Ease of use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>DDP</strong></td><td>None</td><td>Low</td><td>Easy</td></tr>
+          <tr><td><strong>FSDP (SHARD_GRAD_OP)</strong></td><td>Gradients + opt states</td><td>Medium</td><td>Medium</td></tr>
+          <tr><td><strong>FSDP (FULL_SHARD)</strong></td><td>Weights + grads + opt</td><td>Higher</td><td>Medium</td></tr>
+          <tr><td><strong>DeepSpeed ZeRO-3</strong></td><td>Same as FULL_SHARD</td><td>Higher</td><td>Complex config</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 5. ZERO OPTIMIZER ── -->
+  <div class="section-block" id="zero-optimizer">
+    <div class="section-marker">05 — State Sharding</div>
+    <h2>DeepSpeed ZeRO Optimizer</h2>
+    <p><strong>ZeRO (Zero Redundancy Optimizer):</strong> Three stages of sharding: Stage 1 shards optimizer states (4× reduction), Stage 2 shards optimizer states + gradients (8× reduction), Stage 3 shards optimizer states + gradients + parameters (full reduction — enables any model size). <strong>ZeRO-Infinity</strong> offloads optimizer states and/or parameters to CPU RAM or NVMe SSD for extreme scale.</p>
+
+    <h3>DeepSpeed Config for ZeRO-3</h3>
+    <div class="example-box">
+# ds_config.json
+{
+  "zero_optimization": {
+    "stage": 3,
+    "overlap_comm": true,
+    "contiguous_gradients": true,
+    "sub_group_size": 1e9,
+    "reduce_bucket_size": 5e8,
+    "offload_optimizer": {"device": "cpu"},  # ZeRO-Infinity
+    "offload_param": {"device": "cpu"}
+  },
+  "bf16": {"enabled": true},
+  "gradient_clipping": 1.0,
+  "train_micro_batch_size_per_gpu": 4,
+  "gradient_accumulation_steps": 8
+}
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>ZeRO-3 + CPU offload enables training 70B models on 8×A100s</strong> — but CPU-GPU communication adds 20–40% overhead. Benchmark before committing.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. TENSOR & PIPELINE ── -->
+  <div class="section-block" id="tensor-pipeline">
+    <div class="section-marker">06 — Advanced</div>
+    <h2>Tensor and Pipeline Parallelism</h2>
+    <p><strong>Tensor parallelism (TP):</strong> Split individual weight matrices across GPUs (e.g., split attention heads across GPUs). Very low latency — all-reduce per layer. Megatron-LM pioneered this.</p>
+
+    <p><strong>Pipeline parallelism (PP):</strong> Split model layers across GPUs (GPU 0 runs layers 0–8, GPU 1 runs 9–16, etc.). Bubbles in the pipeline reduce efficiency. Requires careful microbatch scheduling.</p>
+
+    <p><strong>Sequence parallelism:</strong> Split the sequence dimension across GPUs for ultra-long context training.</p>
+
+    <h3>Parallelism Strategies</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Strategy</th><th>What's split</th><th>Comm pattern</th><th>Used for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Data (DDP/FSDP)</strong></td><td>Input batches</td><td>All-reduce grads</td><td>Default for most</td></tr>
+          <tr><td><strong>Tensor</strong></td><td>Weight matrices</td><td>All-reduce per layer</td><td>Multi-node, large models</td></tr>
+          <tr><td><strong>Pipeline</strong></td><td>Model layers</td><td>Point-to-point</td><td>Very large models</td></tr>
+          <tr><td><strong>Sequence</strong></td><td>Sequence length</td><td>All-to-all</td><td>Long context (>32K)</td></tr>
+          <tr><td><strong>Mixture (3D)</strong></td><td>All three</td><td>Combined</td><td>Frontier training runs</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 7. LEARNING RATE ── -->
+  <div class="section-block" id="scheduling">
+    <div class="section-marker">07 — Stability</div>
+    <h2>Learning Rate Scheduling and Stability</h2>
+    <p><strong>Warmup:</strong> Ramp LR from 0 to target over first 1–5% of steps. Prevents early instability when weights are random. <strong>Cosine annealing:</strong> Decay LR following a cosine curve from target → 10% of target over training. Smooth, widely used.</p>
+
+    <p><strong>WSD (Warmup-Stable-Decay):</strong> Constant LR for most of training, then sharp cosine decay at end. Used by Mistral, enables mid-training checkpoint reuse.</p>
+
+    <p><strong>Loss spikes:</strong> Sudden loss increases during training are caused by bad batches, large gradients, or numerical instability. Fix: gradient clipping, skip-bad-batch logic, lower LR.</p>
+
+    <h3>Cosine Schedule with Warmup</h3>
+    <div class="example-box">
+from transformers import get_cosine_schedule_with_warmup
+total_steps = len(dataloader) * num_epochs
+warmup_steps = int(0.03 * total_steps)  # 3% warmup
+scheduler = get_cosine_schedule_with_warmup(
+    optimizer,
+    num_warmup_steps=warmup_steps,
+    num_training_steps=total_steps,
+    num_cycles=0.5  # single cosine cycle
+)
+    </div>
+
+    <h3>Scheduling Strategies</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3><span class="badge">🔥</span> Warmup Phase</h3>
+        <ul>
+          <li>Ramp from 0 → target over 1–5%</li>
+          <li>Prevents gradient explosion early</li>
+          <li>Standard 3% warmup for large models</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">〰️</span> Decay Phase</h3>
+        <ul>
+          <li>Cosine from target → 10% over rest</li>
+          <li>Smooth convergence, no abrupt drops</li>
+          <li>Proportional gains decrease over time</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">🛡️</span> Stability</h3>
+        <ul>
+          <li>Monitor loss for spikes</li>
+          <li>Gradient clipping always on</li>
+          <li>Skip bad batches if detected</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">⚙️</span> Tuning</h3>
+        <ul>
+          <li>Start warmup ~2–3% of total steps</li>
+          <li>Cosine decay rest of training</li>
+          <li>Monitor learning curve for anomalies</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Tools and Frameworks</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">PyTorch FSDP</div>
+        <div class="tool-desc">Native fully sharded data parallel.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Library</div>
+        <div class="tool-name">DeepSpeed</div>
+        <div class="tool-desc">Microsoft. ZeRO optimizer and beyond.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Megatron-LM</div>
+        <div class="tool-desc">NVIDIA. Tensor and pipeline parallelism.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Training</div>
+        <div class="tool-name">Axolotl</div>
+        <div class="tool-desc">End-to-end fine-tuning framework.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Training</div>
+        <div class="tool-name">LLM Foundry</div>
+        <div class="tool-desc">Composer/MosaicML stack.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Monitoring</div>
+        <div class="tool-name">W&B</div>
+        <div class="tool-desc">Weights & Biases. Experiment tracking.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Monitoring</div>
+        <div class="tool-name">TensorBoard</div>
+        <div class="tool-desc">TensorFlow. Real-time visualization.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">torchtrain (TorchTitan)</div>
+        <div class="tool-desc">PyTorch's native distributed training.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Rajbhandari, S. et al. (2019).
+        <em>ZeRO: Memory Optimizations Toward Training Trillion Parameter Models.</em>
+        Microsoft. arXiv:1910.02054. —
+        <a href="https://arxiv.org/abs/1910.02054" target="_blank">arxiv:1910.02054 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Zhao, Y. et al. (2023).
+        <em>Fully Sharded Data Parallel: A New Data Parallelism Paradigm.</em>
+        arXiv:2304.11277. —
+        <a href="https://arxiv.org/abs/2304.11277" target="_blank">arxiv:2304.11277 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Shoeybi, M. et al. (2019).
+        <em>Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism.</em>
+        NVIDIA. arXiv:1909.08053. —
+        <a href="https://arxiv.org/abs/1909.08053" target="_blank">arxiv:1909.08053 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Micikevicius, P. et al. (2017).
+        <em>Mixed Precision Training.</em>
+        NVIDIA. arXiv:1710.03740. —
+        <a href="https://arxiv.org/abs/1710.03740" target="_blank">arxiv:1710.03740 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Schulman, J. et al. (2017).
+        <em>Proximal Policy Optimization Algorithms.</em>
+        OpenAI. arXiv:1707.06347. —
+        <a href="https://arxiv.org/abs/1707.06347" target="_blank">arxiv:1707.06347 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> DeepSpeed documentation. <a href="https://deepspeed.ai/docs" target="_blank">deepspeed.ai/docs ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> PyTorch FSDP tutorial. <a href="https://pytorch.org/tutorials" target="_blank">pytorch.org/tutorials ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Megatron-LM on GitHub. <a href="https://github.com/NVIDIA/Megatron-LM" target="_blank">github.com/NVIDIA/Megatron-LM ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> NVIDIA training guide. <a href="https://docs.nvidia.com/deeplearning/performance" target="_blank">nvidia.com/deeplearning ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Blog &amp; Articles</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Microsoft. (2021). <em>Training Trillion-Parameter Models Using DeepSpeed and Megatron.</em> —
+        <a href="https://www.microsoft.com/en-us/research/blog/deepspeed-training-trillion/" target="_blank">microsoft.com ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        PyTorch. (2023). <em>Introducing FSDP for Distributed Training.</em> —
+        <a href="https://pytorch.org/blog/fsdp-distributed-training/" target="_blank">pytorch.org/blog ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        HuggingFace. (2023). <em>Distributed Training with HuggingFace and DeepSpeed.</em> —
+        <a href="https://huggingface.co/blog" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Memory Systems — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+      overflow-x: auto;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9f1239; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Agent Architecture</span>
+  <h1>Agent <em>Memory</em> Systems</h1>
+  <p class="hero-sub">How agents remember — working memory, episodic recall, semantic stores, and procedural knowledge</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">in-context → vector → database</span>
+      <span class="stat-label">the storage hierarchy</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">short-term + long-term</span>
+      <span class="stat-label">the two memory regimes</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">read → reason → write</span>
+      <span class="stat-label">the memory loop</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-agents-memory" data-num="1">Why agents need memory</a></li>
+      <li><a href="#working-memory" data-num="2">Working memory</a></li>
+      <li><a href="#episodic-memory" data-num="3">Episodic memory</a></li>
+      <li><a href="#semantic-memory" data-num="4">Semantic memory</a></li>
+      <li><a href="#procedural-memory" data-num="5">Procedural memory</a></li>
+      <li><a href="#memgpt-architecture" data-num="6">MemGPT & long-context</a></li>
+      <li><a href="#production-patterns" data-num="7">Production patterns</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY AGENTS NEED MEMORY ── -->
+  <div class="section-block" id="why-agents-memory">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>Why Agents Need Memory</h2>
+    <p>An LLM has no persistent state between calls — every call starts from a blank context window. Agents need memory to maintain conversation history, recall facts from past interactions, learn from past task outcomes, store retrieved knowledge temporarily, and persist user preferences across sessions.</p>
+
+    <p>Raw pretraining teaches a model to predict plausible continuations. Without memory, an agent cannot build coherent long-term behavior. Four memory types (inspired by cognitive science) address different needs:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Working memory:</strong> active context (the current prompt)</li>
+      <li style="margin: 0.5rem 0;"><strong>Episodic memory:</strong> past events and interactions</li>
+      <li style="margin: 0.5rem 0;"><strong>Semantic memory:</strong> facts and knowledge</li>
+      <li style="margin: 0.5rem 0;"><strong>Procedural memory:</strong> learned skills and patterns</li>
+    </ul>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>The context window IS the agent's working memory.</strong> When it fills up, old information is lost. Memory systems exist to decide what to keep, what to compress, and what to offload to external storage.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. WORKING MEMORY ── -->
+  <div class="section-block" id="working-memory">
+    <div class="section-marker">02 — Current Context</div>
+    <h2>Working Memory: The Context Window</h2>
+    <p>Everything in the current prompt is working memory. Most flexible, most expensive, limited by context length. Management strategies decide what to keep as conversational history versus what to summarize or discard.</p>
+
+    <h3>Management Strategies</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Sliding window:</strong> drop oldest messages as new ones arrive</li>
+      <li style="margin: 0.5rem 0;"><strong>Summary compression:</strong> summarize old messages to recover tokens</li>
+      <li style="margin: 0.5rem 0;"><strong>Selective retention:</strong> keep only salient messages marked for importance</li>
+    </ul>
+
+    <p style="margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Example: sliding window + summary memory</strong></p>
+    <div class="example-box">from collections import deque
+from openai import OpenAI
+
+client = OpenAI()
+
+class SlidingWindowMemory:
+    def __init__(self, max_messages=20, summary_threshold=15):
+        self.messages = deque(maxlen=max_messages)
+        self.summary = ""
+        self.summary_threshold = summary_threshold
+    
+    def add(self, role: str, content: str):
+        self.messages.append({"role": role, "content": content})
+        if len(self.messages) >= self.summary_threshold:
+            self._compress()
+    
+    def _compress(self):
+        to_summarize = list(self.messages)[:10]
+        summary_response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "user", "content": f"Summarize this conversation concisely:\n{to_summarize}"}
+            ]
+        )
+        self.summary = summary_response.choices[0].message.content
+        for _ in range(10):
+            if self.messages:
+                self.messages.popleft()
+    
+    def get_context(self) -> list:
+        prefix = [{"role": "system", "content": f"Previous context: {self.summary}"}] if self.summary else []
+        return prefix + list(self.messages)</div>
+
+    <h3>Working Memory Strategies</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Strategy</th><th>Memory preserved</th><th>Quality</th><th>Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Sliding window</td><td>Recent N messages</td><td>Loses early context</td><td>Fixed</td></tr>
+          <tr><td>Summarization</td><td>Compressed history</td><td>May lose details</td><td>Extra LLM call</td></tr>
+          <tr><td>Selective retention</td><td>Marked important items</td><td>Best quality</td><td>Extra LLM calls</td></tr>
+          <tr><td>Full history</td><td>Everything</td><td>Perfect recall</td><td>Grows linearly</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 3. EPISODIC MEMORY ── -->
+  <div class="section-block" id="episodic-memory">
+    <div class="section-marker">03 — Past Events</div>
+    <h2>Episodic Memory: Vector Stores</h2>
+    <p>Episodic memory records past events and interactions, retrievable by semantic similarity to current context. Implementation: embed each memory (conversation turn, task outcome, observation) → store in vector DB → at query time, retrieve top-k most similar memories → inject into context.</p>
+
+    <p style="margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Example: episodic memory with ChromaDB</strong></p>
+    <div class="example-box">import chromadb
+from openai import OpenAI
+
+client = OpenAI()
+chroma = chromadb.Client()
+collection = chroma.create_collection("agent_episodes")
+
+def store_episode(content: str, metadata: dict):
+    embedding = client.embeddings.create(
+        model="text-embedding-3-small", input=content).data[0].embedding
+    collection.add(
+        embeddings=[embedding],
+        documents=[content],
+        metadatas=[metadata],
+        ids=[f"ep_{metadata['timestamp']}"]
+    )
+
+def recall_relevant(query: str, k: int = 5) -> list[str]:
+    q_emb = client.embeddings.create(
+        model="text-embedding-3-small", input=query).data[0].embedding
+    results = collection.query(query_embeddings=[q_emb], n_results=k)
+    return results["documents"][0]
+
+# Store an episode after each task
+store_episode("User asked about Python async; I explained asyncio and provided examples.",
+              {"timestamp": "2024-01-15T10:30:00", "task_type": "coding", "success": True})
+
+# Retrieve before responding to new task
+relevant = recall_relevant("How do I handle concurrent API calls in Python?")</div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Add metadata to every stored episode:</strong> timestamp, task type, success/failure, user ID. This enables filtered retrieval ("find similar successful coding tasks from the last week") rather than pure semantic search.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. SEMANTIC MEMORY ── -->
+  <div class="section-block" id="semantic-memory">
+    <div class="section-marker">04 — Knowledge & Facts</div>
+    <h2>Semantic Memory: Knowledge Bases</h2>
+    <p>Semantic memory is factual knowledge about the world, domain, or user — not tied to specific events. Sources include product documentation, user profile data, domain knowledge bases, and learned facts. Differs from episodic: episodic = "what happened during task X"; semantic = "this user prefers Python; the API rate limit is 1000/hour".</p>
+
+    <p style="margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Example: user preference semantic store</strong></p>
+    <div class="example-box">class UserSemanticMemory:
+    def __init__(self):
+        self.facts = {}  # key-value for structured facts
+        self.preferences = []  # free-text preferences
+    
+    def learn_preference(self, preference: str):
+        """Extract and store user preference from conversation."""
+        self.preferences.append(preference)
+    
+    def get_context_str(self) -> str:
+        prefs = "\n".join(f"- {p}" for p in self.preferences[-10:])
+        facts = "\n".join(f"- {k}: {v}" for k, v in self.facts.items())
+        return f"User facts:\n{facts}\n\nUser preferences:\n{prefs}"
+
+# Auto-extract preferences with LLM
+def extract_preferences(conversation: str) -> list[str]:
+    resp = client.chat.completions.create(model="gpt-4o-mini", messages=[
+        {"role": "user", "content": f"Extract any user preferences from: {conversation}\nReturn as JSON list."}
+    ], response_format={"type": "json_object"})
+    return json.loads(resp.choices[0].message.content).get("preferences", [])</div>
+
+    <h3>Semantic Memory Storage Options</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Type</th><th>Storage</th><th>Retrieval</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Key-value facts</td><td>Redis / dict</td><td>Exact key lookup</td><td>Structured user data</td></tr>
+          <tr><td>Vector embeddings</td><td>Vector DB</td><td>Semantic similarity</td><td>Unstructured knowledge</td></tr>
+          <tr><td>Graph (KG)</td><td>Neo4j / NetworkX</td><td>Graph traversal</td><td>Relational knowledge</td></tr>
+          <tr><td>SQL</td><td>Postgres</td><td>SQL queries</td><td>Structured, queryable</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 5. PROCEDURAL MEMORY ── -->
+  <div class="section-block" id="procedural-memory">
+    <div class="section-marker">05 — Learned Skills</div>
+    <h2>Procedural Memory: Skills and Patterns</h2>
+    <p>Procedural memory is "how to do things" — stored as few-shot examples, tool definitions, workflow templates, or fine-tuned weights. Retrieval-augmented few-shot: store (task_type → example_pairs) in a vector DB; retrieve relevant examples at query time based on current task using them as templates.</p>
+
+    <p>Skills as memory: agent stores successful task solutions; retrieves similar solutions when facing new tasks; uses them as templates. This is more scalable than fine-tuning and easier to update.</p>
+
+    <p style="margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Example: procedural memory with dynamic few-shot retrieval</strong></p>
+    <div class="example-box">class ProceduralMemory:
+    def __init__(self):
+        self.skills = []  # list of {task_desc, solution, embedding}
+    
+    def store_skill(self, task_description: str, solution: str):
+        emb = embed(task_description)
+        self.skills.append({
+            "task": task_description,
+            "solution": solution,
+            "embedding": emb
+        })
+    
+    def retrieve_examples(self, current_task: str, k=3) -> list[dict]:
+        q_emb = embed(current_task)
+        scored = [(cosine_sim(q_emb, s["embedding"]), s) for s in self.skills]
+        return [s for _, s in sorted(scored, reverse=True)[:k]]</div>
+  </div>
+
+  <!-- ── 6. MEMGPT ARCHITECTURE ── -->
+  <div class="section-block" id="memgpt-architecture">
+    <div class="section-marker">06 — Explicit Memory</div>
+    <h2>MemGPT and Long-Context Architectures</h2>
+    <p><strong>MemGPT:</strong> model manages its own memory explicitly — decides what to store in "external memory" (vector DB) vs keep in context window, using special memory functions. Letta (MemGPT evolved) is production-ready stateful agent framework with built-in memory management.</p>
+
+    <h3>Memory Functions</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><code style="background: #f0f0f0; padding: 0.2rem 0.4rem; border-radius: 3px;">archival_memory_insert()</code> — Store important information for long-term recall</li>
+      <li style="margin: 0.5rem 0;"><code style="background: #f0f0f0; padding: 0.2rem 0.4rem; border-radius: 3px;">archival_memory_search()</code> — Search long-term memory</li>
+      <li style="margin: 0.5rem 0;"><code style="background: #f0f0f0; padding: 0.2rem 0.4rem; border-radius: 3px;">core_memory_append()</code> — Update persona/human profile</li>
+    </ul>
+
+    <p style="margin-top: 1rem; margin-bottom: 0.5rem;"><strong>Example: MemGPT memory function calling</strong></p>
+    <div class="example-box">SYSTEM: You have the following memory tools available:
+- archival_memory_insert(content): Store important information
+- archival_memory_search(query): Search your long-term memory
+- core_memory_append(name, content): Update your persona/human profile
+
+Your core memory:
+[PERSONA]: You are a helpful assistant who remembers past interactions.
+[HUMAN]: Name: Deepak. Prefers Python. Works in AI/ML.
+
+# Agent decides to store new information:
+# archival_memory_insert("User mentioned building a RAG system for legal documents")</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>MemGPT requires reliable function calling.</strong> Weak models forget to call memory functions or call them incorrectly. Use GPT-4o or Claude 3.5 class models.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. PRODUCTION PATTERNS ── -->
+  <div class="section-block" id="production-patterns">
+    <div class="section-marker">07 — Practical Approaches</div>
+    <h2>Production Memory Patterns</h2>
+
+    <h3>Core Strategies</h3>
+    <div class="methods-list">
+
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Tiered Storage <em>— hot, warm, cold</em></h3>
+          <p><strong>Hot tier:</strong> context window (last N messages). <strong>Warm tier:</strong> in-memory vector store (session). <strong>Cold tier:</strong> persistent vector DB (across sessions). Each tier is cheaper but slower to retrieve.</p>
+          <ul>
+            <li>Context window: ~1M tokens (GPT-4 Turbo)</li>
+            <li>Session memory: retrieval in milliseconds</li>
+            <li>Persistent DB: retrieval in seconds</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Memory Consolidation <em>— compress & prune</em></h3>
+          <p>Periodically (end of session, or every N turns) run consolidation: summarize episodic memories, extract semantic facts, prune redundant entries. Prevents unbounded memory growth.</p>
+          <ul>
+            <li>Consolidation every 50–100 messages</li>
+            <li>Merge similar episodes into summaries</li>
+            <li>Archive old data to cold storage</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Memory Scoping <em>— governance</em></h3>
+          <p>Scope memories to: user (private to one user), session (cleared after session ends), agent (shared across all users of one agent), team (shared across a user's agents). Clear data governance.</p>
+          <ul>
+            <li>User scope: most restrictive, highest privacy</li>
+            <li>Session scope: temporary, fast cleanup</li>
+            <li>Agent scope: enables cross-user learning</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Forgetting & Privacy <em>— TTL & erasure</em></h3>
+          <p>Implement TTL (time-to-live) on episodic memories. Provide user-facing "forget this" functionality. Comply with GDPR right-to-erasure for user memory stores.</p>
+          <ul>
+            <li>Default TTL: 90 days for episodic memories</li>
+            <li>User deletion requests: immediate erasure</li>
+            <li>Compliance audits: trace memory deletion</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <h3>Memory Infrastructure Tools</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangGraph</div>
+        <div class="tool-desc">Checkpointer for multi-turn memory persistence</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Agent</div>
+        <div class="tool-name">Letta / MemGPT</div>
+        <div class="tool-desc">Stateful agent with explicit memory management</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Memory Store</div>
+        <div class="tool-name">mem0</div>
+        <div class="tool-desc">User memory platform for agents and AI apps</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Memory Store</div>
+        <div class="tool-name">Zep</div>
+        <div class="tool-desc">Long-term memory for LLM applications</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Observability</div>
+        <div class="tool-name">LangSmith</div>
+        <div class="tool-desc">Debugging & tracing memory & LLM chains</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">ChromaDB</div>
+        <div class="tool-desc">Embedded vector store for episodes</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">Qdrant</div>
+        <div class="tool-desc">Scalable vector DB for production</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Cache</div>
+        <div class="tool-name">Redis</div>
+        <div class="tool-desc">Fast key-value store for semantic facts</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">References</div>
+    <h2>Further Reading</h2>
+
+    <div class="ref-group-title">Papers & Research</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-paper">Paper</span> Packer, C. et al. (2023). <em>MemGPT: Towards LLMs as Operating Systems.</em> arxiv:2310.08560 — <a href="https://arxiv.org/abs/2310.08560" target="_blank">arxiv.org ↗</a></li>
+      <li><span class="ref-badge badge-paper">Paper</span> Wang, C. et al. (2023). <em>Cognitive Architectures for Language Agents.</em> arxiv:2309.02427 — <a href="https://arxiv.org/abs/2309.02427" target="_blank">arxiv.org ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Documentation</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> Letta Documentation — <a href="https://letta.ai/docs" target="_blank">letta.ai/docs ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> mem0 Documentation — <a href="https://mem0.ai" target="_blank">mem0.ai ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> LangGraph Memory & Checkpointing — <a href="https://langchain-ai.github.io/langgraph/concepts/memory" target="_blank">langchain-ai.github.io ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Zep — <a href="https://docs.getzep.com" target="_blank">getzep.com ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Guides & Articles</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">Blog</span> Anthropic on Context Windows & Long Context — <a href="https://www.anthropic.com/research/many-shot-jailbreaking" target="_blank">anthropic.com ↗</a></li>
+      <li><span class="ref-badge badge-blog">Blog</span> LangChain Memory Patterns — <a href="https://blog.langchain.dev" target="_blank">blog.langchain.dev ↗</a></li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

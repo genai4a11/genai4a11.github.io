@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Hardware Guide — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #dcfce7; border-left: 3px solid var(--green); color: #15803d; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9f1239; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── PRACTICE GRID ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">INFRASTRUCTURE</span>
+  <h1>AI <em>Hardware</em> Guide</h1>
+  <p class="hero-sub">H100 vs A100 vs MI300X, cloud vs on-prem, GPU memory math, and picking the right hardware for training and inference.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">HBM3e memory bandwidth</span>
+      <span class="stat-label">the inference bottleneck</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">NVLink + NVSwitch</span>
+      <span class="stat-label">the multi-GPU interconnect</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">TCO over 3 years</span>
+      <span class="stat-label">the real cost metric</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-hardware-matters" data-num="1">Why hardware matters</a></li>
+      <li><a href="#h100-deep-dive" data-num="2">H100 deep dive</a></li>
+      <li><a href="#gpu-comparison" data-num="3">A100 vs H100 vs H200</a></li>
+      <li><a href="#amd-alternatives" data-num="4">AMD MI300X &amp; alternatives</a></li>
+      <li><a href="#cloud-vs-prem" data-num="5">Cloud vs on-prem</a></li>
+      <li><a href="#memory-math" data-num="6">Memory math &amp; sizing</a></li>
+      <li><a href="#topology" data-num="7">Multi-GPU topology</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY HARDWARE MATTERS ── -->
+  <div class="section-block" id="why-hardware-matters">
+    <div class="section-marker">01 — Fundamentals</div>
+    <h2>Why Hardware Matters for LLMs</h2>
+    <p><strong>Critical insight: LLM inference is memory-bandwidth bound, not compute bound.</strong> The bottleneck is moving weights from HBM to compute cores, not doing the multiplications.</p>
+
+    <p><strong>Memory bandwidth determines tokens/second:</strong> more bandwidth = faster inference. This is why H100 SXM (3.35 TB/s) is ~3× faster at inference than A100 (2 TB/s) for the same model.</p>
+
+    <p><strong>VRAM determines maximum model size:</strong> model weights + KV cache + activations must fit in GPU memory. An A100 (80 GB) can serve a 40B model in FP16; H100 has the same capacity but more bandwidth.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>GPU</th><th>VRAM</th><th>Memory BW</th><th>FP16 TFLOPS</th><th>FP8 TFLOPS</th><th>TDP</th><th>Street price</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>A100 SXM 80GB</strong></td><td>80 GB HBM2e</td><td>2 TB/s</td><td>312</td><td>—</td><td>400W</td><td>~$25K</td></tr>
+          <tr><td><strong>H100 SXM 80GB</strong></td><td>80 GB HBM3</td><td>3.35 TB/s</td><td>989</td><td>1979</td><td>700W</td><td>~$30K</td></tr>
+          <tr><td><strong>H200 SXM 141GB</strong></td><td>141 GB HBM3e</td><td>4.8 TB/s</td><td>989</td><td>1979</td><td>700W</td><td>~$35K</td></tr>
+          <tr><td><strong>A10G 24GB</strong></td><td>24 GB GDDR6</td><td>600 GB/s</td><td>125</td><td>—</td><td>150W</td><td>~$3.5K</td></tr>
+          <tr><td><strong>L4 24GB</strong></td><td>24 GB GDDR6</td><td>300 GB/s</td><td>242</td><td>485</td><td>72W</td><td>~$2.5K</td></tr>
+          <tr><td><strong>L40S 48GB</strong></td><td>48 GB GDDR6</td><td>864 GB/s</td><td>362</td><td>733</td><td>350W</td><td>~$10K</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Memory bandwidth is the real bottleneck for inference.</strong> A lower-cost GPU with higher bandwidth can outperform a more expensive GPU with lower bandwidth on serving latency. Always check TB/s, not just TFLOPS.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. H100 DEEP DIVE ── -->
+  <div class="section-block" id="h100-deep-dive">
+    <div class="section-marker">02 — NVIDIA's Flagship</div>
+    <h2>H100 Deep Dive</h2>
+    <p><strong>Three SKUs:</strong> H100 SXM (fastest, only in DGX/HGX nodes, NVLink), H100 PCIe (fits standard servers, slower), H100 NVL (dual-GPU module).</p>
+
+    <h3>Key Features</h3>
+    <p><strong>Transformer Engine:</strong> hardware-accelerated FP8 matrix multiply — 2× throughput vs FP16 at near-identical quality with per-tensor scaling.</p>
+
+    <p><strong>NVLink 4.0:</strong> 900 GB/s GPU-to-GPU bandwidth within a node (8 GPUs). Critical for tensor parallelism.</p>
+
+    <p><strong>FlashAttention-3 optimized:</strong> uses async tensor cores + warp specialization for maximum utilization on Hopper architecture.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>H100 SXM is the standard for serious training and high-throughput inference.</strong> H100 PCIe is 30–40% slower due to PCIe bandwidth bottleneck — avoid for large models or high QPS.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. GPU COMPARISON ── -->
+  <div class="section-block" id="gpu-comparison">
+    <div class="section-marker">03 — Selection Guide</div>
+    <h2>A100 vs H100 vs H200</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>GPU</th><th>Best for</th><th>Avoid when</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>A100 80GB</strong></td><td>Cost-effective inference, fine-tuning</td><td>Frontier training, FP8 needed</td></tr>
+          <tr><td><strong>H100 SXM</strong></td><td>Training, high-QPS inference, FP8</td><td>Budget constrained</td></tr>
+          <tr><td><strong>H200</strong></td><td>Very large models needing 141GB VRAM</td><td>Don't need the extra memory</td></tr>
+          <tr><td><strong>A10G/L4</strong></td><td>Dev/staging, small model serving</td><td>Any large model</td></tr>
+          <tr><td><strong>L40S</strong></td><td>Inference (no NVLink), rendering</td><td>Multi-GPU training</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>H200 vs H100: The Decision Point</h3>
+    <p><strong>H200 vs H100:</strong> same compute (Hopper architecture), but 141 GB HBM3e vs 80 GB HBM3, and 4.8 TB/s vs 3.35 TB/s bandwidth. H200 fits Llama 3 405B in BF16 on 4 GPUs vs 8 GPUs for H100.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>The H200's main advantage is VRAM capacity, not compute.</strong> For models that fit in H100's 80 GB, the performance difference is bandwidth only (~43% faster). Calculate whether you actually need 141 GB before paying the premium.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. AMD AND ALTERNATIVES ── -->
+  <div class="section-block" id="amd-alternatives">
+    <div class="section-marker">04 — Competition</div>
+    <h2>AMD MI300X and Alternatives</h2>
+
+    <h3>AMD MI300X</h3>
+    <p><strong>192 GB HBM3</strong> (largest VRAM of any GPU), <strong>5.3 TB/s</strong> memory bandwidth, competitive FP16 throughput (383 TFLOPS theoretical vs H100's 989 — but bandwidth often limits inference anyway).</p>
+
+    <p><strong>MI300X advantage:</strong> fits Llama 3 405B entirely in one 8-GPU node (8 × 192 GB = 1.5 TB). No model parallelism needed.</p>
+
+    <p><strong>Software maturity:</strong> ROCm is improving but still lags CUDA ecosystem. Some libraries (FlashAttention, some kernels) are CUDA-only or slower on ROCm.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>NVIDIA H100</th><th>AMD MI300X</th><th>Google TPU v5p</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>VRAM</td><td>80 GB</td><td>192 GB</td><td>96 GB</td></tr>
+          <tr><td>Memory BW</td><td>3.35 TB/s</td><td>5.3 TB/s</td><td>2.8 TB/s</td></tr>
+          <tr><td>Software</td><td>CUDA (excellent)</td><td>ROCm (good)</td><td>XLA/JAX (excellent)</td></tr>
+          <tr><td>Availability</td><td>Cloud + on-prem</td><td>Cloud + on-prem</td><td>Google Cloud only</td></tr>
+          <tr><td>Large model inference</td><td>Needs model parallelism</td><td>Often fits in one node</td><td>Needs model parallelism</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Google TPUs:</strong> TPU v5p is competitive for large training runs. Only available on Google Cloud. Excellent for JAX/XLA workloads (Gemma training).</p>
+  </div>
+
+  <!-- ── 5. CLOUD VS ON-PREM ── -->
+  <div class="section-block" id="cloud-vs-prem">
+    <div class="section-marker">05 — Deployment Model</div>
+    <h2>Cloud vs On-Premises</h2>
+
+    <h3>Cloud</h3>
+    <p>No upfront cost, instant scaling, latest hardware (H100/H200/MI300X available), no maintenance. Pay per hour.</p>
+
+    <h3>On-Prem</h3>
+    <p>3-year TCO often 2–5× cheaper than cloud at sustained utilization (>60%), data sovereignty, no egress fees, customizable networking.</p>
+
+    <h3>Break-Even Analysis</h3>
+    <p>8×H100 server ~$400K + $50K/year opex. Cloud equivalent: ~$32/hr × 8760 hr/year = $280K/year. Break-even ≈ 18 months at 100% utilization.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Instance</th><th>GPU</th><th>GPUs</th><th>$/hr</th><th>Provider</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>p4d.24xlarge</td><td>A100 40GB</td><td>8</td><td>$32</td><td>AWS</td></tr>
+          <tr><td>p4de.24xlarge</td><td>A100 80GB</td><td>8</td><td>$40</td><td>AWS</td></tr>
+          <tr><td>p5.48xlarge</td><td>H100 80GB</td><td>8</td><td>$98</td><td>AWS</td></tr>
+          <tr><td>a3-highgpu-8g</td><td>H100 80GB</td><td>8</td><td>$98</td><td>GCP</td></tr>
+          <tr><td>Standard_ND96asr</td><td>A100 80GB</td><td>8</td><td>$36</td><td>Azure</td></tr>
+          <tr><td>H100 x8</td><td>H100 80GB</td><td>8</td><td>$32</td><td>Lambda Labs</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Lambda Labs and CoreWeave often have H100 capacity at $2–4/GPU/hr vs $12/GPU/hr on major clouds.</strong> For batch training jobs that aren't latency-sensitive, these GPU clouds are 3–5× cheaper.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. MEMORY MATH ── -->
+  <div class="section-block" id="memory-math">
+    <div class="section-marker">06 — Sizing Deployments</div>
+    <h2>Memory Math: Sizing Your Deployment</h2>
+
+    <h3>Three Components</h3>
+    <p><strong>Model weights:</strong> parameters × bytes per parameter (FP16 = 2, INT4 = 0.5)</p>
+    <p><strong>KV cache:</strong> 2 × layers × heads × head_dim × seq_len × batch_size × 2 bytes (FP16)</p>
+    <p><strong>Rule of thumb:</strong> for inference at max batch, budget 1.5–2× model weight size for KV cache + activations</p>
+
+    <h3>Memory Calculator</h3>
+    <div class="example-box">def estimate_vram(params_B: float, dtype_bytes: float, 
+                    seq_len: int, batch_size: int,
+                    n_layers: int, n_heads: int, 
+                    head_dim: int) -> float:
+    weights_gb = params_B * 1e9 * dtype_bytes / 1e9
+    kv_cache_gb = (2 * n_layers * n_heads * head_dim * 
+                   seq_len * batch_size * 2) / 1e9  # FP16
+    overhead_gb = weights_gb * 0.2  # activations, framework
+    return weights_gb + kv_cache_gb + overhead_gb
+
+# Llama 3.1 70B in INT4, batch=4, seq=4096
+# n_layers=80, n_heads=64, head_dim=128
+vram = estimate_vram(70, 0.5, 4096, 4, 80, 64, 128)
+print(f"Estimated: {vram:.1f} GB")  # ~42 GB — fits in 1×H100
+
+# Same model in FP16:
+vram_fp16 = estimate_vram(70, 2.0, 4096, 4, 80, 64, 128)
+print(f"FP16: {vram_fp16:.1f} GB")  # ~145 GB — needs 2×H100</div>
+
+    <p><strong>Key takeaway:</strong> Quantization (INT4, INT8) dramatically reduces VRAM footprint — often making 2× more models fit in the same hardware.</p>
+  </div>
+
+  <!-- ── 7. MULTI-GPU TOPOLOGY ── -->
+  <div class="section-block" id="topology">
+    <div class="section-marker">07 — Distributed Architecture</div>
+    <h2>Multi-GPU Topology and Interconnects</h2>
+
+    <p><strong>NVLink (NVIDIA):</strong> proprietary high-bandwidth GPU-to-GPU interconnect. NVLink 4.0 = 900 GB/s bidirectional per GPU pair. NVSwitch allows any-to-any at full bandwidth in an 8-GPU node (DGX H100).</p>
+
+    <p><strong>PCIe:</strong> all GPUs in a standard server connect via PCIe. PCIe 5.0 = 128 GB/s per GPU. Sufficient for data parallelism; limiting for tensor parallelism.</p>
+
+    <p><strong>Infiniband vs Ethernet:</strong> for multi-node training, InfiniBand HDR (200 Gb/s) or NDR (400 Gb/s) provides low-latency all-reduce. RoCE (RDMA over Converged Ethernet) is the alternative.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Topology</th><th>Bandwidth</th><th>Use case</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>NVLink 4.0 (intra-node)</td><td>900 GB/s</td><td>Tensor parallelism across 8 GPUs</td></tr>
+          <tr><td>PCIe 5.0 (intra-node)</td><td>128 GB/s</td><td>Data parallelism only</td></tr>
+          <tr><td>InfiniBand NDR (inter-node)</td><td>400 Gb/s</td><td>Distributed training across nodes</td></tr>
+          <tr><td>RoCE v2 (inter-node)</td><td>100–400 Gb/s</td><td>Lower-cost alternative to IB</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Tensor parallelism requires NVLink bandwidth.</strong> If you're running tensor parallel across GPUs connected only by PCIe, performance degrades dramatically. Use NVLink-connected nodes for tensor parallel; save PCIe setups for data parallel only.</span>
+    </div>
+
+    <h3>Tools &amp; Frameworks</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Container</div>
+        <div class="tool-name">NVIDIA NGC</div>
+        <div class="tool-desc">Optimized containers for training and inference.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Serving</div>
+        <div class="tool-name">vLLM</div>
+        <div class="tool-desc">High-throughput LLM serving with paged attention.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Optimization</div>
+        <div class="tool-name">TensorRT-LLM</div>
+        <div class="tool-desc">NVIDIA's inference optimization library.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Distributed Training</div>
+        <div class="tool-name">DeepSpeed</div>
+        <div class="tool-desc">Microsoft's distributed training framework.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Distributed Training</div>
+        <div class="tool-name">Megatron-LM</div>
+        <div class="tool-desc">NVIDIA's model parallelism library.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">GPU Cloud</div>
+        <div class="tool-name">Lambda Labs</div>
+        <div class="tool-desc">Affordable H100 cloud with burst capacity.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">GPU Cloud</div>
+        <div class="tool-name">CoreWeave</div>
+        <div class="tool-desc">GPU cloud with competitive H100/MI300X pricing.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Cloud</div>
+        <div class="tool-name">AWS p5 / p5e</div>
+        <div class="tool-desc">AWS's latest H100/H200 instances with NVLink.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Official Specifications</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        NVIDIA H100 Datasheet. —
+        <a href="https://www.nvidia.com/en-us/data-center/h100/" target="_blank">nvidia.com/en-us/data-center/h100 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        AMD MI300X Datasheet. —
+        <a href="https://www.amd.com/en/products/accelerators/instinct/mi300" target="_blank">amd.com/en/products/accelerators ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        Google Cloud TPU v5p Documentation. —
+        <a href="https://cloud.google.com/tpu/docs" target="_blank">cloud.google.com/tpu/docs ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Academic Benchmarks</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        MLCommons. MLPerf Training Benchmarks. —
+        <a href="https://www.mlcommons.org/benchmarks/" target="_blank">mlcommons.org/benchmarks ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Chen, J. et al. (2024).
+        <em>Efficient Large Language Model Inference: A Practical Guide.</em>
+        arXiv:2312.12456. —
+        <a href="https://arxiv.org/abs/2312.12456" target="_blank">arxiv:2312.12456 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Provider Resources</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-guide">Guide</span> Lambda Labs GPU Cloud. <a href="https://www.lambdalabs.com/" target="_blank">lambdalabs.com ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> CoreWeave GPU Cloud. <a href="https://www.coreweave.com/" target="_blank">coreweave.com ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> AWS GPU Instances. <a href="https://aws.amazon.com/ec2/instance-types/p5/" target="_blank">aws.amazon.com/ec2/p5 ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> GCP A3 & A3M Instances. <a href="https://cloud.google.com/compute/docs/gpus" target="_blank">cloud.google.com/compute/docs/gpus ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Resources</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        vLLM Team. <em>High-Throughput LLM Serving: Architecture and Implementation.</em> —
+        <a href="https://blog.vllm.ai/" target="_blank">blog.vllm.ai ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Hugging Face. <em>Hardware Optimization for LLM Inference.</em> —
+        <a href="https://huggingface.co/blog" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Together AI. <em>GPU Memory Optimization: A Practical Guide.</em> —
+        <a href="https://www.together.ai/blog" target="_blank">together.ai/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

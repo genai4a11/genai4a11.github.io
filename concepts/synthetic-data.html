@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synthetic Data for LLMs — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg); color: #e2e8f0;
+      border-radius: 10px; padding: 1.2rem;
+      margin: 1.2rem 0 1.5rem;
+      font-family: 'Fira Code', monospace; font-size: 0.8rem;
+      overflow-x: auto; line-height: 1.5;
+    }
+    .example-box code { color: #e2e8f0; }
+    .example-box em { color: #818cf8; font-style: italic; }
+
+    /* ── METHOD CARD ── */
+    .methods-list {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .methods-list { grid-template-columns: 1fr; } }
+    .method-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      display: flex; gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9f1239; }
+    .callout strong { font-weight: 700; }
+
+    /* ── PRACTICE GRID ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">DATA ENGINEERING</span>
+  <h1><em>Synthetic Data</em> for LLMs</h1>
+  <p class="hero-sub">Generating training data with models — self-instruct, distillation, rejection sampling, and when synthetic beats real</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">self-instruct → distillation → filtering</span>
+      <span class="stat-label">the generation pipeline</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">quality > quantity</span>
+      <span class="stat-label">the golden rule</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">10–100× cheaper than human labels</span>
+      <span class="stat-label">the cost argument</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-synthetic" data-num="1">Why synthetic data?</a></li>
+      <li><a href="#self-instruct" data-num="2">Self-Instruct</a></li>
+      <li><a href="#distillation" data-num="3">Distillation pipelines</a></li>
+      <li><a href="#rejection" data-num="4">Rejection sampling</a></li>
+      <li><a href="#magpie" data-num="5">Magpie & self-play</a></li>
+      <li><a href="#domain" data-num="6">Domain-specific data</a></li>
+      <li><a href="#quality" data-num="7">Quality & collapse</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY SYNTHETIC DATA? ── -->
+  <div class="section-block" id="why-synthetic">
+    <div class="section-marker">01 — Motivation</div>
+    <h2>Why Synthetic Data?</h2>
+    <p>Human annotation is slow (weeks), expensive ($1–10/sample), and hard to scale to rare capabilities. Synthetic data takes a different approach: generate examples with a strong model (GPT-4, Claude), filter for quality, then train a weaker model on the filtered outputs.</p>
+
+    <p>This is the distillation insight: a small model trained on GPT-4 outputs can match GPT-4 on narrow tasks. Alpaca, Vicuna, and WizardLM all use this approach, achieving competitive quality with minimal human labeling.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Model collapse risk:</strong> Training on synthetic data from a model trained on synthetic data degrades quality over rounds. Hallucinations propagate, distribution shift increases. Always validate against real-world held-out data before declaring success.</span>
+    </div>
+
+    <h3>The Core Risks</h3>
+    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;"><strong>Model collapse:</strong> Successive generations on synthetic data reduce diversity and increase errors</li>
+      <li style="margin: 0.5rem 0;"><strong>Hallucination propagation:</strong> Errors in the generator are amplified in downstream models</li>
+      <li style="margin: 0.5rem 0;"><strong>Distribution shift:</strong> Synthetic data distribution diverges from real human data over time</li>
+      <li style="margin: 0.5rem 0;"><strong>Bias amplification:</strong> Whatever biases exist in the generator model get amplified</li>
+    </ul>
+  </div>
+
+  <!-- ── 2. SELF-INSTRUCT ── -->
+  <div class="section-block" id="self-instruct">
+    <div class="section-marker">02 — Method</div>
+    <h2>Self-Instruct and Instruction Tuning Data</h2>
+    <p><strong>Self-Instruct (Wang et al. 2022):</strong> Use the model itself to generate (instruction, input, output) triples starting from a small seed set of 175 human-written examples. The pipeline is simple but effective:</p>
+
+    <h3>The Self-Instruct Pipeline</h3>
+    <ol style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;">Seed tasks: Start with ~175 manually-written instruction examples</li>
+      <li style="margin: 0.5rem 0;">Generate: Use few-shot prompting to generate new instruction-output pairs</li>
+      <li style="margin: 0.5rem 0;">Filter: Remove duplicates and low-quality examples</li>
+      <li style="margin: 0.5rem 0;">Outputs: Generate responses to keep</li>
+      <li style="margin: 0.5rem 0;">Fine-tune: Train the model on the full dataset</li>
+    </ol>
+
+    <p><strong>Alpaca (Stanford):</strong> Applied Self-Instruct to GPT-3.5, generating 52K instruction-following examples. Fine-tuned LLaMA-7B on these outputs and achieved surprisingly good instruction-following capability.</p>
+
+    <p><strong>Evol-Instruct (WizardLM):</strong> Iteratively rewrite instructions to be more complex and diverse using evolving prompts. Add constraints, deepen reasoning, concretize details, increase reasoning steps. This creates progressively harder examples that train the model on harder tasks.</p>
+
+    <h3>Self-Instruct Generation Prompt</h3>
+    <div class="example-box">
+SYSTEM: You are an instruction generator. Given examples of (instruction, output) pairs,
+generate 20 new diverse instructions on different topics. Each instruction should be:
+- A task a language model could complete
+- Different from existing instructions
+- Between 1-3 sentences
+- Varied in format (questions, imperatives, fill-in-the-blank)
+
+EXISTING EXAMPLES:
+1. "Classify the sentiment of this review: {review}"
+2. "Write a Python function that {task}"
+3. "Translate this sentence to French: {text}"
+
+Generate 20 new instructions:
+    </div>
+
+    <h3>Instruction Dataset Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Dataset</th><th>Size</th><th>Generator</th><th>Method</th><th>License</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Alpaca</strong></td><td>52K</td><td>text-davinci-003</td><td>Self-Instruct</td><td>Non-commercial</td></tr>
+          <tr><td><strong>WizardLM-Evol</strong></td><td>250K</td><td>GPT-4</td><td>Evol-Instruct</td><td>Non-commercial</td></tr>
+          <tr><td><strong>Orca</strong></td><td>5M</td><td>GPT-4 + GPT-3.5</td><td>Explanation traces</td><td>Non-commercial</td></tr>
+          <tr><td><strong>Magpie</strong></td><td>1M+</td><td>Llama-3 (self)</td><td>Pre-query generation</td><td>Apache 2.0</td></tr>
+          <tr><td><strong>Capybara</strong></td><td>16K</td><td>GPT-4</td><td>Multi-turn, diverse</td><td>Apache 2.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 3. DISTILLATION ── -->
+  <div class="section-block" id="distillation">
+    <div class="section-marker">03 — Technique</div>
+    <h2>Distillation Pipelines</h2>
+    <p><strong>Knowledge distillation for LLMs:</strong> Train a small student model to mimic a large teacher model's outputs. Hard distillation keeps only final answers (Alpaca-style). Soft distillation uses token probability distributions (better but requires white-box access). Speculative distillation generates diverse outputs, filters with a reward model, and trains on the best ones.</p>
+
+    <h3>Distillation Types</h3>
+    <ul style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;"><strong>Hard distillation:</strong> Student trains on teacher's final answers. Simple, but loses intermediate reasoning steps.</li>
+      <li style="margin: 0.5rem 0;"><strong>Soft distillation:</strong> Student trains on teacher's token probability distributions. Better signal but requires white-box access.</li>
+      <li style="margin: 0.5rem 0;"><strong>Speculative distillation:</strong> Teacher generates diverse outputs, filter with reward model, train on best ones. Higher quality data.</li>
+    </ul>
+
+    <h3>Distillation Pipeline with Filtering</h3>
+    <div class="example-box">
+import openai, json
+from tqdm import tqdm
+
+def generate_training_pair(instruction: str, teacher="gpt-4o") -> dict:
+    response = openai.chat.completions.create(
+        model=teacher,
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant. Be thorough and accurate."},
+            {"role": "user", "content": instruction}
+        ],
+        temperature=0.7
+    )
+    return {"instruction": instruction, "output": response.choices[0].message.content}
+
+def quality_filter(pair: dict, min_length=50, max_length=2000) -> bool:
+    output = pair["output"]
+    if len(output) < min_length or len(output) > max_length:
+        return False
+    if output.startswith("I cannot") or output.startswith("I'm sorry"):
+        return False  # filter refusals
+    return True
+
+dataset = [generate_training_pair(instr) for instr in instructions]
+filtered = [p for p in dataset if quality_filter(p)]
+print(f"Kept {len(filtered)}/{len(dataset)} pairs ({100*len(filtered)/len(dataset):.0f}%)")
+    </div>
+  </div>
+
+  <!-- ── 4. REJECTION SAMPLING ── -->
+  <div class="section-block" id="rejection">
+    <div class="section-marker">04 — Filtering</div>
+    <h2>Rejection Sampling and Filtering</h2>
+    <p><strong>Rejection Sampling Fine-Tuning (RFT):</strong> Generate N outputs per prompt, keep only those that pass a correctness check, train on kept outputs. For math and code, you can verify correctness cheaply (run unit tests, check answer keys). Use this to filter synthetic data.</p>
+
+    <p>Rejection sampling is the gold standard for code and math tasks. DeepSeek-R1 and similar reasoning models bootstrapped their training data this way.</p>
+
+    <h3>Filtering Methods by Task Type</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Verification method</th><th>Rejection rate</th><th>Quality gain</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Math</strong></td><td>Check against answer key</td><td>60–80%</td><td>High</td></tr>
+          <tr><td><strong>Code</strong></td><td>Run unit tests</td><td>40–70%</td><td>High</td></tr>
+          <tr><td><strong>Instruction following</strong></td><td>LLM judge</td><td>20–40%</td><td>Medium</td></tr>
+          <tr><td><strong>Creative writing</strong></td><td>Reward model</td><td>20–50%</td><td>Medium</td></tr>
+          <tr><td><strong>Factual QA</strong></td><td>Retrieval + NLI check</td><td>30–60%</td><td>Medium</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>For code and math, rejection sampling with execution-based verification is the highest-quality synthetic data pipeline available.</strong> It's how DeepSeek-R1 and similar models bootstrapped their reasoning data. High rejection rates are expected and necessary for quality.</span>
+    </div>
+
+    <h3>Deduplication</h3>
+    <p>Always deduplicate synthetic data:</p>
+    <ul style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;"><strong>Exact-match dedup:</strong> Hash outputs, remove identical ones</li>
+      <li style="margin: 0.5rem 0;"><strong>Near-dedup:</strong> MinHash LSH for fuzzy matching</li>
+      <li style="margin: 0.5rem 0;"><strong>Embedding-based clustering:</strong> Cluster similar examples, keep one per cluster</li>
+    </ul>
+    <p>Duplicates hurt more than they help — they waste training capacity and create false confidence in patterns.</p>
+  </div>
+
+  <!-- ── 5. MAGPIE & SELF-PLAY ── -->
+  <div class="section-block" id="magpie">
+    <div class="section-marker">05 — Automation</div>
+    <h2>Magpie and Self-Play Methods</h2>
+    <p><strong>Magpie (Xu et al. 2024):</strong> Instead of generating responses to human instructions, prompt the model in pre-query position and let it generate both the instruction AND response. No seed data needed. Works because instruction-tuned models learn to generate user-like queries when given the system prompt plus an empty human turn.</p>
+
+    <p><strong>Self-play:</strong> Two model instances play adversarial roles (teacher and student, examiner and examinee) to generate challenging data without human involvement.</p>
+
+    <p><strong>Constitutional AI data generation:</strong> Model critiques its own response using a set of principles, then rewrites to better follow them. Generates (critique, revision) pairs for training.</p>
+
+    <h3>Magpie-Style Pre-Query Generation</h3>
+    <div class="example-box">
+# Give model the assistant prefix to trigger instruction generation
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    # Empty human turn — model generates what a user would ask
+]
+# With pre-fill trick (Anthropic):
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    messages=[{"role": "user", "content": ""}],  # empty triggers pre-query
+    system="You are a helpful assistant.",
+    max_tokens=200
+)
+    </div>
+
+    <h3>Why Magpie Works</h3>
+    <ul style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;"><strong>No seed data:</strong> Start generation from an empty state</li>
+      <li style="margin: 0.5rem 0;"><strong>Automatic diversity:</strong> Model naturally generates varied instructions</li>
+      <li style="margin: 0.5rem 0;"><strong>Scale:</strong> Generate millions of examples cheaply</li>
+      <li style="margin: 0.5rem 0;"><strong>Self-consistency:</strong> Each instruction-response pair comes from the same model, high internal consistency</li>
+    </ul>
+  </div>
+
+  <!-- ── 6. DOMAIN-SPECIFIC DATA ── -->
+  <div class="section-block" id="domain">
+    <div class="section-marker">06 — Application</div>
+    <h2>Domain-Specific Synthetic Data</h2>
+    <p>General instruction data is widely available (Alpaca, WizardLM). The real value is domain-specific data you can generate for your use case. Collect domain documents, generate Q&A pairs and reasoning chains, filter and deduplicate, then fine-tune.</p>
+
+    <h3>Domain Adaptation Pipeline</h3>
+    <ol style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;">Collect: Domain documents (papers, contracts, filings, code, support tickets)</li>
+      <li style="margin: 0.5rem 0;">Generate: Q&A pairs and reasoning chains from documents</li>
+      <li style="margin: 0.5rem 0;">Filter: Remove hallucinations and off-topic content</li>
+      <li style="margin: 0.5rem 0;">Deduplicate: Remove near-duplicates</li>
+      <li style="margin: 0.5rem 0;">Fine-tune: Train model on domain data</li>
+    </ol>
+
+    <h3>Domain Strategies by Sector</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Domain</th><th>Source material</th><th>Generation method</th><th>Verification</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Medical</strong></td><td>PubMed abstracts</td><td>Extract + rephrase QA</td><td>Expert review sample</td></tr>
+          <tr><td><strong>Code</strong></td><td>GitHub repos</td><td>Problem → solution pairs</td><td>Unit tests</td></tr>
+          <tr><td><strong>Customer support</strong></td><td>Support tickets</td><td>Rephrase + resolve</td><td>CSAT proxy</td></tr>
+          <tr><td><strong>Legal</strong></td><td>Court rulings</td><td>Clause extraction + QA</td><td>Lawyer review sample</td></tr>
+          <tr><td><strong>Finance</strong></td><td>Earnings reports</td><td>Analyst-style summaries</td><td>Factual check</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">🔒</span>
+      <span><strong>PII scrubbing:</strong> Never include PII (names, emails, account numbers) in synthetic training data, even if it appears in source documents. Scrub before generation, not after. This protects privacy and prevents model memorization of sensitive data.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. QUALITY & COLLAPSE ── -->
+  <div class="section-block" id="quality">
+    <div class="section-marker">07 — Validation</div>
+    <h2>Quality Evaluation and Model Collapse Prevention</h2>
+    <p>Quality metrics for synthetic data: perplexity on held-out real data (should not increase), task accuracy on real benchmarks, human evaluation of 1–5% samples. Model collapse is detected by measuring n-gram diversity and topic coverage — each successive round should maintain or increase diversity.</p>
+
+    <h3>Prevention Strategies</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3><span class="badge">🔄</span> Data Mixing</h3>
+        <ul>
+          <li>Mix 20–80% synthetic with real data</li>
+          <li>Never train purely synthetic for multiple rounds</li>
+          <li>Real data anchors quality</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">🎨</span> Diversity Forcing</h3>
+        <ul>
+          <li>Require diversity in topics, formats, lengths, difficulty</li>
+          <li>Low diversity accelerates collapse</li>
+          <li>Measure n-gram coverage in generation</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">✔️</span> Round-Trip Consistency</h3>
+        <ul>
+          <li>Generate → verify with different model → keep consistent</li>
+          <li>Cross-model verification catches hallucinations</li>
+          <li>Reduces error propagation</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3><span class="badge">📈</span> Iterative Refinement</h3>
+        <ul>
+          <li>Generate → fine-tune → use for harder examples</li>
+          <li>Each round focuses on model's failure modes</li>
+          <li>Proportional gains diminish after 3–4 rounds</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Quality Metrics</h3>
+    <ul style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;"><strong>Perplexity:</strong> Measure on held-out real data. Should not increase after training on synthetic.</li>
+      <li style="margin: 0.5rem 0;"><strong>Benchmark accuracy:</strong> Evaluate on real, public benchmarks. Synthetic should not degrade performance.</li>
+      <li style="margin: 0.5rem 0;"><strong>Human spot-check:</strong> Sample 1–5% of synthetic data and have humans evaluate quality.</li>
+      <li style="margin: 0.5rem 0;"><strong>Diversity metrics:</strong> Track n-gram coverage and topic diversity across generation rounds.</li>
+    </ul>
+
+    <h3>Tools and Frameworks</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Data Generation</div>
+        <div class="tool-name">distilabel</div>
+        <div class="tool-desc">By Argilla. Synthetic data pipelines for instruction tuning.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Data Generation</div>
+        <div class="tool-name">Magpie</div>
+        <div class="tool-desc">Pre-query generation without seed data.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LLM Foundry</div>
+        <div class="tool-desc">Composer/MosaicML. End-to-end training stack.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Training</div>
+        <div class="tool-name">Axolotl</div>
+        <div class="tool-desc">Fine-tuning framework with synthetic data support.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Training</div>
+        <div class="tool-name">TRL (HF)</div>
+        <div class="tool-desc">Transformers Reinforcement Learning library.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Data</div>
+        <div class="tool-name">HuggingFace Datasets</div>
+        <div class="tool-desc">Streaming and batching for large datasets.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">API</div>
+        <div class="tool-name">OpenAI Batch API</div>
+        <div class="tool-desc">Cheap, asynchronous generation at scale.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangChain</div>
+        <div class="tool-desc">Synthetic data generation pipelines.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Wang, Y. et al. (2022).
+        <em>Self-Instruct: Aligning Language Models with Self-Generated Instructions.</em>
+        arXiv:2212.10560. —
+        <a href="https://arxiv.org/abs/2212.10560" target="_blank">arxiv:2212.10560 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Xu, C. et al. (2024).
+        <em>Magpie: Alignment Data Synthesis from Scratch by Prompting Aligned LLMs with Nothing.</em>
+        arXiv:2406.08464. —
+        <a href="https://arxiv.org/abs/2406.08464" target="_blank">arxiv:2406.08464 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Li, X. et al. (2023).
+        <em>Evol-Instruct: Evolution of Instruction Tuning for Language Models.</em>
+        WizardLM. arXiv:2304.12244. —
+        <a href="https://arxiv.org/abs/2304.12244" target="_blank">arxiv:2304.12244 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Wen, Z. et al. (2023).
+        <em>Rejection Sampling Fine-Tuning for LLMs.</em>
+        arXiv:2308.01825. —
+        <a href="https://arxiv.org/abs/2308.01825" target="_blank">arxiv:2308.01825 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> Argilla distilabel. <a href="https://distilabel.argilla.io" target="_blank">distilabel.argilla.io ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Datasets. <a href="https://huggingface.co/docs/datasets" target="_blank">huggingface.co/docs/datasets ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> OpenAI Batch API. <a href="https://platform.openai.com/docs/guides/batch" target="_blank">platform.openai.com ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> Axolotl fine-tuning. <a href="https://github.com/OpenAccess-AI-Collective/axolotl" target="_blank">github.com/axolotl ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Blog &amp; Articles</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Stanford CRFM. (2023). <em>Alpaca: A Strong, Replicable Instruction-Following Model.</em> —
+        <a href="https://crfm.stanford.edu/2023/03/13/alpaca.html" target="_blank">crfm.stanford.edu ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        HuggingFace. (2024). <em>Synthetic Data: Why, When, and How.</em> —
+        <a href="https://huggingface.co/blog" target="_blank">huggingface.co/blog ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

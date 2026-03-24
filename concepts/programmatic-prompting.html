@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programmatic Prompting — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Prompt Engineering</span>
+  <h1><em>Programmatic</em> Prompting</h1>
+  <p class="hero-sub">DSPy, LangChain chains, prompt templates, and optimizing prompts with labeled data instead of manual iteration</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">declare → compile → optimize</span>
+      <span class="stat-label">the DSPy workflow</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">few-shot auto-selection</span>
+      <span class="stat-label">the key innovation</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">metric-driven refinement</span>
+      <span class="stat-label">the shift from manual prompting</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#beyond-manual" data-num="1">Beyond manual prompting</a></li>
+      <li><a href="#prompt-templates" data-num="2">Prompt templates</a></li>
+      <li><a href="#dspy-compile" data-num="3">DSPy: compile prompts</a></li>
+      <li><a href="#dspy-optimizers" data-num="4">DSPy optimizers</a></li>
+      <li><a href="#lcel" data-num="5">LangChain LCEL</a></li>
+      <li><a href="#automatic-optimization" data-num="6">Automatic optimization</a></li>
+      <li><a href="#when-to-use" data-num="7">When to use each</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. BEYOND MANUAL ── -->
+  <div class="section-block" id="beyond-manual">
+    <div class="section-marker">01 — The Problem</div>
+    <h2>Beyond Manual Prompt Engineering</h2>
+    <p><strong>Manual prompting:</strong> write a prompt, test on examples, tweak wording, repeat. Brittle — small wording changes cause large quality swings. Doesn't scale.</p>
+
+    <p><strong>Programmatic prompting:</strong> define what you want (task signature, metric), let a framework optimize how to get it (prompt wording, few-shot examples, chain structure)</p>
+
+    <p><strong>Key insight:</strong> prompts are hyperparameters. They should be optimized on training data, not tuned by intuition.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Manual prompt engineering reaches a ceiling quickly.</strong> For tasks with >100 labeled examples, programmatic optimization (DSPy, OPRO, APE) consistently outperforms hand-tuned prompts.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. PROMPT TEMPLATES ── -->
+  <div class="section-block" id="prompt-templates">
+    <div class="section-marker">02 — Foundation</div>
+    <h2>Prompt Templates and Jinja2</h2>
+    <p><strong>Template engines:</strong> parameterize prompts so dynamic content is cleanly separated from instructions.</p>
+
+    <p><strong>Jinja2:</strong> Python's standard template engine. Supports conditionals, loops, filters — useful for complex prompt construction.</p>
+
+    <p><strong>LangChain PromptTemplate:</strong> wraps Jinja2 with LLM-specific tooling (message formatting, partial templates, composition)</p>
+
+    <h3>Example: Jinja2 + LangChain Prompt Template</h3>
+    <div class="example-box">from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# System template with conditional sections
+system_template = """You are a {role} assistant.
+{% if context %}
+Use this context to answer questions:
+{{ context }}
+{% endif %}
+{% if output_format == "json" %}
+Always respond in valid JSON.
+{% endif %}
+"""
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", system_template),
+    MessagesPlaceholder("history"),  # dynamic conversation history
+    ("human", "{question}")
+])
+
+# Compose with LLM
+from langchain_openai import ChatOpenAI
+chain = prompt | ChatOpenAI(model="gpt-4o") | StrOutputParser()
+
+result = chain.invoke({
+    "role": "financial analyst",
+    "context": retrieved_docs,
+    "output_format": "json",
+    "history": conversation_history,
+    "question": "What was Q3 revenue growth?"
+})</div>
+  </div>
+
+  <!-- ── 3. DSPY ── -->
+  <div class="section-block" id="dspy-compile">
+    <div class="section-marker">03 — Framework</div>
+    <h2>DSPy: Compile Your Prompts</h2>
+    <p><strong>DSPy (Declarative Self-improving Python):</strong> define your task as a typed Signature, compose Modules (Predict, ChainOfThought, ReAct), then compile with an Optimizer that finds the best prompts + few-shot examples automatically.</p>
+
+    <p>No manual prompt strings in your code. The optimizer writes the prompts.</p>
+
+    <p><strong>Signatures:</strong> declare inputs, outputs, and docstring description of the task. DSPy infers the prompt.</p>
+
+    <h3>Example: DSPy Classification Pipeline</h3>
+    <div class="example-box">import dspy
+
+lm = dspy.LM("openai/gpt-4o-mini")
+dspy.configure(lm=lm)
+
+# 1. Define task signature
+class SentimentClassifier(dspy.Signature):
+    """Classify the sentiment of customer feedback."""
+    feedback: str = dspy.InputField()
+    sentiment: Literal["positive", "negative", "neutral"] = dspy.OutputField()
+    confidence: float = dspy.OutputField(desc="0.0 to 1.0")
+
+# 2. Build module
+classifier = dspy.Predict(SentimentClassifier)
+
+# 3. Compile with optimizer (finds best few-shot examples)
+optimizer = dspy.BootstrapFewShot(metric=accuracy_metric, max_bootstrapped_demos=4)
+compiled = optimizer.compile(classifier, trainset=train_examples)
+
+# 4. Use
+result = compiled(feedback="The delivery was fast but packaging was damaged")
+print(result.sentiment, result.confidence)</div>
+
+    <h3>DSPy Modules</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Module</th><th>What it does</th><th>When to use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Predict</strong></td><td>Single LLM call with signature</td><td>Classification, extraction</td></tr>
+          <tr><td><strong>ChainOfThought</strong></td><td>Adds reasoning field</td><td>Math, logic, analysis</td></tr>
+          <tr><td><strong>ReAct</strong></td><td>Tool-use + reasoning loop</td><td>Agents, multi-step tasks</td></tr>
+          <tr><td><strong>MultiChainComparison</strong></td><td>Multiple chains, pick best</td><td>High-stakes decisions</td></tr>
+          <tr><td><strong>Retrieve</strong></td><td>RAG retrieval step</td><td>Any RAG pipeline</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 4. DSPY OPTIMIZERS ── -->
+  <div class="section-block" id="dspy-optimizers">
+    <div class="section-marker">04 — Optimization</div>
+    <h2>DSPy Optimizers</h2>
+    <p><strong>BootstrapFewShot:</strong> runs your program on training examples, identifies successful traces, uses them as few-shot examples — automatic few-shot selection.</p>
+
+    <p><strong>MIPRO (v2):</strong> optimizes both instructions AND few-shot examples simultaneously using Bayesian search over prompt candidates.</p>
+
+    <p><strong>BootstrapFinetune:</strong> instead of in-context few-shot, fine-tunes the model weights on bootstrapped traces.</p>
+
+    <h3>Example: MIPRO Optimization</h3>
+    <div class="example-box">from dspy.teleprompt import MIPROv2
+
+optimizer = MIPROv2(
+    metric=my_metric,
+    auto="medium",    # "light" / "medium" / "heavy" — controls search budget
+    num_threads=8
+)
+
+compiled_program = optimizer.compile(
+    my_program,
+    trainset=train_data,     # labeled examples for optimization
+    valset=val_data,         # held-out for optimizer eval
+    requires_permission_to_run=False
+)
+# compiled_program has optimized prompts + few-shot examples
+# Typically 10-30% better than manually written prompts</div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>MIPROv2 with auto="medium" is the current recommended default for most DSPy programs.</strong> It takes 30–60 minutes but finds prompts that consistently outperform manual engineering.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. LCEL ── -->
+  <div class="section-block" id="lcel">
+    <div class="section-marker">05 — Composition</div>
+    <h2>LangChain Expression Language (LCEL)</h2>
+    <p><strong>LCEL:</strong> pipe-based composition of LangChain components. Chain = prompt | model | parser.</p>
+
+    <p><strong>Supports:</strong> streaming, async, parallel branches, fallbacks, retries — all composable</p>
+
+    <h3>Example: Parallel Chain with LCEL</h3>
+    <div class="example-box">from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+# Two parallel analysis paths
+parallel_chain = RunnableParallel(
+    summary=summary_prompt | llm | StrOutputParser(),
+    risks=risks_prompt | llm | StrOutputParser(),
+    original=RunnablePassthrough()
+)
+
+# Full pipeline: retrieve → analyze in parallel → synthesize
+full_chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | parallel_chain
+    | synthesis_prompt
+    | llm
+    | StrOutputParser()
+)
+
+result = full_chain.invoke("What are the key risks in Q3 earnings?")
+# result contains summary, risks, and synthesis in one call</div>
+  </div>
+
+  <!-- ── 6. AUTOMATIC OPTIMIZATION ── -->
+  <div class="section-block" id="automatic-optimization">
+    <div class="section-marker">06 — Advanced</div>
+    <h2>Automatic Prompt Optimization (APE, OPRO)</h2>
+    <p><strong>APE (Automatic Prompt Engineer):</strong> generate candidate instruction paraphrases using LLM, evaluate each on dev set, select best-performing instruction.</p>
+
+    <p><strong>OPRO (Optimization by Prompting):</strong> frame prompt optimization as a meta-prompt problem — feed current prompt + performance scores to LLM, ask it to suggest improvements, iterate.</p>
+
+    <h3>Example: Simple OPRO Loop</h3>
+    <div class="example-box">def opro_optimize(task_desc: str, examples: list, metric, iterations=10):
+    current_prompt = task_desc
+    history = []
+    
+    for i in range(iterations):
+        score = evaluate(current_prompt, examples, metric)
+        history.append({"prompt": current_prompt, "score": score})
+        
+        # Ask LLM to improve the prompt
+        meta_prompt = f"""
+        You are optimizing an LLM prompt. Here are previous attempts and their scores:
+        {history[-5:]}  # last 5 attempts
+        
+        The task: {task_desc}
+        
+        Suggest a better prompt that might score higher. Output ONLY the new prompt."""
+        
+        current_prompt = llm.invoke(meta_prompt)
+    
+    return max(history, key=lambda x: x["score"])["prompt"]</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>OPRO and APE require labeled evaluation data.</strong> The quality of your metric function directly caps the quality of the optimized prompt. Garbage metric → garbage prompt.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. WHEN TO USE ── -->
+  <div class="section-block" id="when-to-use">
+    <div class="section-marker">07 — Decision Guide</div>
+    <h2>When to Use Each Approach</h2>
+
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Manual Prompting First <em>— the baseline</em></h3>
+          <p>Always start here. If you can solve the task with a well-written prompt and &lt;50 examples, you don't need programmatic optimization. Spend time on your evaluation metric instead.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>DSPy When You Have Labeled Data <em>— the standard</em></h3>
+          <p>If you have 100+ labeled (input, output) examples and a clear metric, DSPy optimization will outperform manual prompting. Start with BootstrapFewShot.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>LCEL for Complex Chains <em>— the pattern</em></h3>
+          <p>When your pipeline has multiple LLM calls, parallel branches, retrieval, or conditional routing, LCEL's composability and streaming support pay off.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Fine-tuning as the Final Step <em>— the ultimate</em></h3>
+          <p>When programmatic prompting plateaus, use DSPy's BootstrapFinetune or standard SFT to bake the optimized behavior into model weights.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Tools Grid</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">DSPy</div>
+        <div class="tool-desc">Declarative signatures, automatic compilation, optimization</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Composition</div>
+        <div class="tool-name">LangChain (LCEL)</div>
+        <div class="tool-desc">Pipe-based composition, streaming, async</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Orchestration</div>
+        <div class="tool-name">LangGraph</div>
+        <div class="tool-desc">Stateful chains, conditional routing, loops</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Output Structure</div>
+        <div class="tool-name">instructor</div>
+        <div class="tool-desc">Pydantic validation, structured outputs</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Testing</div>
+        <div class="tool-name">PromptFoo</div>
+        <div class="tool-desc">Prompt testing, comparison, CI/CD</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Monitoring</div>
+        <div class="tool-name">Braintrust</div>
+        <div class="tool-desc">Evaluation, monitoring, dataset management</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Optimization</div>
+        <div class="tool-name">W&B Prompts</div>
+        <div class="tool-desc">Prompt versioning, experimentation</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">IDE</div>
+        <div class="tool-name">OpenAI Playground</div>
+        <div class="tool-desc">Quick prototyping and testing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-paper">Paper</span> Khattab, O. et al. (2023). <em>DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines.</em> arXiv:2310.03714 — <a href="https://arxiv.org/abs/2310.03714" target="_blank">arxiv:2310.03714 ↗</a></li>
+      <li><span class="ref-badge badge-paper">Paper</span> Yang, G. et al. (2023). <em>Large Language Models as Optimizers.</em> OPRO paper. arXiv:2309.03409 — <a href="https://arxiv.org/abs/2309.03409" target="_blank">arxiv:2309.03409 ↗</a></li>
+      <li><span class="ref-badge badge-paper">Paper</span> Zhou, Y. et al. (2022). <em>Large Language Models Are Human-Level Prompt Engineers.</em> APE paper. arXiv:2211.01910 — <a href="https://arxiv.org/abs/2211.01910" target="_blank">arxiv:2211.01910 ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Documentation</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> DSPy Documentation — <a href="https://dspy.ai" target="_blank">dspy.ai ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> LangChain LCEL Docs — <a href="https://python.langchain.com/docs/expression_language" target="_blank">python.langchain.com/docs/expression_language ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Resources</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">Blog</span> Khattab, O. (2023). <em>DSPy: Compiling Language Models into Self-Improving Pipelines.</em> Intro and walkthrough — <a href="https://dspy.ai/blog" target="_blank">dspy.ai/blog ↗</a></li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>
