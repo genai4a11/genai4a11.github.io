@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LayerNorm / BatchNorm | GenAI Mindmap</title>
+  <meta name="description" content="Normalization layers that stabilize and speed up training. LayerNorm is standard in transformers; BatchNorm is common in CNNs." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="LayerNorm / BatchNorm" />
+  <meta property="og:description" content="Normalization layers that stabilize and speed up training. LayerNorm is standard in transformers; BatchNorm is common in CNNs." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/layer-norm.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/layer-norm.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "LayerNorm / BatchNorm | GenAI Mindmap",
+  "description": "Normalization layers that stabilize and speed up training. LayerNorm is standard in transformers; BatchNorm is common in CNNs.",
+  "url": "https://genai4a11.github.io/concepts/layer-norm.html",
+  "dateModified": "2026-03-24T14:34:23.348631",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "LayerNorm / BatchNorm | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/layer-norm.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/neural-nets.html" class="nav-back">← Neural Networks</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Neural Networks</span>
+    <h1><em>LayerNorm / BatchNorm</em></h1>
+    <p class="hero-sub">Normalization layers that stabilize and speed up training. LayerNorm is standard in transformers; BatchNorm is common in CNNs.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">LayerNorm</div><div class="stat-label">Transformers</div></div>
+      <div><div class="stat-num">BatchNorm</div><div class="stat-label">CNNs/vision</div></div>
+      <div><div class="stat-num">RMSNorm</div><div class="stat-label">LLaMA/Mistral</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why Normalize?</a></li>
+        <li><a href="#s2" data-num="02">BatchNorm Explained</a></li>
+        <li><a href="#s3" data-num="03">LayerNorm Explained</a></li>
+        <li><a href="#s4" data-num="04">RMSNorm in Modern LLMs</a></li>
+        <li><a href="#s5" data-num="05">Pre-Norm vs Post-Norm</a></li>
+        <li><a href="#s6" data-num="06">Implementation</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+      <h2>Why Normalize?</h2>
+      <p>Deep network activations shift distribution as weights update ("internal covariate shift"). Later layers receive inputs with changing mean/variance — they constantly have to re-adapt. Normalization layers fix activations to a standard distribution, allowing much higher learning rates and deeper networks.</p>
+      <div class="callout blue">
+        <strong>Empirical impact:</strong> Adding LayerNorm to a transformer roughly doubles training speed (can use 10× higher LR). It's not optional for deep networks — it's what makes them trainable.
+      </div>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+      <h2>BatchNorm Explained</h2>
+      <div class="example-box">import torch
+import torch.nn as nn
+
+# BatchNorm normalizes over the BATCH dimension
+# For input (batch, channels, H, W): normalize each channel over the batch
+bn = nn.BatchNorm1d(num_features=512)  # For (batch, features)
+bn = nn.BatchNorm2d(num_features=64)   # For (batch, C, H, W) — CNNs
+
+# What it does:
+# 1. Compute mean and std over the batch (dim=0)
+# 2. Normalize: x_hat = (x - mean) / std
+# 3. Learnable scale/shift: y = gamma * x_hat + beta
+
+x = torch.randn(32, 512)  # batch=32, features=512
+out = bn(x)
+# Each of the 512 features is normalized to mean≈0, std≈1 (over the batch)
+
+# Problem with BatchNorm for LLMs:
+# - Requires large batch size (>16) to get stable batch statistics
+# - Hard to use with variable-length sequences
+# - Different behavior at train vs test time (uses running stats at test)
+# → That's why transformers use LayerNorm instead</div>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+      <h2>LayerNorm Explained</h2>
+      <div class="example-box">import torch
+import torch.nn as nn
+
+# LayerNorm normalizes over the FEATURE dimension (each token independently)
+# For input (batch, seq_len, d_model): normalize each token's feature vector
+ln = nn.LayerNorm(normalized_shape=768)
+
+x = torch.randn(32, 512, 768)  # (batch, seq_len, d_model)
+out = ln(x)
+# Each of the 32*512=16384 token vectors is normalized to mean≈0, std≈1
+
+# What it does per token:
+# mean = x.mean(dim=-1, keepdim=True)   # mean over 768 features
+# std  = x.std(dim=-1,  keepdim=True)   # std over 768 features
+# x_hat = (x - mean) / (std + 1e-5)
+# y = gamma * x_hat + beta              # learnable scale/shift (768-dim each)
+
+# Advantages over BatchNorm for LLMs:
+# - Works with any batch size (even 1)
+# - Same behavior train and test
+# - Works with variable-length sequences
+# - Stabilizes training of deep transformers
+
+print(ln.weight.shape)  # (768,) — gamma
+print(ln.bias.shape)    # (768,) — beta</div>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+      <h2>RMSNorm in Modern LLMs</h2>
+      <p>Root Mean Square Normalization (RMSNorm) drops the mean-centering step from LayerNorm. It's simpler, ~20% faster, and used in LLaMA, Mistral, and Gemma.</p>
+      <div class="example-box">import torch
+import torch.nn as nn
+
+class RMSNorm(nn.Module):
+    """RMSNorm as used in LLaMA-2/3, Mistral, Qwen, Gemma."""
+
+    def __init__(self, d_model: int, eps: float = 1e-5):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(d_model))  # learnable scale
+        self.eps = eps
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Compute RMS (no mean subtraction)
+        rms = torch.sqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
+        return self.weight * (x / rms)
+
+# Why RMSNorm over LayerNorm?
+# - Drops mean subtraction: ~20% faster
+# - Empirically similar quality to LayerNorm
+# - Less numerical instability in bfloat16
+
+# HuggingFace already uses RMSNorm for LLaMA models
+from transformers import LlamaModel
+# model.model.norm is an LlamaRMSNorm instance</div>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+      <h2>Pre-Norm vs Post-Norm</h2>
+      <div class="example-box">import torch
+import torch.nn as nn
+
+# Post-norm (original transformer): normalize AFTER residual add
+# x = LayerNorm(x + Attn(x))
+# Susceptible to gradient issues in deep networks
+
+# Pre-norm (modern standard): normalize BEFORE sub-layers
+# x = x + Attn(LayerNorm(x))
+# More stable gradients → used in GPT-3, LLaMA, all modern LLMs
+
+class TransformerBlock_PreNorm(nn.Module):
+    def __init__(self, d_model, n_heads):
+        super().__init__()
+        self.norm1 = nn.RMSNorm(d_model) if hasattr(nn, 'RMSNorm') else nn.LayerNorm(d_model)
+        self.attn  = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.ffn   = nn.Sequential(nn.Linear(d_model, 4*d_model), nn.GELU(), nn.Linear(4*d_model, d_model))
+
+    def forward(self, x):
+        # Pre-norm: LayerNorm BEFORE attention and FFN
+        x = x + self.attn(self.norm1(x), self.norm1(x), self.norm1(x))[0]
+        x = x + self.ffn(self.norm2(x))
+        return x</div>
+      <div class="callout green">
+        <strong>Use pre-norm.</strong> GPT-2 switched to pre-norm. Every modern LLM uses pre-norm. Post-norm requires careful learning rate warmup; pre-norm trains stably from the start.
+      </div>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+      <h2>Implementation Gotchas</h2>
+      <div class="example-box">import torch
+import torch.nn as nn
+
+# Gotcha 1: eps matters in low precision
+ln = nn.LayerNorm(768, eps=1e-5)    # Default fine for fp32
+ln_stable = nn.LayerNorm(768, eps=1e-6)  # May NaN in bfloat16 — use 1e-5
+
+# Gotcha 2: Don't apply weight decay to norm parameters
+def get_param_groups(model):
+    decay, no_decay = [], []
+    for name, param in model.named_parameters():
+        if "norm" in name or "bias" in name:
+            no_decay.append(param)   # LayerNorm weight/bias: no decay
+        else:
+            decay.append(param)
+    return [{"params": decay, "weight_decay": 0.1},
+            {"params": no_decay, "weight_decay": 0.0}]
+
+optimizer = torch.optim.AdamW(get_param_groups(model), lr=1e-4)
+
+# Gotcha 3: Fused LayerNorm for speed (torch 2.x)
+ln_fused = nn.LayerNorm(768, elementwise_affine=True)
+# Or use Flash Attention's built-in fused layer norm</div>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/neural-nets.html" style="color:var(--accent)">Neural Networks</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

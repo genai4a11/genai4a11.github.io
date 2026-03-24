@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autograd | GenAI Mindmap</title>
+  <meta name="description" content="PyTorch's automatic differentiation engine — traces operations on tensors and computes gradients automatically via reverse-mode autodiff." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Autograd" />
+  <meta property="og:description" content="PyTorch's automatic differentiation engine — traces operations on tensors and computes gradients automatically via reverse-mode autodiff." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/autograd.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/autograd.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Autograd | GenAI Mindmap",
+  "description": "PyTorch's automatic differentiation engine \u2014 traces operations on tensors and computes gradients automatically via reverse-mode autodiff.",
+  "url": "https://genai4a11.github.io/concepts/autograd.html",
+  "dateModified": "2026-03-24T14:34:22.050628",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Autograd | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/autograd.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #7c3aed;
+      --accent-dark: #6d28d9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/pytorch-basics.html" class="nav-back">← PyTorch Basics</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">PyTorch Basics</span>
+    <h1><em>Autograd</em></h1>
+    <p class="hero-sub">PyTorch's automatic differentiation engine — traces operations on tensors and computes gradients automatically via reverse-mode autodiff.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Tape</div><div class="stat-label">Mechanism</div></div>
+      <div><div class="stat-num">∂L/∂w</div><div class="stat-label">Computes</div></div>
+      <div><div class="stat-num">O(1)</div><div class="stat-label">Backward Cost</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">How Autograd Works</a></li>
+        <li><a href="#s2" data-num="02">requires_grad & Computation Graph</a></li>
+        <li><a href="#s3" data-num="03">Backward Pass</a></li>
+        <li><a href="#s4" data-num="04">Custom Autograd Functions</a></li>
+        <li><a href="#s5" data-num="05">Gradient Accumulation</a></li>
+        <li><a href="#s6" data-num="06">Debugging Gradients</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+      <h2>How Autograd Works</h2>
+      <p>Autograd uses reverse-mode automatic differentiation. During the forward pass, it builds a computation graph (a tape of operations). During backward(), it traverses the graph in reverse, applying the chain rule at each node.</p>
+      <div class="callout blue">
+        <strong>Key insight:</strong> Autograd doesn't do symbolic math. It traces actual numerical operations and their local gradients, then multiplies them together via the chain rule. This is called reverse-mode autodiff.
+      </div>
+      <ul>
+        <li><strong>Forward pass:</strong> Records operations in a DAG (directed acyclic graph)</li>
+        <li><strong>Backward pass:</strong> Traverses DAG in reverse, accumulating ∂L/∂w for every parameter</li>
+        <li><strong>Cost:</strong> Backward pass has ~same cost as forward pass — not 10x more expensive</li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+      <h2>requires_grad & Computation Graph</h2>
+      <div class="example-box">import torch
+
+# Only tensors with requires_grad=True are tracked
+x = torch.randn(3, requires_grad=True)   # Will track gradients
+w = torch.randn(3, requires_grad=True)   # Learnable weight
+b = torch.tensor(0.5, requires_grad=True)
+
+# Forward pass — autograd records each operation
+y = (x * w).sum() + b  # sum and add are tracked
+z = y ** 2
+
+# Check the graph
+print(z.grad_fn)          # PowBackward0 — the last op
+print(y.grad_fn)          # AddBackward0
+
+# Leaf tensors: user-created tensors (no grad_fn)
+print(x.is_leaf)           # True — x is a leaf
+print(z.is_leaf)           # False — z was computed
+
+# Model parameters are leaf tensors with requires_grad=True
+import torch.nn as nn
+linear = nn.Linear(4, 2)
+for param in linear.parameters():
+    print(param.is_leaf, param.requires_grad)  # True, True</div>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+      <h2>Backward Pass</h2>
+      <div class="example-box">import torch
+
+x = torch.randn(4, requires_grad=True)
+w = torch.randn(4, requires_grad=True)
+
+# Forward
+y = (x * w).sum()
+loss = y ** 2
+
+# Backward — computes all gradients
+loss.backward()
+
+# Access gradients
+print(x.grad)   # ∂loss/∂x
+print(w.grad)   # ∂loss/∂w
+
+# Always zero gradients before next backward!
+# (PyTorch accumulates by default — useful for gradient accumulation)
+x.grad.zero_()
+w.grad.zero_()
+
+# With retain_graph=True: keep graph for multiple backward passes
+loss.backward(retain_graph=True)  # Normally graph is freed after backward
+
+# Vector-valued outputs: pass gradient vector
+y = x * w             # y is a vector
+y.backward(torch.ones_like(y))  # gradient of sum(y)
+# equivalent to y.sum().backward()</div>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+      <h2>Custom Autograd Functions</h2>
+      <div class="example-box">import torch
+
+class StraightThroughEstimator(torch.autograd.Function):
+    """Custom autograd: forward does rounding, backward passes gradient through."""
+
+    @staticmethod
+    def forward(ctx, x):
+        # Round to nearest integer (not differentiable in standard sense)
+        return x.round()
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        # Straight-through: pass gradient unchanged
+        return grad_output  # Act as if forward was identity
+
+# Use it
+ste = StraightThroughEstimator.apply
+x = torch.randn(5, requires_grad=True)
+y = ste(x)
+y.sum().backward()
+print(x.grad)  # Gradient flows through rounding
+
+# Another common use: custom CUDA kernels, masked operations
+class MaskedSoftmax(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, logits, mask):
+        logits = logits.masked_fill(~mask, float('-inf'))
+        probs = torch.softmax(logits, dim=-1)
+        ctx.save_for_backward(probs, mask)
+        return probs
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        probs, mask = ctx.saved_tensors
+        # Standard softmax backward
+        grad = probs * (grad_output - (grad_output * probs).sum(-1, keepdim=True))
+        return grad, None  # No gradient for mask</div>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+      <h2>Gradient Accumulation</h2>
+      <div class="example-box">import torch
+
+# Gradient accumulation: simulate large batch on small GPU
+# Instead of batch_size=128, do 8 steps with batch_size=16
+accum_steps = 8
+optimizer.zero_grad()
+
+for i, (x, y) in enumerate(loader):
+    output = model(x)
+    loss = criterion(output, y) / accum_steps  # Scale loss!
+    loss.backward()  # Gradients accumulate (not zeroed)
+
+    if (i + 1) % accum_steps == 0:
+        optimizer.step()    # Update weights
+        optimizer.zero_grad()  # Now zero gradients
+
+# This gives effective batch size = 16 * 8 = 128
+# Memory usage stays at batch_size=16
+
+# With gradient clipping (important for stability)
+torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+optimizer.step()
+optimizer.zero_grad()</div>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+      <h2>Debugging Gradients</h2>
+      <div class="example-box">import torch
+
+# Check for NaN/Inf gradients
+for name, param in model.named_parameters():
+    if param.grad is not None:
+        if torch.isnan(param.grad).any():
+            print(f"NaN gradient in {name}")
+        if torch.isinf(param.grad).any():
+            print(f"Inf gradient in {name}")
+
+# Monitor gradient norms (useful in TensorBoard/W&B)
+total_norm = 0
+for param in model.parameters():
+    if param.grad is not None:
+        total_norm += param.grad.norm().item() ** 2
+total_norm = total_norm ** 0.5
+wandb.log({"grad_norm": total_norm})
+
+# Gradient hooks — intercept gradients for debugging
+def print_grad(name):
+    def hook(grad):
+        print(f"{name}: grad norm = {grad.norm():.4f}")
+    return hook
+
+for name, param in model.named_parameters():
+    param.register_hook(print_grad(name))
+
+# Detect dead ReLUs (gradients permanently zero)
+activation_stats = {}
+def hook(module, input, output):
+    activation_stats[module] = (output > 0).float().mean().item()  # % active neurons</div>
+      <div class="callout amber">
+        <strong>Vanishing gradients:</strong> If grad norms are < 1e-6, gradients are vanishing. Fixes: use residual connections, layer normalization, or a learning rate warmup schedule.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/pytorch-basics.html" style="color:var(--accent)">PyTorch Basics</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

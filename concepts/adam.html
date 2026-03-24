@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adam Optimizer | GenAI Mindmap</title>
+  <meta name="description" content="Adaptive Moment Estimation — the standard optimizer for training transformers and fine-tuning LLMs. Combines momentum with adaptive per-parameter learning rates." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Adam Optimizer" />
+  <meta property="og:description" content="Adaptive Moment Estimation — the standard optimizer for training transformers and fine-tuning LLMs. Combines momentum with adaptive per-parameter learning rates." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/adam.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/adam.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Adam Optimizer | GenAI Mindmap",
+  "description": "Adaptive Moment Estimation \u2014 the standard optimizer for training transformers and fine-tuning LLMs. Combines momentum with adaptive per-parameter learning rates.",
+  "url": "https://genai4a11.github.io/concepts/adam.html",
+  "dateModified": "2026-03-24T14:34:21.878690",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Adam Optimizer | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/adam.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/optimization.html" class="nav-back">← Optimization</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Optimization</span>
+    <h1><em>Adam Optimizer</em></h1>
+    <p class="hero-sub">Adaptive Moment Estimation — the standard optimizer for training transformers and fine-tuning LLMs. Combines momentum with adaptive per-parameter learning rates.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">AdamW</div><div class="stat-label">LLM Standard</div></div>
+      <div><div class="stat-num">β₁=0.9</div><div class="stat-label">Momentum</div></div>
+      <div><div class="stat-num">β₂=0.999</div><div class="stat-label">RMSProp</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why Adam?</a></li>
+        <li><a href="#s2" data-num="02">Adam Algorithm</a></li>
+        <li><a href="#s3" data-num="03">AdamW: Weight Decay Fix</a></li>
+        <li><a href="#s4" data-num="04">Hyperparameter Guide</a></li>
+        <li><a href="#s5" data-num="05">Memory-Efficient Variants</a></li>
+        <li><a href="#s6" data-num="06">Common Mistakes</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+      <h2>Why Adam?</h2>
+      <p>Vanilla SGD uses the same learning rate for all parameters. Adam maintains per-parameter adaptive learning rates — parameters that rarely get large gradients get a relatively higher effective learning rate. This makes it much more robust to sparse gradients and different feature scales.</p>
+      <ul>
+        <li><strong>Momentum (m):</strong> Smooths gradient updates by maintaining an exponential moving average of gradients. Reduces oscillation.</li>
+        <li><strong>Adaptive rates (v):</strong> Divides by the root of the EMA of squared gradients. Parameters with large gradients get smaller effective LR.</li>
+        <li><strong>Bias correction:</strong> Compensates for the zero-initialization of m and v at the start of training.</li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+      <h2>Adam Algorithm</h2>
+      <div class="example-box">import torch
+
+# Adam update rule (manual implementation for clarity)
+# Parameters: β₁=0.9 (momentum), β₂=0.999 (RMSProp), ε=1e-8
+beta1, beta2, eps, lr = 0.9, 0.999, 1e-8, 1e-3
+
+# State (initialized to zero)
+m = torch.zeros_like(param)   # 1st moment (momentum)
+v = torch.zeros_like(param)   # 2nd moment (squared gradient EMA)
+
+for t in range(1, num_steps + 1):
+    g = param.grad  # gradient at step t
+
+    # Update biased moment estimates
+    m = beta1 * m + (1 - beta1) * g         # EMA of gradients
+    v = beta2 * v + (1 - beta2) * g.pow(2)  # EMA of squared gradients
+
+    # Bias correction (compensates for zero init)
+    m_hat = m / (1 - beta1**t)
+    v_hat = v / (1 - beta2**t)
+
+    # Update parameter
+    param = param - lr * m_hat / (v_hat.sqrt() + eps)
+
+# PyTorch equivalent:
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-8)</div>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+      <h2>AdamW: Weight Decay Fix</h2>
+      <p>The original Adam applies L2 regularization by adding λw to the gradient. This couples weight decay with the adaptive learning rate — parameters with large gradients get less regularization. AdamW decouples them: apply weight decay directly to the parameter, not through the gradient.</p>
+      <div class="example-box">import torch
+
+# Adam (wrong weight decay):
+# param = param - lr * (grad + lambda * param) / (sqrt(v) + eps)
+# → weight decay scaled by 1/sqrt(v) — inconsistent!
+
+# AdamW (correct):
+# param = param - lr * grad / (sqrt(v) + eps) - lr * lambda * param
+# → weight decay always at rate lr * lambda — clean L2 regularization
+
+# Always use AdamW for fine-tuning and pre-training
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=2e-5,            # For fine-tuning
+    betas=(0.9, 0.95),  # β₂=0.95 is better for LLMs (per Chinchilla)
+    eps=1e-8,
+    weight_decay=0.1    # Decoupled weight decay
+)
+
+# In HuggingFace:
+from transformers import AdamW
+optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
+# Note: HF's AdamW is deprecated — use torch.optim.AdamW</div>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+      <h2>Hyperparameter Guide</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Setting</th><th>Pre-training</th><th>Fine-tuning</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Learning rate</td><td>1e-4 to 3e-4</td><td>1e-5 to 3e-4</td><td>Use warmup + cosine decay</td></tr>
+          <tr><td>β₁ (momentum)</td><td>0.9</td><td>0.9</td><td>Rarely changed</td></tr>
+          <tr><td>β₂ (RMSProp)</td><td>0.95</td><td>0.999</td><td>0.95 for LLM pre-training (Chinchilla), 0.999 for fine-tuning</td></tr>
+          <tr><td>ε (epsilon)</td><td>1e-8</td><td>1e-8</td><td>Increase to 1e-6 if NaN in bfloat16</td></tr>
+          <tr><td>Weight decay</td><td>0.1</td><td>0.01–0.1</td><td>Applied to all params except norms and biases</td></tr>
+          <tr><td>Gradient clip</td><td>1.0</td><td>1.0</td><td>max_norm=1.0 standard</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+      <h2>Memory-Efficient Variants</h2>
+      <div class="example-box">import torch
+
+# Standard Adam memory: 2 optimizer states per param
+# For 7B params: 7B × 2 × 4 bytes = 56 GB just for optimizer states!
+
+# AdaFactor: O(√n) states instead of O(n) — used to train T5, PaLM
+from transformers.optimization import Adafactor
+optimizer = Adafactor(
+    model.parameters(),
+    scale_parameter=True,
+    relative_step=True,  # Adaptive LR — no manual LR needed
+    warmup_init=True
+)
+
+# Adam 8-bit: store optimizer states in 8-bit (bitsandbytes)
+import bitsandbytes as bnb
+optimizer = bnb.optim.Adam8bit(model.parameters(), lr=1e-4)
+# Memory: 56 GB → 14 GB for a 7B model optimizer state
+
+# Paged Adam: CPU offload for optimizer states (uses pinned memory)
+optimizer = bnb.optim.PagedAdamW32bit(model.parameters(), lr=1e-4)
+# Used in QLoRA — fine-tune 65B on a single A100</div>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+      <h2>Common Mistakes</h2>
+      <div class="example-box">import torch
+
+# Mistake 1: Learning rate too high — common cause of loss spikes
+# Fix: use warmup (linear warmup for first 1-5% of training steps)
+from transformers import get_cosine_schedule_with_warmup
+scheduler = get_cosine_schedule_with_warmup(
+    optimizer,
+    num_warmup_steps=100,
+    num_training_steps=10000
+)
+
+# Mistake 2: Forgetting to exclude norm/bias from weight decay
+def no_decay_params(model):
+    no_decay = ["bias", "layer_norm", "layernorm", "rmsnorm"]
+    return [
+        {"params": [p for n, p in model.named_parameters()
+                    if not any(nd in n.lower() for nd in no_decay)],
+         "weight_decay": 0.1},
+        {"params": [p for n, p in model.named_parameters()
+                    if any(nd in n.lower() for nd in no_decay)],
+         "weight_decay": 0.0},
+    ]
+optimizer = torch.optim.AdamW(no_decay_params(model), lr=1e-4)
+
+# Mistake 3: Different LR for different param groups (correct for fine-tuning)
+optimizer = torch.optim.AdamW([
+    {"params": model.lm_head.parameters(), "lr": 1e-4},  # Higher for new head
+    {"params": model.transformer.parameters(), "lr": 1e-5},  # Lower for pretrained
+], weight_decay=0.01)</div>
+      <div class="callout green">
+        <strong>Rule of thumb:</strong> For fine-tuning: start with AdamW, lr=2e-5, weight_decay=0.01, cosine schedule, 100-step warmup. Adjust lr up if training is slow, down if loss is unstable.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/optimization.html" style="color:var(--accent)">Optimization</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

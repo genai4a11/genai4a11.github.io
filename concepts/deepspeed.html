@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeepSpeed | GenAI Mindmap</title>
+  <meta name="description" content="Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="DeepSpeed" />
+  <meta property="og:description" content="Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/deepspeed.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/deepspeed.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "DeepSpeed | GenAI Mindmap",
+  "description": "Microsoft's distributed training library with ZeRO optimizer stages \u2014 enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters.",
+  "url": "https://genai4a11.github.io/concepts/deepspeed.html",
+  "dateModified": "2026-03-24T14:34:22.563451",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "DeepSpeed | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/deepspeed.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/training-tech.html" class="nav-back">← Training Tech</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Training Tech</span>
+    <h1><em>DeepSpeed</em></h1>
+    <p class="hero-sub">Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">ZeRO-3</div><div class="stat-label">Full Sharding</div></div>
+      <div><div class="stat-num">10×+</div><div class="stat-label">Larger Models</div></div>
+      <div><div class="stat-num">FSDP</div><div class="stat-label">Alternative</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why DeepSpeed?</a></li>
+        <li><a href="#s2" data-num="02">ZeRO Optimizer Stages</a></li>
+        <li><a href="#s3" data-num="03">Config File</a></li>
+        <li><a href="#s4" data-num="04">HuggingFace + DeepSpeed</a></li>
+        <li><a href="#s5" data-num="05">ZeRO-3 Inference</a></li>
+        <li><a href="#s6" data-num="06">Alternatives: FSDP</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+      <h2>Why DeepSpeed?</h2>
+      <p>Training a 70B model requires ~140GB for weights alone (bfloat16). Optimizer states (Adam) add another 280GB. With gradients, you need ~560GB+ — impossible on a single GPU. DeepSpeed's ZeRO (Zero Redundancy Optimizer) shards all of this across GPUs.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>ZeRO Stage</th><th>What's Sharded</th><th>Memory / GPU (70B)</th></tr></thead>
+        <tbody>
+          <tr><td>Stage 0 (none)</td><td>Nothing</td><td>560 GB</td></tr>
+          <tr><td>Stage 1</td><td>Optimizer states</td><td>~400 GB</td></tr>
+          <tr><td>Stage 2</td><td>Optimizer states + gradients</td><td>~200 GB</td></tr>
+          <tr><td>Stage 3</td><td>Everything (params too)</td><td>~10 GB on 8 GPUs</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+      <h2>ZeRO Optimizer Stages</h2>
+      <div class="example-box"># ZeRO stage comparison for a 7B model across 8 × 80GB A100s:
+#
+# Stage 0 (DDP): 8 replicas × 56GB = 448GB total
+#   Each GPU holds full model + optimizer states. Standard DDP.
+#
+# Stage 1: Shard optimizer states across GPUs
+#   Optimizer states: 28GB → 28/8 = 3.5GB per GPU
+#   Still holds full model (28GB) + gradients (28GB) per GPU
+#   Per-GPU: ~60GB
+#
+# Stage 2: Stage 1 + shard gradients
+#   Gradients: 28/8 = 3.5GB per GPU
+#   Per-GPU: ~35GB
+#
+# Stage 3: Shard everything (params, grads, optimizer states)
+#   Per-GPU: ~7GB for 7B model on 8 GPUs!
+#   Tradeoff: communication overhead (gather params at each layer)
+#
+# Key insight: with 8 × 80GB A100s, even Stage 2 lets you train 65B+ models</div>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+      <h2>Config File</h2>
+      <div class="example-box"># ds_config.json — DeepSpeed configuration
+{
+  "zero_optimization": {
+    "stage": 2,                          // ZeRO Stage 2
+    "overlap_comm": true,                // Overlap communication with compute
+    "contiguous_gradients": true,        // Reduce memory fragmentation
+    "reduce_bucket_size": 5e8,           // Communication bucket size
+    "allgather_bucket_size": 5e8
+  },
+  "bf16": {
+    "enabled": true                      // bfloat16 training
+  },
+  "gradient_clipping": 1.0,             // Max gradient norm
+  "train_batch_size": "auto",           // Set automatically from args
+  "train_micro_batch_size_per_gpu": "auto",
+  "gradient_accumulation_steps": "auto",
+  "optimizer": {
+    "type": "AdamW",
+    "params": {
+      "lr": "auto",
+      "betas": [0.9, 0.999],
+      "weight_decay": "auto",
+      "torch_adam": true
+    }
+  }
+}</div>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+      <h2>HuggingFace + DeepSpeed</h2>
+      <div class="example-box">from transformers import TrainingArguments, Trainer
+
+# DeepSpeed is a first-class option in HuggingFace Trainer
+args = TrainingArguments(
+    output_dir="./output",
+    deepspeed="ds_config.json",   # Point to your config file
+    per_device_train_batch_size=2,
+    gradient_accumulation_steps=8,
+    bf16=True,
+    num_train_epochs=3,
+)
+
+trainer = Trainer(model=model, args=args, train_dataset=train_ds)
+trainer.train()
+
+# Launch with torchrun (or deepspeed launcher):
+# torchrun --nproc_per_node=8 train.py
+# deepspeed --num_gpus=8 train.py
+
+# For Stage 3: add to config
+# "zero_optimization": {
+#   "stage": 3,
+#   "offload_optimizer": {"device": "cpu"},   // CPU offload optimizer states
+#   "offload_param": {"device": "cpu"}         // CPU offload parameters
+# }
+# ZeRO-3 + CPU offload: fine-tune 30B on 4× 40GB A6000s</div>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+      <h2>ZeRO-3 Inference</h2>
+      <div class="example-box">from deepspeed import init_inference
+import torch
+
+# Load a model that doesn't fit on one GPU for inference
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-70b-hf")
+
+# DeepSpeed Inference: shard model across GPUs for inference
+ds_model = init_inference(
+    model,
+    mp_size=4,                   // Tensor parallel across 4 GPUs
+    dtype=torch.bfloat16,
+    replace_with_kernel_inject=True  // Use DeepSpeed optimized kernels
+)
+
+# Inference (same API as standard HuggingFace)
+inputs = tokenizer("Hello, world!", return_tensors="pt").to("cuda")
+outputs = ds_model.generate(**inputs, max_length=100)
+
+# ZeRO-Inference vs Tensor Parallel:
+# ZeRO-Inference: shards by parameter → less communication overhead
+# Tensor Parallel: shards by matrix dimension → better GPU utilization
+# Use ZeRO-Inference for large single-request scenarios</div>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+      <h2>Alternatives: FSDP</h2>
+      <div class="example-box">from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+
+# PyTorch's built-in FSDP — equivalent to ZeRO-3
+import functools
+from transformers.models.llama.modeling_llama import LlamaDecoderLayer
+
+wrap_policy = functools.partial(
+    transformer_auto_wrap_policy,
+    transformer_layer_cls={LlamaDecoderLayer}
+)
+
+model = FSDP(
+    model,
+    auto_wrap_policy=wrap_policy,
+    device_id=torch.cuda.current_device()
+)
+
+# HuggingFace Trainer supports FSDP natively:
+# TrainingArguments(fsdp="full_shard auto_wrap", fsdp_config={"fsdp_transformer_layer_cls_to_wrap": "LlamaDecoderLayer"})
+
+# DeepSpeed vs FSDP:
+# DeepSpeed: more features (CPU offload, ZeRO-Infinity), harder to debug
+# FSDP: PyTorch native, simpler, better torch.compile compatibility
+# 2024 recommendation: FSDP for new projects, DeepSpeed if you need CPU offload</div>
+      <div class="callout amber">
+        <strong>Starting point:</strong> For 1-2 GPUs: ZeRO Stage 2 via HuggingFace (just set deepspeed=...). For 4+ GPUs training large models: ZeRO Stage 3 or FSDP. For 65B+ models on limited hardware: ZeRO-3 + CPU offload.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/training-tech.html" style="color:var(--accent)">Training Tech</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

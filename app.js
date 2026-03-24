@@ -119,6 +119,27 @@ const CONCEPT_PAGES={
   structured_output_app:'concepts/structured-output-app.html',
   database_query:'concepts/database-query.html',
   voice_agents:'concepts/voice-agents.html',
+  // batch 11 — g3 leaf nodes: math / python ecosystem / pytorch / neural nets / optimization / training tech / regularization
+  linear_algebra:'concepts/linear-algebra.html',
+  calculus:'concepts/calculus.html',
+  probability:'concepts/probability.html',
+  numpy:'concepts/numpy.html',
+  pandas:'concepts/pandas.html',
+  matplotlib:'concepts/matplotlib.html',
+  pytorch_t:'concepts/pytorch-tensors.html',
+  autograd:'concepts/autograd.html',
+  hf_datasets:'concepts/hf-datasets.html',
+  backprop:'concepts/backprop.html',
+  activations:'concepts/activations.html',
+  batch_norm:'concepts/layer-norm.html',
+  adam:'concepts/adam.html',
+  lr_schedule:'concepts/lr-schedule.html',
+  weight_init:'concepts/weight-init.html',
+  mixed_prec:'concepts/mixed-precision.html',
+  grad_ckpt:'concepts/grad-checkpointing.html',
+  deepspeed:'concepts/deepspeed.html',
+  dropout:'concepts/dropout.html',
+  weight_decay:'concepts/weight-decay.html',
 };
 let N=JSON.parse(JSON.stringify(DN)),X=JSON.parse(JSON.stringify(DX)),e=false,s=null;
 function ifs(){const c=document.getElementById('starfield'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;const t=[];for(let i=0;i<100;i++)t.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,v:Math.random()*0.3+0.1});function a(){x.fillStyle='#030a1a';x.fillRect(0,0,c.width,c.height);x.fillStyle='#a78bfa';t.forEach(d=>{d.r+=d.v*0.01;if(d.r>2.5)d.r=0;x.beginPath();x.arc(d.x,d.y,d.r,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight})}
