@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Regularisation Techniques — GenAI Mindmap</title>
+  <meta name="description" content="Regularisation for deep learning and LLMs — L1/L2 weight decay, dropout, label smoothing, data augmentation, early stopping, and batch size effects on generalisation." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Regularisation Techniques" />
+  <meta property="og:description" content="Regularisation for deep learning and LLMs — L1/L2 weight decay, dropout, label smoothing, data augmentation, early stopping, and batch size effects on generalisation." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/regularization.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Regularisation Techniques" />
+  <meta name="twitter:description" content="Regularisation for deep learning and LLMs — L1/L2 weight decay, dropout, label smoothing, data augmentation, early stopping, and batch size effects on generalisation." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/regularization.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Regularisation Techniques",
+  "description": "Regularisation for deep learning and LLMs \u2014 L1/L2 weight decay, dropout, label smoothing, data augmentation, early stopping, and batch size effects on generalisation.",
+  "url": "https://genai4a11.github.io/concepts/regularization.html",
+  "dateModified": "2026-03-24T03:49:35.258214",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Regularisation Techniques",
+        "item": "https://genai4a11.github.io/concepts/regularization.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<div class="hero">
+  <span class="hero-tag">Foundations · Training</span>
+  <h1>Regularisation <em>Techniques</em></h1>
+  <p class="hero-sub">Dropout, weight decay, label smoothing, data augmentation, and early stopping — preventing overfitting in deep learning</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">Techniques</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">Sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Python-first</span>
+      <span class="stat-label">Code Examples</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <div class="toc-card">
+    <div class="toc-heading">In this guide</div>
+    <ol class="toc-list">
+      <li><a href="#overfitting-problem" data-num="1">Overfitting Problem</a></li>
+      <li><a href="#weight-decay" data-num="2">Weight Decay</a></li>
+      <li><a href="#dropout" data-num="3">Dropout</a></li>
+      <li><a href="#label-smoothing" data-num="4">Label Smoothing</a></li>
+      <li><a href="#data-augmentation" data-num="5">Data Augmentation</a></li>
+      <li><a href="#early-stopping" data-num="6">Early Stopping</a></li>
+      <li><a href="#llm-regularization" data-num="7">LLM Regularisation</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. OVERFITTING PROBLEM ── -->
+  <div class="section-block" id="overfitting-problem">
+    <div class="section-marker">01 — Fundamentals</div>
+    <h2>The Overfitting Problem</h2>
+    <p>Overfitting occurs when a model memorises training data instead of learning generalizable patterns. The training loss decreases while validation loss increases — a telltale sign. The underlying cause is that models have enough capacity to fit noise in the training set.</p>
+
+    <h3>Bias-Variance Tradeoff</h3>
+    <p>Every model exhibits bias (underfitting due to insufficient capacity) and variance (overfitting due to fitting noise). Regularisation reduces variance at a small cost to bias. The goal is to find the sweet spot that minimizes test error.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Regularisation is not always beneficial.</strong> On small datasets with limited capacity, adding regularisation helps. On massive datasets with weak priors, regularisation can hurt. Always measure on a held-out test set.</span>
+    </div>
+
+    <h3>When Regularisation Helps vs Hurts</h3>
+    <p><strong>Regularisation helps when:</strong> training loss is much lower than validation loss, you have a small dataset relative to model capacity, or you want to enforce prior knowledge. <strong>Regularisation hurts when:</strong> you're underfitting (both losses are high), your dataset is enormous, or your prior is wrong (e.g., L2 regularisation on a scale-invariant model).</p>
+
+    <div class="example-box"># Diagnosing overfitting
+import matplotlib.pyplot as plt
+
+epochs = list(range(100))
+train_losses = [...]  # from training loop
+val_losses = [...]    # from validation
+
+plt.plot(epochs, train_losses, label='Train')
+plt.plot(epochs, val_losses, label='Validation')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+# Overfitting signature:
+# - Train loss: ↓↓↓ (keeps decreasing)
+# - Val loss: ↓↓ then ↑↑ (increases after convergence)</div>
+  </div>
+
+  <!-- ── 2. WEIGHT DECAY ── -->
+  <div class="section-block" id="weight-decay">
+    <div class="section-marker">02 — Penalty Term</div>
+    <h2>L1, L2, and Weight Decay</h2>
+    <p><strong>Weight decay</strong> penalises large weights. L2 weight decay (Ridge regression) adds a penalty term proportional to the sum of squared weights. L1 weight decay (Lasso) penalises the sum of absolute values, encouraging sparsity. Both prevent the model from relying on any single feature too heavily.</p>
+
+    <h3>L2 vs L1 Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Penalty Formula</th><th>Effect on Weights</th><th>Sparsity</th><th>Use Case</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>L2 (Ridge)</strong></td><td>λ × Σ(w²)</td><td>Small, distributed</td><td>No</td><td>Default; smooth regularisation</td></tr>
+          <tr><td><strong>L1 (Lasso)</strong></td><td>λ × Σ(|w|)</td><td>Many zeros, few large</td><td>Yes</td><td>Feature selection; interpretability</td></tr>
+          <tr><td><strong>Elastic Net</strong></td><td>λ₁×Σ(|w|) + λ₂×Σ(w²)</td><td>Hybrid: zeros + small</td><td>Partial</td><td>Combined L1+L2 benefits</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Weight Decay in PyTorch</h3>
+    <p>In PyTorch, weight decay is specified via the optimizer. Most optimizers support the <code>weight_decay</code> parameter, which implements L2 regularisation. Important: weight decay in modern optimizers (AdamW) differs slightly from classical L2 — it's applied directly to weights, not gradients.</p>
+
+    <div class="example-box">import torch
+import torch.nn as nn
+import torch.optim as optim
+
+model = nn.Linear(10, 5)
+
+# L2 weight decay (Ridge)
+optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+
+# Training step
+loss = criterion(model(x), y)
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+# weight_decay is applied: w ← w - lr * (grad + weight_decay * w)
+
+# Manual L2 regularisation (for comparison)
+l2_lambda = 1e-4
+l2_loss = sum(torch.sum(p ** 2) for p in model.parameters())
+total_loss = loss + l2_lambda * l2_loss</div>
+
+    <h3>Choosing Lambda</h3>
+    <p>The weight decay coefficient λ controls regularisation strength. Too small: regularisation has no effect. Too large: the model underfits. Common practice is to grid search λ ∈ {1e-5, 1e-4, 1e-3, 1e-2} and pick the value with the best validation loss. Start at 1e-4 as a default.</p>
+  </div>
+
+  <!-- ── 3. DROPOUT ── -->
+  <div class="section-block" id="dropout">
+    <div class="section-marker">03 — Stochastic Regularisation</div>
+    <h2>Dropout: Random Neuron Deactivation</h2>
+    <p><strong>Dropout</strong> randomly zeroes activations during training with probability p. It forces the network to learn redundant representations — no single neuron becomes critical. At inference, all neurons are used but scaled down by (1-p) to match expected values. Dropout is free regularisation: no hyperparameter tuning beyond p.</p>
+
+    <h3>Training vs Inference Mode</h3>
+    <p>This is critical: dropout behaves differently in training and inference. During training, it drops activations randomly. During inference (<code>model.eval()</code>), it's disabled and all activations are used. PyTorch handles this automatically.</p>
+
+    <div class="example-box">import torch
+import torch.nn as nn
+
+class DropoutModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(128, 256)
+        self.dropout = nn.Dropout(p=0.5)  # drop 50% of activations
+        self.fc2 = nn.Linear(256, 10)
+    
+    def forward(self, x):
+        x = self.fc1(x)
+        x = torch.relu(x)
+        x = self.dropout(x)  # Applied in training; disabled in eval
+        x = self.fc2(x)
+        return x
+
+model = DropoutModel()
+
+# Training: dropout is active
+model.train()
+x = torch.randn(32, 128)
+y_train = model(x)  # Some activations randomly zeroed
+
+# Inference: dropout is disabled
+model.eval()
+y_test = model(x)   # All activations used, scaled by (1-p)</div>
+
+    <h3>Dropout Rate Selection</h3>
+    <p>Typical dropout rates: 0.2–0.5. Higher rates (e.g., 0.7) for large models or small datasets. Lower rates (0.1–0.2) for small models or large datasets. DropPath (dropping entire neurons in a layer) is used in vision transformers. Attention dropout is common in LLMs to prevent reliance on specific attention heads.</p>
+
+    <h3>MC-Dropout for Uncertainty</h3>
+    <p>By keeping dropout active at inference and running multiple forward passes, you get uncertainty estimates. Variations across runs reflect model uncertainty — useful for detecting out-of-distribution inputs.</p>
+
+    <div class="example-box"># MC-Dropout: multiple forward passes with dropout enabled
+model.train()  # Keep dropout active
+num_samples = 10
+predictions = []
+
+with torch.no_grad():
+    for _ in range(num_samples):
+        logits = model(x_test)
+        predictions.append(logits)
+
+predictions = torch.stack(predictions)  # [num_samples, batch_size, num_classes]
+mean_pred = predictions.mean(dim=0)
+uncertainty = predictions.std(dim=0)
+
+# High uncertainty suggests OOD example</div>
+  </div>
+
+  <!-- ── 4. LABEL SMOOTHING ── -->
+  <div class="section-block" id="label-smoothing">
+    <div class="section-marker">04 — Target Modification</div>
+    <h2>Label Smoothing: Soft Targets</h2>
+    <p><strong>Label smoothing</strong> replaces hard targets (one-hot vectors) with soft targets. Instead of [0, 1, 0], use [0.05, 0.9, 0.05] (for 3 classes). It prevents the model from becoming overconfident and improves calibration — predicted probabilities better reflect actual accuracy.</p>
+
+    <h3>Effect on Calibration</h3>
+    <p>Hard targets encourage the model to assign probability 1.0 to the correct class, leading to overconfident predictions. Label smoothing encourages spreading probability mass across all classes, resulting in more calibrated probabilities. This is especially important for uncertainty quantification.</p>
+
+    <div class="example-box">import torch
+import torch.nn.functional as F
+
+def label_smoothing_loss(logits, targets, epsilon=0.1, num_classes=10):
+    """Compute cross-entropy with label smoothing."""
+    # Create soft targets: 1-epsilon on correct class, epsilon/(K-1) on others
+    soft_targets = torch.ones_like(logits) * (epsilon / (num_classes - 1))
+    soft_targets.scatter_(1, targets.unsqueeze(1), 1 - epsilon)
+    
+    # Compute cross-entropy with soft targets
+    log_probs = F.log_softmax(logits, dim=1)
+    loss = -(soft_targets * log_probs).sum(dim=1).mean()
+    return loss
+
+# Example
+logits = torch.randn(32, 10)
+targets = torch.randint(0, 10, (32,))
+loss = label_smoothing_loss(logits, targets, epsilon=0.1)</div>
+
+    <h3>Typical Epsilon Values</h3>
+    <p>ε = 0.1 is a common default for most tasks. ε = 0.01–0.05 for tasks requiring high confidence (e.g., medical diagnosis). ε = 0.2–0.3 for datasets with noisy labels. The tradeoff: higher ε reduces overfitting but can hurt accuracy if the dataset is clean.</p>
+  </div>
+
+  <!-- ── 5. DATA AUGMENTATION ── -->
+  <div class="section-block" id="data-augmentation">
+    <div class="section-marker">05 — Synthetic Training Data</div>
+    <h2>Data Augmentation: Creating Diversity</h2>
+    <p><strong>Data augmentation</strong> creates new training examples by applying transformations. For images: rotations, crops, color jitter, mixup. For text: back-translation, paraphrasing, word replacement. For both: mixup (interpolating between examples) is powerful. It's free data that improves generalisation.</p>
+
+    <h3>Image Augmentation</h3>
+    <p>PyTorch's torchvision.transforms provides standard image transforms. Combine multiple transforms in a pipeline. Be careful not to destroy label semantics (e.g., don't flip images where orientation matters, like text).</p>
+
+    <div class="example-box">from torchvision import transforms
+
+# Standard augmentation pipeline
+train_transform = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomRotation(15),
+    transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+val_transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+# Use in DataLoader
+dataset = MyImageDataset(transform=train_transform)
+loader = DataLoader(dataset, batch_size=32)</div>
+
+    <h3>Text Augmentation</h3>
+    <p>For text: back-translation (translate to another language and back), paraphrasing using language models, and synonym replacement. The nlpaug library provides standard techniques.</p>
+
+    <h3>Mixup: Interpolating Examples</h3>
+    <p>Mixup creates synthetic examples by interpolating between real examples: x' = λx_i + (1-λ)x_j and y' = λy_i + (1-λ)y_j, where λ ~ Beta(α, α). Simple to implement and often improves generalisation by 1–2% accuracy.</p>
+
+    <div class="example-box"># Mixup augmentation
+import torch
+import numpy as np
+
+def mixup(x, y, alpha=1.0):
+    """Apply mixup to a batch."""
+    batch_size = x.size(0)
+    
+    # Sample mixing coefficient from Beta distribution
+    lam = torch.from_numpy(np.random.beta(alpha, alpha)).float()
+    
+    # Random permutation for mixing
+    index = torch.randperm(batch_size)
+    
+    # Interpolate inputs and targets
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    mixed_y = lam * y + (1 - lam) * y[index]
+    
+    return mixed_x, mixed_y
+
+# Use in training
+for x, y in train_loader:
+    x, y = mixup(x, y, alpha=1.0)
+    logits = model(x)
+    loss = criterion(logits, y)</div>
+  </div>
+
+  <!-- ── 6. EARLY STOPPING ── -->
+  <div class="section-block" id="early-stopping">
+    <div class="section-marker">06 — Dynamic Stopping</div>
+    <h2>Early Stopping and Learning Rate Schedules</h2>
+    <p><strong>Early stopping</strong> monitors validation loss and stops training when it plateaus or increases. It prevents overfitting without explicit hyperparameter tuning. <strong>Learning rate schedules</strong> (cosine annealing, warmup, OneCycleLR) reduce the learning rate over time, allowing finer refinement as training progresses. Both are forms of implicit regularisation.</p>
+
+    <h3>Early Stopping Implementation</h3>
+    <p>Track validation loss at epoch boundaries. Stop if loss hasn't improved for <code>patience</code> consecutive epochs. Save the best checkpoint and load it at the end.</p>
+
+    <div class="example-box">class EarlyStopping:
+    def __init__(self, patience=5, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.best_loss = None
+        self.should_stop = False
+    
+    def __call__(self, val_loss):
+        if self.best_loss is None:
+            self.best_loss = val_loss
+        elif val_loss < self.best_loss - self.min_delta:
+            self.best_loss = val_loss
+            self.counter = 0
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                self.should_stop = True
+
+# Use in training loop
+early_stopping = EarlyStopping(patience=3)
+for epoch in range(num_epochs):
+    train_loss = train_one_epoch(...)
+    val_loss = evaluate(...)
+    early_stopping(val_loss)
+    if early_stopping.should_stop:
+        print(f"Early stopping at epoch {epoch}")
+        break</div>
+
+    <h3>Learning Rate Schedules</h3>
+    <p>Cosine annealing: learning rate starts high, smoothly decreases to zero. Warmup: small learning rate initially, then increases to peak. OneCycleLR: combines both — ramp up, then ramp down. These schedules improve convergence and reduce overfitting.</p>
+
+    <div class="example-box">from torch.optim.lr_scheduler import (
+    CosineAnnealingLR, LinearLR, OneCycleLR
+)
+
+optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+# Cosine annealing: LR → 0 over time
+scheduler = CosineAnnealingLR(optimizer, T_max=100)
+
+# Linear warmup + cosine decay (common in transformers)
+scheduler = torch.optim.lr_scheduler.SequentialLR(
+    optimizer,
+    schedulers=[
+        LinearLR(optimizer, start_factor=0.1, total_iters=10),
+        CosineAnnealingLR(optimizer, T_max=90)
+    ],
+    milestones=[10]
+)
+
+# OneCycleLR (used in FastAI)
+scheduler = OneCycleLR(
+    optimizer,
+    max_lr=0.1,
+    total_steps=len(train_loader) * num_epochs,
+    pct_start=0.3,
+    anneal_strategy='cos'
+)
+
+# In training loop
+for epoch in range(num_epochs):
+    for batch in train_loader:
+        loss = ...
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+        scheduler.step()  # Update LR every batch</div>
+  </div>
+
+  <!-- ── 7. LLM REGULARIZATION ── -->
+  <div class="section-block" id="llm-regularization">
+    <div class="section-marker">07 — LLM-Specific Patterns</div>
+    <h2>Regularisation in LLMs</h2>
+    <p>Language models use domain-specific regularisation techniques. Attention dropout and residual dropout prevent overfitting without hurting expressiveness. Weight tying (sharing parameters across layers) reduces parameters while improving regularisation. Z-loss and entropy penalties encourage calibration.</p>
+
+    <h3>Attention and Residual Dropout</h3>
+    <p>In transformer models, dropout is applied to attention weights and residual connections. This is different from fully-connected layers: it prevents the model from relying on specific attention heads and ensures gradients flow smoothly through deep networks.</p>
+
+    <div class="example-box"># Typical transformer dropout configuration
+class TransformerBlock(nn.Module):
+    def __init__(self, dim, num_heads, dropout=0.1):
+        super().__init__()
+        self.attention = nn.MultiheadAttention(dim, num_heads, dropout=dropout)
+        self.mlp = nn.Sequential(
+            nn.Linear(dim, 4 * dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(4 * dim, dim),
+            nn.Dropout(dropout)
+        )
+        self.dropout = nn.Dropout(dropout)
+        self.norm1 = nn.LayerNorm(dim)
+        self.norm2 = nn.LayerNorm(dim)
+    
+    def forward(self, x):
+        # Self-attention with dropout
+        attn_out, _ = self.attention(x, x, x)
+        attn_out = self.dropout(attn_out)
+        x = x + attn_out  # Residual connection
+        x = self.norm1(x)
+        
+        # MLP with dropout
+        mlp_out = self.mlp(x)
+        x = x + mlp_out  # Residual connection
+        x = self.norm2(x)
+        return x</div>
+
+    <h3>Z-Loss and Auxiliary Losses</h3>
+    <p>The z-loss (from PaLM paper) penalises the logit sum to prevent excessive concentration of probability on a few tokens. This improves stability and calibration during training.</p>
+
+    <div class="example-box"># Z-loss regularisation
+def compute_loss_with_z_loss(logits, targets, z_loss_weight=0.0):
+    """Compute cross-entropy loss with z-loss regularisation."""
+    ce_loss = F.cross_entropy(logits, targets)
+    
+    # Z-loss: penalise large logit sums
+    logit_sum = torch.logsumexp(logits, dim=-1)
+    z_loss = logit_sum ** 2
+    z_loss = z_loss.mean()
+    
+    total_loss = ce_loss + z_loss_weight * z_loss
+    return total_loss</div>
+  </div>
+
+  <!-- ── TOOLS & ECOSYSTEM ── -->
+  <div class="section-block" id="tools-ecosystem">
+    <div class="section-marker">Tools & Libraries</div>
+    <h2>Regularisation Tools and Libraries</h2>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">PyTorch</div>
+        <div class="tool-desc">Built-in Dropout, weight_decay in optimizers, and learning rate schedulers. Foundation for all regularisation techniques.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Augmentation</div>
+        <div class="tool-name">torchvision</div>
+        <div class="tool-desc">Standard image transforms: RandomCrop, RandomRotation, ColorJitter, Resize. Easy composition with Compose().</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Augmentation</div>
+        <div class="tool-name">albumentations</div>
+        <div class="tool-desc">Advanced image augmentation with GPU support. Faster and more flexible than torchvision for complex pipelines.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Augmentation</div>
+        <div class="tool-name">nlpaug</div>
+        <div class="tool-desc">Text augmentation: back-translation, word replacement, synonym substitution. Easy integration with training pipelines.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Hyperparameter</div>
+        <div class="tool-name">Optuna</div>
+        <div class="tool-desc">Hyperparameter optimization. Automatically search for best weight_decay, dropout rate, and learning rate schedule.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Training</div>
+        <div class="tool-name">Lightning</div>
+        <div class="tool-desc">High-level training framework with built-in early stopping, learning rate schedulers, and mixed precision.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Research Papers</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-paper">Paper</span> Srivastava, N. et al. (2014). <em>Dropout: A Simple Way to Prevent Neural Networks from Overfitting.</em> JMLR. — <a href="http://jmlr.org/papers/v15/srivastava14a.html" target="_blank">jmlr.org ↗</a></li>
+      <li><span class="ref-badge badge-paper">Paper</span> Szegedy, C. et al. (2016). <em>Rethinking the Inception Architecture for Computer Vision.</em> CVPR. Label smoothing introduced. — <a href="https://arxiv.org/abs/1512.00567" target="_blank">arxiv:1512.00567 ↗</a></li>
+      <li><span class="ref-badge badge-paper">Paper</span> Zhang, H. et al. (2018). <em>mixup: Beyond Empirical Risk Minimization.</em> ICLR. — <a href="https://arxiv.org/abs/1710.09412" target="_blank">arxiv:1710.09412 ↗</a></li>
+      <li><span class="ref-badge badge-paper">Paper</span> Anil, C. et al. (2023). <em>Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (T5).</em> Includes regularisation techniques for large models. — <a href="https://arxiv.org/abs/1910.10683" target="_blank">arxiv:1910.10683 ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Documentation & Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> PyTorch Optimizers. <a href="https://pytorch.org/docs/stable/optim.html" target="_blank">pytorch.org/docs/optim ↗</a> — Weight decay parameter in all optimizers</li>
+      <li><span class="ref-badge badge-docs">Docs</span> PyTorch Learning Rate Schedulers. <a href="https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate" target="_blank">pytorch.org/docs/optim ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> Albumentations Documentation. <a href="https://albumentations.ai/" target="_blank">albumentations.ai ↗</a> — Advanced image augmentation</li>
+      <li><span class="ref-badge badge-guide">Guide</span> Fast.ai Regularisation Handbook. <a href="https://github.com/fastai/fastai/blob/master/docs_src/callback.core.ipynb" target="_blank">github.com/fastai ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">Blog</span> Jeremy Howard. <em>Understanding Deep Learning Overfitting and Regularisation.</em> Fast.ai Practical Deep Learning for Coders course. — <a href="https://course.fast.ai/" target="_blank">course.fast.ai ↗</a></li>
+      <li><span class="ref-badge badge-blog">Blog</span> Distill. <em>Dropout as a Bayesian Approximation: Representing Model Uncertainty in Deep Learning.</em> — <a href="https://distill.pub/" target="_blank">distill.pub ↗</a></li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <a class="concept-nav-prev" href="peft-methods.html">← Parameter-Efficient Fine-Tuning</a>
+  <span class="concept-nav-cat">Training & Fine-Tuning</span>
+  <a class="concept-nav-next" href="synthetic-data.html">→ Synthetic Data for LLMs</a>
+</nav>
+</body>
+</html>

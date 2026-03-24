@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unstructured.io — Document Parsing for RAG — GenAI Mindmap</title>
+  <meta name="description" content="Unstructured.io for RAG pipelines — partition functions, element types, chunking strategies, cloud vs local, and integration with LangChain and LlamaIndex." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Unstructured.io — Document Parsing for RAG" />
+  <meta property="og:description" content="Unstructured.io for RAG pipelines — partition functions, element types, chunking strategies, cloud vs local, and integration with LangChain and LlamaIndex." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/unstructured.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Unstructured.io — Document Parsing for RAG" />
+  <meta name="twitter:description" content="Unstructured.io for RAG pipelines — partition functions, element types, chunking strategies, cloud vs local, and integration with LangChain and LlamaIndex." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/unstructured.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Unstructured.io \u2014 Document Parsing for RAG",
+  "description": "Unstructured.io for RAG pipelines \u2014 partition functions, element types, chunking strategies, cloud vs local, and integration with LangChain and LlamaIndex.",
+  "url": "https://genai4a11.github.io/concepts/unstructured.html",
+  "dateModified": "2026-03-24T03:49:35.567146",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Unstructured.io \u2014 Document Parsing for RAG",
+        "item": "https://genai4a11.github.io/concepts/unstructured.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Retrieval · Ingestion</span>
+  <h1>Unstructured<em>.io</em></h1>
+  <p class="hero-sub">Parsing PDFs, HTML, DOCX, images, and tables into clean chunks ready for embedding</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">25+</span>
+      <span class="stat-label">file types</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Python-first</span>
+      <span class="stat-label">SDK</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-hard" data-num="1">Why parsing is hard</a></li>
+      <li><a href="#elements" data-num="2">Element types</a></li>
+      <li><a href="#partition" data-num="3">Partition functions</a></li>
+      <li><a href="#chunking" data-num="4">Chunking strategies</a></li>
+      <li><a href="#cloud-vs-local" data-num="5">Cloud vs local</a></li>
+      <li><a href="#integration" data-num="6">Integration</a></li>
+      <li><a href="#references" data-num="7">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY PARSING IS HARD ── -->
+  <div class="section-block" id="why-hard">
+    <div class="section-marker">01 — The Problem</div>
+    <h2>Why Document Parsing Is Hard</h2>
+    <p>Most documents are messy. PDFs embed text without structure — you get character positions and font info, but no semantic meaning of what's a title, table, or paragraph. HTML mixes markup with content. DOCX files are XML. Images contain text that needs OCR. And tables are notoriously difficult: cell detection, header inference, and value alignment all fail silently on complex layouts.</p>
+
+    <p>Naive extraction (splitting on whitespace, regex-based chunking) fails catastrophically: tables get flattened into gibberish, multi-column layouts become interleaved nonsense, and semantic boundaries disappear. When you feed that garbage to an LLM, retrieval quality collapses.</p>
+
+    <h3>Common Failure Modes</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3>🔲 PDF Layout Loss</h3>
+        <ul>
+          <li>Two-column layouts interleave lines</li>
+          <li>Sidebars and footnotes appear out of order</li>
+          <li>Headings separate from content</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>📊 Table Destruction</h3>
+        <ul>
+          <li>Headers unlinked from data rows</li>
+          <li>Cell values scrambled by column spanning</li>
+          <li>Merged cells create orphan values</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>🖼️ Image Blindness</h3>
+        <ul>
+          <li>Text in images never extracted</li>
+          <li>Charts and diagrams treated as void</li>
+          <li>OCR errors corrupt extracted text</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>🏷️ Semantic Loss</h3>
+        <ul>
+          <li>No distinction between title and body</li>
+          <li>List structure becomes flat text</li>
+          <li>Code blocks indistinguishable from prose</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>The parsing cost:</strong> Unstructured.io isn't magic, but it solves these systematically. Document understanding is 70% of RAG quality. Garbage parsing ruins even the best retriever.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. ELEMENT TYPES ── -->
+  <div class="section-block" id="elements">
+    <div class="section-marker">02 — Semantics</div>
+    <h2>Unstructured Element Types</h2>
+    <p>Unstructured parses documents into semantic elements — not just raw text. Each element has a type, text content, and metadata (font size, position, page number). Understanding element types lets you build smart chunking and retrieval strategies.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Element Type</th>
+            <th>Description</th>
+            <th>Example</th>
+            <th>RAG Use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Title</strong></td>
+            <td>Top-level document heading</td>
+            <td>"Annual Report 2024"</td>
+            <td>Add to chunk metadata; high relevance for matching</td>
+          </tr>
+          <tr>
+            <td><strong>Heading</strong></td>
+            <td>Section header (h2, h3, etc.)</td>
+            <td>"Financial Performance"</td>
+            <td>Mark section boundaries; use for hierarchy</td>
+          </tr>
+          <tr>
+            <td><strong>NarrativeText</strong></td>
+            <td>Body paragraph</td>
+            <td>"Revenue grew by 15%..."</td>
+            <td>Main content; embed and retrieve</td>
+          </tr>
+          <tr>
+            <td><strong>ListItem</strong></td>
+            <td>Bulleted or numbered item</td>
+            <td>"• Focus on customer retention"</td>
+            <td>Keep together with siblings; preserve order</td>
+          </tr>
+          <tr>
+            <td><strong>Table</strong></td>
+            <td>Structured data grid</td>
+            <td>CSV-like rows and columns</td>
+            <td>Convert to markdown; chunk per row or preserve whole table</td>
+          </tr>
+          <tr>
+            <td><strong>Image</strong></td>
+            <td>Raster or vector graphic</td>
+            <td>PNG, JPG embedded</td>
+            <td>OCR for text; optional caption extraction</td>
+          </tr>
+          <tr>
+            <td><strong>CodeBlock</strong></td>
+            <td>Source code snippet</td>
+            <td>Python, SQL, JavaScript</td>
+            <td>Preserve indentation; don't chunk; embed as-is</td>
+          </tr>
+          <tr>
+            <td><strong>PageBreak</strong></td>
+            <td>Explicit page boundary</td>
+            <td>(metadata only)</td>
+            <td>Track document location; include in chunk metadata</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Accessing Element Metadata</h3>
+    <p>Each element object carries rich metadata: <code>text</code>, <code>type</code>, <code>element_id</code>, <code>page_number</code>, <code>bbox</code> (bounding box), and language. Use this to build context-aware chunks — for example, always include the parent heading with narrative text, or keep a code block with its preceding comment.</p>
+
+    <div class="example-box"># Elements have rich metadata
+from unstructured.documents.elements import Title, Heading, NarrativeText
+
+title = Title(text="Quarterly Report")
+heading = Heading(text="Q3 Results", level=2)
+para = NarrativeText(text="Revenue: $5.2M", metadata={
+  "page_number": 3,
+  "bbox": [50, 100, 400, 120],
+  "language": "en"
+})
+
+# Use type to build smarter chunking
+if isinstance(para, Title):
+    # Add extra weight to titles in embeddings
+    chunk_importance = "high"
+else:
+    chunk_importance = "normal"</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Element types are not perfect:</strong> Classification is heuristic-based. Some headings might be labeled as NarrativeText. Always validate with sampled documents, especially on novel formats.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. PARTITION FUNCTIONS ── -->
+  <div class="section-block" id="partition">
+    <div class="section-marker">03 — Core API</div>
+    <h2>Partition Functions</h2>
+    <p>Unstructured provides partition functions for each document type. Each function reads a file, applies format-specific parsing, and returns a list of element objects. The API is consistent: <code>partition_*</code> takes a file path and optional parameters, returns <code>List[Element]</code>.</p>
+
+    <h3>Main Partition Functions</h3>
+    <div class="methods-list">
+
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3><code>partition_pdf()</code> <em>— PDF & scanned docs</em></h3>
+          <p>Extracts text, layout, and tables from PDFs. Handles both digital PDFs (with embedded text) and scanned PDFs (with images). Two strategies: <code>fast</code> extracts text directly; <code>hi_res</code> uses layout analysis for better structure.</p>
+          <ul>
+            <li><code>strategy="fast"</code>: Quick, suitable for clean digital PDFs</li>
+            <li><code>strategy="hi_res"</code>: Slower, handles multi-column and complex layouts</li>
+            <li><code>infer_table_structure=True</code>: Extract table cell relationships</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3><code>partition_html()</code> <em>— Web pages</em></h3>
+          <p>Parses HTML into semantic elements. Strips markup, identifies headings and paragraphs, extracts tables from <code>&lt;table&gt;</code> tags. Optional include/exclude selectors to keep or ignore specific DOM subtrees.</p>
+          <ul>
+            <li><code>include_metadata=True</code>: Preserve CSS classes and IDs</li>
+            <li><code>skip_headers_footers=True</code>: Skip nav/footer regions</li>
+            <li>Handles dynamically-loaded content (use with Playwright)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3><code>partition_docx()</code> <em>— Microsoft Word</em></h3>
+          <p>Reads DOCX (Office Open XML) directly. Preserves styles, heading levels, table structure, and embedded images. DOCX is structured, so this is one of the most reliable partitioners.</p>
+          <ul>
+            <li>Respects document outline and heading hierarchy</li>
+            <li>Extracts image captions and alt-text</li>
+            <li>Preserves table cell relationships</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3><code>partition_image()</code> <em>— OCR</em></h3>
+          <p>Extracts text from image files (PNG, JPG, etc.) using Tesseract or cloud OCR. Optional layout analysis. For scanned PDFs, this is called internally.</p>
+          <ul>
+            <li><code>strategy="hi_res"</code>: Layout-aware OCR</li>
+            <li><code>ocr_languages=["en", "fr"]</code>: Multi-language support</li>
+            <li>Integrates with cloud OCR (Azure, Google) for better quality</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <h3>Partition Example</h3>
+    <div class="example-box">from unstructured.partition.pdf import partition_pdf
+from unstructured.partition.html import partition_html
+from unstructured.partition.docx import partition_docx
+
+# Fast extraction
+elements = partition_pdf("report.pdf", strategy="fast")
+
+# High-resolution layout analysis
+elements = partition_pdf(
+    "complex_layout.pdf",
+    strategy="hi_res",
+    infer_table_structure=True
+)
+
+# HTML parsing
+elements = partition_html("article.html", skip_headers_footers=True)
+
+# DOCX with styles preserved
+elements = partition_docx("document.docx")
+
+# Print element types
+for elem in elements[:10]:
+    print(f"{elem.type:15s} | {elem.text[:60]}")</div>
+
+    <h3>Strategy Comparison: Fast vs Hi-Res</h3>
+    <p><strong>Fast:</strong> Extracts text stream. Best for single-column documents with clean formatting. ~100ms per page.<br/><strong>Hi-Res:</strong> Uses layout detection (Detectron2) to understand columns, footers, sidebars. Significantly slower (~5-10s per page) but captures structure. Choose hi_res for multi-column PDFs, magazine layouts, or documents with sidebars.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Start with fast, measure quality:</strong> Test both strategies on your documents. Fast often works well and is 50-100× faster. Only upgrade to hi_res if quality assessment shows clear gains.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. CHUNKING STRATEGIES ── -->
+  <div class="section-block" id="chunking">
+    <div class="section-marker">04 — Token Sizing</div>
+    <h2>Chunking with Unstructured</h2>
+    <p>Parsing is step one; chunking is step two. Raw elements are too granular (each paragraph is one element). Chunking combines elements into fixed-size, semantically coherent chunks suitable for embeddings and retrieval.</p>
+
+    <h3>Built-in Chunking Functions</h3>
+    <p><code>chunk_by_title()</code> groups elements under each heading, respecting heading hierarchy. <code>chunk_elements()</code> uses token counting to combine elements until reaching <code>max_characters</code>. Both preserve element type and metadata.</p>
+
+    <div class="example-box">from unstructured.chunking.title import chunk_by_title
+from unstructured.chunking.basic import Chunker
+
+# Chunk by heading hierarchy
+chunks = chunk_by_title(elements, combine_text_under_n_chars=500)
+# Result: each chunk is all content under one heading (recursively)
+
+# Chunk by token budget
+chunker = Chunker(max_characters=512, new_after_n_chars=400)
+chunks = chunker.chunk(elements)
+# Result: combine elements until reaching 512 chars, start new chunk after 400
+
+# Access chunk metadata
+for chunk in chunks[:3]:
+    print(f"Tokens: {len(chunk.text.split())}")
+    print(f"Types: {set(e.type for e in chunk.elements)}")
+    print(f"Text: {chunk.text[:100]}...")
+    print()</div>
+
+    <h3>Chunking Best Practices</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3>✂️ Size Matters</h3>
+        <ul>
+          <li>512 chars = ~100 tokens (typical)</li>
+          <li>For sparse retrieval: 256–512 chars</li>
+          <li>For dense (vector): 256–1024 chars</li>
+          <li>Adjust based on embedding context window</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>🔀 Semantic Boundaries</h3>
+        <ul>
+          <li>Chunk by heading when possible</li>
+          <li>Don't split tables or code blocks</li>
+          <li>Include context (parent heading) in metadata</li>
+          <li>Preserve list structure</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>📦 Overlapping Windows</h3>
+        <ul>
+          <li>Use 10–20% overlap for continuity</li>
+          <li>Helps bridge context between chunks</li>
+          <li>Trade-off: more embeddings, better recall</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>🏷️ Rich Metadata</h3>
+        <ul>
+          <li>Add document title, file path</li>
+          <li>Track page numbers, headings</li>
+          <li>Tag sensitive data (PII, confidential)</li>
+          <li>Include chunk index for reranking</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Beware chunk explosion:</strong> With overlap, a 100-page document can generate 10,000+ chunks. Embedding costs balloon. Set aggressive max_characters and test carefully.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. CLOUD VS LOCAL ── -->
+  <div class="section-block" id="cloud-vs-local">
+    <div class="section-marker">05 — Deployment</div>
+    <h2>Cloud API vs Local Processing</h2>
+    <p>Unstructured.io offers two deployment modes: Cloud API (managed service) and Local SDK (self-hosted). Cloud is simpler but less private; Local is full control but requires infrastructure.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>Cloud API</th>
+            <th>Local SDK</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Setup</strong></td>
+            <td>API key, HTTP requests</td>
+            <td>pip install, GPU optional</td>
+          </tr>
+          <tr>
+            <td><strong>Latency</strong></td>
+            <td>100–500ms per document</td>
+            <td>10–100ms per document (with GPU)</td>
+          </tr>
+          <tr>
+            <td><strong>Cost</strong></td>
+            <td>$0.001–0.01 per page</td>
+            <td>One-time model DL; GPU rental if scaling</td>
+          </tr>
+          <tr>
+            <td><strong>Privacy</strong></td>
+            <td>Documents sent to Unstructured servers</td>
+            <td>Fully on-premise</td>
+          </tr>
+          <tr>
+            <td><strong>OCR Quality</strong></td>
+            <td>Cloud OCR (Azure, Google)</td>
+            <td>Tesseract (lower quality)</td>
+          </tr>
+          <tr>
+            <td><strong>Scaling</strong></td>
+            <td>Unstructured manages scaling</td>
+            <td>You manage queue, workers, GPU</td>
+          </tr>
+          <tr>
+            <td><strong>Model Updates</strong></td>
+            <td>Automatic</td>
+            <td>Manual (pip upgrade)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Cloud API Example</h3>
+    <div class="example-box">from unstructured_client import UnstructuredClient
+from unstructured_client.models import shared
+
+client = UnstructuredClient(api_key="your-api-key")
+
+# Upload file to cloud
+with open("document.pdf", "rb") as f:
+    elements = client.general.partition(
+        files=shared.Files(content=f),
+        strategy="hi_res",
+        model_name="chipper"
+    )
+
+# Receive parsed elements
+for elem in elements:
+    print(f"{elem.type}: {elem.text[:80]}")</div>
+
+    <h3>Local SDK Example</h3>
+    <div class="example-box">from unstructured.partition.pdf import partition_pdf
+from unstructured.chunking.title import chunk_by_title
+
+# All processing happens locally
+elements = partition_pdf(
+    "document.pdf",
+    strategy="hi_res"
+)
+
+# Chunking also local
+chunks = chunk_by_title(elements, combine_text_under_n_chars=500)
+
+# Return to your vector database
+for chunk in chunks:
+    embedding = embedder.embed(chunk.text)
+    store_in_db(chunk.text, embedding, metadata=chunk.metadata)</div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Hybrid approach:</strong> For very large pipelines, use Cloud API for heavy lifting (tables, scanned PDFs), fall back to Local SDK for simple docs. Or batch cloud requests during off-peak hours to reduce costs.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. INTEGRATION ── -->
+  <div class="section-block" id="integration">
+    <div class="section-marker">06 — Ecosystem</div>
+    <h2>Integration with LangChain & LlamaIndex</h2>
+    <p>Unstructured.io integrates seamlessly with the major LLM frameworks. LangChain has <code>UnstructuredLoader</code>; LlamaIndex has <code>UnstructuredReader</code>. Both handle partition and chunking transparently.</p>
+
+    <h3>LangChain Integration</h3>
+    <div class="example-box">from langchain_community.document_loaders import UnstructuredLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# Load and chunk in one step
+loader = UnstructuredLoader(
+    file_path="document.pdf",
+    mode="elements",  # Return element objects
+    strategy="hi_res"
+)
+elements = loader.load()
+
+# Convert to LangChain Document objects
+documents = [
+    Document(
+        page_content=elem.text,
+        metadata={
+            "type": elem.type,
+            "page": elem.metadata.get("page_number"),
+            "source": "document.pdf"
+        }
+    )
+    for elem in elements
+]
+
+# Chain to embeddings + vector store
+vector_store = FAISS.from_documents(documents, embedder)</div>
+
+    <h3>LlamaIndex Integration</h3>
+    <div class="example-box">from llama_index.readers.file import UnstructuredReader
+from llama_index import SimpleDirectoryReader
+
+# Load with Unstructured backend
+reader = UnstructuredReader(mode="elements")
+documents = reader.load_data(file=Path("document.pdf"))
+
+# Or use SimpleDirectoryReader with Unstructured
+loader = SimpleDirectoryReader(
+    input_dir="./documents",
+    file_extractor={".pdf": UnstructuredReader()}
+)
+documents = loader.load_data()
+
+# Build index
+from llama_index import VectorStoreIndex
+index = VectorStoreIndex.from_documents(documents)</div>
+
+    <h3>Custom Pipeline</h3>
+    <p>For full control, partition manually, chunk, embed, and store:</p>
+
+    <div class="example-box">from unstructured.partition.auto import partition
+from unstructured.chunking.title import chunk_by_title
+import pinecone
+
+# Auto-detect file type
+elements = partition("document.pdf")
+
+# Custom chunking
+chunks = chunk_by_title(
+    elements,
+    combine_text_under_n_chars=500,
+    max_characters=1000
+)
+
+# Embed and store
+for i, chunk in enumerate(chunks):
+    embedding = embed_model.encode(chunk.text)
+    pinecone_index.upsert([(
+        f"doc__{i}",
+        embedding,
+        {
+            "text": chunk.text,
+            "type": chunk.type,
+            "document": "filename.pdf"
+        }
+    )])
+
+print(f"Indexed {len(chunks)} chunks")</div>
+  </div>
+
+  <!-- ── TOOLS ── -->
+  <div class="section-block">
+    <div class="section-marker">Tools & Ecosystem</div>
+    <h2>Related Tools</h2>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Parsing</div>
+        <div class="tool-name">Unstructured.io</div>
+        <div class="tool-desc">Multi-format document parser with cloud and local options</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">PDF</div>
+        <div class="tool-name">Docling</div>
+        <div class="tool-desc">IBM's structured document converter for PDF, DOCX, PPTX</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">PDF</div>
+        <div class="tool-name">LlamaParse</div>
+        <div class="tool-desc">LlamaIndex's document parser optimized for tables and complex layouts</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">PDF</div>
+        <div class="tool-name">PyMuPDF</div>
+        <div class="tool-desc">Fast low-level PDF manipulation and text extraction</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">PDF</div>
+        <div class="tool-name">pdfplumber</div>
+        <div class="tool-desc">Precise table and text extraction from PDFs</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Tables</div>
+        <div class="tool-name">Camelot</div>
+        <div class="tool-desc">Specialized table extraction from PDFs</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">OCR</div>
+        <div class="tool-name">Tesseract</div>
+        <div class="tool-desc">Open-source OCR engine for scanned documents</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangChain</div>
+        <div class="tool-desc">LLM framework with Unstructured loader integration</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LlamaIndex</div>
+        <div class="tool-desc">Data indexing framework with UnstructuredReader</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">07 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Documentation</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://unstructured.io/documentation" target="_blank">Unstructured.io Official Documentation ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://python.langchain.com/docs/modules/data_connection/document_loaders/unstructured_file/" target="_blank">LangChain UnstructuredLoader Guide ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://docs.llamaindex.ai/en/stable/module_guides/loading/simpledirectoryreader/" target="_blank">LlamaIndex Document Loading ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Blog &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">Blog</span> <a href="https://unstructured.io/blog" target="_blank">Unstructured.io Blog — Document Parsing Tips ↗</a></li>
+      <li><span class="ref-badge badge-blog">Blog</span> <a href="https://blog.langchain.dev/" target="_blank">LangChain Blog — RAG Patterns ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> <a href="https://www.pinecone.io/learn/chunking-strategies/" target="_blank">Pinecone: Chunking Strategies for RAG ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Papers & Research</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-paper">Paper</span> <a href="https://arxiv.org/abs/2110.06220" target="_blank">LayoutLM: Layout-aware language models for information extraction (arXiv:2110.06220) ↗</a></li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <a class="concept-nav-prev" href="embeddings.html">← Text Embeddings</a>
+  <span class="concept-nav-cat">Retrieval & RAG</span>
+  <a class="concept-nav-next" href="vector-dbs.html">→ Vector Databases</a>
+</nav>
+</body>
+</html>

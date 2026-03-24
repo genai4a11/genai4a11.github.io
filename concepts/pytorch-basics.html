@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyTorch Fundamentals — GenAI Mindmap</title>
+  <meta name="description" content="PyTorch fundamentals for LLM practitioners — tensors, autograd, nn.Module, custom datasets, DataLoader, training loop, GPU acceleration, and model saving/loading." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="PyTorch Fundamentals" />
+  <meta property="og:description" content="PyTorch fundamentals for LLM practitioners — tensors, autograd, nn.Module, custom datasets, DataLoader, training loop, GPU acceleration, and model saving/loading." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/pytorch-basics.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="PyTorch Fundamentals" />
+  <meta name="twitter:description" content="PyTorch fundamentals for LLM practitioners — tensors, autograd, nn.Module, custom datasets, DataLoader, training loop, GPU acceleration, and model saving/loading." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/pytorch-basics.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "PyTorch Fundamentals",
+  "description": "PyTorch fundamentals for LLM practitioners \u2014 tensors, autograd, nn.Module, custom datasets, DataLoader, training loop, GPU acceleration, and model saving/loading.",
+  "url": "https://genai4a11.github.io/concepts/pytorch-basics.html",
+  "dateModified": "2026-03-24T03:49:35.149462",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "PyTorch Fundamentals",
+        "item": "https://genai4a11.github.io/concepts/pytorch-basics.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<div class="hero">
+  <span class="hero-tag">Foundations · PyTorch</span>
+  <h1>PyTorch <em>Fundamentals</em></h1>
+  <p class="hero-sub">Tensors, autograd, nn.Module, DataLoaders, and training loops — the PyTorch mental model every ML practitioner needs</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">5</span>
+      <span class="stat-label">Core Concepts</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">7</span>
+      <span class="stat-label">Sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Python-first</span>
+      <span class="stat-label">Code Examples</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <div class="toc-card">
+    <div class="toc-heading">In this guide</div>
+    <ol class="toc-list">
+      <li><a href="#tensors" data-num="1">Tensors</a></li>
+      <li><a href="#autograd" data-num="2">Autograd</a></li>
+      <li><a href="#nn-module" data-num="3">nn.Module</a></li>
+      <li><a href="#dataloader" data-num="4">DataLoader</a></li>
+      <li><a href="#training-loop" data-num="5">Training Loop</a></li>
+      <li><a href="#gpu-acceleration" data-num="6">GPU Acceleration</a></li>
+      <li><a href="#persistence" data-num="7">Model Persistence</a></li>
+      <li><a href="#tools-ecosystem" data-num="8">Tools & Ecosystem</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. TENSORS ── -->
+  <div class="section-block" id="tensors">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>Tensors: The Core Data Structure</h2>
+    <p>Tensors are multidimensional arrays — the atomic unit of PyTorch computation. Everything flows through tensors: inputs, weights, gradients, outputs. Understanding tensor operations is the foundation of PyTorch proficiency.</p>
+
+    <h3>Creation and Basic Properties</h3>
+    <p>Tensors can be created from Python lists, NumPy arrays, or generated directly. The three properties you must understand are <strong>shape</strong> (dimensions), <strong>dtype</strong> (data type), and <strong>device</strong> (CPU or GPU).</p>
+
+    <div class="example-box">import torch
+
+# Create from list
+x = torch.tensor([1.0, 2.0, 3.0])
+print(x.shape)   # torch.Size([3])
+
+# Create 2D tensor
+y = torch.randn(batch_size=32, features=128)
+print(y.shape)   # torch.Size([32, 128])
+
+# Check properties
+print(x.dtype)   # torch.float32
+print(y.device)  # cpu
+
+# Convert dtype
+z = x.float()    # ensure float32
+w = y.long()     # convert to int64
+
+# Move to GPU
+if torch.cuda.is_available():
+    x_gpu = x.cuda()
+    # or: x_gpu = x.to('cuda:0')</div>
+
+    <h3>Broadcasting and Reshaping</h3>
+    <p>PyTorch follows NumPy broadcasting semantics. Shapes are automatically aligned from the right. Views and reshapes allow you to change tensor shape without copying data (views) or with copying (.reshape()).</p>
+
+    <div class="example-box"># Broadcasting
+a = torch.ones(3, 1, 4)      # shape [3, 1, 4]
+b = torch.ones(1, 5, 4)      # shape [1, 5, 4]
+c = a + b                     # broadcasts to [3, 5, 4]
+
+# View vs reshape
+x = torch.arange(6)           # [0,1,2,3,4,5]
+y = x.view(2, 3)              # reshape without copy (faster)
+z = x.reshape(3, 2)           # reshape with possible copy
+
+# Contiguous memory matters
+z_t = z.t()                   # transposed view
+z_c = z_t.contiguous()        # convert to C-contiguous for some ops</div>
+
+    <h3>Indexing and Selection</h3>
+    <p>Tensors support advanced indexing just like NumPy. Understand the difference between fancy indexing (which returns a copy) and views (which are references).</p>
+
+    <div class="example-box"># Basic indexing
+x = torch.randn(10, 5)
+first_row = x[0]              # shape [5]
+first_col = x[:, 0]           # shape [10]
+subset = x[2:5, 1:4]          # shape [3, 3]
+
+# Masking
+mask = x > 0
+positive = x[mask]            # fancy indexing
+
+# Gather and scatter
+indices = torch.tensor([0, 2, 4])
+gathered = x[indices]         # select rows 0, 2, 4</div>
+  </div>
+
+  <!-- ── 2. AUTOGRAD ── -->
+  <div class="section-block" id="autograd">
+    <div class="section-marker">02 — Automatic Differentiation</div>
+    <h2>Autograd: Computing Gradients</h2>
+    <p>Autograd is PyTorch's automatic differentiation system. It tracks operations on tensors and computes gradients via backpropagation. Every tensor has a <code>requires_grad</code> flag that tells PyTorch to record operations on it for the backward pass.</p>
+
+    <h3>Gradient Tracking and Backward</h3>
+    <p>When you set <code>requires_grad=True</code>, PyTorch builds a computation graph. Calling <code>.backward()</code> triggers backpropagation, computing gradients for all tensors in the graph. Gradients accumulate in the <code>.grad</code> attribute.</p>
+
+    <div class="example-box">import torch
+
+# Simple scalar backward
+x = torch.tensor(2.0, requires_grad=True)
+y = x ** 2 + 3 * x + 1
+y.backward()
+print(x.grad)  # dy/dx = 2x + 3 = 7.0
+
+# Vector backward (implicit reduction)
+x = torch.randn(5, requires_grad=True)
+y = (x ** 2).sum()
+y.backward()
+print(x.grad)  # grad[i] = 2 * x[i]
+
+# Manual gradient specification
+x = torch.randn(3, requires_grad=True)
+y = x * 2
+y.backward(torch.ones_like(y))  # specify output gradient
+print(x.grad)  # [2, 2, 2]</div>
+
+    <h3>Gradient Accumulation and Zeroing</h3>
+    <p>Gradients accumulate by default when you call <code>.backward()</code> multiple times on the same tensor. In training loops, you must zero gradients before each backward pass to prevent accumulation.</p>
+
+    <div class="example-box"># Gradient accumulation
+x = torch.tensor(3.0, requires_grad=True)
+for i in range(3):
+    y = x ** 2
+    y.backward()
+print(x.grad)  # 6.0 + 6.0 + 6.0 = 18.0
+
+# Correct pattern: zero_grad before backward
+x = torch.tensor(3.0, requires_grad=True)
+for i in range(3):
+    x.grad = None  # or: x.grad.zero_()
+    y = x ** 2
+    y.backward()
+print(x.grad)  # 6.0 (correct)</div>
+
+    <h3>no_grad Context and Inference</h3>
+    <p>Use <code>torch.no_grad()</code> context to disable gradient tracking during inference or when you need to modify tensors without affecting gradients. This saves memory and computation.</p>
+
+    <div class="example-box"># Inference: disable gradient tracking
+model.eval()
+with torch.no_grad():
+    logits = model(x_test)
+    predictions = logits.argmax(dim=-1)
+
+# Manual gradient updates (weight decay example)
+with torch.no_grad():
+    for param in model.parameters():
+        param -= learning_rate * param.grad
+
+# detach() breaks the computation graph
+y = x ** 2
+z = (y.detach()) ** 2  # z won't flow gradients back to x</div>
+  </div>
+
+  <!-- ── 3. NN.MODULE ── -->
+  <div class="section-block" id="nn-module">
+    <div class="section-marker">03 — Model Architecture</div>
+    <h2>nn.Module: Building Model Layers</h2>
+    <p>nn.Module is the base class for all PyTorch models. It organizes parameters, buffers, and submodules. When you define a custom model, inherit from nn.Module, initialize layers in <code>__init__</code>, and implement <code>forward()</code>.</p>
+
+    <h3>Basic Module Structure</h3>
+    <p>Every module tracks its parameters and submodules automatically. When you call model(x), it invokes the forward() method. Parameters become attributes and are automatically registered for optimization.</p>
+
+    <div class="example-box">import torch
+import torch.nn as nn
+
+class SimpleMLP(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super().__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+    
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        return x
+
+model = SimpleMLP(128, 256, 10)
+print(model)  # shows layer structure
+
+# Access parameters
+for name, param in model.named_parameters():
+    print(name, param.shape)
+
+# Forward pass
+x = torch.randn(32, 128)  # batch_size=32, features=128
+output = model(x)          # calls forward()
+print(output.shape)        # [32, 10]</div>
+
+    <h3>Parameter Management and state_dict</h3>
+    <p>Models store learned parameters as nn.Parameter objects. Use <code>state_dict()</code> to get all parameters and buffers as a dictionary — essential for checkpointing and distributed training.</p>
+
+    <div class="example-box"># Save and load model state
+torch.save(model.state_dict(), 'checkpoint.pt')
+
+# Later: load state into a fresh model
+model = SimpleMLP(128, 256, 10)
+model.load_state_dict(torch.load('checkpoint.pt'))
+
+# Freeze parameters
+for param in model.fc1.parameters():
+    param.requires_grad = False
+
+# Count parameters
+total_params = sum(p.numel() for p in model.parameters())
+trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(f"Total: {total_params}, Trainable: {trainable_params}")</div>
+
+    <h3>Custom Layers and Modules</h3>
+    <p>Extend nn.Module to create custom layers. Register parameters with <code>nn.Parameter()</code> and submodules with direct assignment in <code>__init__</code>. PyTorch automatically tracks them.</p>
+
+    <div class="example-box">class GateLayer(nn.Module):
+    def __init__(self, in_features, out_features):
+        super().__init__()
+        self.weight = nn.Parameter(torch.randn(out_features, in_features))
+        self.gate_weight = nn.Parameter(torch.randn(out_features, in_features))
+        self.bias = nn.Parameter(torch.zeros(out_features))
+    
+    def forward(self, x):
+        gate = torch.sigmoid(x @ self.gate_weight.t())
+        output = (x @ self.weight.t() + self.bias) * gate
+        return output</div>
+  </div>
+
+  <!-- ── 4. DATALOADER ── -->
+  <div class="section-block" id="dataloader">
+    <div class="section-marker">04 — Data Pipeline</div>
+    <h2>DataLoader: Batching and Sampling</h2>
+    <p>DataLoader handles the data pipeline: sampling batches, shuffling, collating samples, and prefetching. It wraps a Dataset (which provides individual samples) and handles multiprocessing for efficient I/O.</p>
+
+    <h3>Dataset and DataLoader Basics</h3>
+    <p>Implement a custom Dataset by inheriting from torch.utils.data.Dataset. Implement <code>__len__()</code> to return dataset size and <code>__getitem__()</code> to return individual samples. Pass to DataLoader for batching.</p>
+
+    <div class="example-box">from torch.utils.data import Dataset, DataLoader
+import torch
+
+class CustomDataset(Dataset):
+    def __init__(self, inputs, labels):
+        self.inputs = inputs
+        self.labels = labels
+    
+    def __len__(self):
+        return len(self.inputs)
+    
+    def __getitem__(self, idx):
+        return self.inputs[idx], self.labels[idx]
+
+# Create dataset
+dataset = CustomDataset(
+    inputs=torch.randn(1000, 128),
+    labels=torch.randint(0, 10, (1000,))
+)
+
+# Create DataLoader
+dataloader = DataLoader(
+    dataset,
+    batch_size=32,
+    shuffle=True,
+    num_workers=4,
+    pin_memory=True
+)
+
+# Iterate
+for batch_inputs, batch_labels in dataloader:
+    print(batch_inputs.shape)  # [32, 128]
+    print(batch_labels.shape)  # [32]
+    break</div>
+
+    <h3>Collate Functions and Custom Batching</h3>
+    <p>The collate_fn merges samples into a batch. Default stacking works for fixed-size tensors. For variable-length data (e.g., sequences), implement custom collate functions to pad or truncate.</p>
+
+    <div class="example-box">def pad_collate_fn(batch):
+    """Pad sequences to the same length in a batch."""
+    inputs, labels = zip(*batch)
+    
+    # Pad sequences to max length in batch
+    max_len = max(len(x) for x in inputs)
+    padded = torch.zeros(len(inputs), max_len)
+    for i, x in enumerate(inputs):
+        padded[i, :len(x)] = x
+    
+    labels = torch.stack(labels)
+    return padded, labels
+
+dataloader = DataLoader(
+    dataset,
+    batch_size=32,
+    collate_fn=pad_collate_fn,
+    num_workers=0  # Custom collate often requires num_workers=0
+)</div>
+
+    <h3>Optimization: num_workers and pin_memory</h3>
+    <p><code>num_workers > 0</code> spawns background processes to load data in parallel while the GPU trains. <code>pin_memory=True</code> pre-allocates pinned CPU memory for faster GPU transfers. Use both for maximum throughput.</p>
+
+    <div class="example-box"># Optimal DataLoader for GPU training
+train_loader = DataLoader(
+    train_dataset,
+    batch_size=128,
+    shuffle=True,
+    num_workers=4,            # 4 background workers loading data
+    pin_memory=True,           # pinned CPU memory
+    persistent_workers=True,   # keep workers alive between epochs
+    prefetch_factor=2          # prefetch 2 batches per worker
+)
+
+# For small datasets or debugging, use num_workers=0
+debug_loader = DataLoader(
+    small_dataset,
+    batch_size=8,
+    num_workers=0
+)</div>
+  </div>
+
+  <!-- ── 5. TRAINING LOOP ── -->
+  <div class="section-block" id="training-loop">
+    <div class="section-marker">05 — Core Training Pattern</div>
+    <h2>The Training Loop: Putting It Together</h2>
+    <p>The training loop is the core pattern: forward pass, compute loss, backward pass, optimizer step. Repeat over batches. Validation happens at epoch boundaries to detect overfitting.</p>
+
+    <h3>Basic Training Loop</h3>
+    <div class="example-box">import torch
+import torch.nn as nn
+import torch.optim as optim
+
+model = SimpleMLP(128, 256, 10)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+model.to(device)
+
+num_epochs = 10
+for epoch in range(num_epochs):
+    model.train()  # enable training mode (dropout, batchnorm)
+    epoch_loss = 0.0
+    
+    for batch_inputs, batch_labels in train_loader:
+        # Move to device
+        batch_inputs = batch_inputs.to(device)
+        batch_labels = batch_labels.to(device)
+        
+        # Forward pass
+        outputs = model(batch_inputs)
+        loss = criterion(outputs, batch_labels)
+        
+        # Backward pass
+        optimizer.zero_grad()
+        loss.backward()
+        
+        # Optimizer step
+        optimizer.step()
+        
+        epoch_loss += loss.item()
+    
+    # Validation at epoch boundary
+    model.eval()
+    val_loss = 0.0
+    with torch.no_grad():
+        for batch_inputs, batch_labels in val_loader:
+            batch_inputs = batch_inputs.to(device)
+            batch_labels = batch_labels.to(device)
+            outputs = model(batch_inputs)
+            val_loss += criterion(outputs, batch_labels).item()
+    
+    print(f"Epoch {epoch+1}: train_loss={epoch_loss/len(train_loader):.4f}, val_loss={val_loss/len(val_loader):.4f}")</div>
+
+    <h3>Advanced: Gradient Accumulation and Mixed Precision</h3>
+    <p>For large models that don't fit with large batches, accumulate gradients over multiple forward passes before stepping the optimizer. Mixed precision training uses float16 for speed and float32 for stability.</p>
+
+    <div class="example-box"># Gradient accumulation for larger effective batch size
+accumulation_steps = 4
+optimizer.zero_grad()
+
+for batch_idx, (inputs, labels) in enumerate(train_loader):
+    inputs, labels = inputs.to(device), labels.to(device)
+    outputs = model(inputs)
+    loss = criterion(outputs, labels) / accumulation_steps
+    loss.backward()
+    
+    if (batch_idx + 1) % accumulation_steps == 0:
+        optimizer.step()
+        optimizer.zero_grad()
+
+# Mixed precision with autocast
+from torch.amp import autocast, GradScaler
+scaler = GradScaler()
+
+for inputs, labels in train_loader:
+    inputs, labels = inputs.to(device), labels.to(device)
+    
+    with autocast(device_type='cuda'):
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
+    
+    scaler.scale(loss).backward()
+    scaler.step(optimizer)
+    scaler.update()
+    optimizer.zero_grad()</div>
+
+    <h3>Checkpointing and Early Stopping</h3>
+    <p>Save model checkpoints during training to recover from crashes or resume training. Implement early stopping to stop training when validation performance plateaus, preventing overfitting.</p>
+
+    <div class="example-box">best_val_loss = float('inf')
+patience = 3
+patience_counter = 0
+
+for epoch in range(num_epochs):
+    # ... training code ...
+    
+    # Validation
+    val_loss = evaluate(model, val_loader, device)
+    
+    # Checkpointing
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        patience_counter = 0
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'val_loss': val_loss
+        }, 'best_checkpoint.pt')
+    else:
+        patience_counter += 1
+    
+    # Early stopping
+    if patience_counter >= patience:
+        print(f"Early stopping at epoch {epoch}")
+        break
+
+# Load best checkpoint
+checkpoint = torch.load('best_checkpoint.pt')
+model.load_state_dict(checkpoint['model_state_dict'])</div>
+  </div>
+
+  <!-- ── 6. GPU ACCELERATION ── -->
+  <div class="section-block" id="gpu-acceleration">
+    <div class="section-marker">06 — Hardware Utilization</div>
+    <h2>GPU Acceleration: Moving to CUDA</h2>
+    <p>PyTorch runs on CPU by default. GPU (CUDA) training is 10–100× faster. The pattern is simple: move tensors and models to device, compute, move results back if needed. Device-agnostic code makes switching easy.</p>
+
+    <h3>Device Management</h3>
+    <p>Always write device-agnostic code using a <code>device</code> variable. Call <code>.to(device)</code> on models and tensors. Check CUDA availability and manage memory with <code>torch.cuda.empty_cache()</code>.</p>
+
+    <div class="example-box">import torch
+
+# Check CUDA
+print(torch.cuda.is_available())
+print(torch.cuda.get_device_name(0))
+print(torch.cuda.get_device_properties(0))
+
+# Device-agnostic code
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+# Move model and data
+model = SimpleMLP(128, 256, 10).to(device)
+x = torch.randn(32, 128).to(device)
+output = model(x)  # Computes on GPU
+
+# Move tensors between devices
+y = output.cpu()          # back to CPU
+z = y.to('cuda:1')        # to GPU 1
+
+# Free GPU memory
+torch.cuda.empty_cache()
+
+# Get current memory usage
+print(torch.cuda.memory_allocated(device))
+print(torch.cuda.memory_reserved(device))</div>
+
+    <h3>Distributed Training: DataParallel and DistributedDataParallel</h3>
+    <p>For multi-GPU training, wrap models with DistributedDataParallel (recommended) or DataParallel. DDP synchronizes gradients across GPUs; DataParallel is simpler but slower.</p>
+
+    <div class="example-box"># DataParallel: simple but slower synchronization
+model = SimpleMLP(128, 256, 10)
+if torch.cuda.device_count() > 1:
+    model = nn.DataParallel(model)
+model.to(device)
+
+# DistributedDataParallel: proper multi-GPU (recommended for production)
+# Run with: python -m torch.distributed.launch --nproc_per_node=4 train.py
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel
+
+dist.init_process_group(backend='nccl')
+model = SimpleMLP(128, 256, 10).to(device)
+model = DistributedDataParallel(model, device_ids=[dist.get_rank()])
+
+# Use DistributedSampler to split data across processes
+sampler = torch.utils.data.distributed.DistributedSampler(
+    dataset,
+    num_replicas=dist.get_world_size(),
+    rank=dist.get_rank(),
+    shuffle=True
+)
+dataloader = DataLoader(dataset, sampler=sampler, batch_size=32)</div>
+
+    <h3>Memory Management</h3>
+    <p>GPU memory is limited. Monitor usage with <code>nvidia-smi</code> or PyTorch APIs. Use gradient checkpointing to trade computation for memory (recompute activations instead of storing them).</p>
+
+    <div class="example-box"># Gradient checkpointing: trades memory for compute
+from torch.utils.checkpoint import checkpoint
+
+class CheckpointedBlock(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = nn.Linear(256, 256)
+        self.layer2 = nn.Linear(256, 256)
+        self.relu = nn.ReLU()
+    
+    def forward(self, x):
+        # Recompute layer1 output during backward instead of storing it
+        return checkpoint(self._inner_forward, x, use_reentrant=False)
+    
+    def _inner_forward(self, x):
+        x = self.layer1(x)
+        x = self.relu(x)
+        x = self.layer2(x)
+        return x
+
+# Memory usage drops ~30% but compute increases ~20%</div>
+  </div>
+
+  <!-- ── 7. MODEL PERSISTENCE ── -->
+  <div class="section-block" id="persistence">
+    <div class="section-marker">07 — Saving and Loading</div>
+    <h2>Model Persistence: Checkpoints and Formats</h2>
+    <p>Save models as <code>.pt</code> files containing state_dict (recommended for research) or full models (less portable). For production, use standardized formats like ONNX or TorchScript for deployment.</p>
+
+    <h3>state_dict vs Full Model</h3>
+    <p>Always save <code>state_dict</code>, not the full model object. state_dict is portable, versionable, and composable. Full model pickling binds you to your exact code structure.</p>
+
+    <div class="example-box"># GOOD: Save only state_dict
+torch.save(model.state_dict(), 'model.pt')
+
+# Load (requires model class definition)
+model = SimpleMLP(128, 256, 10)
+model.load_state_dict(torch.load('model.pt'))
+
+# BAD: Save full model (not recommended)
+torch.save(model, 'model_full.pt')  # Pickles entire model object
+model = torch.load('model_full.pt')  # Breaks with code changes
+
+# Checkpoint: save state + optimizer + epoch for resuming
+checkpoint = {
+    'epoch': 42,
+    'model_state_dict': model.state_dict(),
+    'optimizer_state_dict': optimizer.state_dict(),
+    'scheduler_state_dict': scheduler.state_dict(),
+    'loss': loss_value
+}
+torch.save(checkpoint, 'checkpoint_epoch42.pt')
+
+# Resume from checkpoint
+checkpoint = torch.load('checkpoint_epoch42.pt')
+model.load_state_dict(checkpoint['model_state_dict'])
+optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+start_epoch = checkpoint['epoch']</div>
+
+    <h3>ONNX Export for Inference</h3>
+    <p>Convert PyTorch models to ONNX (Open Neural Network Exchange) for deployment to production systems, mobile, or other frameworks. ONNX decouples the model from PyTorch.</p>
+
+    <div class="example-box">import torch.onnx
+
+# Export to ONNX
+model.eval()
+dummy_input = torch.randn(1, 128)
+torch.onnx.export(
+    model,
+    dummy_input,
+    'model.onnx',
+    input_names=['input'],
+    output_names=['output'],
+    opset_version=14,
+    dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
+)
+
+# Verify with onnxruntime
+import onnxruntime as ort
+ort_session = ort.InferenceSession('model.onnx')
+ort_output = ort_session.run(None, {'input': dummy_input.numpy()})
+print(ort_output[0].shape)  # [1, 10]</div>
+
+    <h3>TorchScript for Production</h3>
+    <p>TorchScript compiles PyTorch models to a serialized format that runs without Python. Use <code>torch.jit.script</code> or <code>torch.jit.trace</code> to compile models for deployment.</p>
+
+    <div class="example-box">import torch
+
+# JIT tracing: captures execution path, works with most code
+model = SimpleMLP(128, 256, 10)
+dummy_input = torch.randn(1, 128)
+scripted_model = torch.jit.trace(model, dummy_input)
+scripted_model.save('model_traced.pt')
+
+# Load and run
+loaded = torch.jit.load('model_traced.pt')
+output = loaded(dummy_input)
+
+# JIT scripting: compiles Python code to TorchScript (more flexible)
+class ScriptedModel(torch.nn.Module):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x + 1.0
+
+scripted = torch.jit.script(ScriptedModel())
+scripted.save('model_scripted.pt')</div>
+
+    <h3>HuggingFace Integration</h3>
+    <p>For transformer models, HuggingFace provides high-level APIs for saving/loading. Models include config, weights, and tokenizer. Integrates seamlessly with PyTorch ecosystem.</p>
+
+    <div class="example-box">from transformers import AutoModel, AutoTokenizer
+
+# Load pretrained model
+model = AutoModel.from_pretrained('bert-base-uncased')
+tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+
+# Fine-tune (your training code)
+# ...
+
+# Save
+model.save_pretrained('./my_model')
+tokenizer.save_pretrained('./my_model')
+
+# Later: load from local
+model = AutoModel.from_pretrained('./my_model')
+tokenizer = AutoTokenizer.from_pretrained('./my_model')</div>
+  </div>
+
+  <!-- ── TOOLS & ECOSYSTEM ── -->
+  <div class="section-block" id="tools-ecosystem">
+    <div class="section-marker">08 — Ecosystem</div>
+    <h2>Tools & Ecosystem</h2>
+    <p>PyTorch is surrounded by a rich ecosystem of tools. These handle training workflows, distributed compute, monitoring, and deployment.</p>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Lightning</div>
+        <div class="tool-desc">High-level training framework that abstracts training loops, distributed training, and checkpointing. Reduces boilerplate significantly.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Monitoring</div>
+        <div class="tool-name">Weights & Biases</div>
+        <div class="tool-desc">Experiment tracking: log metrics, visualize training, compare runs, and share results. Industry standard for ML research.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Visualization</div>
+        <div class="tool-name">TensorBoard</div>
+        <div class="tool-desc">Real-time visualization of training metrics, histograms, embeddings, and computational graphs. Built-in PyTorch integration.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Computer Vision</div>
+        <div class="tool-name">torchvision</div>
+        <div class="tool-desc">Pretrained models (ResNet, EfficientNet, ViT), datasets (CIFAR-10, ImageNet), and image transforms for vision tasks.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Data Pipelines</div>
+        <div class="tool-name">torchdata</div>
+        <div class="tool-desc">High-performance data loading with functional composition, supports distributed dataloading and async I/O.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Deployment</div>
+        <div class="tool-name">ONNX</div>
+        <div class="tool-desc">Cross-platform model format for deployment to inference servers, mobile, edge, and other frameworks.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Deployment</div>
+        <div class="tool-name">TorchServe</div>
+        <div class="tool-desc">Production model serving with batching, versioning, and A/B testing. Official PyTorch deployment tool.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Compilation</div>
+        <div class="tool-name">TorchScript</div>
+        <div class="tool-desc">Compile PyTorch models to an intermediate representation that runs without Python. For production deployment.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Official Docs</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://pytorch.org/docs/stable/index.html" target="_blank">PyTorch Official Documentation ↗</a> — Complete API reference and tutorials</li>
+      <li><span class="ref-badge badge-guide">Guide</span> <a href="https://pytorch.org/tutorials/" target="_blank">PyTorch Tutorials ↗</a> — Official step-by-step guides from basics to advanced</li>
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://pytorch.org/docs/stable/nn.html" target="_blank">torch.nn Module Reference ↗</a> — Complete list of layers and loss functions</li>
+    </ul>
+
+    <div class="ref-group-title">Research Papers</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-paper">Paper</span> Paszke, A. et al. (2019). <em>PyTorch: An Imperative Style, High-Performance Deep Learning Library.</em> NeurIPS. arXiv:1912.01703. — <a href="https://arxiv.org/abs/1912.01703" target="_blank">arxiv:1912.01703 ↗</a></li>
+      <li><span class="ref-badge badge-paper">Paper</span> Autograd mechanics. <a href="https://pytorch.org/docs/stable/notes/autograd.html" target="_blank">pytorch.org/docs/notes/autograd ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">Blog</span> <a href="https://pytorch.org/blog/" target="_blank">PyTorch Official Blog ↗</a> — Updates, case studies, and community spotlights</li>
+      <li><span class="ref-badge badge-guide">Guide</span> <a href="https://pytorch.org/get-started/locally/" target="_blank">Get Started Locally ↗</a> — Installation and quickstart guide</li>
+      <li><span class="ref-badge badge-guide">Guide</span> <a href="https://pytorch-lightning.readthedocs.io/en/latest/starter/introduction.html" target="_blank">Lightning Documentation ↗</a> — High-level training framework built on PyTorch</li>
+    </ul>
+
+    <div class="ref-group-title">Community Resources</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">Blog</span> <a href="https://github.com/pytorch/pytorch" target="_blank">PyTorch GitHub Repository ↗</a> — Source code, issues, and discussions</li>
+      <li><span class="ref-badge badge-guide">Guide</span> <a href="https://discuss.pytorch.org/" target="_blank">PyTorch Forums ↗</a> — Community Q&A and support</li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <a class="concept-nav-prev" href="python-ecosystem.html">← Python Ecosystem for ML</a>
+  <span class="concept-nav-cat">Foundations</span>
+  <span></span>
+</nav>
+</body>
+</html>

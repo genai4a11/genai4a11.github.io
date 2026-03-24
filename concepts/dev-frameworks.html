@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Development Frameworks — GenAI Mindmap</title>
+  <meta name="description" content="LLM development framework comparison — LangChain vs LlamaIndex vs Haystack vs Semantic Kernel — architecture, RAG pipelines, agent support, observability, and migration guide." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="LLM Development Frameworks" />
+  <meta property="og:description" content="LLM development framework comparison — LangChain vs LlamaIndex vs Haystack vs Semantic Kernel — architecture, RAG pipelines, agent support, observability, and migration guide." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/dev-frameworks.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="LLM Development Frameworks" />
+  <meta name="twitter:description" content="LLM development framework comparison — LangChain vs LlamaIndex vs Haystack vs Semantic Kernel — architecture, RAG pipelines, agent support, observability." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/dev-frameworks.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --indigo: #4f46e5; --indigo-dk: #3730a3; --indigo-lt: #eef2ff; --blue: #2563eb; --sky: #38bdf8; --green: #22c55e; --rose: #f43f5e; --amber: #f59e0b; --text: #0f172a; --muted: #64748b; --border: #e2e8f0; --bg: #f8fafc; --bg-white: #ffffff; --code-bg: #1e293b; --hero-from: #0f172a; --hero-to: #1e1b4b; }
+    nav { position: sticky; top: 0; z-index: 200; background: rgba(15,23,42,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07); padding: 0 2rem; height: 54px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { font-size: 0.88rem; font-weight: 700; color: #e2e8f0; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; letter-spacing: -0.01em; }
+    .nav-brand .dot { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--indigo), var(--sky)); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+    .nav-back { font-size: 0.82rem; font-weight: 500; color: #94a3b8; text-decoration: none; display: flex; align-items: center; gap: 0.35rem; transition: color 0.15s; }
+    .nav-back:hover { color: #e2e8f0; }
+    .hero { background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%); padding: 4rem 2rem 3.5rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%), radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%); pointer-events: none; }
+    .hero-tag { display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #818cf8; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); padding: 0.3rem 0.8rem; border-radius: 20px; margin-bottom: 1.2rem; }
+    .hero h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800; color: #f1f5f9; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 0.9rem; }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub { font-size: 1.05rem; color: #94a3b8; max-width: 560px; margin: 0 auto 2rem; }
+    .hero-stats { display: inline-flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
+    .stat { text-align: center; }
+    .stat-num { display: block; font-size: 1.5rem; font-weight: 800; color: #e2e8f0; letter-spacing: -0.02em; }
+    .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; }
+    .page-wrap { max-width: 1040px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+    .toc-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem 1.8rem; margin-bottom: 3rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .toc-heading { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.8rem; }
+    .toc-list { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem; }
+    .toc-list li a { font-size: 0.88rem; color: var(--indigo); text-decoration: none; display: flex; align-items: center; gap: 0.4rem; transition: color 0.15s; }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before { content: attr(data-num); font-size: 0.7rem; font-weight: 700; color: var(--bg-white); background: var(--indigo); width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .section-marker { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--indigo); margin-bottom: 0.4rem; }
+    h2 { font-size: 1.45rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-bottom: 1rem; }
+    h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 1.6rem 0 0.5rem; }
+    p { margin-bottom: 1rem; color: #334155; }
+    .section-block { background: var(--bg-white); border: 1px solid var(--border); border-radius: 16px; padding: 2rem 2rem 1.5rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th { background: var(--text); color: #f1f5f9; padding: 0.7rem 1rem; text-align: left; font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em; }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; color: #334155; }
+    tbody tr:last-child td { border-bottom: none; }
+    .example-box { background: var(--code-bg); border-radius: 10px; padding: 1.2rem 1.4rem; margin: 1rem 0 1.5rem; font-family: 'Fira Code', 'SF Mono', monospace; font-size: 0.82rem; line-height: 1.7; white-space: pre-wrap; color: #cbd5e1; }
+    .callout { border-radius: 10px; padding: 1rem 1.2rem; margin: 1.2rem 0; font-size: 0.92rem; display: flex; gap: 0.8rem; align-items: flex-start; }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout strong { font-weight: 700; }
+    .practice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.1rem; }
+    .practice-item h3 { font-size: 0.88rem; margin: 0 0 0.5rem; display: flex; align-items: center; gap: 0.4rem; }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+    .tool-card { border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.1rem; background: var(--bg-white); transition: box-shadow 0.15s, border-color 0.15s; }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--indigo); margin-bottom: 0.4rem; }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+    .ref-group-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); margin: 1.5rem 0 0.8rem; }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li { padding: 0.55rem 0; border-bottom: 1px solid var(--border); font-size: 0.87rem; line-height: 1.55; color: #334155; }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem; vertical-align: middle; }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog { background: #dcfce7; color: #15803d; }
+    .badge-docs { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+    .page-footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; color: var(--muted); flex-wrap: wrap; gap: 0.5rem; }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+    @media (max-width: 600px) { .hero { padding: 3rem 1.5rem 2.5rem; } .page-wrap { padding: 2rem 1.25rem 4rem; } .hero-stats { gap: 1.2rem; } .toc-list { grid-template-columns: 1fr; } }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "LLM Development Frameworks",
+  "description": "LLM development framework comparison \u2014 LangChain vs LlamaIndex vs Haystack vs Semantic Kernel \u2014 architecture, RAG pipelines, agent support, observability, and migration guide.",
+  "url": "https://genai4a11.github.io/concepts/dev-frameworks.html",
+  "dateModified": "2026-03-24T03:49:34.133272",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "LLM Development Frameworks",
+        "item": "https://genai4a11.github.io/concepts/dev-frameworks.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<div class="hero">
+  <span class="hero-tag">Architecture · Tooling</span>
+  <h1>LLM Development <em>Frameworks</em></h1>
+  <p class="hero-sub">LangChain, LlamaIndex, Haystack, and Semantic Kernel — when to use each and what they actually give you</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">frameworks</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">7</span>
+      <span class="stat-label">sections</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Python-first</span>
+      <span class="stat-label">SDKs</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#landscape" data-num="1">Framework landscape</a></li>
+      <li><a href="#comparison" data-num="2">Framework comparison</a></li>
+      <li><a href="#langchain" data-num="3">LangChain deep-dive</a></li>
+      <li><a href="#llamaindex" data-num="4">LlamaIndex deep-dive</a></li>
+      <li><a href="#haystack" data-num="5">Haystack deep-dive</a></li>
+      <li><a href="#when-to-use" data-num="6">When to use what</a></li>
+      <li><a href="#references" data-num="7">References</a></li>
+    </ol>
+  </div>
+
+  <div class="section-block" id="landscape">
+    <div class="section-marker">01 — Overview</div>
+    <h2>Framework Landscape</h2>
+    <p>LLM development frameworks abstract away boilerplate. They provide building blocks: chains (sequential operations), prompts (templates), retrievers (vector search), agents (autonomous decision-making), and memory (conversation context). Each framework takes a different architectural approach, leading to different tradeoffs in simplicity, flexibility, and observability.</p>
+
+    <h3>Why Frameworks Exist</h3>
+    <p>Raw LLM APIs are low-level. Building a chat application requires: prompt template management, context window management, tool invocation loops, error handling, retries, and logging. Frameworks handle this. But they also impose patterns—some more opinionated than others.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key decision:</strong> Do you want simplicity (more opinionated framework) or flexibility (less opinionated)? LangChain leans opinionated; LlamaIndex leans flexible.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="comparison">
+    <div class="section-marker">02 — Comparison Matrix</div>
+    <h2>Framework Comparison</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Framework</th>
+            <th>Primary Use</th>
+            <th>RAG Support</th>
+            <th>Agents</th>
+            <th>Streaming</th>
+            <th>Community</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>LangChain</strong></td>
+            <td>General-purpose chains</td>
+            <td>Excellent</td>
+            <td>Strong (ReAct)</td>
+            <td>✓</td>
+            <td>Largest</td>
+          </tr>
+          <tr>
+            <td><strong>LlamaIndex</strong></td>
+            <td>RAG-first indexing</td>
+            <td>Outstanding</td>
+            <td>Good</td>
+            <td>✓</td>
+            <td>Large</td>
+          </tr>
+          <tr>
+            <td><strong>Haystack</strong></td>
+            <td>NLP pipelines</td>
+            <td>Excellent</td>
+            <td>Emerging</td>
+            <td>✓</td>
+            <td>Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Semantic Kernel</strong></td>
+            <td>.NET integration</td>
+            <td>Good</td>
+            <td>Good</td>
+            <td>✓</td>
+            <td>Growing</td>
+          </tr>
+          <tr>
+            <td><strong>LangGraph</strong></td>
+            <td>State machines</td>
+            <td>Good</td>
+            <td>Excellent</td>
+            <td>✓</td>
+            <td>Emerging</td>
+          </tr>
+          <tr>
+            <td><strong>DSPy</strong></td>
+            <td>Program optimization</td>
+            <td>Good</td>
+            <td>Good</td>
+            <td>✓</td>
+            <td>Research</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-block" id="langchain">
+    <div class="section-marker">03 — Most Popular</div>
+    <h2>LangChain Deep-Dive</h2>
+    <p><strong>LangChain</strong> is the largest and most opinionated framework. It pioneered the "chain" abstraction: composable components linked together. Core concepts: Chains (sequences), Runnables (modern execution model), Memory (conversation state), Tools (function calling), and Callbacks (observability).</p>
+
+    <h3>LangChain Core Concepts</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3>⛓️ LCEL Chains</h3>
+        <ul>
+          <li>Composable units of work</li>
+          <li>Pipe operator for chaining</li>
+          <li>Streaming + batching built-in</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>🧠 Memory Management</h3>
+        <ul>
+          <li>Conversation history tracking</li>
+          <li>Context window awareness</li>
+          <li>Retrieval augmented context</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>🔧 Tools & Agents</h3>
+        <ul>
+          <li>Function calling abstraction</li>
+          <li>ReAct agent loop</li>
+          <li>Tool selection strategies</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>📊 LangSmith</h3>
+        <ul>
+          <li>Tracing & debugging</li>
+          <li>Evaluation frameworks</li>
+          <li>Production monitoring</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Example: Simple Chain</h3>
+    <div class="example-box">from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
+
+llm = OpenAI(temperature=0.7)
+prompt = PromptTemplate(
+    input_variables=["topic"],
+    template="Write a haiku about {topic}"
+)
+
+chain = LLMChain(llm=llm, prompt=prompt)
+result = chain.run(topic="machine learning")
+print(result)</div>
+
+    <h3>Pros & Cons</h3>
+    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
+      <li>✅ Largest ecosystem and community</li>
+      <li>✅ Excellent documentation and examples</li>
+      <li>✅ Strong RAG + agent support</li>
+      <li>❌ Opinionated (can feel over-engineered)</li>
+      <li>❌ Breaking changes between versions</li>
+      <li>❌ Performance overhead for simple tasks</li>
+    </ul>
+  </div>
+
+  <div class="section-block" id="llamaindex">
+    <div class="section-marker">04 — RAG-First</div>
+    <h2>LlamaIndex Deep-Dive</h2>
+    <p><strong>LlamaIndex</strong> is purpose-built for RAG. Concepts: Data Loaders (ingest), Indices (organize), Query Engines (retrieve + rerank), and Retrievers (vector search). Focused on data indexing and retrieval quality.</p>
+
+    <h3>LlamaIndex Architecture</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3>📥 Data Loaders</h3>
+        <ul>
+          <li>Load from 100+ sources</li>
+          <li>SimpleDirectoryReader</li>
+          <li>Custom loader support</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>📑 Indices</h3>
+        <ul>
+          <li>VectorStoreIndex (embedding-based)</li>
+          <li>TreeIndex (hierarchical)</li>
+          <li>SummaryIndex (flat)</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>🔍 Query Engines</h3>
+        <ul>
+          <li>Built on Retrievers</li>
+          <li>Reranking support</li>
+          <li>Streaming responses</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>🤖 Agents</h3>
+        <ul>
+          <li>Agent Router</li>
+          <li>Tool selection</li>
+          <li>Multi-index search</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Example: RAG Pipeline</h3>
+    <div class="example-box">from llama_index import SimpleDirectoryReader, VectorStoreIndex
+
+# Load documents
+documents = SimpleDirectoryReader("./data").load_data()
+
+# Create index
+index = VectorStoreIndex.from_documents(documents)
+
+# Query
+query_engine = index.as_query_engine()
+response = query_engine.query("What is RAG?")
+print(response)print(response)</div>
+
+    <h3>Pros & Cons</h3>
+    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
+      <li>✅ RAG-optimized, not general-purpose</li>
+      <li>✅ Simpler learning curve than LangChain</li>
+      <li>✅ Excellent data loader ecosystem</li>
+      <li>❌ Less agent support than LangChain</li>
+      <li>❌ Smaller community</li>
+    </ul>
+  </div>
+
+  <div class="section-block" id="haystack">
+    <div class="section-marker">05 — NLP-First</div>
+    <h2>Haystack Deep-Dive</h2>
+    <p><strong>Haystack</strong> (by deepset) is built on NLP-first thinking. Concepts: Pipelines (YAML-configurable workflows), Components (pluggable NLP nodes), Document Stores (retrieval), and Evaluators (metrics). Designed for production NLP systems.</p>
+
+    <h3>When to Use Haystack</h3>
+    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
+      <li>You have complex NLP requirements (entity extraction, classification)</li>
+      <li>You want YAML-based pipeline configuration</li>
+      <li>You need strong evaluation/metrics frameworks</li>
+      <li>You're building traditional search (BM25 + dense retrieval)</li>
+    </ul>
+
+    <h3>Haystack Pipeline Example</h3>
+    <div class="example-box">from haystack import Pipeline
+from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
+from haystack.components.rankers import TransformersSimilarityRanker
+
+# Build pipeline
+pipeline = Pipeline()
+pipeline.add_component("retriever", InMemoryBM25Retriever())
+pipeline.add_component("ranker", TransformersSimilarityRanker())
+
+# Connect components
+pipeline.connect("retriever.documents", "ranker.documents")
+
+# Run
+result = pipeline.run({"retriever": {"query": "machine learning"}})
+print(result)
+
+  <div class="section-block" id="when-to-use">
+    <div class="section-marker">06 — Decision Framework</div>
+    <h2>When to Use What</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>Best Choice</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Simple RAG (docs → search → LLM)</td>
+            <td>LlamaIndex</td>
+            <td>Purpose-built, minimal overhead</td>
+          </tr>
+          <tr>
+            <td>Complex agents (multi-tool, memory)</td>
+            <td>LangChain</td>
+            <td>Strongest agent framework</td>
+          </tr>
+          <tr>
+            <td>Enterprise NLP pipeline</td>
+            <td>Haystack</td>
+            <td>Production-grade, evaluation tools</td>
+          </tr>
+          <tr>
+            <td>.NET/C# application</td>
+            <td>Semantic Kernel</td>
+            <td>Native .NET integration</td>
+          </tr>
+          <tr>
+            <td>Agentic state machine</td>
+            <td>LangGraph</td>
+            <td>Explicit state control</td>
+          </tr>
+          <tr>
+            <td>Prompt optimization</td>
+            <td>DSPy</td>
+            <td>Automated prompt engineering</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Migration Paths</h3>
+    <p>Start simple with LlamaIndex for RAG, graduate to LangChain if you need agents. Both work together—use LlamaIndex's query engine as a tool in LangChain agents.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Avoid framework hopping:</strong> All frameworks are viable. Pick one, go deep, and switch only if you hit real constraints (not theoretical ones).</span>
+    </div>
+  </div>
+
+  <div class="section-block">
+    <div class="section-marker">Tools &amp; SDKs</div>
+    <h2>Framework & Tool Ecosystem</h2>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangChain</div>
+        <div class="tool-desc">General-purpose LLM application framework with chains, agents, memory</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LlamaIndex</div>
+        <div class="tool-desc">RAG-focused indexing and retrieval framework</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Haystack</div>
+        <div class="tool-desc">NLP-first pipeline and component framework</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Semantic Kernel</div>
+        <div class="tool-desc">Microsoft's .NET LLM framework</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Agentic</div>
+        <div class="tool-name">LangGraph</div>
+        <div class="tool-desc">State machine framework for agents (LangChain layer)</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Optimization</div>
+        <div class="tool-name">DSPy</div>
+        <div class="tool-desc">Automatic prompt optimization framework</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Observability</div>
+        <div class="tool-name">LangSmith</div>
+        <div class="tool-desc">Debugging, evaluation, monitoring (LangChain)</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">Pinecone</div>
+        <div class="tool-desc">Managed vector database (works with all frameworks)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-block" id="references">
+    <div class="section-marker">07 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Documentation</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://python.langchain.com/" target="_blank">LangChain Documentation ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://docs.llamaindex.ai/" target="_blank">LlamaIndex Documentation ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://docs.haystack.deepset.ai/" target="_blank">Haystack Documentation ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://github.com/microsoft/semantic-kernel" target="_blank">Semantic Kernel GitHub ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Guides &amp; Blogs</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">Blog</span> <a href="https://blog.langchain.dev/" target="_blank">LangChain Blog ↗</a></li>
+      <li><span class="ref-badge badge-blog">Blog</span> <a href="https://blog.llamaindex.ai/" target="_blank">LlamaIndex Blog ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> <a href="https://python.langchain.com/docs/get_started/introduction" target="_blank">LangChain Getting Started ↗</a></li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <a class="concept-nav-prev" href="frontier-models.html">← Frontier LLM Models</a>
+  <span class="concept-nav-cat">Models & Prompting</span>
+  <a class="concept-nav-next" href="integration-std.html">→ LLM Integration Standards</a>
+</nav>
+</body>
+</html>

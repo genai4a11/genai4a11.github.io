@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decision Frameworks for AI Systems - GenAI Mindmap</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Decision frameworks for building AI systems. Cost-quality-latency tradeoffs, RAG vs fine-tuning, model selection, build vs buy analysis, agent architecture patterns, and evaluation-driven design.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://genai4a11.com/concepts/decision-frameworks.html">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Decision Frameworks for AI Systems - GenAI Mindmap">
+  <meta property="og:description" content="Master architectural decisions for production AI systems. Cost-quality tradeoffs, model selection, and evaluation-driven design.">
+  <meta property="og:url" content="https://genai4a11.com/concepts/decision-frameworks.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="GenAI Mindmap">
+  <meta property="og:image" content="https://genai4a11.com/og-image.png">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Decision Frameworks for AI Systems">
+  <meta name="twitter:description" content="Cost-quality-latency tradeoffs, model selection, and evaluation-driven architecture patterns">
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+
+  <style>
+    :root {
+      --text: #0f172a;
+      --text-light: #475569;
+      --bg-white: #ffffff;
+      --bg-light: #f8fafc;
+      --bg-lighter: #f1f5f9;
+      --border: #e2e8f0;
+      --indigo: #4f46e5;
+      --blue: #0284c7;
+      --cyan: #06b6d4;
+      --purple: #9333ea;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--text); }
+    body { background: var(--bg-light); }
+
+    .nav-back {
+      padding: 1rem 2rem;
+      background: var(--bg-white);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-back a {
+      color: var(--indigo); text-decoration: none; font-size: 0.9rem; font-weight: 600;
+    }
+
+    .container {
+      max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #9333ea 0%, #06b6d4 100%);
+      color: white;
+      border-radius: 20px;
+      padding: 3rem 2rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 4px 20px rgba(147, 51, 234, 0.2);
+    }
+    .hero-tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9; }
+    .hero h1 { font-size: 2rem; font-weight: 900; margin: 0.5rem 0; letter-spacing: -0.03em; }
+    .hero em { font-style: normal; background: rgba(255,255,255,0.25); padding: 0 0.3rem; border-radius: 4px; }
+    .hero-sub { font-size: 0.95rem; opacity: 0.95; margin-top: 1rem; }
+
+    .hero-stats {
+      display: grid; grid-template-columns: auto auto auto; gap: 2rem; margin-top: 1.5rem;
+    }
+    .stat { display: flex; gap: 0.8rem; }
+    .stat-num { font-size: 1.4rem; font-weight: 800; }
+    .stat-label { font-size: 0.8rem; opacity: 0.85; }
+
+    .toc-card {
+      background: var(--bg-white);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .toc-card h3 { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; color: var(--indigo); }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.8rem; text-align: left; font-weight: 700; letter-spacing: -0.01em;
+    }
+    tbody td {
+      padding: 0.8rem; border-bottom: 1px solid var(--border);
+    }
+    tbody tr:hover { background: var(--bg-lighter); }
+
+    .example-box {
+      background: #0f172a; color: #e2e8f0;
+      padding: 1.2rem; border-radius: 8px;
+      margin: 1.2rem 0 1.5rem;
+      font-size: 0.85rem; font-family: 'Monaco', monospace;
+      overflow-x: auto; line-height: 1.5; white-space: pre-wrap;
+    }
+
+    .method-card {
+      background: var(--bg-lighter);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+    }
+    .method-card:hover { border-color: var(--indigo); background: var(--bg-white); box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1); }
+    .method-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--indigo); }
+    .method-card p { font-size: 0.85rem; margin: 0; }
+
+    .tools-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;
+    }
+
+    .ref-item {
+      margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    }
+    .ref-item:last-child { border-bottom: none; }
+    .ref-badge {
+      display: inline-block;
+      background: var(--indigo); color: white;
+      padding: 0.3rem 0.7rem; border-radius: 4px;
+      font-size: 0.75rem; font-weight: 700;
+      text-decoration: none;
+      margin-bottom: 0.5rem;
+    }
+    .ref-badge:hover { opacity: 0.85; }
+
+    footer {
+      text-align: center; padding: 2rem; color: #64748b; font-size: 0.85rem;
+    }
+    footer a { color: var(--indigo); text-decoration: none; }
+
+    @media (max-width: 768px) {
+      .hero { padding: 2rem; }
+      .hero h1 { font-size: 1.5rem; }
+      .hero-stats { grid-template-columns: 1fr; gap: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+      .tools-grid { grid-template-columns: 1fr; }
+      .section-block { padding: 1.5rem; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Decision Frameworks for AI Systems - GenAI Mindmap",
+  "description": "Decision frameworks for building AI systems. Cost-quality-latency tradeoffs, RAG vs fine-tuning, model selection, build vs buy analysis, agent architecture patterns, and evaluation-driven design.",
+  "url": "https://genai4a11.com/concepts/decision-frameworks.html",
+  "dateModified": "2026-03-24T03:49:34.020444",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Decision Frameworks for AI Systems - GenAI Mindmap",
+        "item": "https://genai4a11.com/concepts/decision-frameworks.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<div class="nav-back">
+  <a href="/index.html">← Back to Mindmap</a>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <div class="hero-tag">Architecture · Strategy</div>
+    <h1>Decision Frameworks for AI <em>Systems</em></h1>
+    <div class="hero-sub">Strategic frameworks for model selection, build vs buy decisions, RAG vs fine-tuning tradeoffs, and evaluation-driven architecture patterns.</div>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num">5</div>
+        <div class="stat-label">Decision frameworks</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">7</div>
+        <div class="stat-label">Sections</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">Python-first</div>
+        <div class="stat-label">Implementation</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toc-card">
+    <h3>Table of Contents</h3>
+    <ul class="toc-list">
+      <li><a href="#cost-quality-latency" data-num="1">Cost-Quality-Latency Triangle</a></li>
+      <li><a href="#rag-vs-finetuning" data-num="2">RAG vs Fine-tuning</a></li>
+      <li><a href="#model-selection" data-num="3">Model Selection Framework</a></li>
+      <li><a href="#build-vs-buy" data-num="4">Build vs Buy Analysis</a></li>
+      <li><a href="#agent-patterns" data-num="5">Agent Use Cases and Patterns</a></li>
+      <li><a href="#arch-patterns" data-num="6">Architecture Patterns</a></li>
+      <li><a href="#eval-driven" data-num="7">Evaluation-Driven Design</a></li>
+    </ul>
+  </div>
+
+  <div class="section-block" id="cost-quality-latency">
+    <div class="section-marker">01 — Tradeoffs</div>
+    <h2>The Cost-Quality-Latency Triangle</h2>
+    <p>Every AI system exists at the intersection of three competing constraints. Optimize for two; the third suffers. Know your tradeoffs explicitly.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Optimize For</th>
+            <th>Sacrifice</th>
+            <th>Technology Choice</th>
+            <th>Example Use Case</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Quality + Cost</strong></td>
+            <td>Latency (batch)</td>
+            <td>Batch API, overnight processing</td>
+            <td>Daily email summaries, report generation</td>
+          </tr>
+          <tr>
+            <td><strong>Quality + Latency</strong></td>
+            <td>Cost (expensive model)</td>
+            <td>GPT-4o with streaming</td>
+            <td>Real-time customer support, code review</td>
+          </tr>
+          <tr>
+            <td><strong>Cost + Latency</strong></td>
+            <td>Quality (degraded)</td>
+            <td>Smaller models, quantization</td>
+            <td>Classification, fast filtering</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="example-box"># Decision framework: cost-quality-latency
+class SystemOptimizer:
+    def __init__(self, constraints):
+        self.max_cost_per_request = constraints["max_cost"]
+        self.max_latency_ms = constraints["max_latency"]
+        self.min_quality = constraints["min_quality"]
+    
+    def choose_architecture(self):
+        # If latency is flexible, use batch API
+        if self.max_latency_ms > 3600000:  # > 1 hour
+            return {
+                "model": "gpt-4o",
+                "mode": "batch",
+                "cost_per_token": 0.000003,
+                "latency": "12-24 hours"
+            }
+        
+        # If cost is flexible, maximize quality
+        if self.max_cost_per_request > 0.10:
+            return {
+                "model": "gpt-4o",
+                "mode": "streaming",
+                "cost_per_token": 0.000015,
+                "latency": "2-5 seconds"
+            }
+        
+        # Cost-constrained: use smaller model
+        return {
+            "model": "gpt-4o-mini",
+            "mode": "streaming",
+            "cost_per_token": 0.00000015,
+            "latency": "1-2 seconds"
+        }
+  </div>
+
+  <div class="section-block" id="rag-vs-finetuning">
+    <div class="section-marker">02 — Knowledge Integration</div>
+    <h2>RAG vs Fine-tuning Decision Matrix</h2>
+    <p>Two approaches for incorporating domain knowledge. RAG is faster to implement and cheaper. Fine-tuning gives better quality but requires preparation and ongoing maintenance.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>RAG</th>
+            <th>Fine-tuning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Time to production</strong></td>
+            <td>Weeks (build retrieval system)</td>
+            <td>Months (collect, label, train)</td>
+          </tr>
+          <tr>
+            <td><strong>Latency impact</strong></td>
+            <td>+500ms (vector search)</td>
+            <td>None (model behavior change)</td>
+          </tr>
+          <tr>
+            <td><strong>Cost per inference</strong></td>
+            <td>Baseline + retrieval</td>
+            <td>Baseline (potentially cheaper with smaller model)</td>
+          </tr>
+          <tr>
+            <td><strong>Knowledge currency</strong></td>
+            <td>Real-time (update documents)</td>
+            <td>Static (retrain for updates)</td>
+          </tr>
+          <tr>
+            <td><strong>Quality ceiling</strong></td>
+            <td>Limited by retrieval accuracy</td>
+            <td>Limited by training data quality</td>
+          </tr>
+          <tr>
+            <td><strong>Best for</strong></td>
+            <td>Rapidly changing domain, large knowledge base</td>
+            <td>Stable domain, specialized reasoning</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Hybrid Approach: RAG + Fine-tuning</h3>
+    <p>Use RAG to inject recent knowledge. Use fine-tuning for reasoning patterns. Combine both for optimal quality.</p>
+
+    <div class="example-box"># Hybrid RAG + fine-tuned model
+class HybridKnowledgeSystem:
+    def __init__(self, base_model, retriever, finetuned_model):
+        self.retriever = retriever
+        self.finetuned_model = finetuned_model
+    
+    def answer(self, question):
+        # 1. Retrieve relevant context
+        docs = self.retriever.search(question, top_k=5)
+        context = "\n".join([d["text"] for d in docs])
+        
+        # 2. Fine-tuned model has learned reasoning patterns
+        # Prompt format from fine-tuning
+        prompt = f"""Question: {question}
+Context: {context}
+Answer:"""
+        
+        response = self.finetuned_model.generate(prompt)
+        return {
+            "answer": response,
+            "sources": [d["source"] for d in docs],
+            "confidence": self.estimate_confidence(response, context)
+        }
+  </div>
+
+  <div class="section-block" id="model-selection">
+    <div class="section-marker">03 — Selection</div>
+    <h2>Model Selection Framework</h2>
+    <p>Evaluate models on capability, cost, speed, and fit for your specific task. Don't default to the largest model. Benchmark on your actual data.</p>
+
+    <div class="example-box"># Model selection scorecard
+class ModelEvaluator:
+    def score_model(self, model, benchmark_data, weights=None):
+        # Default: quality > latency > cost
+        weights = weights or {
+            "quality": 0.50,
+            "latency": 0.30,
+            "cost": 0.20
+        }
+        
+        results = self.benchmark(model, benchmark_data)
+        
+        scores = {
+            "quality": results["accuracy"] / 0.95,  # Normalize
+            "latency": 2000 / results["avg_latency_ms"],
+            "cost": 0.001 / results["cost_per_token"]
+        }
+        
+        final_score = sum(
+            scores[key] * weights[key]
+            for key in scores
+        )
+        
+        return {
+            "model": model,
+            "final_score": final_score,
+            "component_scores": scores,
+            "benchmark_results": results
+        }
+    
+    def recommend(self, candidates, benchmark_data):
+        evaluations = [
+            self.score_model(model, benchmark_data)
+            for model in candidates
+        ]
+        return sorted(evaluations, key=lambda x: x["final_score"], reverse=True)[0]</div>
+  </div>
+
+  <div class="section-block" id="build-vs-buy">
+    <div class="section-marker">04 — Make-or-Buy</div>
+    <h2>Build vs Buy Decision Analysis</h2>
+    <p>Building custom models is expensive. Buying API access is simple. Choose based on scale, differentiation, and control requirements.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Factor</th>
+            <th>Build</th>
+            <th>Buy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Initial investment</strong></td>
+            <td>High ($100K-1M)</td>
+            <td>Low ($5K-50K)</td>
+          </tr>
+          <tr>
+            <td><strong>Time to production</strong></td>
+            <td>6-18 months</td>
+            <td>Weeks</td>
+          </tr>
+          <tr>
+            <td><strong>Operational cost at scale</strong></td>
+            <td>Low (amortized)</td>
+            <td>High (per-request)</td>
+          </tr>
+          <tr>
+            <td><strong>Control and IP</strong></td>
+            <td>Complete ownership</td>
+            <td>Vendor dependent</td>
+          </tr>
+          <tr>
+            <td><strong>Differentiation value</strong></td>
+            <td>High (unique capability)</td>
+            <td>Commodity (everyone has access)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Break-Even Analysis</h3>
+    <div class="example-box"># Build vs buy cost comparison
+def calculate_breakeven(api_cost_per_token, inference_volume_per_year, training_cost, serving_cost_per_year):
+    api_annual_cost = api_cost_per_token * inference_volume_per_year
+    custom_annual_cost = training_cost / 5 + serving_cost_per_year  # Amortize training over 5 years
+    
+    # Break-even when custom catches up
+    years_to_breakeven = training_cost / (api_annual_cost - serving_cost_per_year)
+    
+    return {
+        "api_annual_cost": api_annual_cost,
+        "custom_annual_cost": custom_annual_cost,
+        "years_to_breakeven": years_to_breakeven,
+        "recommendation": "build" if years_to_breakeven < 3 else "buy"
+    }
+
+# Example: billion inferences per year
+breakeven = calculate_breakeven(
+    api_cost_per_token=0.000005,
+    inference_volume_per_year=500_000_000_000,  # 500B tokens
+    training_cost=500_000,
+    serving_cost_per_year=100_000
+)
+  </div>
+
+  <div class="section-block" id="agent-patterns">
+    <div class="section-marker">05 — Patterns</div>
+    <h2>Agent Use Cases and Patterns</h2>
+    <p>Agents excel when tasks require planning, tool use, and iterative refinement. But not all AI tasks need agents. Start simple; add agentic patterns only when needed.</p>
+
+    <h3>When to Use Agents</h3>
+    <p><strong>Good fit:</strong> Multi-step workflows (research, code generation), dynamic planning (unknown steps), tool use (API calls, file operations), adaptive reasoning (learn from mistakes).</p>
+    <p><strong>Poor fit:</strong> Single-turn classification, simple generation, low-latency requirements (&lt;1 second), cost-critical operations.</p>
+
+    <div class="example-box"># Simple agentic loop with ReAct pattern
+class SimpleAgent:
+    def __init__(self, model_client, tools):
+        self.client = model_client
+        self.tools = {t.name: t for t in tools}
+        self.max_iterations = 10
+    
+    async def run(self, task):
+        messages = [{"role": "user", "content": task}]
+        
+        for _ in range(self.max_iterations):
+            # Think: LLM decides next action
+            response = await self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages
+            )
+            
+            # Check if done
+            if "done" in response.choices[0].message.content.lower():
+                return response.choices[0].message.content
+            
+            # Act: execute tool
+            tool_call = self.parse_tool_call(response)
+            result = await self.tools[tool_call["name"]].execute(
+                **tool_call["args"]
+            )
+            
+            # Observe: add to context
+            messages.append({"role": "assistant", "content": response.choices[0].message.content})
+            messages.append({"role": "user", "content": f"Tool result: {result}"})
+        
+        return "Max iterations reached"
+  </div>
+
+  <div class="section-block" id="arch-patterns">
+    <div class="section-marker">06 — Architecture</div>
+    <h2>Architecture Patterns and Scaling</h2>
+    <p>Three common patterns: monolithic (single model), modular (specialized models), and hierarchical (routing). Choose based on complexity, latency, and operational constraints.</p>
+
+    <h3>Monolithic Pattern</h3>
+    <p>Single large model handles all tasks. Simple to operate. Works well for general tasks. Limited scaling flexibility.</p>
+
+    <h3>Modular Pattern</h3>
+    <p>Specialized models for different tasks. Route based on input classification. Better cost control. Higher operational complexity.</p>
+
+    <div class="example-box"># Modular architecture with routing
+class ModularPipeline:
+    def __init__(self):
+        self.classifier = load_classifier()
+        self.models = {
+            "summarization": GPTClient(model="gpt-4o-mini"),
+            "coding": GPTClient(model="gpt-4o"),
+            "translation": GPTClient(model="gpt-4o-mini"),
+            "reasoning": GPTClient(model="gpt-4o")
+        }
+    
+    async def process(self, request):
+        # Classify task
+        task_type = await self.classifier.predict(request["content"])
+        
+        # Route to appropriate model
+        model = self.models.get(task_type, self.models["reasoning"])
+        
+        response = await model.generate(request["content"])
+        return response
+  </div>
+
+  <div class="section-block" id="eval-driven">
+    <div class="section-marker">07 — Validation</div>
+    <h2>Evaluation-Driven Design</h2>
+    <p>Start with metrics and benchmarks. Design systems to maximize the metrics that matter. Measure continuously. Let data guide decisions, not intuition.</p>
+
+    <h3>Defining Success Metrics</h3>
+    <p><strong>Task accuracy:</strong> BLEU, F1, exact match for classification/generation. <strong>User satisfaction:</strong> thumbs up/down, ratings, NPS. <strong>Business impact:</strong> conversion rate, retention, revenue. <strong>Operational:</strong> latency, cost, error rate.</p>
+
+    <div class="example-box"># Evaluation framework
+class EvaluationFramework:
+    def __init__(self, baseline_metrics):
+        self.baseline = baseline_metrics
+        self.experiments = []
+    
+    def run_experiment(self, variant_name, variant_fn, test_data):
+        """A/B test a change"""
+        results = []
+        
+        for sample in test_data:
+            baseline_output = self.baseline_fn(sample)
+            variant_output = variant_fn(sample)
+            
+            results.append({
+                "baseline": baseline_output,
+                "variant": variant_output,
+                "correct_baseline": baseline_output == sample["expected"],
+                "correct_variant": variant_output == sample["expected"]
+            })
+        
+        improvement = {
+            "accuracy_lift": sum(r["correct_variant"] for r in results) / len(results) - self.baseline["accuracy"],
+            "latency": self.measure_latency(variant_fn, test_data),
+            "cost": self.measure_cost(variant_fn, test_data)
+        }
+        
+        self.experiments.append({
+            "variant": variant_name,
+            "improvement": improvement,
+            "results": results
+        })
+        
+        return improvement
+  </div>
+
+  <div class="section-block" id="tools-grid-section">
+    <div class="section-marker">Tools</div>
+    <h2>Decision Support Stack</h2>
+    <p>Tools for model evaluation, benchmarking, and architectural decisions.</p>
+    
+    <div class="tools-grid">
+      <div class="method-card">
+        <h4>HELM Benchmark</h4>
+        <p>Comprehensive LLM evaluation across diverse tasks. Compare models on accuracy, efficiency, and bias metrics.</p>
+      </div>
+      <div class="method-card">
+        <h4>LangSmith</h4>
+        <p>Debug and monitor LLM applications. Evaluate prompt changes before deployment. Track costs per feature.</p>
+      </div>
+      <div class="method-card">
+        <h4>DeepEval</h4>
+        <p>Evaluation framework for LLM outputs. Metrics for hallucination, relevance, faithfulness, and bias.</p>
+      </div>
+      <div class="method-card">
+        <h4>Weights &amp; Biases</h4>
+        <p>Experiment tracking with decision logging. Compare model versions and architectures systematically.</p>
+      </div>
+      <div class="method-card">
+        <h4>MLflow</h4>
+        <p>Model registry and versioning. Track experiments, parameters, and metrics. Compare variants.</p>
+      </div>
+      <div class="method-card">
+        <h4>LiteLLM</h4>
+        <p>Multi-provider LLM router. A/B test models. Track costs and performance across providers.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-block" id="references">
+    <div class="section-marker">References</div>
+    <h2>Learn More</h2>
+    
+    <div class="reference-list">
+      <div class="ref-item">
+        <a href="https://crfm.stanford.edu/helm/" target="_blank" class="ref-badge">HELM Benchmark</a>
+        <p>Comprehensive evaluation framework for language models. Compare across diverse tasks and metrics.</p>
+      </div>
+      <div class="ref-item">
+        <a href="https://smith.langchain.com/" target="_blank" class="ref-badge">LangSmith</a>
+        <p>Debugging and monitoring platform for LLM applications. Evaluate and iterate on prompts.</p>
+      </div>
+      <div class="ref-item">
+        <a href="https://github.com/confident-ai/deepeval" target="_blank" class="ref-badge">DeepEval</a>
+        <p>Open-source evaluation framework for LLM outputs. Hallucination, relevance, and bias detection.</p>
+      </div>
+      <div class="ref-item">
+        <a href="https://wandb.ai/" target="_blank" class="ref-badge">Weights &amp; Biases</a>
+        <p>Experiment tracking and decision logging for AI systems. Compare model variants systematically.</p>
+      </div>
+      <div class="ref-item">
+        <a href="https://mlflow.org/" target="_blank" class="ref-badge">MLflow</a>
+        <p>Model registry and versioning. Track experiments, parameters, and metrics.</p>
+      </div>
+      <div class="ref-item">
+        <a href="https://www.litellm.ai/" target="_blank" class="ref-badge">LiteLLM</a>
+        <p>Multi-provider LLM router with cost tracking and A/B testing capabilities.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Part of the <a href="/index.html">GenAI Mindmap</a></p>
+  </footer>
+
+</div>
+
+<nav class="concept-nav">
+  <span></span>
+  <span class="concept-nav-cat">Strategy & Design</span>
+  <a class="concept-nav-next" href="frontier-implications.html">→ Frontier Implications of AI - GenAI Mindmap</a>
+</nav>
+</body>
+</html>
