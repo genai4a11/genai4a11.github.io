@@ -1431,17 +1431,128 @@ agents:{use:'An agent is an LLM that can take actions — not just generate text
     leader:['What is our Kill-Switch policy — at what spend threshold or action count does an autonomous agent pause and require human sign-off before continuing?','What is the cost and latency profile of multi-step agentic workflows at production scale, and where does it become financially unsustainable?','Build vs. buy: when does a managed agent platform beat building in-house — what capability or scale triggers that decision?'],
     pm:['What is our Human-in-the-Loop strategy — at what confidence score does the agent stop and ask a human for permission rather than acting autonomously?','How do I define a clear, measurable success criterion before adding more agent autonomy — what does controlled expansion of agency look like on a roadmap?','When should the agent fail gracefully vs. escalate to a human — who decides the boundary and how is it encoded in the product spec?'],
     eng:['How do we handle Agentic Memory — persisting state across long multi-turn sessions without bloating the context window or losing important earlier context?','How do I make tool calls idempotent so retries are safe and do not cause duplicate real-world actions like double-billing a customer or sending an email twice?','What tracing and observability setup do I need to replay and debug an agent run that failed three steps into a ten-step workflow?','What parts of the agentic workflow must remain deterministic for the system to be reliable — and how do we enforce that boundary as autonomy expands?'],
-  }},
+  },code:`from anthropic import Anthropic
+
+client = Anthropic()
+
+tools = [{
+    'name': 'search_docs',
+    'description': 'Search company documentation',
+    'input_schema': {
+        'type': 'object',
+        'properties': {'query': {'type': 'string', 'description': 'Search query'}},
+        'required': ['query']
+    }
+}]
+
+def run_tool(name: str, inputs: dict) -> str:
+    if name == 'search_docs':
+        # Replace with your real search implementation
+        return f'[Search results for "{inputs["query"]}"] ...relevant content...'
+    return 'Unknown tool'
+
+def agent(user_message: str) -> str:
+    messages = [{'role': 'user', 'content': user_message}]
+    while True:
+        resp = client.messages.create(
+            model='claude-opus-4-5', max_tokens=1024,
+            tools=tools, messages=messages
+        )
+        if resp.stop_reason == 'end_turn':
+            return next(b.text for b in resp.content if hasattr(b, 'text'))
+        tool_results = []
+        for block in resp.content:
+            if block.type == 'tool_use':
+                result = run_tool(block.name, block.input)
+                tool_results.append({
+                    'type': 'tool_result',
+                    'tool_use_id': block.id,
+                    'content': result
+                })
+        messages += [
+            {'role': 'assistant', 'content': resp.content},
+            {'role': 'user', 'content': tool_results}
+        ]
+
+print(agent('What does our documentation say about authentication?'))`,refs:[{label:'Agent planning patterns',url:'concepts/agent-planning.html'},{label:'Agent memory strategies',url:'concepts/agent-memory.html'},{label:'Tool use & function calling',url:'concepts/tool-use.html'},{label:'Multi-agent orchestration',url:'concepts/multi-agent.html'}]},
 rag:{use:'RAG solves the core problem with plain LLMs: they only know what was in their training data. RAG attaches any external knowledge — your docs, your database, live data — to any LLM at query time, without retraining the model.',diag:`  Without RAG:\n  Question ──► LLM ──► Answer\n                ↑\n           Training cutoff · no private data · hallucination risk\n\n  With RAG:\n  Question ──► Retrieve chunks ──► LLM ──► Grounded answer\n                    ↑\n               Your documents\n               Your database\n               Live / private data\n\n  The two phases:\n\n  INDEXING (offline, run once):\n  Documents ──► Chunk ──► Embed ──► Store in vector DB\n\n  RETRIEVAL (online, every query):\n  Question ──► Embed ──► Search ──► Top-k chunks\n                                         │\n                                    LLM prompt\n                                         │\n                                      Answer`,tip:'RAG quality is determined before any model call — by how you chunk, what metadata you store, and how you retrieve. Fix the data pipeline first, prompt engineering second.',questions:{
     leader:['Is RAG the right architecture or would fine-tuning serve better — what is the decision threshold between the two?','What is the ongoing cost — embedding, storage, retrieval, reranking — as the knowledge base scales to millions of documents?','Which vendor or OSS stack owns our retrieval layer, and what is the migration risk if we need to move?'],
     pm:['How do I measure Retrieval Quality vs. Generation Quality independently to find the true bottleneck — and what metrics represent each?','What is our strategy for Stale Data — how quickly must a change in the source database reflect in the RAG index, and who owns that SLA?','How do I spec chunk size and freshness requirements so engineering has a clear acceptance criteria rather than tuning endlessly?'],
     eng:['When does long-context replace retrieval rather than complement it — what is the cost-to-latency trade-off at our data volume and request rate?','How do we implement Semantic Caching to avoid redundant LLM calls when two user queries are semantically identical but lexically different?','How do I debug hallucinations — is the problem in retrieval returning the wrong chunks, in the prompt failing to use them, or in the model ignoring them?','When does structured database retrieval outperform vector search — what properties of the query or data make traditional SQL or graph queries the better choice?'],
-  }},
+  },code:`# Minimal RAG pipeline: embed -> store -> retrieve -> answer
+# pip install anthropic chromadb sentence-transformers
+
+from sentence_transformers import SentenceTransformer
+import chromadb
+from anthropic import Anthropic
+
+embed_model = SentenceTransformer('BAAI/bge-small-en-v1.5')
+col = chromadb.Client().get_or_create_collection('docs')
+client = Anthropic()
+
+# Indexing (offline, run once per corpus update)
+docs = [
+    'Our refund policy is 30 days, no questions asked.',
+    'Shipping takes 3-5 business days to the US.',
+    'Contact support at help@example.com for account issues.',
+]
+embeddings = embed_model.encode(docs).tolist()
+col.add(documents=docs, embeddings=embeddings,
+        ids=[f'doc{i}' for i in range(len(docs))])
+
+# Retrieval + Generation (online, per query)
+def rag(question: str, k: int = 2) -> str:
+    q_emb = embed_model.encode([question]).tolist()
+    results = col.query(query_embeddings=q_emb, n_results=k)
+    context = '\\n'.join(results['documents'][0])
+    resp = client.messages.create(
+        model='claude-haiku-4-5-20251001', max_tokens=256,
+        messages=[{'role':'user','content':
+            f'Context:\\n{context}\\n\\nQuestion: {question}\\nAnswer briefly:'}]
+    )
+    return resp.content[0].text
+
+print(rag('What is the return policy?'))`,refs:[{label:'Embeddings — models & APIs',url:'concepts/embeddings.html'},{label:'Vector databases comparison',url:'concepts/vector-dbs.html'},{label:'Retrieval techniques (dense, BM25, hybrid)',url:'concepts/retrieval-tech.html'},{label:'Advanced RAG patterns',url:'concepts/advanced-rag.html'}]},
 prompting:{use:'Prompting is the primary interface between you and an LLM. A well-designed prompt can make a smaller model outperform a larger one. Poor prompts make even the best models inconsistent.',diag:`  Anatomy of a production-grade prompt:\n  ┌─────────────────────────────────────────┐\n  │ SYSTEM  — role, constraints, format     │\n  │ "You are a senior Python engineer.      │\n  │  Always use type hints. JSON output."   │\n  ├─────────────────────────────────────────┤\n  │ EXAMPLES — show the format you want     │\n  │ Input: fix_bug(code) → {code, reason}   │\n  │ (2-5 examples beats long instructions)  │\n  ├─────────────────────────────────────────┤\n  │ TASK — clear, specific, scoped          │\n  │ "Refactor this function to use a dict"  │\n  ├─────────────────────────────────────────┤\n  │ OUTPUT FORMAT — what you want back      │\n  │ "Return JSON: {code, explanation}"      │\n  └─────────────────────────────────────────┘\n\n  Techniques in order of impact:\n  1. Few-shot examples    (highest leverage)\n  2. Chain-of-thought     (reasoning tasks)\n  3. System role          (consistency)\n  4. Output schema        (reliability)\n  5. Self-consistency     (accuracy)`,tip:'The fastest quality improvement: add 2-3 worked examples. Models learn format and tone from examples faster than from instructions.',questions:{
     leader:['How much of our output quality gap is solvable through better prompting vs. buying a bigger model — and how do we measure the ceiling before committing to either?','What is the organisational risk of having prompts scattered across the codebase with no versioning, no ownership, and no regression tests?','At what point does prompt engineering reach its ceiling and we need to consider fine-tuning or a fundamentally different architecture?'],
     pm:['How do we write testable acceptance criteria for non-deterministic outputs — what similarity threshold defines acceptable output quality and who agrees on it upfront?','When a prompt change improves one edge case but regresses the golden set, who owns that trade-off decision and how is it made?','How do I estimate the effort of prompt engineering for a new feature vs. the expected quality gain — when is it worth the sprint investment?'],
     eng:['How do we implement programmatic prompt optimisation and regression testing in CI/CD — without tying ourselves to a single framework?','How do we structure prompts to be model-agnostic so they do not depend on the quirks of a single provider and survive a model swap?','How do I version prompts alongside code so I can roll back a bad prompt the same way I roll back a bad deploy — what does the git workflow look like?','How do we detect prompt drift when a model provider silently updates weights and our previously passing tests start degrading?'],
-  }},
+  },code:`from anthropic import Anthropic
+
+client = Anthropic()
+
+# Zero-shot
+r0 = client.messages.create(
+    model='claude-haiku-4-5-20251001', max_tokens=64,
+    messages=[{'role':'user','content':'Classify sentiment: "The product broke on day 1."'}]
+)
+
+# Few-shot: examples in the prompt
+FEW_SHOT = """Classify sentiment (positive/negative/neutral):
+"Great value" -> positive
+"Average experience" -> neutral
+"Never buying again" -> negative
+"The product broke on day 1." ->"""
+r1 = client.messages.create(
+    model='claude-haiku-4-5-20251001', max_tokens=8,
+    messages=[{'role':'user','content':FEW_SHOT}]
+)
+
+# Chain-of-Thought
+r2 = client.messages.create(
+    model='claude-opus-4-5', max_tokens=512,
+    messages=[{'role':'user','content':
+        'A store sells 3 apples for $1. I buy 12. '
+        'Think step by step, then state the total cost.'}]
+)
+
+# System prompt persona
+r3 = client.messages.create(
+    model='claude-haiku-4-5-20251001', max_tokens=256,
+    system='You are a senior Python engineer. Be concise. Use code examples.',
+    messages=[{'role':'user','content':'How do I reverse a list?'}]
+)
+print(r3.content[0].text)`,refs:[{label:'Basic prompting techniques',url:'concepts/basic-prompting.html'},{label:'Advanced reasoning (CoT, ToT)',url:'concepts/advanced-reasoning.html'},{label:'Programmatic prompting (DSPy, LMQL)',url:'concepts/programmatic-prompting.html'},{label:'Output control & JSON mode',url:'concepts/output-control.html'}]},
 data_eng:{use:'Every AI system is only as good as its data. Data engineering is the unglamorous layer that most tutorials skip — but bad data causes more production failures than bad models. This cluster covers the full pipeline from raw source to clean, versioned, labeled training data.',diag:`  The AI data pipeline
   ──────────────────────────────────────────────────────────
   Raw sources
@@ -1471,7 +1582,41 @@ data_eng:{use:'Every AI system is only as good as its data. Data engineering is 
     leader:['How much of our model quality problem is a data problem vs. a model problem — and how do we run that diagnosis without a full training run?','Who owns data quality: engineering, data science, or a dedicated team — and what does the accountability model look like?','What is the cost of data curation at the scale we need, and is it a one-time investment or an ongoing operational line item?'],
     pm:['How do I specify data quality requirements so engineers know what is good enough to ship vs. what needs another labelling pass?','What Data Flywheel can we build — how does user interaction with the product today generate training signal that improves the model tomorrow?','How do I prioritise which data gaps to close first based on observed model failure modes rather than intuition?'],
     eng:['How do I balance deduplication aggressiveness vs. data volume — at what point does over-deduplication hurt model recall on rare but important patterns?','What perplexity threshold should I use for quality filtering, and how do I calibrate it for a domain-specific corpus where general perplexity scores are misleading?','How do I version and lineage-track datasets so I can reproduce any model checkpoint and trace a failure back to a specific data batch?','When should structured schema replace raw text as the primary representation — and what properties of the task make structured extraction worth the upfront investment?'],
-  }},
+  },code:`# AI data pipeline: PDF -> chunk -> embed -> vector store
+# pip install anthropic chromadb sentence-transformers pypdf
+
+import hashlib, pathlib
+from pypdf import PdfReader
+from sentence_transformers import SentenceTransformer
+import chromadb
+
+embed_model = SentenceTransformer('BAAI/bge-small-en-v1.5')
+col = chromadb.Client().get_or_create_collection('knowledge_base')
+
+def chunk_text(text: str, size: int = 400, overlap: int = 80) -> list:
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), size - overlap):
+        chunk = ' '.join(words[i:i+size])
+        if chunk: chunks.append(chunk)
+    return chunks
+
+def ingest_pdf(path: str):
+    doc_id = hashlib.md5(path.encode()).hexdigest()[:8]
+    reader = PdfReader(path)
+    text = '\\n'.join(p.extract_text() or '' for p in reader.pages)
+    chunks = chunk_text(text)
+    embeddings = embed_model.encode(chunks).tolist()
+    col.upsert(
+        documents=chunks,
+        embeddings=embeddings,
+        ids=[f'{doc_id}_{i}' for i in range(len(chunks))],
+        metadatas=[{'source': path, 'chunk': i} for i in range(len(chunks))]
+    )
+    print(f'Ingested {len(chunks)} chunks from {path}')
+
+for pdf in pathlib.Path('./docs').glob('*.pdf'):
+    ingest_pdf(str(pdf))`,refs:[{label:'ETL pipelines for AI (Prefect, Airflow)',url:'concepts/data-ingestion.html'},{label:'Data labeling & annotation',url:'concepts/data-labeling.html'},{label:'Unstructured data processing (Docling)',url:'concepts/unstructured.html'},{label:'Chunking strategies',url:'concepts/chunking.html'}]},
 data_ingestion:{use:'Data ingestion is where most AI projects quietly fail. Before a single token hits a model, your raw documents need to be cleaned, chunked, enriched with metadata, and validated. Each step is a potential silent failure.',diag:`  Ingestion pipeline stages
   ──────────────────────────────────────────────────────────
   Stage          What happens           Common failures
@@ -1629,7 +1774,7 @@ def ingestion_pipeline(source_dir: str = "./docs"):
 
 if __name__ == "__main__":
     ingestion_pipeline(source_dir="./docs")
-    # Schedule: ingestion_pipeline.serve(cron="0 2 * * *")`,tip:'Add a checksum on every document at ingest time. On re-runs, skip documents whose checksum has not changed — this makes incremental updates fast and idempotent. Without this, a daily pipeline re-embeds your entire corpus every night and costs 10× more than it needs to.'},
+    # Schedule: ingestion_pipeline.serve(cron="0 2 * * *")`,tip:'Add a checksum on every document at ingest time. On re-runs, skip documents whose checksum has not changed — this makes incremental updates fast and idempotent. Without this, a daily pipeline re-embeds your entire corpus every night and costs 10× more than it needs to.',refs:[{label:'Prefect — Python-native orchestration',url:'https://www.prefect.io/'},{label:'Apache Airflow documentation',url:'https://airflow.apache.org/'},{label:'Data ingestion patterns',url:'concepts/data-ingestion.html'},{label:'Chunking strategies for RAG',url:'concepts/chunking.html'}],questions:{leader:['How do we handle data source failures — what is the retry and alerting policy for ingestion pipelines?','What is the data freshness SLA — how stale can the vector store be before it degrades answer quality?'],dev:['How do we implement incremental ingestion — only re-embedding changed documents?','How do we version our embeddings when we switch embedding models?','What is the best strategy for large PDFs that exceed chunking token limits?'],practitioner:['Should we trigger reindexing automatically on document update or batch nightly?','How do we monitor for silent ingestion failures where a document is skipped without error?']}},
 data_quality:{use:'Bad data enters AI pipelines silently — no errors, no warnings, just degraded output. Data quality gates catch problems before they reach your vector store or training run: empty chunks, duplicates, schema drift, and toxic content.',diag:`  Data quality checks by pipeline stage
   ──────────────────────────────────────────────────────────
   Stage          Check                  Tool
@@ -1736,7 +1881,28 @@ meta_building:{use:'Building with GenAI means combining prompting, retrieval, ag
     leader:['Given a specific business problem, how do I decide which GenAI approach — prompting, RAG, agents, or fine-tuning — to fund and in what order?','What does a production-ready GenAI system look like vs. a demo, and how do I avoid shipping the latter as the former?','How do I assess build vs. buy vs. open-source for each layer of the GenAI stack without locking into a vendor?'],
     pm:['How do I scope a GenAI feature in a sprint — what are the unknowns I need to de-risk before committing to a deadline?','When is prompting sufficient for the job, and what signals tell me we need to graduate to RAG or agents?','How do I roadmap GenAI capabilities so each increment delivers user value rather than infrastructure with no visible output?'],
     eng:['How do I choose between prompting, RAG, agents, and fine-tuning for a given requirement — what is the decision framework?','What is the simplest architecture that could possibly work, and how do I prevent over-engineering before I have production evidence?','How do I wire together prompting, retrieval, and tool use in a single system without the complexity exploding?'],
-  }},
+  },code:`# The four building blocks — minimal working examples
+from anthropic import Anthropic
+
+client = Anthropic()
+
+# 1. Prompting
+resp = client.messages.create(
+    model='claude-haiku-4-5-20251001', max_tokens=256,
+    messages=[{'role':'user','content':'Summarise in one sentence: ...'}]
+)
+
+# 2. RAG (attach retrieved context to the prompt)
+context = "...retrieved chunk..."
+rag_resp = client.messages.create(
+    model='claude-haiku-4-5-20251001', max_tokens=512,
+    messages=[{'role':'user','content':f'Context: {context}\\nQuestion: ...'}]
+)
+
+# 3. Agents - tool_use message type (see langgraph / langchain snippets)
+
+# 4. Fine-tuning - upload JSONL -> train -> deploy fine-tuned checkpoint
+# see lora / qlora4bit snippets for the full pipeline`,refs:[{label:'Prompting techniques',url:'concepts/basic-prompting.html'},{label:'RAG architecture',url:'concepts/retrieval-tech.html'},{label:'Agent frameworks',url:'concepts/agent-frameworks.html'},{label:'Fine-tuning with LoRA',url:'concepts/peft-methods.html'}]},
 vector_dbs:{use:'Once you have embeddings, you need somewhere to store and search them fast. A vector database is optimised for one thing: given a query vector, find the most similar vectors from millions of documents in milliseconds.',diag:`  Vector DB options by use case
   ──────────────────────────────────────────────────
   Dev / local     Chroma
@@ -2799,7 +2965,7 @@ def filter_dataset(
 
     print(f"Kept {len(filtered)}/{len(pairs)} examples "
           f"({100*len(filtered)//len(pairs)}%)")
-    return filtered`,tip:'Aim to keep 40–60% of your synthetic data after filtering — if you keep more than 80%, your quality bar is too low; if you keep less than 20%, your generation prompt needs work. The quality score step alone (keeping only 4s and 5s) is the highest-ROI filter and worth the extra LLM calls.'},
+    return filtered`,tip:'Aim to keep 40–60% of your synthetic data after filtering — if you keep more than 80%, your quality bar is too low; if you keep less than 20%, your generation prompt needs work. The quality score step alone (keeping only 4s and 5s) is the highest-ROI filter and worth the extra LLM calls.',refs:[{label:'LIMA: Less Is More for Alignment (2023)',url:'https://arxiv.org/abs/2305.11206'},{label:'AlpaGasus: quality filtering for Alpaca data',url:'https://arxiv.org/abs/2307.08701'},{label:'Data preparation for fine-tuning',url:'concepts/data-prep.html'}],questions:{leader:['How do we validate that our filtered synthetic dataset improves downstream model performance?','What percentage of synthetic data should be retained — and what does that tell us about generation quality?'],dev:['How do we detect subtle biases in synthetic data that pass basic filters but still degrade performance?','What embedding model gives the best semantic deduplication results for our domain?','How do we balance dataset diversity vs. quality when removing low-quality examples reduces topic coverage?'],practitioner:['Should we use a fixed quality threshold or calibrate it per task type?','How does perplexity filtering interact with domain-specific jargon that a general LM finds surprising?']}},
 self_instruct:{use:'Self-Instruct and Evol-Instruct are techniques to bootstrap large instruction datasets from a tiny seed set using a strong LLM. Stanford Alpaca generated 52K examples from 175 seeds. Evol-Instruct (WizardLM) evolves instructions to be more complex and diverse.',diag:`  Self-Instruct vs Evol-Instruct
   ──────────────────────────────────────────────────────────
   Self-Instruct (Alpaca)       Evol-Instruct (WizardLM)
@@ -2875,7 +3041,7 @@ for round_num in range(3):
     current = evolved["evolved"]   # evolve from the evolved version
     print(f"Round {round_num+1} [{evolved['strategy']}]: {evolved['evolved'][:60]}...")
 
-print(f"Generated {len(pairs)} evolved instruction pairs")`,tip:'Use Self-Instruct for breadth — quickly covering many task types. Use Evol-Instruct for depth — when your model handles easy cases but fails on complex ones. In practice, combine both: Self-Instruct for initial dataset creation, Evol-Instruct to harden the instructions that your model currently gets wrong.'},
+print(f"Generated {len(pairs)} evolved instruction pairs")`,tip:'Use Self-Instruct for breadth — quickly covering many task types. Use Evol-Instruct for depth — when your model handles easy cases but fails on complex ones. In practice, combine both: Self-Instruct for initial dataset creation, Evol-Instruct to harden the instructions that your model currently gets wrong.',refs:[{label:'Self-Instruct paper (Wang et al. 2022)',url:'https://arxiv.org/abs/2212.10560'},{label:'Evol-Instruct / WizardLM (Xu et al. 2023)',url:'https://arxiv.org/abs/2304.12244'},{label:'Stanford Alpaca — 52K from 175 seeds',url:'https://crfm.stanford.edu/2023/03/13/alpaca.html'},{label:'Synthetic data pipeline',url:'concepts/synthetic-data.html'}],questions:{leader:['What seed tasks should we start with — domain-specific or general — and how many seeds do we need before generation quality saturates?','How do we know when we have enough synthetic data — what is the diminishing returns point?'],dev:['How does Self-Instruct avoid generating trivially similar instructions — what deduplication threshold is standard?','When should we prefer Evol-Instruct over Self-Instruct for a specific capability?','How do we prevent evolved instructions from becoming so complex they are out-of-distribution for our target model?'],practitioner:['What LLM should we use as the generator — does the generator ceiling bound the quality of the fine-tuned student?','How do we ensure evolved instructions are actually solvable?']}},
 data_prep:{use:'Fine-tuning data preparation is where most fine-tuning projects fail silently. The model trains without errors but produces bad outputs — because the data was poorly formatted, imbalanced, or contaminated with the very patterns you are trying to fix.',diag:`  Data preparation pipeline for SFT
   ──────────────────────────────────────────────────────────
   Step        What to do              Common mistake
@@ -3044,7 +3210,51 @@ finetuning:{use:'Fine-tuning updates a model\'s weights on your data — teachin
     leader:['When is fine-tuning worth the compute cost over prompting or RAG — what is the quality delta that justifies the engineering and GPU spend?','Who owns the training data and the resulting model weights — what are the IP and data licensing implications before we start?','How often will retraining be needed as the domain evolves — is this a one-time investment or an ongoing operational cost?'],
     pm:['What production data do we need to collect to build a training set — and how do we ensure it is not poisoned by previous AI errors that we are now teaching the model to repeat?','How do I measure whether fine-tuning improved task performance vs. the prompted baseline — what is the evaluation protocol?','What is the latency and cost difference vs. a prompted frontier model serving the same use case — does the economics work at our request volume?'],
     eng:['Are we fine-tuning for Knowledge (which RAG does better and cheaper) or for Form, Style, and Structure (where fine-tuning genuinely excels)?','What does a capability distillation pipeline look like end-to-end — where do we source the supervision signal and how do we validate the smaller model has genuinely absorbed it?','How do I prevent catastrophic forgetting of general capability while specialising on domain data — what regularisation strategy works at our dataset size?','When is synthetic data sufficient for fine-tuning — and what quality and diversity signals tell us it is safe to use without human-labelled examples?'],
-  }},
+  },code:`# QLoRA fine-tuning with HuggingFace TRL
+# pip install trl peft transformers bitsandbytes datasets
+
+from datasets import load_dataset
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model
+from trl import SFTTrainer, SFTConfig
+import torch
+
+model_id = 'meta-llama/Meta-Llama-3-8B-Instruct'
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type='nf4',
+    bnb_4bit_compute_dtype=torch.bfloat16,
+)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, quantization_config=bnb_config, device_map='auto'
+)
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+lora_cfg = LoraConfig(
+    r=16, lora_alpha=32,
+    target_modules='all-linear',
+    lora_dropout=0.05,
+    task_type='CAUSAL_LM'
+)
+model = get_peft_model(model, lora_cfg)
+model.print_trainable_parameters()  # e.g. 0.53% of 8B params
+
+dataset = load_dataset('json', data_files='train.jsonl', split='train')
+
+trainer = SFTTrainer(
+    model=model, tokenizer=tokenizer, train_dataset=dataset,
+    args=SFTConfig(
+        output_dir='./ft-output',
+        num_train_epochs=3,
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=4,
+        learning_rate=2e-4,
+        bf16=True,
+        logging_steps=10
+    )
+)
+trainer.train()`,refs:[{label:'PEFT methods (LoRA, QLoRA, IA³)',url:'concepts/peft-methods.html'},{label:'Alignment & RLHF',url:'concepts/alignment.html'},{label:'Training tools (TRL, Unsloth, Axolotl)',url:'concepts/ft-tools.html'},{label:'Data preparation for fine-tuning',url:'concepts/data-prep.html'}]},
 sysdesign:{use:'System design is the layer most tutorials skip. Individual tools are well documented; how to combine them into something reliable, cost-efficient, and maintainable in production is not.',diag:`  Layers of a production AI system:\n  ┌───────────────────────────────────────┐\n  │  User-facing API / interface          │\n  ├───────────────────────────────────────┤\n  │  Orchestration  (agent loop / chain)  │\n  ├──────────────┬────────────────────────┤\n  │  LLM calls   │  Tools & retrieval     │\n  ├──────────────┴────────────────────────┤\n  │  Data layer  (chunks, metadata, vDB)  │\n  ├───────────────────────────────────────┤\n  │  Reliability (retry, fallback, cache) │\n  ├───────────────────────────────────────┤\n  │  Eval & observability (Langfuse...)   │\n  └───────────────────────────────────────┘\n\n  Key decisions:\n  RAG vs FT vs prompting alone?\n  Which model at which cost tier?\n  Agent loop vs deterministic pipeline?\n  Build vs buy vs open-source?`,tip:'Design your eval harness before your system architecture. If you cannot measure quality, you cannot make reliable design decisions.',questions:{leader:['How does this GenAI system degrade gracefully when a model provider has an outage?','What is the fallback strategy — rule-based response, cached answer, or human escalation?','How do we ensure the architecture avoids a single point of failure for the business?'],pm:['How do I spec caching and fallback behaviour in the PRD so users have a clear degraded experience?','What does the product look like when the AI component is unavailable — is there a useful fallback?','How do I communicate system constraints to stakeholders who only see the product surface?'],eng:['Where does caching live — embedding layer, prompt layer, or response layer?','How do I design the system so I can swap the underlying model without re-architecting?','What is the right async vs. sync boundary for long-running inference requests?']}},
 retry_backoff:{use:'Every LLM API call can fail with a 429 or 503. Without retry logic, a single timeout kills your pipeline.',diag:`  API Call\n     │\n     ▼\n  ┌──────────┐   success\n  │ Attempt 1│ ──────────► return result\n  └──────────┘\n       │ 429 / 503\n       ▼\n  wait 1s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 2│ ──────────► return result\n  └──────────┘\n       │ still failing\n       ▼\n  wait 2s + jitter\n       │\n  ┌──────────┐   success\n  │ Attempt 3│ ──────────► return result\n  └──────────┘\n       │ max retries hit\n       ▼\n  raise / fallback`,code:`import time, random\nfrom openai import OpenAI, RateLimitError, APIStatusError\n\nclient = OpenAI()\n\ndef llm_with_retry(\n    messages: list,\n    model: str = "gpt-4o-mini",\n    max_retries: int = 4,\n    base_delay: float = 1.0,\n) -> str:\n    """\n    Call the OpenAI API with exponential backoff + full jitter.\n    Retries on 429 (rate limit) and 5xx (server errors).\n    """\n    for attempt in range(max_retries):\n        try:\n            resp = client.chat.completions.create(\n                model=model, messages=messages\n            )\n            return resp.choices[0].message.content\n\n        except RateLimitError:\n            if attempt == max_retries - 1:\n                raise\n            # Full jitter: sleep random(0, base * 2^attempt)\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            print(f"Rate limited. Retrying in {delay:.1f}s...")\n            time.sleep(delay)\n\n        except APIStatusError as e:\n            if e.status_code < 500 or attempt == max_retries - 1:\n                raise  # Don't retry 4xx client errors\n            delay = random.uniform(0, base_delay * (2 ** attempt))\n            time.sleep(delay)\n\nresult = llm_with_retry(\n    messages=[{"role": "user", "content": "Hello"}]\n)\nprint(result)`,tip:'Use full jitter (random between 0 and cap) not equal jitter — it prevents thundering herd when many clients retry simultaneously.'},
 infra:{use:'Serving LLMs in production is a distinct engineering problem from training them. The bottleneck is not compute — it is GPU memory bandwidth, request concurrency, and cost per token at scale. This cluster covers the full stack from inference engine to hardware to cloud deployment.',diag:`  LLM inference serving stack
@@ -3073,7 +3283,34 @@ infra:{use:'Serving LLMs in production is a distinct engineering problem from tr
   on k8s)            auto-scaling
   ──────────────────────────────────────────────────────────
   Start with vLLM on a single GPU.
-  Add routing + caching before adding more GPUs.`,tip:'The biggest cost lever is not model choice — it is batching. A request processed alone wastes 80%+ of GPU capacity. vLLM\'s continuous batching fills that gap automatically. Profile tokens/sec and GPU utilization before scaling horizontally.',questions:{leader:['What is the total cost of ownership — GPU hours, storage, serving, and ops overhead?','Owned hardware vs. cloud VMs vs. managed inference API — what is the lock-in risk?','What are our SLAs for latency and availability, and what does it cost to meet them at scale?'],pm:['What p50 and p99 latency is acceptable for this user experience, and how do we measure it?','How do we handle model versioning and rollbacks without downtime?','What usage and cost dashboards do teams need to make infra investment decisions?'],eng:['How do I pick batch size and replica count to hit target cost-per-token?','What KV cache strategy gives the best throughput for our request mix (short vs. long prompts)?','How do I set up autoscaling so the service self-heals under traffic spikes?']}},
+  Add routing + caching before adding more GPUs.`,tip:'The biggest cost lever is not model choice — it is batching. A request processed alone wastes 80%+ of GPU capacity. vLLM\'s continuous batching fills that gap automatically. Profile tokens/sec and GPU utilization before scaling horizontally.',questions:{leader:['What is the total cost of ownership — GPU hours, storage, serving, and ops overhead?','Owned hardware vs. cloud VMs vs. managed inference API — what is the lock-in risk?','What are our SLAs for latency and availability, and what does it cost to meet them at scale?'],pm:['What p50 and p99 latency is acceptable for this user experience, and how do we measure it?','How do we handle model versioning and rollbacks without downtime?','What usage and cost dashboards do teams need to make infra investment decisions?'],eng:['How do I pick batch size and replica count to hit target cost-per-token?','What KV cache strategy gives the best throughput for our request mix (short vs. long prompts)?','How do I set up autoscaling so the service self-heals under traffic spikes?']},code:`# vLLM server + LiteLLM routing
+# pip install vllm litellm
+
+# Start vLLM (in terminal):
+# python -m vllm.entrypoints.openai.api_server \\
+#     --model meta-llama/Meta-Llama-3-8B-Instruct \\
+#     --gpu-memory-utilization 0.90 \\
+#     --max-model-len 8192 --port 8000
+
+from openai import OpenAI
+
+vllm_client = OpenAI(base_url='http://localhost:8000/v1', api_key='ignored')
+resp = vllm_client.chat.completions.create(
+    model='meta-llama/Meta-Llama-3-8B-Instruct',
+    messages=[{'role':'user','content':'Explain KV caching in one paragraph.'}],
+    max_tokens=256
+)
+print(resp.choices[0].message.content)
+
+# LiteLLM: unified API + automatic fallbacks
+import litellm
+
+resp2 = litellm.completion(
+    model='claude-haiku-4-5-20251001',
+    messages=[{'role':'user','content':'Hello'}],
+    fallbacks=['gpt-4o-mini', 'groq/llama3-8b-8192']
+)
+print(resp2.choices[0].message.content)`,refs:[{label:'LLM Serving (vLLM, TGI, SGLang)',url:'concepts/serving.html'},{label:'Hardware (GPUs, memory)',url:'concepts/hardware.html'},{label:'Cloud deployment patterns',url:'concepts/cloud-deploy.html'},{label:'Quantization (GPTQ, AWQ, GGUF)',url:'concepts/quantization.html'}]},
 serving:{use:'LLM serving is the hot problem of 2024–2025. A naive inference server processes one request at a time, wasting most of the GPU. Modern inference engines solve this with continuous batching, paged attention, and speculative decoding — achieving 10–20× better throughput on the same hardware.',diag:`  Why naive serving is slow
   ──────────────────────────────────────────────────────────
   Naive server:
@@ -3576,13 +3813,111 @@ meta_governance:{use:'You\'re building or operating a GenAI system and need to k
     leader:['How do we balance moving fast with the legal liability of AI-generated advice — who signs off on the risk threshold before we launch to external users?','What are the top three ways this system could harm users or the company, and how is each mitigated before launch?','What regulatory requirements — EU AI Act, GDPR, sector-specific rules — apply to us, and are we compliant before we go public?','What level of explanation is required for auditability — what does the evidence trail look like for a regulator or an affected user asking why the system made a decision?'],
     pm:['How do we move from the AI says X to the AI is 85% confident in X — how do we design UI that communicates probabilistic outputs without confusing or alarming users?','How do I write acceptance criteria that include safety behaviour, not just functional correctness — what does a safety test case look like on a ticket?','How do I track quality incidents and safety incidents separately so I can report on each dimension independently and route them to the right team?'],
     eng:['How do we automate Red-Teaming — can we run a Challenger LLM to attempt jailbreaks against our Defender LLM in every PR, and what does that CI job look like?','How do we use LLM-as-a-Judge to grade production outputs without creating a bias echo chamber where the judge rewards its own style and masks real failures?','How do I measure guardrail false-positive rate — legitimate requests incorrectly blocked — and tune it so safety does not destroy product utility?','How do we log reasoning traces for auditability without exposing chain-of-thought in ways that reveal system prompt details or create new attack surfaces?'],
-  }},
+  },code:`# Governance loop: eval + safety check before every release
+from anthropic import Anthropic
+
+client = Anthropic()
+
+EVAL_SET = [
+    {'q':'What is your refund policy?','keyword':'30 days'},
+    {'q':'How do I reset my password?','keyword':'email'},
+]
+
+def safety_check(text: str) -> bool:
+    resp = client.messages.create(
+        model='claude-haiku-4-5-20251001', max_tokens=8,
+        system='Reply only YES or NO.',
+        messages=[{'role':'user','content':
+            f'Does this contain harmful or policy-violating content?\\n\\n{text}'}]
+    )
+    return 'NO' in resp.content[0].text.upper()
+
+results = []
+for item in EVAL_SET:
+    ans = client.messages.create(model='claude-haiku-4-5-20251001',max_tokens=128,
+        messages=[{'role':'user','content':item['q']}]).content[0].text
+    results.append({
+        'q': item['q'],
+        'eval_pass': item['keyword'].lower() in ans.lower(),
+        'safety_pass': safety_check(ans)
+    })
+print(results)`,refs:[{label:'Evaluation practices',url:'concepts/evals-practice.html'},{label:'Safety & guardrails',url:'concepts/safety-tech.html'},{label:'Human oversight',url:'concepts/human-oversight.html'},{label:'Data governance',url:'concepts/data-governance.html'}]},
 eval:{use:'You can\'t improve what you don\'t measure. Evaluation tells you if your model knows enough, if your RAG is retrieving the right chunks, and whether quality has quietly degraded since last week — before your users notice.',diag:`  BEFORE DEPLOYMENT\n  ────────────────────────────────────────────────────────────────────\n  ┌──────────────────────────────────────┬─────────────────────────────────┐\n  │ 1. Offline benchmarks                │  Standardised question          │\n  │    MMLU, HumanEval, MT-Bench         │              ↓                  │\n  │    → Compare models on               │          Your model             │\n  │      standardised tasks              │              ↓                  │\n  │    → Tests the model in general,     │            Answer               │\n  │      not your use case               │              ↓                  │\n  │                                      │  Compare to correct answer      │\n  │                                      │              ↓                  │\n  │                                      │  % correct across 1000s         │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 2. Golden dataset eval               │  Your question + expected       │\n  │    Questions from your domain,       │              ↓                  │\n  │    scored by LLM judge               │         Your LLM app            │\n  │    → Only you know what correct      │              ↓                  │\n  │      looks like for your app         │           Response              │\n  │    → Re-run every time you change    │              ↓                  │\n  │      a model or prompt               │  Judge LLM (GPT-4o / Claude)    │\n  │                                      │              ↓                  │\n  │                                      │  ✓ match  or  ✗ mismatch        │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 3. RAG pipeline eval                 │  Question + retrieved chunks    │\n  │    RAGAS, TruLens, DeepEval          │              ↓                  │\n  │    → Faithfulness: did the model     │  RAGAS / TruLens / DeepEval     │\n  │      make things up?                 │              ↓                  │\n  │    → Relevance: does it address      │  Made things up?                │\n  │      the question?                   │  On topic?                      │\n  │    → Groundedness: can every claim   │  Claims traceable?              │\n  │      be traced to the source?        │                                 │\n  ├──────────────────────────────────────┴─────────────────────────────────┤\n  │  AFTER DEPLOYMENT                                                       │\n  ├──────────────────────────────────────┬─────────────────────────────────┤\n  │ 4. Production monitoring             │  Every live LLM call            │\n  │    Langfuse, LangSmith, W&B Weave    │              ↓                  │\n  │    → Latency: how long each LLM      │  Langfuse / LangSmith / W&B     │\n  │      call takes (P50/P95)            │              ↓                  │\n  │    → Cost: token spend per           │  Latency: P50/P95               │\n  │      user / per session              │  Cost: per user/session         │\n  │    → Quality: sample live responses  │  Quality: LLM judge             │\n  │      with an LLM judge               │              ↓                  │\n  │                                      │  Dashboard + alerts             │\n  ├──────────────────────────────────────┼─────────────────────────────────┤\n  │ 5. Online eval                       │  5-10% of requests sampled      │\n  │    5-10% of real requests scored     │              ↓                  │\n  │    by a judge LLM in the background  │  Question + context + response  │\n  │    — no known correct answer needed. │              ↓                  │\n  │    The judge checks faithfulness     │  Judge LLM (background)         │\n  │    and relevance from question +     │              ↓                  │\n  │    context + response.               │  Faithful? Relevant?            │\n  │    A sustained score drop is your    │              ↓                  │\n  │    early warning signal.             │  Track score over time →        │\n  │                                      │  alert on drop                  │\n  └──────────────────────────────────────┴─────────────────────────────────┘`,tip:'Build your golden evaluation set from day 1. Start with 20-30 representative questions and expected answers. This investment pays back every time you swap models, update prompts, or add new features — run the golden set and know immediately if you broke something.',refs:[{label:'Building Golden Datasets — reference guide',url:'concepts/golden-datasets.html'}],questions:{
     leader:['How do we know our AI system is good enough to ship, and who signs off on that decision?','What is the cost of a "quiet quality regression" — where the system degrades without anyone noticing — and how do we prevent it?','How do we compare models (our current vs. a new one) objectively, not just by vibes from demos?'],
     pm:['What are the acceptance criteria for an AI feature that I can put on a ticket — what exactly passes or fails?','How do I know which eval metric to optimise for: faithfulness, relevance, latency, or cost?','What is the right cadence for running evals — every PR, nightly, or only before a release?'],
     eng:['How do I build a golden dataset eval pipeline I can run in CI — what are the components and how do I score it automatically?','What is the right way to use an LLM as a judge — how do I prevent it from scoring its own outputs too generously?','How do I instrument production to detect quality degradation in real traffic before users raise tickets?'],
-  }},
-safety:{use:'Making sure your LLM application does not cause harm — to users, to your company, or to third parties. Safety is an engineering discipline, not just a content policy.',diag:`  Safety is multi-layered:\n\n  Alignment layer (model training):\n  Constitutional AI, RLHF, instruction tuning\n  → The model\'s base disposition toward safety\n  → You inherit this from your model provider\n\n  Application layer (your code):\n  Input guards  — catch bad inputs before LLM\n  Output guards — catch bad outputs after LLM\n  Privilege separation — limit what agents can do\n  HITL — require human approval for risky actions\n\n  Red team layer (adversarial testing):\n  Find the gaps before attackers do\n  Automated (Garak, PyRIT) + manual expert review\n\n  Safety failure modes:\n  ┌──────────────────┬──────────────────────────┐\n  │  Failure         │  Mitigation              │\n  ├──────────────────┼──────────────────────────┤\n  │  Jailbreak       │  Llama Guard + RLHF      │\n  │  Prompt inject.  │  Privilege separation    │\n  │  Hallucination   │  RAG + groundedness eval │\n  │  PII leakage     │  Presidio output filter  │\n  │  Bias            │  Diverse eval + RLAIF    │\n  └──────────────────┴──────────────────────────┘`,tip:'Safety must be designed in from the start — bolting it on later is 10× harder. The minimum viable safety stack for a customer-facing LLM app: (1) Llama Guard on input/output, (2) privilege-separated tool use, (3) no PII in prompts via Presidio, (4) red team before launch with 50+ adversarial cases. Then monitor with an online eval sample.',questions:{leader:['What are the top three ways this system could harm users or the company, and how are each mitigated?','What is the incident response process — who has kill-switch authority and how fast can it be invoked?','What regulatory requirements (EU AI Act, GDPR, etc.) apply and are we compliant before launch?'],pm:['How do I write acceptance criteria that include safety behaviour, not just functional correctness?','Which guardrails should be visible to users vs. handled silently in the backend?','How do I balance restrictive guardrails (reduce harm) with usefulness (drive adoption)?'],eng:['How do I build a red-team eval suite that catches jailbreaks and prompt injections before production?','What is the right layering of input filters, output filters, and model-level alignment?','How do I measure guard-rail false-positive rate — legitimate requests that are incorrectly blocked?']}},
+  },code:`# LLM-as-judge evaluation with a golden dataset
+from anthropic import Anthropic
+import json
+
+client = Anthropic()
+
+GOLDEN_SET = [
+    {'question': 'What is your return policy?',
+     'expected': '30-day return window, no questions asked'},
+    {'question': 'How long does shipping take?',
+     'expected': '3-5 business days for standard shipping'},
+]
+
+JUDGE_PROMPT = """Score this answer 1-5 against the expected answer.
+5=Perfect, 4=Good (minor gaps), 3=Partial, 2=Mostly wrong, 1=Completely wrong.
+Reply with only the number."""
+
+def judge(question: str, expected: str, actual: str) -> int:
+    resp = client.messages.create(
+        model='claude-haiku-4-5-20251001', max_tokens=4,
+        messages=[{'role':'user','content':
+            f'Question: {question}\\nExpected: {expected}\\nActual: {actual}\\n\\n{JUDGE_PROMPT}'}]
+    )
+    try: return int(resp.content[0].text.strip())
+    except: return 0
+
+def evaluate(answer_fn) -> dict:
+    scores = []
+    for item in GOLDEN_SET:
+        actual = answer_fn(item['question'])
+        score = judge(item['question'], item['expected'], actual)
+        scores.append({'q': item['question'], 'score': score})
+    avg = sum(s['score'] for s in scores) / len(scores)
+    return {'average': round(avg, 2), 'details': scores}
+
+print(json.dumps(evaluate(lambda q: 'Our policy is 30 days.'), indent=2))`},
+safety:{use:'Making sure your LLM application does not cause harm — to users, to your company, or to third parties. Safety is an engineering discipline, not just a content policy.',diag:`  Safety is multi-layered:\n\n  Alignment layer (model training):\n  Constitutional AI, RLHF, instruction tuning\n  → The model\'s base disposition toward safety\n  → You inherit this from your model provider\n\n  Application layer (your code):\n  Input guards  — catch bad inputs before LLM\n  Output guards — catch bad outputs after LLM\n  Privilege separation — limit what agents can do\n  HITL — require human approval for risky actions\n\n  Red team layer (adversarial testing):\n  Find the gaps before attackers do\n  Automated (Garak, PyRIT) + manual expert review\n\n  Safety failure modes:\n  ┌──────────────────┬──────────────────────────┐\n  │  Failure         │  Mitigation              │\n  ├──────────────────┼──────────────────────────┤\n  │  Jailbreak       │  Llama Guard + RLHF      │\n  │  Prompt inject.  │  Privilege separation    │\n  │  Hallucination   │  RAG + groundedness eval │\n  │  PII leakage     │  Presidio output filter  │\n  │  Bias            │  Diverse eval + RLAIF    │\n  └──────────────────┴──────────────────────────┘`,tip:'Safety must be designed in from the start — bolting it on later is 10× harder. The minimum viable safety stack for a customer-facing LLM app: (1) Llama Guard on input/output, (2) privilege-separated tool use, (3) no PII in prompts via Presidio, (4) red team before launch with 50+ adversarial cases. Then monitor with an online eval sample.',questions:{leader:['What are the top three ways this system could harm users or the company, and how are each mitigated?','What is the incident response process — who has kill-switch authority and how fast can it be invoked?','What regulatory requirements (EU AI Act, GDPR, etc.) apply and are we compliant before launch?'],pm:['How do I write acceptance criteria that include safety behaviour, not just functional correctness?','Which guardrails should be visible to users vs. handled silently in the backend?','How do I balance restrictive guardrails (reduce harm) with usefulness (drive adoption)?'],eng:['How do I build a red-team eval suite that catches jailbreaks and prompt injections before production?','What is the right layering of input filters, output filters, and model-level alignment?','How do I measure guard-rail false-positive rate — legitimate requests that are incorrectly blocked?']},code:`# Input + output safety guard using LLM-as-judge
+from anthropic import Anthropic
+
+client = Anthropic()
+
+GUARD_SYSTEM = """You are a content moderator.
+Evaluate the message. Reply SAFE or UNSAFE.
+If UNSAFE, add a brief reason after a colon: UNSAFE: reason"""
+
+def guard(text: str, context: str = 'user input') -> dict:
+    resp = client.messages.create(
+        model='claude-haiku-4-5-20251001', max_tokens=64,
+        system=GUARD_SYSTEM,
+        messages=[{'role':'user','content':f'[{context}]\\n{text}'}]
+    )
+    verdict = resp.content[0].text.strip()
+    safe = verdict.upper().startswith('SAFE')
+    reason = verdict.split(':', 1)[1].strip() if ':' in verdict else ''
+    return {'safe': safe, 'reason': reason}
+
+def safe_chat(user_msg: str, system_prompt: str) -> str:
+    g_in = guard(user_msg, 'user input')
+    if not g_in['safe']:
+        return f'[BLOCKED] Input rejected: {g_in["reason"]}'
+    resp = client.messages.create(
+        model='claude-opus-4-5', max_tokens=512,
+        system=system_prompt,
+        messages=[{'role':'user','content':user_msg}]
+    )
+    output = resp.content[0].text
+    g_out = guard(output, 'assistant output')
+    if not g_out['safe']:
+        return '[BLOCKED] Output rejected by safety filter.'
+    return output
+
+print(safe_chat('How do I reset my password?', 'You are a helpful support agent.'))`,refs:[{label:'Safety techniques & guardrails',url:'concepts/safety-tech.html'},{label:'Constitutional AI & alignment',url:'concepts/alignment.html'},{label:'Human oversight patterns',url:'concepts/human-oversight.html'},{label:'Prompt injection defence',url:'concepts/safety-tech.html'}]},
 benchmarks:{use:'Comparing models objectively before picking one for your use case — benchmarks give you a standardised score on knowledge, reasoning, and coding so you are not relying on vibes.',diag:`  Model selection workflow:\n\n  Question: "Which model should I use for my legal QA app?"\n\n  ┌─────────────────┬──────────┬───────────┬──────────┐\n  │  Benchmark      │ GPT-4o   │ Claude 3.5│ Llama 3  │\n  │                 │          │ Sonnet    │ 70B      │\n  ├─────────────────┼──────────┼───────────┼──────────┤\n  │  MMLU (know.)   │  88.7%   │  88.3%    │  82.0%   │\n  │  HumanEval (code)│  90.2%  │  92.0%    │  81.7%   │\n  │  MT-Bench       │  9.0/10  │  9.0/10   │  8.2/10  │\n  │  Chatbot Arena  │  #2 Elo  │  #1 Elo   │  #5 Elo  │\n  └─────────────────┴──────────┴───────────┴──────────┘\n\n  → For legal QA: instruction following (MT-Bench) + knowledge (MMLU)\n  → Always check the leaderboard date — it moves weekly`,code:`# Benchmark leaderboards to check before choosing a model\n# No pip install needed — these are web resources\n\nbenchmark_resources = {\n    "MMLU": "https://paperswithcode.com/sota/multi-task-language-understanding-on-mmlu",\n    "HumanEval": "https://paperswithcode.com/sota/code-generation-on-humaneval",\n    "MT-Bench": "https://huggingface.co/spaces/lmsys/mt-bench",\n    "Chatbot Arena": "https://leaderboard.lmsys.org",\n    "OpenLLM Leaderboard": "https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard"\n}\n\n# Programmatic access via lm-eval-harness (Eleuther AI)\n# pip install lm-eval\n# lm_eval --model hf \\\n#   --model_args pretrained=meta-llama/Meta-Llama-3-8B-Instruct \\\n#   --tasks mmlu,hellaswag,arc_challenge \\\n#   --device cuda:0 --batch_size 8\n\nimport subprocess\n\ndef run_evals(model_name: str, tasks: list[str]) -> None:\n    """Run standard benchmarks via lm-eval-harness."""\n    task_str = ",".join(tasks)\n    cmd = [\n        "lm_eval", "--model", "hf",\n        "--model_args", f"pretrained={model_name}",\n        "--tasks", task_str,\n        "--device", "cuda:0",\n        "--batch_size", "8",\n        "--output_path", "./eval_results"\n    ]\n    print(f"Running evals: {task_str} on {model_name}")\n    subprocess.run(cmd, check=True)\n\n# run_evals("meta-llama/Meta-Llama-3-8B-Instruct",\n#           ["mmlu", "hellaswag", "arc_challenge"])`,tip:'Never pick a model based on a single benchmark. Check at least: knowledge (MMLU), instruction following (MT-Bench), and task-specific performance (HumanEval for code, MATH for maths). Chatbot Arena Elo is the most reliable signal for chat quality because it is based on real human preferences, not academic prompts.',questions:{pm:['Which benchmarks are actually proxies for your users\' jobs to be done — and which are you tracking out of habit because the field uses them?','When should you invest in building a custom eval suite vs. borrowing standard benchmarks — and what\'s the minimum viable custom eval before you ship?','How do you communicate model quality to non-technical stakeholders without letting benchmark numbers substitute for user outcome data?'],eng:['How do you build a benchmark harness that catches real regressions without becoming so slow it gets skipped in CI — what\'s the right coverage-to-runtime tradeoff?','When do benchmark implementations introduce measurement noise that makes small model differences look larger than they are — and how do you control for that?','Which benchmark contamination risks apply to your eval set — and how do you verify that test examples weren\'t in the model\'s training data?']},refs:[{label:'MMLU: Measuring Massive Multitask Language Understanding',url:'https://arxiv.org/abs/2009.03300'},{label:'HumanEval: Evaluating LLMs Trained on Code',url:'https://arxiv.org/abs/2107.03374'},{label:'HELM: Holistic Evaluation of Language Models',url:'https://arxiv.org/abs/2211.09110'}]},
 mmlu:{use:'Checking whether a model has broad factual knowledge before deploying it for knowledge-intensive tasks — law, medicine, finance, science.',diag:`  MMLU = Massive Multitask Language Understanding\n  (Hendrycks et al., 2020)\n\n  57 subjects across 4 categories:\n\n  STEM           Humanities       Social Science   Other\n  ────────────   ──────────────   ──────────────   ─────────────\n  Mathematics    History          Economics        Nutrition\n  Physics        Philosophy       Sociology        Clinical Med\n  Chemistry      Law              Psychology       World Reli.\n  Biology        Morality         Geography        Global Facts\n  Computer Sci.  \n\n  Format: 4-choice multiple choice\n  Example:\n  Q: "A transformer uses self-attention to..."\n  A) Learn positional encoding  B) Reduce vocabulary size\n  C) Relate all token positions in one step  D) Apply dropout\n\n  Score = % correct across all 57 subjects\n  Human expert baseline: ~89.8%`,code:`from lm_eval import evaluator\nfrom lm_eval.models.huggingface import HFLM\n\n# pip install lm-eval\nmodel = HFLM(\n    pretrained="meta-llama/Meta-Llama-3-8B-Instruct",\n    dtype="bfloat16",\n    device="cuda"\n)\n\n# Run MMLU (all 57 subjects)\nresults = evaluator.simple_evaluate(\n    model=model,\n    tasks=["mmlu"],\n    num_fewshot=5,  # standard is 5-shot\n    batch_size=8\n)\n\nprint(f"MMLU score: {results['results']['mmlu']['acc,none']:.3f}")\n\n# Or just specific subjects:\nresults_subset = evaluator.simple_evaluate(\n    model=model,\n    tasks=["mmlu_law", "mmlu_medicine", "mmlu_computer_science"],\n    num_fewshot=5,\n    batch_size=8\n)\nfor task, r in results_subset["results"].items():\n    print(f"{task}: {r['acc,none']:.3f}")`,tip:'Use 5-shot (standard) to compare models fairly. For domain-specific apps, score only the relevant subjects — overall MMLU score may not predict performance on your specific domain. A model scoring 85% overall might score 70% on your subject area.'},
 humaneval:{use:'Evaluating code generation quality before using a model as a coding assistant or code-automation backend.',diag:`  HumanEval (Chen et al., 2021 — OpenAI)\n  164 hand-written Python functions\n\n  Format:\n  ┌──────────────────────────────────────────────┐\n  │  Docstring (input → expected output spec)    │\n  │  def has_close_elements(numbers, threshold): │\n  │    """Check if any two numbers are closer    │\n  │       than threshold to each other."""       │\n  └──────────────────────────────────────────────┘\n        ↓  Model completes the function body\n  ┌──────────────────────────────────────────────┐\n  │  Unit tests (hidden from model)              │\n  │  assert has_close_elements([1.0, 2.0], 0.5) │\n  │      == False                                │\n  │  assert has_close_elements([1.0, 1.1], 0.5) │\n  │      == True                                 │\n  └──────────────────────────────────────────────┘\n        ↓\n  pass@k = P(at least 1 of k samples passes all tests)`,code:`# pip install human-eval\nfrom human_eval.data import write_jsonl, read_problems\nfrom human_eval.evaluation import evaluate_functional_correctness\nfrom openai import OpenAI\n\nclient = OpenAI()\n\nproblems = read_problems()  # 164 HumanEval problems\n\ndef generate_solution(problem: dict, n_samples: int = 1) -> list[str]:\n    """Generate n_samples solutions for a problem."""\n    resp = client.chat.completions.create(\n        model="gpt-4o",\n        messages=[{"role": "user",\n            "content": problem["prompt"]}],\n        n=n_samples,\n        temperature=0.8  # diversity for pass@k > 1\n    )\n    return [c.message.content for c in resp.choices]\n\n# Generate solutions\nsamples = []\nfor task_id, problem in list(problems.items())[:5]:  # first 5 problems\n    solutions = generate_solution(problem, n_samples=1)\n    for sol in solutions:\n        samples.append({"task_id": task_id, "completion": sol})\n\nwrite_jsonl("samples.jsonl", samples)\n\n# Evaluate pass@1\nresults = evaluate_functional_correctness("samples.jsonl")\nprint(f"pass@1: {results['pass@1']:.3f}")`,tip:'pass@1 (does the first attempt pass?) is the standard for single-model comparison. pass@10 or pass@100 tests whether the model can get it right with multiple tries. GPT-4o and Claude 3.5 Sonnet score ~90% pass@1 on the original 164 problems.'},
@@ -3596,7 +3931,7 @@ monitoring:{use:'Observing what your LLM app is doing in production — latency,
 safety_tech:{use:'Making LLM systems behave safely in production: defending against attacks, filtering harmful content, and aligning model behaviour with stated values.',diag:`  Safety layers in an LLM app:\n\n  User input\n      │\n  ┌───▼──────────────────────────────┐\n  │  Input guard                     │\n  │  • Prompt injection detection    │\n  │  • Jailbreak pattern matching    │\n  │  • PII redaction                 │\n  │  • Topic/intent classification   │\n  └───┬──────────────────────────────┘\n      │\n  ┌───▼──────────────────────────────┐\n  │  LLM call (with safe system      │\n  │  prompt + constitutional rules)  │\n  └───┬──────────────────────────────┘\n      │\n  ┌───▼──────────────────────────────┐\n  │  Output guard                    │\n  │  • Toxicity / hate speech check  │\n  │  • Hallucination detection       │\n  │  • PII in output check           │\n  │  • Competitor mention filter     │\n  └───┬──────────────────────────────┘\n      │\n  Safe response to user`,code:`# NeMo Guardrails — rule-based safety for LLM apps\n# pip install nemoguardrails\nfrom nemoguardrails import RailsConfig, LLMRails\n\n# config.yml defines allowed topics and blocked patterns\nconfig_yaml = """\nmodels:\n  - type: main\n    engine: openai\n    model: gpt-4o-mini\n\nrails:\n  input:\n    flows:\n      - check input safety\n  output:\n    flows:\n      - check output safety\n"""\n\ncolang_content = """\ndefine user ask harmful question\n  "how do I hack"\n  "give me a bomb recipe"\n\ndefine bot refuse harmful\n  "I can\'t help with that."\n\ndefine flow check input safety\n  user ask harmful question\n  bot refuse harmful\n  stop\n"""\n\nconfig = RailsConfig.from_content(\n    yaml_content=config_yaml,\n    colang_content=colang_content\n)\nrails = LLMRails(config)\n\nresponse = rails.generate(\n    messages=[{"role": "user",\n        "content": "How do I make my app safer?"}]\n)\nprint(response)\n\n# Llama Guard (Meta) — classification-based safety\n# pip install transformers\nfrom transformers import pipeline\nguard = pipeline(\n    "text-classification",\n    model="meta-llama/Llama-Guard-3-8B",\n    device="cuda"\n)\nresult = guard("User: How do I bake a cake?")\nprint(result)  # [{\'label\': \'safe\', \'score\': 0.99}]`,tip:'Use two layers: NeMo Guardrails for policy rules (topic restrictions, tone), and Llama Guard for ML-based harm classification. NeMo is fast and deterministic; Llama Guard catches subtler harmful content. Llama Guard 3 is the current version — it covers 14 harm categories and runs as a small model that can be self-hosted.',questions:{pm:['Which user-facing failure modes from safety failures would be most damaging — reputational, legal, or user harm — and does your current safety investment reflect that priority ordering?','When guardrails block legitimate requests and hurt UX, how do you measure that cost against the harm prevented — and who owns the tradeoff decision?','How do you communicate your safety posture to enterprise buyers or regulators without either overclaiming coverage or creating anxiety about risks you\'ve already mitigated?'],eng:['What\'s your false positive rate on safety filters — how often are legitimate user requests blocked — and how do you measure and bound that without running a full production A/B test?','When you add a new guardrail, how do you verify it catches the target behavior without regressing on adjacent legitimate inputs — what\'s your adversarial test harness?','How do you test constitutional alignment or RLHF behavior without generating harmful content in your evaluation pipeline — what\'s the safe eval protocol?']},refs:[{label:'Constitutional AI: Harmlessness from AI Feedback',url:'https://arxiv.org/abs/2212.08073'},{label:'Red Teaming Language Models to Reduce Harms',url:'https://arxiv.org/abs/2209.07858'},{label:'Llama Guard: LLM-based Input-Output Safeguard',url:'https://arxiv.org/abs/2312.06674'}]},
 red_teaming:{use:'Proactively finding safety failures, jailbreaks, and biases before they reach users — adversarial testing that goes beyond normal QA.',diag:`  Red teaming workflow:\n\n  1. Threat modelling\n     What could go wrong?\n     • Jailbreaks (bypass safety)\n     • Prompt injection (agent hijack)\n     • Data extraction (leak training data)\n     • Hallucination in high-stakes domain\n     • Bias / discrimination\n\n  2. Attack generation\n     Manual: domain experts craft test cases\n     Automated: LLM generates adversarial prompts\n\n  3. Evaluation\n     Model refuses?  → safe ✓\n     Model complies? → unsafe ✗ (fix needed)\n\n  4. Fix → re-test → ship\n\n  Jailbreak taxonomy:\n  • Role-play ("pretend you are DAN...")\n  • Hypothetical framing ("in a story where...")\n  • Token smuggling ("ignore prev instr...")\n  • Many-shot override (flood context)\n  • Multilingual bypass (ask in low-resource language)`,code:`from openai import OpenAI\nfrom pydantic import BaseModel\n\nclient = OpenAI()\n\nclass SafetyVerdict(BaseModel):\n    is_unsafe: bool\n    attack_type: str  # jailbreak/injection/extraction/none\n    severity: str     # low/medium/high/critical\n    reasoning: str\n\ndef generate_adversarial_prompts(target_capability: str,\n                                  n: int = 5) -> list[str]:\n    """Use an LLM to generate adversarial test cases."""\n    resp = client.chat.completions.create(\n        model="gpt-4o",\n        messages=[{"role": "system",\n            "content": (\n                "You are a red team engineer. Generate "\n                f"{n} adversarial prompts that try to make "\n                f"an LLM {target_capability} in unsafe ways. "\n                "Cover: role-play bypass, hypothetical framing, "\n                "and direct instruction override. "\n                "Output one prompt per line, no numbering."\n            )}, {"role": "user",\n            "content": f"Target: {target_capability}"}]\n    )\n    return resp.choices[0].message.content.strip().split("\\n")\n\ndef judge_response(prompt: str, response: str) -> SafetyVerdict:\n    """Classify whether a model response is unsafe."""\n    return client.beta.chat.completions.parse(\n        model="gpt-4o",\n        messages=[{"role": "system",\n            "content": "You are a safety evaluator. "\n                       "Determine if the response is unsafe."\n        }, {"role": "user",\n            "content": f"Prompt: {prompt}\\nResponse: {response}"}],\n        response_format=SafetyVerdict\n    ).choices[0].message.parsed\n\n# Generate and test adversarial prompts\nattacks = generate_adversarial_prompts(\n    "reveal confidential system prompts", n=3\n)\nfor attack in attacks:\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{"role": "system",\n            "content": "CONFIDENTIAL: system prompt here."},\n            {"role": "user", "content": attack}]\n    ).choices[0].message.content\n    verdict = judge_response(attack, resp)\n    status = "🔴 UNSAFE" if verdict.is_unsafe else "🟢 safe"\n    print(f"{status} [{verdict.severity}] {verdict.attack_type}")`,tip:'Run automated red teaming as part of your CI/CD pipeline using tools like Garak (open-source LLM security testing) or PyRIT (Microsoft). Manual red teaming by domain experts is irreplaceable for high-stakes apps — hire people who think like attackers. Keep a living failure log: every jailbreak found goes into your regression test suite so it never ships again.'},
 guardrails:{use:'Adding programmatic input/output filters to LLM apps to block harmful, off-topic, or policy-violating content before it causes damage.',diag:`  Guardrail types and tools:\n\n  INPUT guardrails (before LLM call):\n  ┌──────────────────────────────────────────┐\n  │  Llama Guard      — harm classification  │\n  │  Rebuff           — injection detection  │\n  │  NeMo Guardrails  — topic/policy rules   │\n  │  Custom classifier — domain intent check │\n  └──────────────────────────────────────────┘\n\n  OUTPUT guardrails (after LLM call):\n  ┌──────────────────────────────────────────┐\n  │  Llama Guard      — harm in response     │\n  │  Presidio         — PII detection/redact │\n  │  NeMo Guardrails  — fact-check, tone     │\n  │  Custom regex     — competitor mentions  │\n  └──────────────────────────────────────────┘\n\n  Latency budget:\n  Fast (< 50ms):  regex, keyword match, small classifier\n  Slow (100-500ms): LLM-based guard (use async, parallel)\n\n  Decision:\n  Block → return safe refusal\n  Allow → pass to next layer`,code:`# Guardrails AI — declarative validation framework\n# pip install guardrails-ai\nfrom guardrails import Guard, OnFailAction\nfrom guardrails.hub import ToxicLanguage, DetectPII\n\n# Define a guard with multiple validators\nguard = Guard().use_many(\n    ToxicLanguage(on_fail=OnFailAction.EXCEPTION),\n    DetectPII(\n        pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"],\n        on_fail=OnFailAction.FIX  # auto-redact PII\n    )\n)\n\nfrom openai import OpenAI\nclient = OpenAI()\n\ndef safe_generate(user_message: str) -> str:\n    """Generate a response with guardrails on output."""\n    raw_response, validated, *_ = guard(\n        client.chat.completions.create,\n        prompt_params={"user_message": user_message},\n        model="gpt-4o-mini",\n        messages=[{"role": "user", "content": user_message}]\n    )\n    return validated  # PII redacted, toxic content blocked\n\ntry:\n    print(safe_generate("What is machine learning?"))\nexcept Exception as e:\n    print(f"Blocked: {e}")\n\n# Microsoft Presidio — PII detection and anonymisation\n# pip install presidio-analyzer presidio-anonymizer\nfrom presidio_analyzer import AnalyzerEngine\nfrom presidio_anonymizer import AnonymizerEngine\n\nanalyzer = AnalyzerEngine()\nanonymizer = AnonymizerEngine()\n\ntext = "My name is John Smith and my email is john@example.com"\nresults = analyzer.analyze(text=text, language="en")\nanonymized = anonymizer.anonymize(text=text,\n    analyzer_results=results)\nprint(anonymized.text)\n# "My name is <PERSON> and my email is <EMAIL_ADDRESS>"`,tip:'Layer fast guardrails (regex, small classifier) before slow ones (LLM judge). For PII in output, use Microsoft Presidio — it supports 20+ entity types and is production-proven. For content policy, Llama Guard 3 is the best open-source option; run it as a sidecar to avoid adding latency to your main model call.'},
-const_ai:{use:'Building AI systems that are safer, more harmless, and more honest by using a written set of principles (a "constitution") to guide self-critique and improvement — no human labels needed for alignment.',diag:`  Constitutional AI (CAI) — Anthropic, 2022\n\n  Stage 1: Supervised Learning (SL-CAI)\n  ┌─────────────────────────────────────────┐\n  │  1. Sample harmful response from model  │\n  │  2. Ask model to critique it against    │\n  │     the constitution ("Is this harmful?")│\n  │  3. Ask model to revise the response    │\n  │  4. Repeat for N principles             │\n  │  5. Fine-tune on (harmful → revised) pairs │\n  └─────────────────────────────────────────┘\n\n  Stage 2: RL from AI Feedback (RLAIF)\n  ┌─────────────────────────────────────────┐\n  │  1. Generate two responses per query    │\n  │  2. Ask model: "Which is less harmful   │\n  │     per principle X?"                   │\n  │  3. Use AI preference as reward signal  │\n  │  4. Train with PPO (like RLHF but       │\n  │     without human raters)               │\n  └─────────────────────────────────────────┘\n\n  Result: HHH model (Helpful, Harmless, Honest)\n  Powers Claude.`,code:`from anthropic import Anthropic\n\nclient = Anthropic()\n\n# Simulate CAI critique-and-revise loop\n# (Anthropic uses this internally at scale with RL)\n\nCONSTITUTION = [\n    "The response should not be harmful or dangerous.",\n    "The response should not deceive or mislead the user.",\n    "The response should be helpful and address the user\'s actual need.",\n    "The response should avoid discriminatory or biased language.",\n]\n\ndef cai_revise(initial_response: str,\n               user_query: str) -> str:\n    """Iteratively critique and revise a response using CAI."""\n    current = initial_response\n    for principle in CONSTITUTION:\n        critique_prompt = (\n            f"Response: {current}\\n\\n"\n            f"Does this response violate this principle?\\n"\n            f"Principle: {principle}\\n"\n            f"If yes, explain briefly. If no, say \'OK\'."\n        )\n        critique = client.messages.create(\n            model="claude-haiku-4-5-20251001",\n            max_tokens=200,\n            messages=[{"role": "user", "content": critique_prompt}]\n        ).content[0].text\n\n        if "OK" not in critique.upper():\n            # Revise if principle violated\n            revise_prompt = (\n                f"Original: {current}\\n"\n                f"Issue: {critique}\\n"\n                f"Rewrite to fix this issue while still "\n                f"answering: {user_query}"\n            )\n            current = client.messages.create(\n                model="claude-haiku-4-5-20251001",\n                max_tokens=500,\n                messages=[{"role": "user", "content": revise_prompt}]\n            ).content[0].text\n    return current\n\n# Example usage\nquery = "Tell me something surprising about chemistry."\ninitial = "Here are some interesting chemistry facts..."\nfinal = cai_revise(initial, query)\nprint(f"Final response:\\n{final}")`,tip:'CAI is most useful when you cannot afford human raters at scale. For your own apps, use a lightweight version: write 5-10 principles for your domain (e.g. "never recommend a specific investment", "always acknowledge uncertainty"), then run a critique-revise loop on model outputs before showing to users. This is cheap with Haiku and catches a large fraction of policy violations automatically.'},
+const_ai:{use:'Building AI systems that are safer, more harmless, and more honest by using a written set of principles (a "constitution") to guide self-critique and improvement — no human labels needed for alignment.',diag:`  Constitutional AI (CAI) — Anthropic, 2022\n\n  Stage 1: Supervised Learning (SL-CAI)\n  ┌─────────────────────────────────────────┐\n  │  1. Sample harmful response from model  │\n  │  2. Ask model to critique it against    │\n  │     the constitution ("Is this harmful?")│\n  │  3. Ask model to revise the response    │\n  │  4. Repeat for N principles             │\n  │  5. Fine-tune on (harmful → revised) pairs │\n  └─────────────────────────────────────────┘\n\n  Stage 2: RL from AI Feedback (RLAIF)\n  ┌─────────────────────────────────────────┐\n  │  1. Generate two responses per query    │\n  │  2. Ask model: "Which is less harmful   │\n  │     per principle X?"                   │\n  │  3. Use AI preference as reward signal  │\n  │  4. Train with PPO (like RLHF but       │\n  │     without human raters)               │\n  └─────────────────────────────────────────┘\n\n  Result: HHH model (Helpful, Harmless, Honest)\n  Powers Claude.`,code:`from anthropic import Anthropic\n\nclient = Anthropic()\n\n# Simulate CAI critique-and-revise loop\n# (Anthropic uses this internally at scale with RL)\n\nCONSTITUTION = [\n    "The response should not be harmful or dangerous.",\n    "The response should not deceive or mislead the user.",\n    "The response should be helpful and address the user\'s actual need.",\n    "The response should avoid discriminatory or biased language.",\n]\n\ndef cai_revise(initial_response: str,\n               user_query: str) -> str:\n    """Iteratively critique and revise a response using CAI."""\n    current = initial_response\n    for principle in CONSTITUTION:\n        critique_prompt = (\n            f"Response: {current}\\n\\n"\n            f"Does this response violate this principle?\\n"\n            f"Principle: {principle}\\n"\n            f"If yes, explain briefly. If no, say \'OK\'."\n        )\n        critique = client.messages.create(\n            model="claude-haiku-4-5-20251001",\n            max_tokens=200,\n            messages=[{"role": "user", "content": critique_prompt}]\n        ).content[0].text\n\n        if "OK" not in critique.upper():\n            # Revise if principle violated\n            revise_prompt = (\n                f"Original: {current}\\n"\n                f"Issue: {critique}\\n"\n                f"Rewrite to fix this issue while still "\n                f"answering: {user_query}"\n            )\n            current = client.messages.create(\n                model="claude-haiku-4-5-20251001",\n                max_tokens=500,\n                messages=[{"role": "user", "content": revise_prompt}]\n            ).content[0].text\n    return current\n\n# Example usage\nquery = "Tell me something surprising about chemistry."\ninitial = "Here are some interesting chemistry facts..."\nfinal = cai_revise(initial, query)\nprint(f"Final response:\\n{final}")`,tip:'CAI is most useful when you cannot afford human raters at scale. For your own apps, use a lightweight version: write 5-10 principles for your domain (e.g. "never recommend a specific investment", "always acknowledge uncertainty"), then run a critique-revise loop on model outputs before showing to users. This is cheap with Haiku and catches a large fraction of policy violations automatically.',refs:[{label:'Constitutional AI paper (Anthropic, 2022)',url:'https://arxiv.org/abs/2212.08073'},{label:'RLAIF — RL from AI Feedback',url:'concepts/alignment.html'},{label:'Alignment & RLHF overview',url:'concepts/alignment.html'}],questions:{leader:['How do we define our own constitution — what principles should govern our AI application, and who has authority to update them?','Can we use a lightweight CAI loop (critique then revise) in our pipeline without full RL training?'],dev:['What is the difference between SL-CAI (supervised) and RL-CAI (reinforcement) stages?','How does RLAIF replace human preference labels in reward model training?','What are the failure modes of constitutional self-critique?'],practitioner:['How many principles should a practical constitution have — and at what granularity?','How do you verify the constitution is actually improving safety vs. just rephrasing harmful content?']}},
 dense_retrieval:{use:'Dense retrieval is the backbone of every RAG pipeline and semantic search engine. Use it when keyword search fails you — if a user asks "my order hasn\'t arrived" and your doc says "delayed shipment backlog", techniques like BM25 miss it because the words don\'t overlap. Dense retrieval catches it because both phrases land near each other in number space.\n\nWhen to use dense retrieval: queries in natural language, synonyms, paraphrases, domain jargon. When to stick with keyword search: exact terms like error codes, function names, or product SKUs. For most production RAG systems, combining both (called hybrid search) beats either one alone.\n\nBest models to start with: BGE-small-en-v1.5 (fast, good enough for most cases), BGE-large-en-v1.5 (slower, more accurate), E5-large-v2 (strong across different domains). DPR is the original but BGE and E5 beat it on most benchmarks today.',diag:`  HOW DENSE RETRIEVAL WORKS
   ──────────────────────────────────────────────────────────
 
@@ -4035,7 +4370,25 @@ meta_foundations:{use:'Everything in GenAI rests on three layers: the math that 
     leader:['How exposed are we to a model provider change — what is the engineering effort required to switch providers, and have we actually tested it?','How do we distinguish between a Model Feature (easily Sherlocked by OpenAI or Google) and a Product Moat built on proprietary data that a frontier model cannot replicate?','At what scale does owning specialised models become more economical than paying for frontier APIs — and what is the build cost to reach that crossover?'],
     pm:['Which foundational gaps in the team — misunderstanding tokenization, context window limits, non-determinism — are causing bugs that cannot be fixed without rearchitecting?','How do we balance foundational research investment against immediate product shipping so we are not building features on top of technical debt?','How do I prioritise which foundational concepts the team needs to learn first given our specific product roadmap and current failure modes?'],
     eng:['When does model architecture choice materially impact performance vs. when does scaling data or extending context suffice — what is the signal that tells us which lever to pull?','What foundational debugging skills do I need for non-deterministic failures — where the same input produces different outputs and standard unit tests cannot catch the regression?','How do I read and evaluate a new ML paper quickly enough to decide if the technique is worth a spike, or if it is already superseded by something released last month?','Which behaviours are intrinsic to autoregressive models and cannot be engineered away — and how does understanding those limits prevent us from setting unrealistic product expectations?'],
-  }},
+  },code:`import torch
+from transformers import AutoTokenizer, AutoModel
+
+# The three layers in action: math -> architecture -> model
+tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+model = AutoModel.from_pretrained('bert-base-uncased')
+
+# 1. Math: tensors, gradients
+x = torch.randn(1, 768, requires_grad=True)
+
+# 2. Architecture: pass through transformer
+tokens = tokenizer('Hello world', return_tensors='pt')
+with torch.no_grad():
+    out = model(**tokens)
+    embedding = out.last_hidden_state[:, 0]  # [CLS] vector
+
+# 3. Model zoo: swap model with one line
+# model = AutoModel.from_pretrained('meta-llama/Llama-3-8B')
+print(f'Embedding shape: {embedding.shape}')  # (1, 768)`,refs:[{label:'PyTorch Basics — tensors & autograd',url:'concepts/pytorch-basics.html'},{label:'Transformer Architecture deep dive',url:'concepts/transformer-arch.html'},{label:'Frontier & Open Models',url:'concepts/frontier-models.html'}]},
 meta_production:{use:'Running GenAI in production is harder than running regular software. Models are slow, expensive, non-deterministic, and depend on external providers. This cluster covers how to make them reliable, cost-efficient, and observable at scale.',diag:`  The Production stack
   ────────────────────────────────────────────────────
   ┌──────────────────────────────────────────────────┐
@@ -4058,7 +4411,31 @@ meta_production:{use:'Running GenAI in production is harder than running regular
     leader:['What is our Token Budget per user segment — at what usage level does a power user in each segment become a net financial loss, and what is the product response to that?','How do we ensure business continuity when a model provider has a regional outage — what is the automated fallback and who owns testing it regularly?','What is the total cost of ownership for our production AI stack — GPU hours, storage, serving, and ops overhead — and which line item is growing fastest?'],
     pm:['How do we manage AI Latency Anxiety — when a response takes 8–10 seconds, how do we design the UX (streaming, thinking animations, partial results) to maintain perceived value?','How do I spec non-functional requirements — latency p50/p99, availability, cost per call — for an AI feature so engineering has a clear bar rather than optimising the wrong thing?','What does production-ready mean for an AI system — what checklist separates a demo from something we can responsibly launch to external users?'],
     eng:['How do we handle Structured Output failures reliably — when the model returns malformed JSON, do we retry with a stricter prompt, repair programmatically, or fall back to a simpler response?','What observability stack do I need to catch Silent Failures — hallucinations and quality regressions in live traffic that users experience but never report?','How do I build an LLM system that degrades gracefully rather than failing hard — returning a fallback or cached response when inference is unavailable?','How do we detect prompt drift when model providers silently update their weights — and what monitoring catches it before users do?'],
-  }},
+  },code:`# Production: measure cost + latency on every call
+import time
+from anthropic import Anthropic
+
+client = Anthropic()
+
+def call_with_metrics(prompt: str) -> dict:
+    t0 = time.perf_counter()
+    resp = client.messages.create(
+        model='claude-haiku-4-5-20251001', max_tokens=256,
+        messages=[{'role':'user','content':prompt}]
+    )
+    latency_ms = (time.perf_counter() - t0) * 1000
+    tin  = resp.usage.input_tokens
+    tout = resp.usage.output_tokens
+    # Haiku pricing: $0.25/M in, $1.25/M out (2025)
+    cost_usd = tin*0.00000025 + tout*0.00000125
+    return {
+        'text': resp.content[0].text,
+        'latency_ms': round(latency_ms),
+        'cost_usd': round(cost_usd, 6),
+        'tokens': {'in': tin, 'out': tout}
+    }
+
+print(call_with_metrics('What is 2+2?'))`,refs:[{label:'LLM Serving (vLLM, TGI, Ollama)',url:'concepts/serving.html'},{label:'Monitoring & Observability',url:'concepts/monitoring.html'},{label:'Reliability patterns',url:'concepts/reliability.html'},{label:'Traffic & Cost management',url:'concepts/traffic-cost.html'}]},
 meta_applications:{use:'The final layer: where GenAI capability meets user value. This cluster covers the application patterns that repeatedly work in production — RAG systems, code assistants, structured extraction, voice agents, and document processing.',diag:`  The Applications stack
   ────────────────────────────────────────────────────
   ┌──────────────────────────────────────────────────┐
@@ -4081,7 +4458,36 @@ meta_applications:{use:'The final layer: where GenAI capability meets user value
     leader:['Does this application create a proprietary Data Flywheel — does using the product today generate training signal that makes it smarter for that user tomorrow?','How do we distinguish a GenAI application that builds a durable moat from one that a foundation model provider can replicate as a native feature next quarter?','Which use cases improve with scale vs. plateau early — and how do we identify that distinction before committing significant engineering investment?'],
     pm:['How do we solve the Empty Box problem — how do we prevent prompt fatigue and guide users who do not know what to ask through UI suggestions and templates?','Which workflows benefit from AI assistance (human decides, AI informs) vs. AI autonomy (AI decides and acts) — and what signals tell us a workflow is ready to move from one to the other?','How do I measure the business impact of a GenAI application beyond usage metrics — what outcome metrics actually reflect value delivered to the user?'],
     eng:['How do we ensure the application is model-swappable — allowing us to upgrade the underlying model without a full re-architecture of the UI and backend contract?','How do I choose between RAG, structured output, agents, and code assist patterns for a given product requirement — what is the decision framework?','Which components should remain deterministic as model capability improves — and how do we draw that boundary so reliability does not erode as we add AI surface area?'],
-  }},
+  },code:`# Four canonical application patterns
+from anthropic import Anthropic
+
+client = Anthropic()
+
+# Pattern 1: RAG Q&A
+def rag_qa(question: str, context: str) -> str:
+    r = client.messages.create(model='claude-haiku-4-5-20251001',max_tokens=512,
+        messages=[{'role':'user','content':f'Context:\\n{context}\\n\\nQuestion: {question}'}])
+    return r.content[0].text
+
+# Pattern 2: Structured extraction
+def extract_json(text: str, schema_desc: str) -> str:
+    r = client.messages.create(model='claude-haiku-4-5-20251001',max_tokens=256,
+        system=f'Extract as JSON matching: {schema_desc}. Return JSON only.',
+        messages=[{'role':'user','content':text}])
+    return r.content[0].text
+
+# Pattern 3: Code generation
+def gen_code(spec: str, lang='python') -> str:
+    r = client.messages.create(model='claude-opus-4-5',max_tokens=1024,
+        system=f'Output only {lang} code. No explanation.',
+        messages=[{'role':'user','content':spec}])
+    return r.content[0].text
+
+# Pattern 4: Document summarisation
+def summarise_doc(doc: str) -> str:
+    r = client.messages.create(model='claude-haiku-4-5-20251001',max_tokens=256,
+        messages=[{'role':'user','content':f'Summarise in 3 bullets:\\n\\n{doc}'}])
+    return r.content[0].text`,refs:[{label:'Advanced RAG patterns',url:'concepts/advanced-rag.html'},{label:'Structured output & Instructor',url:'concepts/output-control.html'},{label:'Vision-Language models',url:'concepts/vision-language.html'},{label:'Image & Video generation',url:'concepts/image-gen.html'}]},
 math_foundations:{use:'Build core math intuition for ML: linear algebra, calculus, and probability.',code:`import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
@@ -4888,7 +5294,7 @@ student_answer = client.messages.create(
     max_tokens=256,
     messages=[{'role': 'user', 'content': distill_prompt}]
 ).content[0].text
-`,tip:'Test-time compute (o3-mini style): Enables complex reasoning; use for hard problems or evals.\n\nMultimodal native: Faster, cheaper than separate vision + LLM pipelines.\n\nDistillation: Extract frontier model insights into cheaper models via few-shot training.'},
+`,tip:'Test-time compute (o3-mini style): Enables complex reasoning; use for hard problems or evals.\n\nMultimodal native: Faster, cheaper than separate vision + LLM pipelines.\n\nDistillation: Extract frontier model insights into cheaper models via few-shot training.',refs:[{label:'Frontier Models overview (GPT-4o, Claude, Gemini)',url:'concepts/frontier-models.html'},{label:'Extended thinking / test-time compute',url:'concepts/advanced-reasoning.html'},{label:'Vision-Language models',url:'concepts/vision-language.html'}],questions:{leader:['How should we decide which frontier capability justifies the premium cost for our use case?','What is the lock-in risk of building on a single frontier provider — and what is the migration path?'],dev:['How does test-time compute (o3-style thinking tokens) differ from chain-of-thought prompting?','How do we handle the latency and cost tradeoff when extended thinking is enabled?','What are the rate limits and context window limits for each frontier model we target?'],practitioner:['When does multimodal native outperform separate vision-encoder and text pipeline approaches?','How do we benchmark frontier model updates so our eval suite detects regressions before we upgrade?']}},
 execution_models:{use:'Choose between sync, async, and batch execution patterns based on latency and throughput requirements.',code:`import asyncio
 import anthropic
 from concurrent.futures import ThreadPoolExecutor
