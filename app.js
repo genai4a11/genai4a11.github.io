@@ -140,6 +140,24 @@ const CONCEPT_PAGES={
   deepspeed:'concepts/deepspeed.html',
   dropout:'concepts/dropout.html',
   weight_decay:'concepts/weight-decay.html',
+  // batch 12 — prompting group
+  zero_shot:'concepts/zero-shot.html',
+  few_shot:'concepts/few-shot.html',
+  system_prompts:'concepts/system-prompts.html',
+  role_prompting:'concepts/role-prompting.html',
+  chain_of_thought:'concepts/chain-of-thought.html',
+  extended_thinking:'concepts/extended-thinking.html',
+  self_consistency:'concepts/self-consistency.html',
+  tree_of_thoughts:'concepts/tree-of-thoughts.html',
+  react_prompting:'concepts/react-prompting.html',
+  dspy:'concepts/dspy.html',
+  lmql:'concepts/lmql.html',
+  prompt_versioning:'concepts/prompt-versioning.html',
+  prompt_caching:'concepts/prompt-caching.html',
+  json_mode:'concepts/json-mode.html',
+  instructor:'concepts/instructor.html',
+  code_output_validation:'concepts/code-output-validation.html',
+  outlines:'concepts/outlines.html',
 };
 let N=JSON.parse(JSON.stringify(DN)),X=JSON.parse(JSON.stringify(DX)),e=false,s=null;
 function ifs(){const c=document.getElementById('starfield'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;const t=[];for(let i=0;i<100;i++)t.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,v:Math.random()*0.3+0.1});function a(){x.fillStyle='#030a1a';x.fillRect(0,0,c.width,c.height);x.fillStyle='#a78bfa';t.forEach(d=>{d.r+=d.v*0.01;if(d.r>2.5)d.r=0;x.beginPath();x.arc(d.x,d.y,d.r,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight})}
