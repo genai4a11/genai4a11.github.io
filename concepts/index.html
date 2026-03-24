@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concept Deep Dives — GenAI Mindmap</title>
+  <meta name="description" content="30+ in-depth articles on Generative AI — transformers, RAG, agents, fine-tuning, safety, evaluation, and production infrastructure. Each page has comparison tables, code examples, and references.">
+  <meta property="og:title" content="GenAI Concept Deep Dives">
+  <meta property="og:description" content="30+ in-depth articles on Generative AI — transformers, RAG, agents, fine-tuning, safety, and production systems.">
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-Y9590EJKQX');</script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:     #0b1120;
+      --bg2:    #111827;
+      --bg3:    #1e293b;
+      --border: rgba(148,163,184,0.12);
+      --purple: #a78bfa;
+      --purple2:#7c3aed;
+      --text:   #f1f5f9;
+      --muted:  #94a3b8;
+      --muted2: #64748b;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; min-height: 100vh; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 56px; background: rgba(11,17,32,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .nav-brand { font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .nav-brand span { color: var(--purple); }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); }
+    .nav-cta { background: var(--purple2); color: #fff !important; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; text-decoration: none; transition: background 0.2s; }
+    .nav-cta:hover { background: #6d28d9 !important; }
+
+    /* PAGE HERO */
+    .page-hero { padding: 100px 1.5rem 60px; text-align: center; position: relative; overflow: hidden; }
+    .page-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 50% at 50% 30%, rgba(124,58,237,0.10) 0%, transparent 70%); pointer-events: none; }
+    .hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--purple); margin-bottom: 0.75rem; }
+    .page-hero h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; color: var(--text); margin-bottom: 0.75rem; }
+    .page-hero h1 em { font-style: normal; color: var(--purple); }
+    .page-hero p { font-size: 1rem; color: var(--muted); max-width: 560px; margin: 0 auto 2rem; }
+
+    /* CONTROLS */
+    .controls { max-width: 960px; margin: 0 auto; padding: 0 1.5rem 2.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .search-wrap { position: relative; }
+    .search-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--muted2); pointer-events: none; }
+    #search { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px 10px 40px; font-size: 14px; color: var(--text); outline: none; transition: border-color 0.2s; }
+    #search::placeholder { color: var(--muted2); }
+    #search:focus { border-color: rgba(167,139,250,0.45); }
+
+    .filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .filter-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted2); margin-right: 4px; }
+    .filter-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 14px; font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .filter-btn:hover { border-color: rgba(167,139,250,0.35); color: var(--text); }
+    .filter-btn.active { color: #fff; border-color: transparent; }
+
+    /* RESULTS META */
+    .results-meta { max-width: 960px; margin: 0 auto; padding: 0 1.5rem 1.25rem; font-size: 12px; color: var(--muted2); }
+
+    /* DIRECTORY */
+    .directory { max-width: 960px; margin: 0 auto; padding: 0 1.5rem 80px; }
+    .cat-block { margin-bottom: 3rem; }
+    .cat-block[hidden] { display: none; }
+    .cat-heading { font-size: 12px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.85rem; }
+
+    /* ARTICLE CARD */
+    .a-card { display: flex; flex-direction: column; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.25rem; text-decoration: none; transition: border-color 0.18s, transform 0.15s; }
+    .a-card:hover { border-color: rgba(167,139,250,0.4); transform: translateY(-1px); }
+    .a-card[hidden] { display: none; }
+    .a-card-title { font-size: 0.875rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem; line-height: 1.3; }
+    .a-card-desc  { font-size: 0.78rem; color: var(--muted); line-height: 1.45; flex: 1; }
+    .a-card-read  { font-size: 0.72rem; font-weight: 600; margin-top: 0.65rem; }
+
+    /* EMPTY STATE */
+    #empty-state { display: none; text-align: center; padding: 4rem 1.5rem; color: var(--muted2); }
+    #empty-state svg { width: 40px; height: 40px; margin-bottom: 1rem; opacity: 0.4; }
+    #empty-state p { font-size: 0.95rem; }
+
+    /* BACK LINK */
+    .back-strip { background: var(--bg2); border-top: 1px solid var(--border); padding: 1.25rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
+    .back-strip a { font-size: 13px; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s; }
+    .back-strip a:hover { color: var(--text); }
+    .back-strip .cta-btn { background: var(--purple2); color: #fff; padding: 8px 18px; border-radius: 6px; font-weight: 500; }
+    .back-strip .cta-btn:hover { background: #6d28d9; color: #fff; }
+
+    @media(max-width:640px) {
+      nav { padding: 0 1rem; }
+      .nav-links { gap: 0.9rem; }
+      .cards-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media(max-width:400px) {
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="../index.html">🧠 GenAI <span>Mindmap</span></a>
+  <div class="nav-links">
+    <a href="../index.html">Home</a>
+    <a href="index.html" class="active">Deep Dives</a>
+    <a href="../map.html" class="nav-cta">Open Map →</a>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="hero-eyebrow">Concept Articles</div>
+  <h1>GenAI <em>Deep Dives</em></h1>
+  <p>In-depth articles on the most complex topics — comparison tables, Python code examples, method cards, and references.</p>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input id="search" type="search" placeholder="Search articles… e.g. LoRA, RAG, agents" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-btn active" data-cat="all">All</button>
+    <button class="filter-btn" data-cat="inference" style="--accent:#38bdf8;">Inference &amp; Architecture</button>
+    <button class="filter-btn" data-cat="training"  style="--accent:#f59e0b;">Training &amp; Fine-Tuning</button>
+    <button class="filter-btn" data-cat="retrieval" style="--accent:#22c55e;">Retrieval &amp; RAG</button>
+    <button class="filter-btn" data-cat="agents"    style="--accent:#a78bfa;">Agents &amp; Orchestration</button>
+    <button class="filter-btn" data-cat="prompting" style="--accent:#818cf8;">Models &amp; Prompting</button>
+    <button class="filter-btn" data-cat="safety"    style="--accent:#f472b6;">Safety &amp; Evaluation</button>
+    <button class="filter-btn" data-cat="production"style="--accent:#fb923c;">Production &amp; Infra</button>
+  </div>
+</div>
+
+<div class="results-meta" id="results-meta"></div>
+
+<div class="directory" id="directory">
+
+  <!-- ── INFERENCE & ARCHITECTURE ─────────────────────────────────── -->
+  <div class="cat-block" data-cat="inference">
+    <div class="cat-heading" style="color:#38bdf8;">Inference &amp; Architecture</div>
+    <div class="cards-grid">
+      <a class="a-card" href="kv-cache.html" data-keywords="kv cache attention key value memory gqa mla paged eviction prefix">
+        <div class="a-card-title">KV Cache Mechanics</div>
+        <div class="a-card-desc">How transformers avoid recomputing attention — memory math, GQA/MLA, eviction strategies, PagedAttention, prefix caching</div>
+        <div class="a-card-read" style="color:#38bdf8;">Read →</div>
+      </a>
+      <a class="a-card" href="quantization.html" data-keywords="quantization gptq awq smoothquant gguf ptq qat int4 int8 bitsandbytes compression">
+        <div class="a-card-title">Model Quantization</div>
+        <div class="a-card-desc">GPTQ, AWQ, SmoothQuant, GGUF — reducing model size 2–8× with controlled accuracy loss</div>
+        <div class="a-card-read" style="color:#38bdf8;">Read →</div>
+      </a>
+      <a class="a-card" href="transformer-arch.html" data-keywords="transformer architecture mha gqa ffn swiglu rope pre-norm attention heads embedding">
+        <div class="a-card-title">Transformer Architecture</div>
+        <div class="a-card-desc">MHA, GQA, FFN/SwiGLU, RoPE, pre-norm — the building blocks of every modern LLM</div>
+        <div class="a-card-read" style="color:#38bdf8;">Read →</div>
+      </a>
+      <a class="a-card" href="llm-internals.html" data-keywords="tokenization context window sampling temperature top-p logprobs chat templates bpe">
+        <div class="a-card-title">LLM Internals</div>
+        <div class="a-card-desc">Tokenization, context windows, sampling strategies, logprobs, and chat templates</div>
+        <div class="a-card-read" style="color:#38bdf8;">Read →</div>
+      </a>
+      <a class="a-card" href="advanced-reasoning.html" data-keywords="chain of thought cot prm tree search grpo test time compute o1 reasoning reward model">
+        <div class="a-card-title">Advanced Reasoning</div>
+        <div class="a-card-desc">CoT, process reward models, tree search, GRPO, and test-time compute scaling</div>
+        <div class="a-card-read" style="color:#38bdf8;">Read →</div>
+      </a>
+      <a class="a-card" href="serving.html" data-keywords="serving inference ttft tbt continuous batching speculative decoding parallelism vllm triton latency throughput">
+        <div class="a-card-title">LLM Serving</div>
+        <div class="a-card-desc">TTFT/TBT, continuous batching, speculative decoding, parallelism, and latency SLOs</div>
+        <div class="a-card-read" style="color:#38bdf8;">Read →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── TRAINING & FINE-TUNING ────────────────────────────────────── -->
+  <div class="cat-block" data-cat="training">
+    <div class="cat-heading" style="color:#f59e0b;">Training &amp; Fine-Tuning</div>
+    <div class="cards-grid">
+      <a class="a-card" href="peft-methods.html" data-keywords="peft lora qlora prefix tuning adapters rank selection fine tuning parameter efficient">
+        <div class="a-card-title">PEFT Methods</div>
+        <div class="a-card-desc">LoRA, QLoRA, prefix tuning, adapters — rank selection and memory comparison</div>
+        <div class="a-card-read" style="color:#f59e0b;">Read →</div>
+      </a>
+      <a class="a-card" href="alignment.html" data-keywords="rlhf dpo constitutional ai reward model alignment preference fine tuning ppo">
+        <div class="a-card-title">LLM Alignment</div>
+        <div class="a-card-desc">RLHF, DPO, Constitutional AI — how each shapes model behaviour and what it costs</div>
+        <div class="a-card-read" style="color:#f59e0b;">Read →</div>
+      </a>
+      <a class="a-card" href="training-tech.html" data-keywords="mixed precision fsdp deepspeed zero tensor pipeline parallelism distributed training bf16">
+        <div class="a-card-title">Training Techniques</div>
+        <div class="a-card-desc">Mixed precision, FSDP, DeepSpeed ZeRO, tensor and pipeline parallelism</div>
+        <div class="a-card-read" style="color:#f59e0b;">Read →</div>
+      </a>
+      <a class="a-card" href="synthetic-data.html" data-keywords="synthetic data self instruct distillation rejection sampling magpie model collapse data generation">
+        <div class="a-card-title">Synthetic Data</div>
+        <div class="a-card-desc">Self-instruct, distillation, rejection sampling, Magpie — and avoiding model collapse</div>
+        <div class="a-card-read" style="color:#f59e0b;">Read →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── RETRIEVAL & RAG ───────────────────────────────────────────── -->
+  <div class="cat-block" data-cat="retrieval">
+    <div class="cat-heading" style="color:#22c55e;">Retrieval &amp; RAG</div>
+    <div class="cards-grid">
+      <a class="a-card" href="embeddings.html" data-keywords="embeddings text embedding models mteb matryoshka fine tuning cross encoder reranking sentence transformers">
+        <div class="a-card-title">Text Embeddings</div>
+        <div class="a-card-desc">Embedding models, MTEB benchmarks, Matryoshka dimensions, fine-tuning, cross-encoder reranking</div>
+        <div class="a-card-read" style="color:#22c55e;">Read →</div>
+      </a>
+      <a class="a-card" href="retrieval-tech.html" data-keywords="bm25 faiss hnsw hybrid rrf retrieval vector search approximate nearest neighbor sparse dense">
+        <div class="a-card-title">Retrieval Technology</div>
+        <div class="a-card-desc">BM25, FAISS, HNSW, hybrid RRF — how to pick and tune a retrieval stack</div>
+        <div class="a-card-read" style="color:#22c55e;">Read →</div>
+      </a>
+      <a class="a-card" href="advanced-rag.html" data-keywords="advanced rag hyde chunking reranking hybrid search multi hop ragas evaluation retrieval augmented generation">
+        <div class="a-card-title">Advanced RAG Patterns</div>
+        <div class="a-card-desc">HyDE, reranking, hybrid search, multi-hop retrieval, and RAGAS evaluation</div>
+        <div class="a-card-read" style="color:#22c55e;">Read →</div>
+      </a>
+      <a class="a-card" href="vector-dbs.html" data-keywords="vector database pgvector qdrant weaviate pinecone chroma comparison selection guide">
+        <div class="a-card-title">Vector Databases</div>
+        <div class="a-card-desc">pgvector, Qdrant, Weaviate, Pinecone, Chroma — comparison and selection guide</div>
+        <div class="a-card-read" style="color:#22c55e;">Read →</div>
+      </a>
+      <a class="a-card" href="golden-datasets.html" data-keywords="golden dataset eval evaluation annotation pipeline quality criteria versioning ground truth">
+        <div class="a-card-title">Golden Datasets</div>
+        <div class="a-card-desc">Building eval datasets, quality criteria, annotation pipelines, and versioning</div>
+        <div class="a-card-read" style="color:#22c55e;">Read →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── AGENTS & ORCHESTRATION ────────────────────────────────────── -->
+  <div class="cat-block" data-cat="agents">
+    <div class="cat-heading" style="color:#a78bfa;">Agents &amp; Orchestration</div>
+    <div class="cards-grid">
+      <a class="a-card" href="agent-frameworks.html" data-keywords="agent framework langgraph crewai autogen pydantic ai comparison orchestration workflow">
+        <div class="a-card-title">Agent Frameworks</div>
+        <div class="a-card-desc">LangGraph, CrewAI, AutoGen, Pydantic AI — comparison and decision guide</div>
+        <div class="a-card-read" style="color:#a78bfa;">Read →</div>
+      </a>
+      <a class="a-card" href="agent-planning.html" data-keywords="agent planning react plan execute reflexion tree of thoughts memory reasoning loop">
+        <div class="a-card-title">Agent Planning</div>
+        <div class="a-card-desc">ReAct, plan-and-execute, Reflexion, Tree of Thoughts, and memory patterns</div>
+        <div class="a-card-read" style="color:#a78bfa;">Read →</div>
+      </a>
+      <a class="a-card" href="agent-memory.html" data-keywords="agent memory working episodic semantic procedural memgpt long term short term context">
+        <div class="a-card-title">Agent Memory Systems</div>
+        <div class="a-card-desc">Working, episodic, semantic, and procedural memory — MemGPT and production patterns</div>
+        <div class="a-card-read" style="color:#a78bfa;">Read →</div>
+      </a>
+      <a class="a-card" href="multi-agent.html" data-keywords="multi agent orchestrator subagent parallel debate trust observability supervisor worker">
+        <div class="a-card-title">Multi-Agent Systems</div>
+        <div class="a-card-desc">Orchestrator–subagent, parallel execution, debate, trust levels, and observability</div>
+        <div class="a-card-read" style="color:#a78bfa;">Read →</div>
+      </a>
+      <a class="a-card" href="tool-use.html" data-keywords="tool use function calling schema design parallel calls strict mode tool loop json api">
+        <div class="a-card-title">Tool Use &amp; Function Calling</div>
+        <div class="a-card-desc">The tool loop, schema design, parallel calls, strict mode, and failure modes</div>
+        <div class="a-card-read" style="color:#a78bfa;">Read →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── MODELS & PROMPTING ────────────────────────────────────────── -->
+  <div class="cat-block" data-cat="prompting">
+    <div class="cat-heading" style="color:#818cf8;">Models &amp; Prompting</div>
+    <div class="cards-grid">
+      <a class="a-card" href="frontier-models.html" data-keywords="frontier models gpt4o claude gemini llama comparison pricing selection guide multi provider routing">
+        <div class="a-card-title">Frontier LLM Models</div>
+        <div class="a-card-desc">GPT-4o, Claude, Gemini, Llama 3 — capabilities, pricing, and selection guide</div>
+        <div class="a-card-read" style="color:#818cf8;">Read →</div>
+      </a>
+      <a class="a-card" href="basic-prompting.html" data-keywords="prompt engineering system prompt few shot chain of thought role prompting format control instructions">
+        <div class="a-card-title">Prompt Engineering</div>
+        <div class="a-card-desc">System prompts, few-shot, chain-of-thought, role prompting, and format control</div>
+        <div class="a-card-read" style="color:#818cf8;">Read →</div>
+      </a>
+      <a class="a-card" href="programmatic-prompting.html" data-keywords="dspy lcel mipro opro ape programmatic prompting automatic optimization template engine">
+        <div class="a-card-title">Programmatic Prompting</div>
+        <div class="a-card-desc">DSPy, LCEL, MIPRO, OPRO — optimising prompts automatically with labelled examples</div>
+        <div class="a-card-read" style="color:#818cf8;">Read →</div>
+      </a>
+      <a class="a-card" href="output-control.html" data-keywords="output control json mode instructor outlines constrained decoding grammar structured output schema">
+        <div class="a-card-title">Output Control</div>
+        <div class="a-card-desc">JSON mode, instructor, Outlines, constrained decoding — reliable structured output</div>
+        <div class="a-card-read" style="color:#818cf8;">Read →</div>
+      </a>
+      <a class="a-card" href="vision-language.html" data-keywords="vision language model vlm clip llava gpt4v multimodal tiled tokenization image understanding">
+        <div class="a-card-title">Vision-Language Models</div>
+        <div class="a-card-desc">CLIP, LLaVA, GPT-4V, tiled tokenization — multimodal architecture and pipelines</div>
+        <div class="a-card-read" style="color:#818cf8;">Read →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── SAFETY, EVALUATION & GOVERNANCE ──────────────────────────── -->
+  <div class="cat-block" data-cat="safety">
+    <div class="cat-heading" style="color:#f472b6;">Safety, Evaluation &amp; Governance</div>
+    <div class="cards-grid">
+      <a class="a-card" href="safety-tech.html" data-keywords="safety constitutional ai red teaming guardrails jailbreak defense privacy nemo moderation">
+        <div class="a-card-title">LLM Safety Techniques</div>
+        <div class="a-card-desc">Constitutional AI, red-teaming, guardrails, jailbreak defences, and privacy</div>
+        <div class="a-card-read" style="color:#f472b6;">Read →</div>
+      </a>
+      <a class="a-card" href="evals-practice.html" data-keywords="evaluation eval funnel llm as judge golden sets ci cd evals framework comparison deepeval">
+        <div class="a-card-title">Evaluation in Practice</div>
+        <div class="a-card-desc">Eval funnel, LLM-as-judge, golden sets, CI/CD for evals, framework comparison</div>
+        <div class="a-card-read" style="color:#f472b6;">Read →</div>
+      </a>
+      <a class="a-card" href="benchmarks.html" data-keywords="benchmark mmlu swe bench chatbot arena saturation evaluation leaderboard selection guide">
+        <div class="a-card-title">LLM Benchmarks Explained</div>
+        <div class="a-card-desc">MMLU, SWE-Bench, Chatbot Arena — what they measure, where they mislead</div>
+        <div class="a-card-read" style="color:#f472b6;">Read →</div>
+      </a>
+      <a class="a-card" href="reliability.html" data-keywords="reliability hallucination mitigation grounding uncertainty quantification fallback patterns citation">
+        <div class="a-card-title">Reliability Engineering</div>
+        <div class="a-card-desc">Hallucination mitigation, grounding, uncertainty quantification, fallback patterns</div>
+        <div class="a-card-read" style="color:#f472b6;">Read →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── PRODUCTION & INFRASTRUCTURE ─────────────────────────────── -->
+  <div class="cat-block" data-cat="production">
+    <div class="cat-heading" style="color:#fb923c;">Production &amp; Infrastructure</div>
+    <div class="cards-grid">
+      <a class="a-card" href="mlops.html" data-keywords="mlops llmops prompt ci cd model registry drift detection canary deploy cost management observability">
+        <div class="a-card-title">MLOps for LLMs</div>
+        <div class="a-card-desc">Prompt CI/CD, model registry, drift detection, canary deploys, and cost management</div>
+        <div class="a-card-read" style="color:#fb923c;">Read →</div>
+      </a>
+      <a class="a-card" href="hardware.html" data-keywords="hardware h100 a100 mi300x gpu cloud on prem memory bandwidth interconnect nvlink tpu">
+        <div class="a-card-title">AI Hardware Guide</div>
+        <div class="a-card-desc">H100 vs A100 vs MI300X, cloud vs on-prem, memory math, and interconnects</div>
+        <div class="a-card-read" style="color:#fb923c;">Read →</div>
+      </a>
+    </div>
+  </div>
+
+  <div id="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6M11 8v6"/></svg>
+    <p>No articles match "<span id="empty-query"></span>"</p>
+    <p style="margin-top:0.4rem;font-size:0.82rem;">Try a different keyword or clear the search.</p>
+  </div>
+
+</div><!-- /directory -->
+
+<div class="back-strip">
+  <a href="../index.html">← Back to home</a>
+  <a class="cta-btn" href="../map.html">Open the mindmap →</a>
+</div>
+
+<script>
+  const searchEl = document.getElementById('search');
+  const metaEl   = document.getElementById('results-meta');
+  const emptyEl  = document.getElementById('empty-state');
+  const emptyQ   = document.getElementById('empty-query');
+  const allCards = Array.from(document.querySelectorAll('.a-card'));
+  const catBlocks = Array.from(document.querySelectorAll('.cat-block'));
+  const filterBtns = Array.from(document.querySelectorAll('.filter-btn'));
+
+  let activeCat = 'all';
+  let searchQ   = '';
+
+  function update() {
+    const q = searchQ.toLowerCase().trim();
+    let visible = 0;
+
+    allCards.forEach(card => {
+      const catMatch = activeCat === 'all' || card.closest('.cat-block').dataset.cat === activeCat;
+      const kw = (card.dataset.keywords + ' ' + card.querySelector('.a-card-title').textContent).toLowerCase();
+      const qMatch  = !q || kw.includes(q);
+      const show = catMatch && qMatch;
+      card.hidden = !show;
+      if (show) visible++;
+    });
+
+    // hide empty category blocks
+    catBlocks.forEach(block => {
+      const hasVisible = block.querySelectorAll('.a-card:not([hidden])').length > 0;
+      block.hidden = !hasVisible;
+    });
+
+    const total = allCards.length;
+    metaEl.textContent = q || activeCat !== 'all'
+      ? `Showing ${visible} of ${total} articles`
+      : `${total} articles across 7 categories`;
+
+    const isEmpty = visible === 0;
+    emptyEl.style.display = isEmpty ? 'block' : 'none';
+    if (isEmpty) emptyQ.textContent = q || activeCat;
+  }
+
+  searchEl.addEventListener('input', () => { searchQ = searchEl.value; update(); });
+
+  filterBtns.forEach(btn => {
+    // set active colour from --accent
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCat = btn.dataset.cat;
+      update();
+    });
+    // colour the active state per category
+    btn.addEventListener('mouseenter', () => {});
+  });
+
+  // Style active filter buttons with their accent colour
+  filterBtns.forEach(btn => {
+    const accent = getComputedStyle(btn).getPropertyValue('--accent').trim();
+    if (!accent) return;
+    btn.addEventListener('mouseenter', () => { if (!btn.classList.contains('active')) btn.style.color = accent; });
+    btn.addEventListener('mouseleave', () => { if (!btn.classList.contains('active')) btn.style.color = ''; });
+    if (btn.classList.contains('active')) return;
+    // apply accent on active
+  });
+
+  // apply accent background when active
+  function applyActiveStyles() {
+    filterBtns.forEach(btn => {
+      const accent = getComputedStyle(btn).getPropertyValue('--accent').trim() || '#a78bfa';
+      if (btn.classList.contains('active')) {
+        btn.style.background = accent;
+        btn.style.color = '#fff';
+        btn.style.borderColor = accent;
+      } else {
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.borderColor = '';
+      }
+    });
+  }
+
+  filterBtns.forEach(btn => btn.addEventListener('click', applyActiveStyles));
+  applyActiveStyles();
+
+  // initial count
+  update();
+</script>
+</body>
+</html>
