@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Query Retrieval | GenAI Mindmap</title>
+  <meta name="description" content="A retrieval technique that generates multiple paraphrased versions of the user query using an LLM, retrieves documents for each, and merges results to improve recall." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Multi-Query Retrieval" />
+  <meta property="og:description" content="A retrieval technique that generates multiple paraphrased versions of the user query using an LLM, retrieves documents for each, and merges results to improve recall." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/multi-query-retrieval.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/multi-query-retrieval.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Multi-Query Retrieval | GenAI Mindmap",
+  "description": "A retrieval technique that generates multiple paraphrased versions of the user query using an LLM, retrieves documents for each, and merges results to improve recall.",
+  "url": "https://genai4a11.github.io/concepts/multi-query-retrieval.html",
+  "dateModified": "2026-03-24T16:58:30.600786",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Multi-Query Retrieval | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/multi-query-retrieval.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0891b2;
+      --accent-dark: #0e7490;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0891b2 0%,#0e7490 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/retrieval.html" class="nav-back">← Retrieval</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Retrieval</span>
+    <h1><em>Multi-Query Retrieval</em></h1>
+    <p class="hero-sub">A retrieval technique that generates multiple paraphrased versions of the user query using an LLM, retrieves documents for each, and merges results to improve recall.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">3-5 queries</div><div class="stat-label">Typical expansion</div></div>
+      <div><div class="stat-num">+20-40%</div><div class="stat-label">Recall improvement</div></div>
+      <div><div class="stat-num">LLM-generated</div><div class="stat-label">Paraphrases</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The single-query blind spot</a></li>
+        <li><a href="#s2" data-num="02">How multi-query retrieval works</a></li>
+        <li><a href="#s3" data-num="03">Implementation from scratch</a></li>
+        <li><a href="#s4" data-num="04">LangChain MultiQueryRetriever</a></li>
+        <li><a href="#s5" data-num="05">Query diversity strategies</a></li>
+        <li><a href="#s6" data-num="06">Cost vs recall tradeoff</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The single-query blind spot</h2>
+<p>You ask "How do I cancel my subscription?" and the most relevant document says "To terminate your account, visit Account Settings." Standard dense retrieval embeds your query as a single vector and looks for nearby documents — but "cancel subscription" and "terminate account" may not be close enough in embedding space to score highly.</p>
+<p>This is the vocabulary mismatch problem: your phrasing differs from the document's phrasing, and a single query embedding can only cover one "view" of the semantic space.</p>
+<p><strong>Multi-query retrieval</strong> solves this by generating 3–5 paraphrased versions of the original query, retrieving documents for each, and merging the results. Each paraphrase covers a different corner of the semantic space, dramatically improving recall.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>How multi-query retrieval works</h2>
+<ol>
+<li><strong>Expand</strong>: send the original query to an LLM with a prompt asking for N diverse paraphrases ("Generate 4 different phrasings of this question").</li>
+<li><strong>Retrieve</strong>: run a standard retrieval (dense, BM25, or hybrid) for each paraphrase independently. Get top-k results for each.</li>
+<li><strong>Merge and deduplicate</strong>: combine all result sets. If the same document appears in multiple result lists, keep it once (Reciprocal Rank Fusion handles ranking).</li>
+<li><strong>Rerank optionally</strong>: apply a cross-encoder reranker on the merged set to get the final top-N before passing to the LLM.</li>
+</ol>
+<p>The key insight: documents that consistently appear across multiple differently-worded retrievals are very likely to be genuinely relevant — multi-query acts as a confidence boost.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Implementation from scratch</h2>
+<pre><code class="language-python">import anthropic
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+client = anthropic.Anthropic()
+model = SentenceTransformer("BAAI/bge-large-en-v1.5")
+
+def generate_query_variants(query: str, n: int = 4) -> list[str]:
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=300,
+        messages=[{"role": "user", "content": f'''Generate {n} different phrasings of the following question.
+Each phrasing should approach the topic from a different angle.
+Return ONLY the {n} questions, one per line, no numbering or explanation.
+
+Original question: {query}'''}]
+    )
+    variants = [q.strip() for q in response.content[0].text.strip().split('\n') if q.strip()]
+    return [query] + variants[:n]   # include original + n variants
+
+def multi_query_retrieve(query: str, corpus: list[dict], k: int = 5) -> list[dict]:
+    # Generate query variants
+    variants = generate_query_variants(query, n=4)
+    print(f"Query variants: {variants}")
+
+    # Embed corpus once (offline in practice)
+    texts = [d["text"] for d in corpus]
+    prefix = "Represent this sentence for searching relevant passages: "
+    corpus_embs = model.encode(texts, normalize_embeddings=True)
+
+    # Retrieve for each variant, track doc appearances
+    doc_scores: dict[str, list[float]] = {}
+    for variant in variants:
+        q_emb = model.encode(prefix + variant, normalize_embeddings=True)
+        scores = corpus_embs @ q_emb
+        top_k_idx = np.argsort(scores)[::-1][:k]
+        for rank, idx in enumerate(top_k_idx):
+            doc_id = corpus[idx]["id"]
+            doc_scores.setdefault(doc_id, []).append(1 / (60 + rank + 1))  # RRF
+
+    # Merge by RRF score
+    merged = sorted(doc_scores.items(), key=lambda x: sum(x[1]), reverse=True)
+    id_to_doc = {d["id"]: d for d in corpus}
+    return [id_to_doc[doc_id] for doc_id, _ in merged[:k]]
+
+# Test
+corpus = [
+    {"id": "1", "text": "To cancel your subscription, go to Account Settings > Billing > Cancel Plan."},
+    {"id": "2", "text": "Terminate your account by visiting the subscription management portal."},
+    {"id": "3", "text": "Free shipping applies to orders over fifty dollars."},
+    {"id": "4", "text": "Your subscription renews automatically on the billing date unless cancelled."},
+]
+results = multi_query_retrieve("How do I stop my subscription?", corpus)
+for r in results[:3]:
+    print(r["text"][:60])
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>LangChain MultiQueryRetriever</h2>
+<pre><code class="language-python">from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain_anthropic import ChatAnthropic
+from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain.schema import Document
+import logging
+
+# Set up logging to see the generated queries
+logging.basicConfig()
+logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
+
+# Build the base vector store
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+docs = [
+    Document(page_content="To cancel your subscription, go to Account Settings."),
+    Document(page_content="Terminate your account via the subscription portal."),
+    Document(page_content="Your plan auto-renews unless you cancel beforehand."),
+    Document(page_content="Free shipping on all orders above $50."),
+]
+vectorstore = Chroma.from_documents(docs, embeddings)
+base_retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+
+# Wrap with MultiQueryRetriever — uses LLM to generate variants
+llm = ChatAnthropic(model="claude-3-5-haiku-20241022")
+multi_retriever = MultiQueryRetriever.from_llm(
+    retriever=base_retriever,
+    llm=llm,
+    include_original=True   # always include original query
+)
+
+# Retrieve — generates ~3 variants automatically, merges results
+results = multi_retriever.invoke("How do I stop paying for the service?")
+for doc in results:
+    print(doc.page_content)
+# Logs show the generated queries; results include docs from all variants
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Query diversity strategies</h2>
+<p>The quality of multi-query retrieval depends on generating <em>diverse</em> variants. Default LLM paraphrasing works, but targeted strategies work better:</p>
+<pre><code class="language-python">DIVERSITY_PROMPT = '''Generate 4 alternative search queries for the original question below.
+Use these strategies:
+1. Rephrase with synonyms (e.g. "cancel" -> "terminate", "subscription" -> "plan")
+2. Ask from a different perspective (e.g. "how to..." -> "what are the steps to...")
+3. Use more technical or formal language
+4. Use simpler, everyday language
+
+Original: {query}
+
+Return only the 4 alternative queries, one per line.'''
+</code></pre>
+<p>You can also generate queries that target specific document types:</p>
+<pre><code class="language-python">TARGETED_PROMPT = '''Given the question, generate:
+1. A version for finding step-by-step instructions
+2. A version for finding policy documents
+3. A version for finding FAQ answers
+4. A version with technical terminology
+
+Original: {query}
+'''
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Cost vs recall tradeoff</h2>
+<table>
+<thead><tr><th>Approach</th><th>Recall</th><th>LLM calls</th><th>Latency</th></tr></thead>
+<tbody>
+<tr><td>Single query (baseline)</td><td>~70%</td><td>0</td><td>Fastest</td></tr>
+<tr><td>2 queries (original + 1)</td><td>~82%</td><td>1</td><td>+200ms</td></tr>
+<tr><td>5 queries (original + 4)</td><td>~91%</td><td>1</td><td>+300ms</td></tr>
+<tr><td>10 queries</td><td>~95%</td><td>1</td><td>+500ms</td></tr>
+</tbody>
+</table>
+<p>Note that all query variants can be generated in a <em>single</em> LLM call. The extra latency comes from running the retriever N times, not N LLM calls. Use <code>asyncio.gather</code> to parallelise retrieval across variants:</p>
+<pre><code class="language-python">import asyncio
+
+async def retrieve_variant(variant: str) -> list:
+    # Your async retrieval function
+    return await async_vector_search(variant, k=10)
+
+async def multi_query_async(variants: list[str]) -> list:
+    results = await asyncio.gather(*[retrieve_variant(v) for v in variants])
+    # Merge results with RRF
+    return merge_with_rrf(results)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Generated queries can be off-target.</strong> LLMs occasionally produce variants that drift from the original intent. Use a lower temperature (0.0–0.3) for query generation and include the original query in the result set unconditionally.</p>
+<p><strong>Deduplication is essential.</strong> Multiple variants often retrieve the same documents. Without deduplication, you'll pass the same chunk to the LLM multiple times, wasting context tokens. Use document IDs or content hashing to deduplicate.</p>
+<p><strong>Combining with HyDE is powerful.</strong> Multi-query generates diverse question phrasings; HyDE generates document-style hypothetical answers. Combining both (generate 3 HyDE documents + 3 query variants = 6 retrieval passes) can push recall above 95% on most benchmarks — at the cost of 7 LLM calls per query.</p>
+<p><strong>Don't use multi-query for simple keyword lookups.</strong> If the user types an exact product code or error message, generating paraphrases introduces noise. Apply multi-query selectively for natural-language questions, not for exact-match lookups.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/retrieval.html" style="color:var(--accent)">Retrieval</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

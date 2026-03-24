@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Context Compression | GenAI Mindmap</title>
+  <meta name="description" content="Techniques to reduce the amount of retrieved context passed to the LLM by extracting only relevant sentences or compressing passages, improving quality and reducing cost." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Context Compression" />
+  <meta property="og:description" content="Techniques to reduce the amount of retrieved context passed to the LLM by extracting only relevant sentences or compressing passages, improving quality and reducing cost." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/context-compression.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/context-compression.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Context Compression | GenAI Mindmap",
+  "description": "Techniques to reduce the amount of retrieved context passed to the LLM by extracting only relevant sentences or compressing passages, improving quality and reducing cost.",
+  "url": "https://genai4a11.github.io/concepts/context-compression.html",
+  "dateModified": "2026-03-24T16:58:29.449411",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Context Compression | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/context-compression.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0891b2;
+      --accent-dark: #0e7490;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0891b2 0%,#0e7490 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/post-retrieval.html" class="nav-back">← Post-Retrieval</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Post-Retrieval</span>
+    <h1><em>Context Compression</em></h1>
+    <p class="hero-sub">Techniques to reduce the amount of retrieved context passed to the LLM by extracting only relevant sentences or compressing passages, improving quality and reducing cost.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Fewer tokens</div><div class="stat-label">To LLM</div></div>
+      <div><div class="stat-num">Less noise</div><div class="stat-label">In context</div></div>
+      <div><div class="stat-num">LLM-based or</div><div class="stat-label">Extractive</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The noise problem in RAG context</a></li>
+        <li><a href="#s2" data-num="02">Extractive compression</a></li>
+        <li><a href="#s3" data-num="03">LLM-based compression</a></li>
+        <li><a href="#s4" data-num="04">LangChain ContextualCompressionRetriever</a></li>
+        <li><a href="#s5" data-num="05">When to compress vs rerank</a></li>
+        <li><a href="#s6" data-num="06">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The noise problem in RAG context</h2>
+<p>You retrieve the top-5 chunks. Each chunk is 512 tokens. But the user's question is about a single sentence in chunk 3 — the other 4 chunks and 90% of chunk 3 are noise. You're sending 2560 tokens to the LLM when 50 tokens would suffice.</p>
+<p>Two problems follow: <strong>cost</strong> (you pay for all 2560 tokens) and <strong>quality</strong> ("lost in the middle" — LLMs are less accurate when the relevant content is buried deep in a long context). Context compression solves both by stripping out the irrelevant parts before they reach the LLM.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Extractive compression</h2>
+<p>Extract only the sentences or fragments from the retrieved chunks that are relevant to the query, discarding the rest:</p>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+def extract_relevant_sentences(query: str, passage: str) -> str:
+    '''Extract only the sentences from passage that answer the query.'''
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=512,
+        messages=[{"role": "user", "content": f'''
+Extract only the sentences from the passage below that are directly relevant
+to answering the question. If no sentences are relevant, return "IRRELEVANT".
+Return only the extracted sentences, nothing else.
+
+Question: {query}
+
+Passage:
+{passage}
+'''}]
+    )
+    result = response.content[0].text.strip()
+    return "" if result == "IRRELEVANT" else result
+
+# Usage
+passage = '''
+Our company was founded in 2015 by Jane Smith.
+Returns are accepted within 30 days of purchase with the original receipt.
+We have offices in New York, London, and Singapore.
+Refunds are processed to the original payment method within 5 business days.
+Our CEO has over 20 years of retail experience.
+'''
+compressed = extract_relevant_sentences("How long does a refund take?", passage)
+print(compressed)
+# "Refunds are processed to the original payment method within 5 business days."
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>LLM-based compression</h2>
+<p>Instead of extracting sentences, ask the LLM to summarise the relevant portions:</p>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+def compress_to_answer(query: str, passages: list[str]) -> str:
+    '''Compress multiple retrieved passages into a focused context.'''
+    combined = "\n\n---\n\n".join(passages)
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=300,
+        messages=[{"role": "user", "content": f'''
+Given the following retrieved passages and a question, extract and condense
+only the information relevant to answering the question.
+Be concise. If a passage has no relevant information, skip it.
+
+Question: {query}
+
+Retrieved passages:
+{combined}
+
+Condensed relevant information:
+'''}]
+    )
+    return response.content[0].text.strip()
+
+query = "What is the refund policy?"
+passages = [
+    "Our company was founded in 2015. We have 500 employees globally.",
+    "Returns are accepted within 30 days. Refunds take 5 business days.",
+    "We ship worldwide. Free shipping on orders over $50.",
+]
+compressed = compress_to_answer(query, passages)
+print(compressed)
+# "Returns are accepted within 30 days of purchase. Refunds are processed in 5 business days."
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>LangChain ContextualCompressionRetriever</h2>
+<pre><code class="language-python">from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import LLMChainExtractor
+from langchain_anthropic import ChatAnthropic
+from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
+from langchain.schema import Document
+
+# Base retriever
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+docs = [
+    Document(page_content="Founded 2015, 500 employees globally."),
+    Document(page_content="Returns within 30 days. Refunds in 5 business days."),
+    Document(page_content="Ships worldwide. Free shipping over $50."),
+]
+vectorstore = Chroma.from_documents(docs, embeddings)
+base_retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+
+# Compression layer
+llm = ChatAnthropic(model="claude-3-5-haiku-20241022")
+compressor = LLMChainExtractor.from_llm(llm)
+
+# Combine: retrieves 5 docs, compresses each, returns only relevant snippets
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor,
+    base_retriever=base_retriever
+)
+
+compressed_docs = compression_retriever.invoke("What is the refund timeline?")
+for doc in compressed_docs:
+    print(doc.page_content)
+# Only: "Refunds in 5 business days."
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>When to compress vs rerank</h2>
+<table>
+<thead><tr><th>Situation</th><th>Recommended approach</th></tr></thead>
+<tbody>
+<tr><td>Retrieved chunks are long (512+ tokens) but mostly irrelevant</td><td>Extractive compression or LLM extraction</td></tr>
+<tr><td>Multiple chunks retrieved, only 1-2 are truly relevant</td><td>Reranking (cheaper than LLM compression)</td></tr>
+<tr><td>High QPS, latency-sensitive</td><td>Smaller chunk size at indexing time (avoids runtime cost)</td></tr>
+<tr><td>Best quality, latency not critical</td><td>Rerank first, then compress the top results</td></tr>
+<tr><td>Cost is primary concern</td><td>Shorter chunks at indexing + BM25 pre-filter</td></tr>
+</tbody>
+</table>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Gotchas</h2>
+<p><strong>Compression adds latency and cost.</strong> LLM-based compression requires an LLM call per retrieved chunk. For 5 retrieved chunks, that's 5 extra API calls before the main generation. Use a cheap, fast model (Haiku) for compression, not your main generation model.</p>
+<p><strong>Compression can drop critical context.</strong> Extractive compression might remove sentences that seem irrelevant but are needed for context. Test on edge cases where the answer requires background context that's not directly about the query.</p>
+<p><strong>Chunking at indexing time is the upstream fix.</strong> If your chunks are noisy, the root cause is often that chunk size is too large. Smaller, more focused chunks at indexing time reduce the need for runtime compression — and reduce latency and cost at query time.</p>
+<p><strong>Filter before compress.</strong> Always rerank or filter to top-3 before compressing. Compressing 20 chunks is expensive; compressing 3 well-chosen chunks is reasonable.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/post-retrieval.html" style="color:var(--accent)">Post-Retrieval</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
