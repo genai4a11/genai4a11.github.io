@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rate Limiting | GenAI Mindmap</title>
+  <meta name="description" content="Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Rate Limiting" />
+  <meta property="og:description" content="Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/rate-limiting.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/rate-limiting.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Rate Limiting | GenAI Mindmap",
+  "description": "Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement \u2014 protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users.",
+  "url": "https://genai4a11.github.io/concepts/rate-limiting.html",
+  "dateModified": "2026-03-24T23:25:58.167347",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Rate Limiting | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/rate-limiting.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0f766e;
+      --accent-dark: #0d9488;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/traffic-cost.html" class="nav-back">← Traffic & Cost</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Traffic & Cost</span>
+    <h1><em>Rate Limiting</em></h1>
+    <p class="hero-sub">Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Token bucket</div><div class="stat-label">Algorithm</div></div>
+      <div><div class="stat-num">Per-tenant</div><div class="stat-label">Enforcement</div></div>
+      <div><div class="stat-num">Redis</div><div class="stat-label">State store</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why LLM apps need rate limiting</a></li>
+        <li><a href="#s2" data-num="02">Token bucket algorithm</a></li>
+        <li><a href="#s3" data-num="03">Sliding window counter</a></li>
+        <li><a href="#s4" data-num="04">Redis-backed implementation</a></li>
+        <li><a href="#s5" data-num="05">FastAPI middleware</a></li>
+        <li><a href="#s6" data-num="06">Tiered limits by plan</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why LLM apps need rate limiting</h2>
+<p>LLM APIs enforce per-account rate limits (tokens-per-minute and requests-per-minute). Without your own rate limiting, a single heavy user can exhaust your entire quota, causing 429 errors for all other users. At scale, rate limiting also controls costs — a user who submits 1000 requests in a loop could burn through your monthly budget in minutes.</p>
+<p>Three levels of rate limiting for LLM applications:</p>
+<p><strong>Per-user rate limiting</strong>: each user gets their own quota (e.g., 100 requests/hour). Prevents individual abuse. Implemented in your API layer.</p>
+<p><strong>Per-tenant rate limiting</strong>: for B2B SaaS, each customer organisation gets a quota. Usually tied to their subscription tier (starter: 1000 req/day, pro: 10,000, enterprise: unlimited). More coarse-grained than per-user.</p>
+<p><strong>Global budget guards</strong>: a hard ceiling on total spend across all users. Implemented as a daily/monthly token counter — when the budget is hit, all requests are blocked until the next period. Prevents runaway costs from bugs or attacks.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Token bucket algorithm</h2>
+<pre><code class="language-python">import time
+import threading
+
+class TokenBucket:
+    def __init__(self, capacity: int, refill_rate: float):
+        # capacity: max tokens in the bucket (burst allowance)
+        # refill_rate: tokens added per second
+        self.capacity = capacity
+        self.refill_rate = refill_rate
+        self.tokens = capacity         # start full
+        self.last_refill = time.time()
+        self._lock = threading.Lock()
+
+    def _refill(self):
+        now = time.time()
+        elapsed = now - self.last_refill
+        added = elapsed * self.refill_rate
+        self.tokens = min(self.capacity, self.tokens + added)
+        self.last_refill = now
+
+    def consume(self, tokens: int = 1) -> bool:
+        with self._lock:
+            self._refill()
+            if self.tokens >= tokens:
+                self.tokens -= tokens
+                return True   # allowed
+            return False      # rate limited
+
+# Example: 10 requests/second sustained, burst up to 50
+bucket = TokenBucket(capacity=50, refill_rate=10)
+
+for i in range(60):
+    allowed = bucket.consume(1)
+    print(f"Request {i}: {'OK' if allowed else 'RATE LIMITED'}")
+    time.sleep(0.05)   # 20 req/s — twice the refill rate; burst consumed after 2.5s
+</code></pre>
+<p>Token bucket naturally handles bursts — a user who was idle accumulates tokens and can then burst briefly above the sustained rate. Good for interactive applications where users may send a few quick follow-up messages.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Sliding window counter</h2>
+<pre><code class="language-python">from collections import deque
+import time
+
+class SlidingWindowCounter:
+    def __init__(self, limit: int, window_seconds: float):
+        # limit: max requests in any window_seconds interval
+        self.limit = limit
+        self.window = window_seconds
+        self.requests = deque()    # timestamps of recent requests
+        self._lock = __import__('threading').Lock()
+
+    def is_allowed(self) -> bool:
+        with self._lock:
+            now = time.time()
+            cutoff = now - self.window
+
+            # Remove expired timestamps
+            while self.requests and self.requests[0] < cutoff:
+                self.requests.popleft()
+
+            if len(self.requests) < self.limit:
+                self.requests.append(now)
+                return True
+            return False
+
+    @property
+    def retry_after(self) -> float:
+        # How long until the oldest request expires
+        if not self.requests:
+            return 0.0
+        return max(0.0, self.requests[0] + self.window - time.time())
+
+# Example: 100 requests per minute
+sw = SlidingWindowCounter(limit=100, window_seconds=60)
+
+# Simulate usage
+for i in range(105):
+    if sw.is_allowed():
+        print(f"Request {i}: OK")
+    else:
+        print(f"Request {i}: RATE LIMITED (retry after {sw.retry_after:.1f}s)")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Redis-backed implementation</h2>
+<pre><code class="language-python">import redis
+import time
+
+r = redis.Redis(host="localhost", port=6379, db=0)
+
+def check_rate_limit(user_id: str, limit: int, window: int) -> dict:
+    # Sliding window using Redis sorted sets
+    # Key: rate_limit:{user_id}
+    # Members: request timestamps (as floats)
+    key = f"rate_limit:{user_id}"
+    now = time.time()
+    window_start = now - window
+
+    pipe = r.pipeline()
+    # Remove expired requests
+    pipe.zremrangebyscore(key, 0, window_start)
+    # Count current requests in window
+    pipe.zcard(key)
+    # Add this request
+    pipe.zadd(key, {str(now): now})
+    # Set expiry on the key
+    pipe.expire(key, window + 1)
+    results = pipe.execute()
+
+    current_count = results[1]
+    allowed = current_count < limit
+
+    if not allowed:
+        # Rollback the zadd — remove the request we just added
+        r.zrem(key, str(now))
+
+    oldest = r.zrange(key, 0, 0, withscores=True)
+    retry_after = (oldest[0][1] + window - now) if oldest else 0
+
+    return {
+        "allowed": allowed,
+        "count": current_count,
+        "limit": limit,
+        "retry_after": retry_after if not allowed else 0,
+    }
+
+# Usage
+result = check_rate_limit("user_123", limit=100, window=3600)
+if not result["allowed"]:
+    print(f"Rate limited. Retry in {result['retry_after']:.0f}s")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>FastAPI middleware</h2>
+<pre><code class="language-python">from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import JSONResponse
+import redis
+import time
+
+app = FastAPI()
+r = redis.Redis(host="localhost", port=6379)
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    # Extract user identifier (from JWT, API key, or IP)
+    user_id = request.headers.get("X-User-ID") or request.client.host
+
+    # Check rate limit
+    result = check_rate_limit(user_id, limit=60, window=60)  # 60 req/min
+
+    if not result["allowed"]:
+        return JSONResponse(
+            status_code=429,
+            content={"error": "Rate limit exceeded",
+                     "retry_after": result["retry_after"]},
+            headers={
+                "Retry-After": str(int(result["retry_after"])),
+                "X-RateLimit-Limit": str(result["limit"]),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(int(time.time() + result["retry_after"])),
+            }
+        )
+
+    # Add rate limit headers to successful responses
+    response = await call_next(request)
+    response.headers["X-RateLimit-Limit"] = str(result["limit"])
+    response.headers["X-RateLimit-Remaining"] = str(result["limit"] - result["count"] - 1)
+    return response
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Tiered limits by plan</h2>
+<pre><code class="language-python">from enum import Enum
+from dataclasses import dataclass
+
+class Plan(Enum):
+    FREE    = "free"
+    STARTER = "starter"
+    PRO     = "pro"
+    ENTERPRISE = "enterprise"
+
+@dataclass
+class RateLimitTier:
+    requests_per_minute: int
+    requests_per_day: int
+    tokens_per_minute: int    # maps to upstream LLM API limits
+    max_context_tokens: int   # cap on prompt size
+
+TIERS = {
+    Plan.FREE:       RateLimitTier(10,    100,     10_000,   4_096),
+    Plan.STARTER:    RateLimitTier(60,   1_000,   100_000,  32_768),
+    Plan.PRO:        RateLimitTier(300,  10_000,  500_000, 100_000),
+    Plan.ENTERPRISE: RateLimitTier(3000, 100_000, 2_000_000, 200_000),
+}
+
+def enforce_limits(user_id: str, plan: Plan, token_count: int) -> bool:
+    tier = TIERS[plan]
+
+    # Check token count against context limit
+    if token_count > tier.max_context_tokens:
+        raise ValueError(f"Prompt too long: {token_count} > {tier.max_context_tokens}")
+
+    # Check RPM
+    rpm_result = check_rate_limit(f"{user_id}:rpm", tier.requests_per_minute, 60)
+    if not rpm_result["allowed"]: return False
+
+    # Check RPD
+    rpd_result = check_rate_limit(f"{user_id}:rpd", tier.requests_per_day, 86400)
+    if not rpd_result["allowed"]: return False
+
+    # Check TPM (approximate — track by consuming tokens)
+    tpm_result = check_rate_limit(f"{user_id}:tpm:{int(time.time()//60)}",
+                                   tier.tokens_per_minute, 60)
+    return tpm_result["allowed"]
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Rate limiting by IP is easy to bypass and unfair.</strong> Behind a corporate NAT or shared WiFi, hundreds of users share one IP. Limiting by IP either over-limits legitimate users or provides too easy a bypass (just switch networks). Always rate limit by authenticated user ID or API key once users are logged in.</p>
+<p><strong>Sliding window is more accurate than fixed window but uses more memory.</strong> Fixed window counters (just increment a counter each minute, reset on the minute) allow double the limit at window boundaries (burst at the end of minute 1 + start of minute 2). Sliding window is more accurate but stores timestamps for every request. For most applications, sliding window with Redis TTL-based cleanup is the right choice.</p>
+<p><strong>Count tokens, not just requests, for LLM rate limiting.</strong> A single request with a 100K-token prompt uses 1000× the upstream API quota of a 100-token request. Counting requests equally is unfair and ineffective at protecting your budget. Track token usage per user alongside request counts, especially if you expose long-context capabilities.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/traffic-cost.html" style="color:var(--accent)">Traffic & Cost</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

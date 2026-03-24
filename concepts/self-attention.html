@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Self-Attention | GenAI Mindmap</title>
+  <meta name="description" content="The Q·Kᵀ/√d mechanism that lets every token attend to every other token — the single operation that defines transformers. Understand this and the rest of the architecture falls into place." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Self-Attention" />
+  <meta property="og:description" content="The Q·Kᵀ/√d mechanism that lets every token attend to every other token — the single operation that defines transformers. Understand this and the rest of the architecture falls into place." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/self-attention.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/self-attention.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Self-Attention | GenAI Mindmap",
+  "description": "The Q\u00b7K\u1d40/\u221ad mechanism that lets every token attend to every other token \u2014 the single operation that defines transformers. Understand this and the rest of the architecture falls into place.",
+  "url": "https://genai4a11.github.io/concepts/self-attention.html",
+  "dateModified": "2026-03-24T23:25:58.647368",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Self-Attention | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/self-attention.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/attention.html" class="nav-back">← Attention Mechanisms</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Attention Mechanisms</span>
+    <h1><em>Self-Attention</em></h1>
+    <p class="hero-sub">The Q·Kᵀ/√d mechanism that lets every token attend to every other token — the single operation that defines transformers. Understand this and the rest of the architecture falls into place.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">O(n²)</div><div class="stat-label">Time complexity</div></div>
+      <div><div class="stat-num">√d</div><div class="stat-label">Scaling factor</div></div>
+      <div><div class="stat-num">Softmax</div><div class="stat-label">Normalisation</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The intuition</a></li>
+        <li><a href="#s2" data-num="02">Queries, keys, and values</a></li>
+        <li><a href="#s3" data-num="03">Scaled dot-product attention</a></li>
+        <li><a href="#s4" data-num="04">NumPy implementation</a></li>
+        <li><a href="#s5" data-num="05">Causal masking</a></li>
+        <li><a href="#s6" data-num="06">Computational cost</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The intuition</h2>
+<p>Self-attention is a mechanism for letting each token in a sequence gather information from all other tokens. Think of it as a soft lookup: each token asks a <em>query</em> ("what information do I need?"), every token broadcasts a <em>key</em> ("here's what I contain"), and when a query matches a key, the token retrieves that token's <em>value</em> ("here's my content").</p>
+<p>In a sentence like "The animal didn't cross the street because it was too tired", the word "it" needs to figure out whether it refers to "animal" or "street". Self-attention allows "it" to attend strongly to "animal" (high query-key compatibility) and weakly to "street", incorporating the animal's representation into the encoding of "it".</p>
+<p>This happens simultaneously for every token, in parallel. Unlike RNNs which process tokens left-to-right and struggle with long-range dependencies, self-attention has a direct path between any two tokens regardless of distance — one of the key reasons transformers outperform RNNs.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Queries, keys, and values</h2>
+<p>Given a sequence of token embeddings X ∈ ℝ<sup>n×d</sup> (n tokens, d dimensions), self-attention learns three weight matrices: W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> ∈ ℝ<sup>d×d_k</sup>.</p>
+<p>These project X into three spaces:</p>
+<pre><code class="language-python">import numpy as np
+
+d_model = 512   # embedding dimension
+d_k = 64        # key/query dimension (often d_model / num_heads)
+n = 10          # sequence length
+
+# Random input embeddings (in practice, from an embedding table + pos encoding)
+X = np.random.randn(n, d_model)
+
+# Learned projection matrices (initialised randomly, trained by backprop)
+W_Q = np.random.randn(d_model, d_k) * 0.02
+W_K = np.random.randn(d_model, d_k) * 0.02
+W_V = np.random.randn(d_model, d_k) * 0.02
+
+Q = X @ W_Q   # (n, d_k)  — what each token is looking for
+K = X @ W_K   # (n, d_k)  — what each token contains / advertises
+V = X @ W_V   # (n, d_k)  — what each token will contribute if attended to
+</code></pre>
+<p>Intuitively: Q is "what I'm looking for", K is "what I have to offer", V is "what I'll give you if you attend to me". The attention score between token i and token j is Q[i] · K[j] — how well token i's query matches token j's key.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Scaled dot-product attention</h2>
+<p>The full formula: <strong>Attention(Q, K, V) = softmax(QK<sup>T</sup> / √d_k) · V</strong></p>
+<p>Why divide by √d_k? Without scaling, the dot products grow large as d_k increases, pushing softmax into saturation regions where gradients vanish. Dividing by √d_k keeps variance ≈ 1.</p>
+<pre><code class="language-python">def scaled_dot_product_attention(Q, K, V, mask=None):
+    d_k = Q.shape[-1]
+
+    # Step 1: compute raw attention scores — (n, n) matrix
+    scores = Q @ K.T / np.sqrt(d_k)
+
+    # Step 2: apply mask (for causal or padding masking)
+    if mask is not None:
+        scores = scores + mask   # mask contains -inf where attention is blocked
+
+    # Step 3: softmax — convert scores to probabilities
+    # subtract max for numerical stability
+    scores -= scores.max(axis=-1, keepdims=True)
+    attn_weights = np.exp(scores)
+    attn_weights /= attn_weights.sum(axis=-1, keepdims=True)
+
+    # Step 4: weighted sum of values
+    output = attn_weights @ V   # (n, d_k)
+    return output, attn_weights
+
+output, weights = scaled_dot_product_attention(Q, K, V)
+print(f"Output shape: {output.shape}")   # (10, 64)
+print(f"Attention weights sum: {weights.sum(axis=-1)}")  # all 1.0
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>NumPy implementation</h2>
+<pre><code class="language-python">import numpy as np
+
+class SelfAttention:
+    def __init__(self, d_model: int, d_k: int):
+        self.d_k = d_k
+        # Xavier initialisation
+        scale = np.sqrt(2.0 / (d_model + d_k))
+        self.W_Q = np.random.randn(d_model, d_k) * scale
+        self.W_K = np.random.randn(d_model, d_k) * scale
+        self.W_V = np.random.randn(d_model, d_k) * scale
+        self.W_O = np.random.randn(d_k, d_model) * scale  # output projection
+
+    def forward(self, X: np.ndarray, mask=None):
+        # X: (batch, seq_len, d_model)
+        Q = X @ self.W_Q   # (batch, seq, d_k)
+        K = X @ self.W_K
+        V = X @ self.W_V
+
+        # Attention scores: (batch, seq, seq)
+        scores = (Q @ K.transpose(0, 2, 1)) / np.sqrt(self.d_k)
+
+        if mask is not None:
+            scores += mask
+
+        # Softmax
+        scores -= scores.max(axis=-1, keepdims=True)
+        weights = np.exp(scores)
+        weights /= weights.sum(axis=-1, keepdims=True)
+
+        # Weighted values + output projection
+        context = weights @ V   # (batch, seq, d_k)
+        output = context @ self.W_O  # (batch, seq, d_model)
+        return output, weights
+
+# Test
+batch, seq, d_model, d_k = 2, 8, 64, 32
+X = np.random.randn(batch, seq, d_model)
+attn = SelfAttention(d_model, d_k)
+out, w = attn.forward(X)
+print(f"Output: {out.shape}")  # (2, 8, 64)
+print(f"Weights row sum: {w[0, 0].sum():.4f}")  # 1.0
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Causal masking</h2>
+<p>In decoder-only models (GPT, Llama), token i should only attend to tokens 0..i — not future tokens. This is enforced with a <em>causal mask</em>: a triangular matrix of -∞ values in the upper triangle.</p>
+<pre><code class="language-python">def causal_mask(seq_len: int) -> np.ndarray:
+    # Upper triangle (excluding diagonal) = -inf, lower triangle = 0
+    mask = np.triu(np.full((seq_len, seq_len), -np.inf), k=1)
+    return mask  # shape: (seq_len, seq_len)
+
+# Visualise for seq_len=4
+mask = causal_mask(4)
+print(mask)
+# [[  0. -inf -inf -inf]
+#  [  0.   0. -inf -inf]
+#  [  0.   0.   0. -inf]
+#  [  0.   0.   0.   0.]]
+
+# After adding to scores and softmax:
+# Token 0 attends only to itself
+# Token 1 attends to tokens 0 and 1
+# Token 3 attends to all 4 tokens
+
+import torch, torch.nn.functional as F
+
+def causal_attention(Q, K, V):
+    seq = Q.shape[-2]
+    mask = torch.triu(torch.full((seq, seq), float('-inf')), diagonal=1)
+    scores = (Q @ K.transpose(-2, -1)) / Q.shape[-1] ** 0.5
+    return F.softmax(scores + mask, dim=-1) @ V
+
+# PyTorch also has built-in causal attention:
+# F.scaled_dot_product_attention(Q, K, V, is_causal=True)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Computational cost</h2>
+<p>Self-attention has <strong>O(n²·d)</strong> time and <strong>O(n²)</strong> memory complexity — the attention matrix is n×n. For n=512 this is fine; for n=32768 (32K context) it's 32768² = 1 billion entries per layer per head.</p>
+<p>This quadratic scaling is why long-context models are expensive, and why alternatives like Flash Attention (IO-aware tiling), linear attention, and SSMs (Mamba) exist.</p>
+<pre><code class="language-python">import torch
+
+# PyTorch's optimised attention — use this in practice
+Q = torch.randn(1, 8, 512, 64)   # (batch, heads, seq, d_k)
+K = torch.randn(1, 8, 512, 64)
+V = torch.randn(1, 8, 512, 64)
+
+# Flash Attention under the hood when available (requires PyTorch 2.0+)
+out = torch.nn.functional.scaled_dot_product_attention(
+    Q, K, V,
+    attn_mask=None,
+    dropout_p=0.0,
+    is_causal=True,     # enables causal masking without materialising the mask
+)
+print(out.shape)  # (1, 8, 512, 64)
+
+# Memory comparison: standard vs Flash Attention
+# Standard: stores full n×n attention matrix in HBM — O(n²) memory
+# Flash Attention: tiles computation, never stores full matrix — O(n) memory
+# For n=32768: standard = 4GB per head; Flash Attention = ~32MB per head
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Softmax in float16 overflows.</strong> QK<sup>T</sup> values can be large; in float16 (max ~65504), exp(score) overflows to NaN. Always subtract the max before softmax (numerically stable softmax) and consider running attention in float32 even when the rest of the model is float16. PyTorch's <code>scaled_dot_product_attention</code> handles this correctly.</p>
+<p><strong>d_k must be divisible by num_heads.</strong> In multi-head attention, d_k is typically d_model / num_heads. If d_model=512 and num_heads=6, d_k=85.3 — not an integer. Choose num_heads that evenly divides d_model (8 or 16 for d_model=512).</p>
+<p><strong>Attention is not the only operation.</strong> The full transformer block is: LayerNorm → Attention → residual add → LayerNorm → FFN → residual add. The FFN (2 linear layers with activation) typically uses 4× the dimension of attention and accounts for ~67% of parameters. Don't optimise attention in isolation.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/attention.html" style="color:var(--accent)">Attention Mechanisms</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

@@ -219,6 +219,20 @@ const CONCEPT_PAGES={
   guardrails:'concepts/guardrails.html',
   const_ai:'concepts/constitutional-ai.html',
   llamaindex:'concepts/llamaindex.html',
+  // batch 16a — transformers(5)
+  self_attention:'concepts/self-attention.html',
+  multihead_attn:'concepts/multi-head-attention.html',
+  rope:'concepts/rope.html',
+  encoder_only:'concepts/encoder-only.html',
+  decoder_only:'concepts/decoder-only.html',
+  // batch 16b — finetuning(4) + prod_eng(3)
+  qlora4bit:'concepts/qlora.html',
+  trl:'concepts/trl.html',
+  unsloth:'concepts/unsloth.html',
+  orpo:'concepts/orpo.html',
+  streaming_arch:'concepts/streaming-arch.html',
+  retry_backoff:'concepts/retry-backoff.html',
+  rate_limiting:'concepts/rate-limiting.html',
 };
 let N=JSON.parse(JSON.stringify(DN)),X=JSON.parse(JSON.stringify(DX)),e=false,s=null;
 function ifs(){const c=document.getElementById('starfield'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;const t=[];for(let i=0;i<100;i++)t.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,v:Math.random()*0.3+0.1});function a(){x.fillStyle='#030a1a';x.fillRect(0,0,c.width,c.height);x.fillStyle='#a78bfa';t.forEach(d=>{d.r+=d.v*0.01;if(d.r>2.5)d.r=0;x.beginPath();x.arc(d.x,d.y,d.r,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight})}

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Streaming Architecture | GenAI Mindmap</title>
+  <meta name="description" content="Delivering LLM tokens to users as they're generated via SSE or WebSockets — the pattern that turns a 10-second blank wait into a fast-feeling experience. Covers FastAPI, async generators, and client handling." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Streaming Architecture" />
+  <meta property="og:description" content="Delivering LLM tokens to users as they're generated via SSE or WebSockets — the pattern that turns a 10-second blank wait into a fast-feeling experience. Covers FastAPI, async generators, and client handling." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/streaming-arch.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/streaming-arch.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Streaming Architecture | GenAI Mindmap",
+  "description": "Delivering LLM tokens to users as they're generated via SSE or WebSockets \u2014 the pattern that turns a 10-second blank wait into a fast-feeling experience. Covers FastAPI, async generators, and client handling.",
+  "url": "https://genai4a11.github.io/concepts/streaming-arch.html",
+  "dateModified": "2026-03-24T23:25:58.814995",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Streaming Architecture | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/streaming-arch.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0f766e;
+      --accent-dark: #0d9488;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/execution-models.html" class="nav-back">← Execution Models</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Execution Models</span>
+    <h1><em>Streaming Architecture</em></h1>
+    <p class="hero-sub">Delivering LLM tokens to users as they're generated via SSE or WebSockets — the pattern that turns a 10-second blank wait into a fast-feeling experience. Covers FastAPI, async generators, and client handling.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">SSE / WS</div><div class="stat-label">Transport</div></div>
+      <div><div class="stat-num">First token</div><div class="stat-label"><1s perceived</div></div>
+      <div><div class="stat-num">Async</div><div class="stat-label">Required</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why streaming transforms UX</a></li>
+        <li><a href="#s2" data-num="02">SSE vs WebSockets</a></li>
+        <li><a href="#s3" data-num="03">FastAPI SSE endpoint</a></li>
+        <li><a href="#s4" data-num="04">Streaming from the Anthropic API</a></li>
+        <li><a href="#s5" data-num="05">Client-side JavaScript</a></li>
+        <li><a href="#s6" data-num="06">Streaming with tool use</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why streaming transforms UX</h2>
+<p>A standard LLM response takes 5–30 seconds for a long output. Showing nothing for 20 seconds, then dumping a wall of text, feels broken — users assume the app has stalled. Streaming sends tokens to the client as they're generated, so users see the first word in under a second.</p>
+<p>The psychological effect is significant. A response that takes 15 seconds to complete feels "fast" when you can see it being written in real time, because you have immediate feedback that something is happening. This is the same reason progress bars feel faster than blank waiting screens.</p>
+<p>Beyond UX, streaming enables two practical patterns: <strong>early stopping</strong> (user reads enough and interrupts before the full response completes), and <strong>progressive rendering</strong> (parse and display structured output like markdown incrementally, rather than waiting for the full JSON).</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>SSE vs WebSockets</h2>
+<p><strong>Server-Sent Events (SSE)</strong>: unidirectional, server → client. Uses regular HTTP. Auto-reconnects on disconnect. Supported natively in browsers via EventSource API. Perfect for streaming LLM responses — you only need server-to-client data flow. Simpler to implement, works through proxies and load balancers that support HTTP.</p>
+<p><strong>WebSockets</strong>: bidirectional. Separate protocol (WS/WSS). More complex setup. Use WebSockets when you need client-to-server messages mid-stream — e.g., user interrupts the generation, sends a follow-up while the model is still generating, or you need real-time bidirectional communication (like voice/audio streaming).</p>
+<p>For most LLM chat applications: use SSE. The OpenAI and Anthropic APIs both use SSE for their streaming endpoints. WebSockets add complexity without benefit unless you have genuine bidirectional requirements.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>FastAPI SSE endpoint</h2>
+<pre><code class="language-python">from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import anthropic
+import json
+
+app = FastAPI()
+client = anthropic.Anthropic()
+
+async def stream_claude(prompt: str):
+    # Open a streaming connection to Anthropic
+    with client.messages.stream(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    ) as stream:
+        for text_chunk in stream.text_stream:
+            # SSE format: each event is "data: {json}
+
+"
+            yield f"data: {json.dumps({'text': text_chunk})}
+
+"
+        # Signal completion
+        yield f"data: {json.dumps({'done': True})}
+
+"
+
+@app.get("/stream")
+async def stream_endpoint(prompt: str):
+    return StreamingResponse(
+        stream_claude(prompt),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # disable nginx buffering
+            "Connection": "keep-alive",
+        }
+    )
+
+# Test: curl -N "http://localhost:8000/stream?prompt=Hello"
+# Output: data: {"text": "Hello"}
+#         data: {"text": "!"}
+#         data: {"done": true}
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Streaming from the Anthropic API</h2>
+<pre><code class="language-python">import anthropic
+import asyncio
+
+client = anthropic.Anthropic()
+async_client = anthropic.AsyncAnthropic()
+
+# Synchronous streaming
+def stream_sync(prompt: str) -> str:
+    full_text = ""
+    with client.messages.stream(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)
+            full_text += text
+        # Access final message after stream completes
+        final_msg = stream.get_final_message()
+        print(f"
+Stop reason: {final_msg.stop_reason}")
+        print(f"Tokens: {final_msg.usage.input_tokens}+{final_msg.usage.output_tokens}")
+    return full_text
+
+# Async streaming (for FastAPI/async applications)
+async def stream_async(prompt: str):
+    async with async_client.messages.stream(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        async for text in stream.text_stream:
+            yield text   # yields tokens as they arrive
+
+# Use in FastAPI:
+async def stream_generator(prompt: str):
+    async for token in stream_async(prompt):
+        yield f"data: {token}
+
+"
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Client-side JavaScript</h2>
+<pre><code class="language-javascript">// EventSource — simplest SSE client
+const source = new EventSource(`/stream?prompt=Explain+transformers`);
+const output = document.getElementById('output');
+
+source.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.done) {
+        source.close();
+        return;
+    }
+    output.textContent += data.text;
+};
+source.onerror = () => source.close();
+
+// Fetch API with ReadableStream — more control, supports POST
+async function streamFetch(prompt) {
+    const response = await fetch('/stream', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({prompt}),
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, {stream: true});
+        // Parse SSE format
+        for (const line of chunk.split('
+')) {
+            if (line.startsWith('data: ')) {
+                const data = JSON.parse(line.slice(6));
+                if (data.done) return;
+                document.getElementById('output').textContent += data.text;
+            }
+        }
+    }
+}
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Streaming with tool use</h2>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+tools = [{"name": "calculator", "description": "Compute math",
+           "input_schema": {"type": "object",
+                            "properties": {"expression": {"type": "string"}},
+                            "required": ["expression"]}}]
+
+# Stream events have different types during tool use
+with client.messages.stream(
+    model="claude-haiku-4-5-20251001",
+    max_tokens=1024,
+    tools=tools,
+    messages=[{"role": "user", "content": "What is 2847 * 3921?"}],
+) as stream:
+    for event in stream:
+        event_type = type(event).__name__
+
+        if event_type == "RawContentBlockDeltaEvent":
+            delta = event.delta
+            if hasattr(delta, "text"):
+                # Regular text token
+                print(delta.text, end="", flush=True)
+            elif hasattr(delta, "partial_json"):
+                # Tool input being streamed as partial JSON
+                print(f"[tool_input+={delta.partial_json}]", end="", flush=True)
+
+        elif event_type == "RawContentBlockStartEvent":
+            if hasattr(event.content_block, "name"):
+                print(f"
+[calling tool: {event.content_block.name}]")
+
+    # Handle tool call after stream completes
+    final = stream.get_final_message()
+    for block in final.content:
+        if block.type == "tool_use":
+            result = eval(block.input["expression"])
+            print(f"
+Calculator result: {result}")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Nginx and proxies buffer SSE by default.</strong> Most reverse proxies buffer responses before forwarding — this breaks streaming, showing nothing until the buffer fills or the connection closes. Fix: add <code>X-Accel-Buffering: no</code> response header (Nginx) or configure <code>proxy_buffering off</code> in your Nginx config. AWS ALB and Cloudflare also require explicit configuration to pass through SSE without buffering.</p>
+<p><strong>EventSource only supports GET requests.</strong> The browser's native EventSource API doesn't support POST or custom headers. If you need to send a long prompt (too long for URL params) or authentication headers, use the Fetch API with ReadableStream instead of EventSource. Most production streaming implementations use fetch + ReadableStream for this reason.</p>
+<p><strong>Count tokens before streaming starts for accurate cost estimates.</strong> Once you start streaming, you can't stop it mid-way without closing the connection — you'll be charged for all tokens generated. For expensive operations, count input tokens with <code>client.messages.count_tokens()</code> before opening the stream, and warn users or require confirmation if the estimated cost exceeds a threshold.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/execution-models.html" style="color:var(--accent)">Execution Models</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Head Attention | GenAI Mindmap</title>
+  <meta name="description" content="h parallel attention heads with different learned projections — each specialises in different relationship types (syntax, coreference, position). Outputs are concatenated and projected back to d_model." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Multi-Head Attention" />
+  <meta property="og:description" content="h parallel attention heads with different learned projections — each specialises in different relationship types (syntax, coreference, position). Outputs are concatenated and projected back to d_model." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/multi-head-attention.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/multi-head-attention.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Multi-Head Attention | GenAI Mindmap",
+  "description": "h parallel attention heads with different learned projections \u2014 each specialises in different relationship types (syntax, coreference, position). Outputs are concatenated and projected back to d_model.",
+  "url": "https://genai4a11.github.io/concepts/multi-head-attention.html",
+  "dateModified": "2026-03-24T23:25:57.539283",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Multi-Head Attention | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/multi-head-attention.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/attention.html" class="nav-back">← Attention Mechanisms</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Attention Mechanisms</span>
+    <h1><em>Multi-Head Attention</em></h1>
+    <p class="hero-sub">h parallel attention heads with different learned projections — each specialises in different relationship types (syntax, coreference, position). Outputs are concatenated and projected back to d_model.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">h heads</div><div class="stat-label">Parallel</div></div>
+      <div><div class="stat-num">d_model/h</div><div class="stat-label">Per-head dim</div></div>
+      <div><div class="stat-num">4 weight</div><div class="stat-label">Matrices</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why multiple heads</a></li>
+        <li><a href="#s2" data-num="02">The MHA architecture</a></li>
+        <li><a href="#s3" data-num="03">Implementation</a></li>
+        <li><a href="#s4" data-num="04">What heads specialise in</a></li>
+        <li><a href="#s5" data-num="05">GQA and MQA</a></li>
+        <li><a href="#s6" data-num="06">PyTorch built-in</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why multiple heads</h2>
+<p>A single attention head computes one weighted combination of values. But language has multiple simultaneous relationship structures: word A might be the syntactic subject of B, while also being co-referential with C, and positionally adjacent to D. A single head can only capture one weighted combination — it can't represent all these relationships simultaneously.</p>
+<p>Multi-head attention runs h independent attention functions in parallel, each with its own learned Q, K, V projections. Head 1 might learn to track syntactic dependencies; head 2 might track coreference; head 3 might attend to nearby tokens. Each head projects into a lower-dimensional subspace (d_k = d_model/h), so the total computation cost is similar to one full-dimensional head.</p>
+<p>The outputs of all heads are concatenated into a d_model-dimensional vector and passed through a final linear projection W_O. This projection learns how to combine the diverse information captured by different heads.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>The MHA architecture</h2>
+<p>For h heads and d_model dimensions, each head i uses:</p>
+<ul>
+<li>W<sub>Q</sub><sup>i</sup> ∈ ℝ<sup>d_model × d_k</sup></li>
+<li>W<sub>K</sub><sup>i</sup> ∈ ℝ<sup>d_model × d_k</sup></li>
+<li>W<sub>V</sub><sup>i</sup> ∈ ℝ<sup>d_model × d_v</sup></li>
+</ul>
+<p>where d_k = d_v = d_model / h.</p>
+<p>The output projection W<sub>O</sub> ∈ ℝ<sup>h·d_v × d_model</sup> maps the concatenated head outputs back to d_model.</p>
+<p>Total parameters per MHA layer: 4 × d_model² (three input projections + one output projection). For d_model=768 (BERT-base): 4 × 768² ≈ 2.4M parameters per MHA layer.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Implementation</h2>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, d_model: int, num_heads: int, dropout: float = 0.0):
+        super().__init__()
+        assert d_model % num_heads == 0
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+
+        # In practice, W_Q/K/V for all heads are stacked into one matrix
+        self.W_Q = nn.Linear(d_model, d_model, bias=False)
+        self.W_K = nn.Linear(d_model, d_model, bias=False)
+        self.W_V = nn.Linear(d_model, d_model, bias=False)
+        self.W_O = nn.Linear(d_model, d_model, bias=False)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x, mask=None):
+        B, N, D = x.shape
+        h = self.num_heads
+
+        # Project and split into heads: (B, N, D) -> (B, h, N, d_k)
+        Q = self.W_Q(x).view(B, N, h, self.d_k).transpose(1, 2)
+        K = self.W_K(x).view(B, N, h, self.d_k).transpose(1, 2)
+        V = self.W_V(x).view(B, N, h, self.d_k).transpose(1, 2)
+
+        # Scaled dot-product attention for all heads at once
+        out = F.scaled_dot_product_attention(Q, K, V,
+            attn_mask=mask, dropout_p=self.dropout.p if self.training else 0.0)
+
+        # Merge heads: (B, h, N, d_k) -> (B, N, D)
+        out = out.transpose(1, 2).contiguous().view(B, N, D)
+        return self.W_O(out)
+
+# Test
+model = MultiHeadAttention(d_model=512, num_heads=8)
+x = torch.randn(2, 16, 512)  # (batch, seq_len, d_model)
+out = model(x)
+print(out.shape)  # (2, 16, 512)
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")  # ~1M
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>What heads specialise in</h2>
+<p>Research on BERT's attention heads (Clark et al. 2019) found clear specialisation:</p>
+<p><strong>Syntactic heads</strong>: heads that strongly attend to direct objects from verbs, or to heads of noun phrases. These effectively implement dependency parsing within the attention weights.</p>
+<p><strong>Coreference heads</strong>: certain heads attend from pronouns to their antecedents — the "it → animal" example from before. These heads track entity co-reference across sentences.</p>
+<p><strong>Positional heads</strong>: heads that primarily attend to the next or previous token, implementing something like a local sliding window. Common in early layers.</p>
+<p><strong>Separator heads</strong>: heads that almost always attend to the [SEP] token — functioning as a "soft no-op" where a head doesn't have useful information to contribute.</p>
+<p>Not all heads are equally useful — up to 20% of heads can be pruned from BERT with minimal quality loss. Heads that specialise clearly tend to be more robust to pruning than heads with diffuse attention patterns.</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>GQA and MQA</h2>
+<p>Standard MHA uses h distinct K and V projections — one per head. This means the KV cache (stored during inference for each previously-generated token) scales as O(n × h × 2 × d_k) — expensive for long contexts.</p>
+<p><strong>Multi-Query Attention (MQA)</strong>: all heads share a single K and V projection. Only Q has h separate projections. Reduces KV cache by h×, but can hurt quality on some tasks.</p>
+<p><strong>Grouped-Query Attention (GQA)</strong>: compromise between MHA and MQA. g groups of heads share K/V. Llama 3 uses GQA with g=8 groups for 70B, giving an 8× KV cache reduction vs full MHA with minimal quality loss.</p>
+<pre><code class="language-python">class GQA(nn.Module):
+    def __init__(self, d_model, num_heads, num_kv_heads):
+        super().__init__()
+        assert num_heads % num_kv_heads == 0
+        self.num_heads = num_heads
+        self.num_kv_heads = num_kv_heads
+        self.d_k = d_model // num_heads
+        self.groups = num_heads // num_kv_heads
+
+        self.W_Q = nn.Linear(d_model, num_heads * self.d_k, bias=False)
+        self.W_K = nn.Linear(d_model, num_kv_heads * self.d_k, bias=False)
+        self.W_V = nn.Linear(d_model, num_kv_heads * self.d_k, bias=False)
+        self.W_O = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, x):
+        B, N, D = x.shape
+        Q = self.W_Q(x).view(B, N, self.num_heads, self.d_k).transpose(1, 2)
+        K = self.W_K(x).view(B, N, self.num_kv_heads, self.d_k).transpose(1, 2)
+        V = self.W_V(x).view(B, N, self.num_kv_heads, self.d_k).transpose(1, 2)
+        # Repeat K/V for each group of Q heads
+        K = K.repeat_interleave(self.groups, dim=1)
+        V = V.repeat_interleave(self.groups, dim=1)
+        out = F.scaled_dot_product_attention(Q, K, V)
+        return self.W_O(out.transpose(1,2).contiguous().view(B, N, D))
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>PyTorch built-in</h2>
+<pre><code class="language-python">import torch.nn as nn
+
+# PyTorch's nn.MultiheadAttention — production-ready implementation
+mha = nn.MultiheadAttention(
+    embed_dim=512,
+    num_heads=8,
+    dropout=0.1,
+    bias=True,
+    batch_first=True,   # input shape: (batch, seq, features) instead of (seq, batch, features)
+)
+
+x = torch.randn(2, 16, 512)
+
+# Self-attention (query = key = value = x)
+output, attn_weights = mha(x, x, x)
+print(output.shape)        # (2, 16, 512)
+print(attn_weights.shape)  # (2, 16, 16) — averaged over heads by default
+
+# With causal mask (for decoder)
+causal_mask = nn.Transformer.generate_square_subsequent_mask(16)
+output, _ = mha(x, x, x, attn_mask=causal_mask)
+
+# Cross-attention (query from decoder, key/value from encoder)
+enc_out = torch.randn(2, 32, 512)  # encoder output, different seq length
+dec_in  = torch.randn(2, 16, 512)  # decoder input
+output, _ = mha(dec_in, enc_out, enc_out)  # Q from dec, K/V from enc
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>num_heads must divide d_model evenly.</strong> d_k = d_model / num_heads must be an integer. A common mistake: using num_heads=6 with d_model=512 gives d_k=85.3. Standard choices: 8 heads with d_model=512 (d_k=64), 12 heads with d_model=768 (d_k=64), 32 heads with d_model=4096 (d_k=128).</p>
+<p><strong>W_O is often forgotten.</strong> The output projection W_O is essential — it's what allows different heads' information to be mixed. Implementing MHA without W_O (just concatenating and returning) loses the model's ability to combine cross-head information and produces significantly worse results.</p>
+<p><strong>Attention dropout is applied to weights, not values.</strong> Dropout in attention zeroes out entire attention edges (rows in the weight matrix), forcing the model to route information through different paths. It's applied after softmax, before the weighted sum of V — not to the output.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/attention.html" style="color:var(--accent)">Attention Mechanisms</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

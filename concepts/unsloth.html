@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unsloth | GenAI Mindmap</title>
+  <meta name="description" content="2–5× faster and 60% less memory than standard QLoRA — hand-written CUDA kernels replace HuggingFace's attention and RoPE implementations for dramatically better training throughput on consumer GPUs." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Unsloth" />
+  <meta property="og:description" content="2–5× faster and 60% less memory than standard QLoRA — hand-written CUDA kernels replace HuggingFace's attention and RoPE implementations for dramatically better training throughput on consumer GPUs." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/unsloth.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/unsloth.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Unsloth | GenAI Mindmap",
+  "description": "2\u20135\u00d7 faster and 60% less memory than standard QLoRA \u2014 hand-written CUDA kernels replace HuggingFace's attention and RoPE implementations for dramatically better training throughput on consumer GPUs.",
+  "url": "https://genai4a11.github.io/concepts/unsloth.html",
+  "dateModified": "2026-03-24T23:25:59.136914",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Unsloth | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/unsloth.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #d97706;
+      --accent-dark: #b45309;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#d97706 0%,#b45309 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/ft-tools.html" class="nav-back">← Training Tools</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Training Tools</span>
+    <h1><em>Unsloth</em></h1>
+    <p class="hero-sub">2–5× faster and 60% less memory than standard QLoRA — hand-written CUDA kernels replace HuggingFace's attention and RoPE implementations for dramatically better training throughput on consumer GPUs.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">2–5×</div><div class="stat-label">Faster training</div></div>
+      <div><div class="stat-num">60%</div><div class="stat-label">Less VRAM</div></div>
+      <div><div class="stat-num">Free tier</div><div class="stat-label">Available</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why Unsloth is faster</a></li>
+        <li><a href="#s2" data-num="02">Installation</a></li>
+        <li><a href="#s3" data-num="03">Fine-tuning with Unsloth</a></li>
+        <li><a href="#s4" data-num="04">Exporting to GGUF</a></li>
+        <li><a href="#s5" data-num="05">Benchmarks vs standard TRL</a></li>
+        <li><a href="#s6" data-num="06">Supported models</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why Unsloth is faster</h2>
+<p>Standard HuggingFace/PyTorch training computes attention and RoPE using autograd — every operation is tracked for the backward pass, with intermediate activations stored in GPU memory. Unsloth replaces these with hand-written CUDA kernels that: (1) fuse multiple operations into one kernel (fewer memory round-trips), (2) use tiling to reduce HBM bandwidth, and (3) recompute some activations instead of storing them.</p>
+<p>The result: Unsloth's attention kernel is ~2× faster than Flash Attention 2 on single-GPU training, and uses 60% less VRAM than equivalent QLoRA training with standard TRL. This means a model that would require an A100 80GB with standard tools trains on an RTX 4090 24GB with Unsloth.</p>
+<p>Unsloth is actively maintained and supports Llama 3.x, Qwen 2.5, Mistral, Phi-3, Gemma 2, and DeepSeek. The free tier runs on any NVIDIA GPU; the Pro tier adds multi-GPU and AMD support.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Installation</h2>
+<pre><code class="language-python"># CUDA 12.1+ required
+pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+pip install --no-deps trl peft accelerate bitsandbytes
+
+# Verify installation
+import unsloth
+print(unsloth.__version__)
+
+# For Google Colab (CUDA 12.2):
+# pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+
+# For local with CUDA 12.1:
+# pip install "unsloth @ git+https://github.com/unslothai/unsloth.git"
+
+# For Jupyter Notebook — check CUDA version first:
+import subprocess
+result = subprocess.run(["nvcc", "--version"], capture_output=True, text=True)
+print(result.stdout)  # should show CUDA 12.x
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Fine-tuning with Unsloth</h2>
+<pre><code class="language-python">from unsloth import FastLanguageModel
+from trl import SFTTrainer, SFTConfig
+from datasets import load_dataset
+import torch
+
+# Load model with Unsloth's optimised loader
+model, tokenizer = FastLanguageModel.from_pretrained(
+    model_name="unsloth/Meta-Llama-3.1-8B-Instruct",
+    max_seq_length=2048,
+    dtype=None,              # auto-detect: bf16 on Ampere+
+    load_in_4bit=True,       # QLoRA
+)
+
+# Add LoRA adapters — Unsloth's version is drop-in compatible with PEFT
+model = FastLanguageModel.get_peft_model(
+    model,
+    r=16,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                     "gate_proj", "up_proj", "down_proj"],
+    lora_alpha=16,
+    lora_dropout=0,          # Unsloth recommends 0 for speed
+    bias="none",
+    use_gradient_checkpointing="unsloth",  # Unsloth's optimised GC
+    random_state=42,
+)
+print(model.print_trainable_parameters())
+
+# Train — same as standard TRL
+dataset = load_dataset("yahma/alpaca-cleaned", split="train")
+
+trainer = SFTTrainer(
+    model=model,
+    tokenizer=tokenizer,
+    train_dataset=dataset,
+    args=SFTConfig(
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=4,
+        num_train_epochs=3,
+        learning_rate=2e-4,
+        fp16=not torch.cuda.is_bf16_supported(),
+        bf16=torch.cuda.is_bf16_supported(),
+        output_dir="./unsloth-output",
+        max_seq_length=2048,
+    ),
+)
+trainer.train()
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Exporting to GGUF</h2>
+<pre><code class="language-python"># Unsloth has built-in GGUF export — much simpler than manual conversion
+
+# Option 1: Save merged model then export to GGUF
+model.save_pretrained_merged("./merged-model", tokenizer,
+    save_method="merged_16bit")  # or "merged_4bit_forced", "lora"
+
+# Option 2: Save directly as GGUF (various quantisation levels)
+model.save_pretrained_gguf("./gguf-model", tokenizer,
+    quantization_method="q4_k_m")   # q4_k_m, q8_0, f16, q5_k_m, etc.
+
+# Option 3: Push directly to HuggingFace Hub as GGUF
+model.push_to_hub_gguf(
+    "your-username/llama3-finetuned-gguf",
+    tokenizer,
+    quantization_method=["q4_k_m", "q8_0"],   # upload multiple quants
+    token="hf_...",
+)
+
+# Then use with Ollama:
+# ollama create my-model -f Modelfile
+# where Modelfile contains: FROM ./gguf-model/model-Q4_K_M.gguf
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Benchmarks vs standard TRL</h2>
+<p>Measured on Llama 3.1 8B, single RTX 4090 (24GB), 2048 tokens, batch=4, rank=16:</p>
+<pre><code class="language-python">benchmarks = {
+    "method": ["Standard QLoRA (TRL)", "Flash Attention 2 + TRL", "Unsloth"],
+    "tokens_per_second": [1420, 2080, 3890],
+    "vram_gb":           [22.1, 20.8, 9.4],
+    "time_per_epoch_min": [48,   33,   17],
+}
+# Unsloth: 2.7x faster than standard, 60% less VRAM
+
+# On A100 80GB (Llama 3.1 70B, rank=64):
+# Standard QLoRA:  210 tok/s, 72 GB VRAM
+# Unsloth:         580 tok/s, 42 GB VRAM (fits in one A100, no multi-GPU needed)
+
+# Speedup varies by:
+# - GPU architecture: Ampere (30xx, A100) > Turing (20xx, T4) for Unsloth
+# - Sequence length: longer sequences benefit more from Unsloth's attention tiling
+# - Batch size: larger batches reduce Unsloth's relative advantage slightly
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Supported models</h2>
+<pre><code class="language-python"># As of early 2025, Unsloth supports:
+SUPPORTED = [
+    "meta-llama/Llama-3.1-{8B,70B}-Instruct",
+    "meta-llama/Llama-3.2-{1B,3B}-Instruct",
+    "Qwen/Qwen2.5-{7B,14B,32B,72B}-Instruct",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "microsoft/Phi-3-{mini,medium}-128k-instruct",
+    "google/gemma-2-{2b,9b,27b}-it",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-{7B,32B}",
+    "unsloth/mistral-7b-v0.3-bnb-4bit",  # pre-quantised for faster loading
+]
+
+# Load any supported model:
+from unsloth import FastLanguageModel
+model, tokenizer = FastLanguageModel.from_pretrained(
+    "unsloth/Qwen2.5-7B-Instruct-bnb-4bit",   # unsloth's pre-quantised versions
+    max_seq_length=8192,
+    load_in_4bit=True,
+)
+
+# Check if a model is supported:
+# https://github.com/unslothai/unsloth/wiki#-supported-models
+# If not in the list, use standard TRL instead — Unsloth will error on unsupported architectures
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Unsloth requires CUDA — no MPS (Apple Silicon) or CPU training.</strong> Unsloth's kernels are CUDA-specific. If you're on a Mac or a CPU-only machine, use standard TRL + PEFT instead. For Apple Silicon, consider MLX-LM which has native optimisations for M-series chips.</p>
+<p><strong>use_gradient_checkpointing="unsloth" not True.</strong> Unsloth has its own gradient checkpointing implementation that's faster than PyTorch's. Always pass the string "unsloth" rather than the boolean True — using True enables standard PyTorch gradient checkpointing which is slower and may cause errors with Unsloth's kernels.</p>
+<p><strong>lora_dropout=0 is intentional in Unsloth benchmarks.</strong> Unsloth benchmarks are run with dropout=0 for maximum speed. For production fine-tuning where you risk overfitting (small dataset, many epochs), add dropout=0.05. The speed difference is modest.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/ft-tools.html" style="color:var(--accent)">Training Tools</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

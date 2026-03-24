@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPT / Decoder-only | GenAI Mindmap</title>
+  <meta name="description" content="Autoregressive transformers with causal masking — the architecture behind every modern LLM. Each token attends only to past tokens; generation proceeds one token at a time via next-token prediction." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="GPT / Decoder-only" />
+  <meta property="og:description" content="Autoregressive transformers with causal masking — the architecture behind every modern LLM. Each token attends only to past tokens; generation proceeds one token at a time via next-token prediction." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/decoder-only.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/decoder-only.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "GPT / Decoder-only | GenAI Mindmap",
+  "description": "Autoregressive transformers with causal masking \u2014 the architecture behind every modern LLM. Each token attends only to past tokens; generation proceeds one token at a time via next-token prediction.",
+  "url": "https://genai4a11.github.io/concepts/decoder-only.html",
+  "dateModified": "2026-03-24T23:25:56.914332",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "GPT / Decoder-only | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/decoder-only.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/transformer-arch.html" class="nav-back">← Architectures</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Architectures</span>
+    <h1><em>GPT / Decoder-only</em></h1>
+    <p class="hero-sub">Autoregressive transformers with causal masking — the architecture behind every modern LLM. Each token attends only to past tokens; generation proceeds one token at a time via next-token prediction.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Causal</div><div class="stat-label">Masking</div></div>
+      <div><div class="stat-num">Autoregressive</div><div class="stat-label">Generation</div></div>
+      <div><div class="stat-num">Basis of</div><div class="stat-label">All modern LLMs</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The decoder-only design</a></li>
+        <li><a href="#s2" data-num="02">Causal masking in depth</a></li>
+        <li><a href="#s3" data-num="03">Training: next-token prediction</a></li>
+        <li><a href="#s4" data-num="04">Sampling strategies</a></li>
+        <li><a href="#s5" data-num="05">KV cache</a></li>
+        <li><a href="#s6" data-num="06">Minimal GPT implementation</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The decoder-only design</h2>
+<p>A decoder-only transformer is a stack of N identical blocks, each containing: <strong>Causal Self-Attention → Add &amp; Norm → FFN → Add &amp; Norm</strong>. There's no encoder, no cross-attention — just causal self-attention and feed-forward layers stacked repeatedly.</p>
+<p>The "decoder-only" name is historical (from the original encoder-decoder transformer for translation). Modern LLMs (GPT-2 through GPT-4, Llama, Mistral, Claude, Gemini) are all decoder-only. The architecture works for generation because: (1) causal masking allows training on all token positions simultaneously via teacher forcing; (2) at inference, the model generates one token at a time, appending each new token to the growing context.</p>
+<p>Compared to encoder-only: each token only sees its past, giving it a narrower view. But the model compensates with scale — LLMs have billions of parameters and trillions of training tokens, encoding world knowledge directly into weights rather than relying on bidirectional context within a single forward pass.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Causal masking in depth</h2>
+<pre><code class="language-python">import torch
+import torch.nn.functional as F
+
+def causal_self_attention(Q, K, V):
+    # Q, K, V: (batch, heads, seq_len, d_k)
+    B, H, N, dk = Q.shape
+
+    # Compute raw scores
+    scores = Q @ K.transpose(-2, -1) / dk ** 0.5   # (B, H, N, N)
+
+    # Build causal mask: -inf above the diagonal
+    causal_mask = torch.triu(
+        torch.full((N, N), float('-inf'), device=Q.device), diagonal=1
+    )  # (N, N)
+
+    scores = scores + causal_mask   # broadcast over batch and head dims
+
+    weights = F.softmax(scores, dim=-1)
+    return weights @ V
+
+# Visualise what causal masking does:
+# For a 4-token sequence, the attention weight matrix looks like:
+# token 0:  [1.0, 0.0, 0.0, 0.0]  — can only see itself
+# token 1:  [0.6, 0.4, 0.0, 0.0]  — can see tokens 0 and 1
+# token 2:  [0.3, 0.4, 0.3, 0.0]  — can see tokens 0, 1, 2
+# token 3:  [0.2, 0.3, 0.3, 0.2]  — can see all tokens
+
+# PyTorch's efficient implementation (no explicit mask needed):
+out = F.scaled_dot_product_attention(Q, K, V, is_causal=True)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Training: next-token prediction</h2>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+
+# Training objective: predict token[i+1] given tokens[0..i]
+# This is maximum likelihood estimation over the training corpus
+
+def compute_lm_loss(model, input_ids: torch.Tensor) -> torch.Tensor:
+    # input_ids: (batch, seq_len)
+    # Labels are input_ids shifted by 1: predict next token at each position
+    logits = model(input_ids)          # (batch, seq_len, vocab_size)
+
+    # Shift: inputs are [0..n-2], targets are [1..n-1]
+    shift_logits = logits[:, :-1, :]   # (batch, seq_len-1, vocab_size)
+    shift_labels = input_ids[:, 1:]    # (batch, seq_len-1)
+
+    loss = nn.CrossEntropyLoss()(
+        shift_logits.reshape(-1, shift_logits.size(-1)),
+        shift_labels.reshape(-1)
+    )
+    return loss
+
+# The cross-entropy loss over tokens is equivalent to:
+# -log P(token_1 | token_0) - log P(token_2 | token_0, token_1) - ...
+# Minimising this = maximising the probability of the training sequences
+
+# Perplexity = exp(average loss) — main LLM training metric
+# PPX of 10 means model is as uncertain as choosing from 10 equal options
+def perplexity(loss: float) -> float:
+    return torch.exp(torch.tensor(loss)).item()
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Sampling strategies</h2>
+<pre><code class="language-python">import torch
+import torch.nn.functional as F
+
+def sample_next_token(logits: torch.Tensor, temperature: float = 1.0,
+                       top_k: int = 0, top_p: float = 1.0) -> int:
+    # logits: (vocab_size,) unnormalised scores for next token
+    logits = logits / temperature  # higher temp = more random
+
+    # Top-k: keep only top k tokens
+    if top_k > 0:
+        kth_val = logits.topk(top_k).values[-1]
+        logits[logits < kth_val] = float('-inf')
+
+    # Top-p (nucleus): keep smallest set of tokens summing to >= p probability
+    if top_p < 1.0:
+        sorted_logits, sorted_idx = logits.sort(descending=True)
+        probs = F.softmax(sorted_logits, dim=-1)
+        cumsum = probs.cumsum(dim=-1)
+        # Remove tokens once cumulative probability exceeds top_p
+        remove = cumsum - probs > top_p
+        sorted_logits[remove] = float('-inf')
+        logits[sorted_idx] = sorted_logits
+
+    probs = F.softmax(logits, dim=-1)
+    return torch.multinomial(probs, 1).item()
+
+# Greedy decoding (temperature=0 equivalent):
+def greedy_next(logits): return logits.argmax().item()
+
+# Typical production settings:
+# temperature=0.7, top_p=0.9 — creative but coherent
+# temperature=0.1, top_k=1  — near-deterministic, for code/structured output
+# temperature=1.0, top_p=1.0 — sample directly from model distribution
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>KV cache</h2>
+<p>During autoregressive generation, at each step the model must compute K and V for the entire prefix (all previously generated tokens). Without caching, generating token t requires O(t) attention computation — total generation is O(n²).</p>
+<p>The KV cache stores K and V for all past tokens. At each new step, only compute Q, K, V for the new token; then append K and V to the cache and attend over cached + new K/V. This reduces generation to O(n) total.</p>
+<pre><code class="language-python">class CachedAttention(nn.Module):
+    def __init__(self, d_model, num_heads):
+        super().__init__()
+        self.mha = nn.MultiheadAttention(d_model, num_heads, batch_first=True)
+        self.kv_cache = None  # (batch, past_len, 2, d_model)
+
+    def forward(self, x, use_cache=True):
+        # x: (batch, 1, d_model) — single new token during generation
+        if use_cache and self.kv_cache is not None:
+            past_k, past_v = self.kv_cache
+            # Only compute Q for new token, but K/V for full sequence
+            full_seq = torch.cat([past_k, x], dim=1)
+            out, _ = self.mha(x, full_seq, full_seq)
+        else:
+            out, _ = self.mha(x, x, x)
+
+        if use_cache:
+            prefix = self.kv_cache[0] if self.kv_cache else x
+            self.kv_cache = (torch.cat([prefix, x], dim=1), None)  # simplified
+        return out
+
+# KV cache memory: 2 * num_layers * seq_len * d_model * bytes_per_element
+# For Llama-3 8B: 2 * 32 * 4096 * 4096 * 2 bytes = 2GB at fp16 for 4K tokens
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Minimal GPT implementation</h2>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class GPTBlock(nn.Module):
+    def __init__(self, d_model, num_heads, d_ff):
+        super().__init__()
+        self.ln1 = nn.LayerNorm(d_model)
+        self.attn = nn.MultiheadAttention(d_model, num_heads, batch_first=True)
+        self.ln2 = nn.LayerNorm(d_model)
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model)
+        )
+
+    def forward(self, x):
+        N = x.shape[1]
+        causal_mask = nn.Transformer.generate_square_subsequent_mask(N, device=x.device)
+        # Pre-norm + residual connection (modern GPT uses pre-norm, not post-norm)
+        h = self.ln1(x)
+        h, _ = self.attn(h, h, h, attn_mask=causal_mask, is_causal=True)
+        x = x + h
+        x = x + self.ffn(self.ln2(x))
+        return x
+
+class TinyGPT(nn.Module):
+    def __init__(self, vocab_size, d_model=256, num_heads=8, num_layers=4, max_len=512):
+        super().__init__()
+        self.tok_emb = nn.Embedding(vocab_size, d_model)
+        self.pos_emb = nn.Embedding(max_len, d_model)
+        self.blocks = nn.ModuleList([GPTBlock(d_model, num_heads, d_model*4)
+                                      for _ in range(num_layers)])
+        self.ln_f = nn.LayerNorm(d_model)
+        self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
+
+    def forward(self, idx):
+        B, T = idx.shape
+        x = self.tok_emb(idx) + self.pos_emb(torch.arange(T, device=idx.device))
+        for block in self.blocks:
+            x = block(x)
+        return self.lm_head(self.ln_f(x))   # (B, T, vocab_size)
+
+model = TinyGPT(vocab_size=50257)
+print(f"Params: {sum(p.numel() for p in model.parameters()):,}")  # ~6.5M
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Pre-norm vs post-norm matters.</strong> The original transformer uses post-norm (LayerNorm after the residual add). Modern LLMs (GPT-2+, Llama) use pre-norm (LayerNorm before the attention/FFN). Pre-norm is more stable to train at large scale — gradients flow more cleanly through the residual stream. If you see training instability, check whether you're using post-norm.</p>
+<p><strong>The FFN is the majority of parameters.</strong> For a 7B Llama model, attention is ~25% of parameters, FFN is ~65%, embeddings ~10%. The FFN (two linear layers with a non-linearity, often SwiGLU) is where most of the "factual knowledge" is stored. Don't neglect FFN optimisation when profiling inference speed.</p>
+<p><strong>Temperature 0 is not greedy decoding.</strong> Setting temperature to 0 makes all logits divide by 0 (or near-0), producing NaN or all-uniform distributions. Most inference libraries implement "temperature=0" as argmax (true greedy decoding) as a special case. When writing your own sampler, handle temperature≤0 explicitly with argmax rather than the division formula.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/transformer-arch.html" style="color:var(--accent)">Architectures</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

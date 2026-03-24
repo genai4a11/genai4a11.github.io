@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ORPO | GenAI Mindmap</title>
+  <meta name="description" content="Odds Ratio Preference Optimisation — trains on chosen responses while penalising rejected ones in a single stage, eliminating the need for a separate SFT step before DPO. Simpler pipeline, comparable results." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="ORPO" />
+  <meta property="og:description" content="Odds Ratio Preference Optimisation — trains on chosen responses while penalising rejected ones in a single stage, eliminating the need for a separate SFT step before DPO. Simpler pipeline, comparable results." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/orpo.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/orpo.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "ORPO | GenAI Mindmap",
+  "description": "Odds Ratio Preference Optimisation \u2014 trains on chosen responses while penalising rejected ones in a single stage, eliminating the need for a separate SFT step before DPO. Simpler pipeline, comparable results.",
+  "url": "https://genai4a11.github.io/concepts/orpo.html",
+  "dateModified": "2026-03-24T23:25:57.717117",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "ORPO | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/orpo.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #d97706;
+      --accent-dark: #b45309;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#d97706 0%,#b45309 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/alignment.html" class="nav-back">← Alignment & RLHF</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Alignment & RLHF</span>
+    <h1><em>ORPO</em></h1>
+    <p class="hero-sub">Odds Ratio Preference Optimisation — trains on chosen responses while penalising rejected ones in a single stage, eliminating the need for a separate SFT step before DPO. Simpler pipeline, comparable results.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">1-stage</div><div class="stat-label">Training</div></div>
+      <div><div class="stat-num">No SFT</div><div class="stat-label">Pre-step needed</div></div>
+      <div><div class="stat-num">Odds ratio</div><div class="stat-label">Loss term</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">ORPO vs DPO vs RLHF</a></li>
+        <li><a href="#s2" data-num="02">The ORPO loss function</a></li>
+        <li><a href="#s3" data-num="03">Why odds ratio works</a></li>
+        <li><a href="#s4" data-num="04">Training with ORPOTrainer</a></li>
+        <li><a href="#s5" data-num="05">Dataset format</a></li>
+        <li><a href="#s6" data-num="06">When to choose ORPO</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>ORPO vs DPO vs RLHF</h2>
+<p><strong>RLHF (full)</strong>: SFT → train reward model → PPO RL fine-tuning. Gold standard for quality but requires a separate reward model, PPO tuning (notoriously unstable), and 3–4 separate training stages. Used by OpenAI and Anthropic for frontier models.</p>
+<p><strong>DPO</strong>: SFT → DPO on chosen/rejected pairs. Eliminates the reward model and RL training loop. Still requires a separate SFT stage first — DPO needs a good base policy to align. Two-stage pipeline.</p>
+<p><strong>ORPO</strong> (Hong et al. 2024): single training stage. The ORPO loss combines supervised fine-tuning on chosen responses with a penalty for rejected responses in one unified objective. No SFT pre-step needed — you train directly from a base model to an aligned model. Simpler pipeline, comparable quality to DPO on most benchmarks.</p>
+<p>In practice: ORPO is the best default when you have a preference dataset and want the simplest possible pipeline. Use DPO when you already have a well-tuned SFT model you want to align. Use full RLHF only when you have the infrastructure and need frontier-quality alignment.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>The ORPO loss function</h2>
+<p>ORPO combines two components:</p>
+<p><strong>SFT loss</strong>: standard negative log-likelihood on chosen responses. Trains the model to generate the preferred outputs.</p>
+<p><strong>Odds ratio penalty</strong>: penalises the model for having higher relative probability on rejected responses. Defined as:</p>
+<pre><code>odds(x) = P(x) / (1 - P(x))
+OR = odds(chosen) / odds(rejected)
+L_OR = -log(sigmoid(log(OR)))
+</code></pre>
+<p>Total loss: <strong>L_ORPO = L_SFT + λ · L_OR</strong></p>
+<p>The odds ratio formulation is more stable than directly comparing log-probabilities (as in DPO) because it's bounded and less sensitive to the absolute probability scale. When the model assigns much higher probability to chosen than rejected, OR is large and L_OR is small — the penalty disappears. When the model prefers rejected, OR &lt; 1 and the penalty is large.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Why odds ratio works</h2>
+<pre><code class="language-python">import torch
+
+def orpo_loss_explained(log_probs_chosen, log_probs_rejected, lambda_: float = 0.1):
+    # log_probs: sum of log-probabilities of each token in the response
+    # shape: (batch,)
+
+    # SFT component: maximise probability of chosen responses
+    sft_loss = -log_probs_chosen.mean()
+
+    # Odds ratio component
+    # P(chosen) / (1 - P(chosen)) vs P(rejected) / (1 - P(rejected))
+    # Working in log-space for numerical stability:
+    # log_odds_chosen = log_probs_chosen - log(1 - exp(log_probs_chosen))
+
+    def log_odds(log_p):
+        # log_odds = log_p - log(1 - exp(log_p))
+        # = log_p - softplus(-log_p) [numerically stable form]
+        return log_p - torch.nn.functional.softplus(-log_p)
+
+    log_or = log_odds(log_probs_chosen) - log_odds(log_probs_rejected)
+
+    # We want log_or > 0 (model prefers chosen over rejected)
+    # Loss is small when model strongly prefers chosen, large otherwise
+    or_loss = -torch.nn.functional.logsigmoid(log_or).mean()
+
+    total = sft_loss + lambda_ * or_loss
+    return total, sft_loss.item(), or_loss.item()
+
+# Intuition:
+# If P(chosen)=0.8, P(rejected)=0.1:
+#   odds_chosen = 0.8/0.2 = 4.0
+#   odds_rejected = 0.1/0.9 = 0.11
+#   OR = 4.0/0.11 = 36 (model strongly prefers chosen — low penalty)
+# If P(chosen)=0.3, P(rejected)=0.4:
+#   OR = (0.3/0.7)/(0.4/0.6) = 0.43/0.67 = 0.64 (model prefers rejected — high penalty)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Training with ORPOTrainer</h2>
+<pre><code class="language-python">from trl import ORPOTrainer, ORPOConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Start from a base model (no SFT pre-training needed!)
+model = AutoModelForCausalLM.from_pretrained(
+    "meta-llama/Llama-3.1-8B",  # base model, not instruct
+    torch_dtype="auto",
+    device_map="auto",
+)
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B")
+
+from datasets import load_dataset
+dataset = load_dataset("mlabonne/orpo-dpo-mix-40k", split="train")
+# Dataset has: prompt, chosen, rejected columns
+
+trainer = ORPOTrainer(
+    model=model,
+    args=ORPOConfig(
+        output_dir="./orpo-output",
+        num_train_epochs=1,
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=8,
+        learning_rate=8e-6,          # similar to DPO — small lr
+        beta=0.1,                    # lambda for OR loss weight
+        max_length=1024,
+        max_prompt_length=512,
+        bf16=True,
+        logging_steps=10,
+    ),
+    train_dataset=dataset,
+    tokenizer=tokenizer,
+)
+trainer.train()
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Dataset format</h2>
+<pre><code class="language-python">from datasets import Dataset
+
+# ORPO expects the same format as DPO: prompt, chosen, rejected
+# Each field is a string (not a message list — just the text)
+
+orpo_data = Dataset.from_list([
+    {
+        "prompt": "What is the capital of France?",
+        "chosen": "The capital of France is Paris, which has served as the country's political and cultural centre since the 10th century.",
+        "rejected": "France's capital is I think Paris or maybe Lyon, not totally sure.",
+    },
+    {
+        "prompt": "Write a Python function to check if a number is prime.",
+        "chosen": "def is_prime(n: int) -> bool:
+    if n < 2: return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0: return False
+    return True",
+        "rejected": "def check_prime(n):
+    for i in range(2, n):
+        if n % i == 0:
+            return False
+    return True  # O(n) instead of O(sqrt(n))",
+    },
+])
+
+# If your data is in chat format (message lists), convert first:
+def format_for_orpo(example):
+    chosen_text = tokenizer.apply_chat_template(example["chosen"], tokenize=False)
+    rejected_text = tokenizer.apply_chat_template(example["rejected"], tokenize=False)
+    prompt_text = tokenizer.apply_chat_template(
+        example["chosen"][:-1], tokenize=False, add_generation_prompt=True
+    )
+    return {"prompt": prompt_text, "chosen": chosen_text, "rejected": rejected_text}
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>When to choose ORPO</h2>
+<p><strong>Choose ORPO when</strong>: you want the simplest pipeline (one training job instead of two), you're starting from a base model, you have a preference dataset with clear chosen/rejected pairs, or you're resource-constrained and can't run a two-stage SFT + DPO pipeline.</p>
+<p><strong>Choose DPO when</strong>: you already have a high-quality SFT model and want to align it without retraining from scratch. DPO fine-tunes only the alignment; ORPO fine-tunes both instruction following and alignment simultaneously — if your SFT model is already very good, DPO may preserve more of that tuning.</p>
+<p><strong>Quality comparison</strong>: on most benchmarks (MT-Bench, AlpacaEval), ORPO produces comparable or slightly lower quality than SFT+DPO. The difference is small enough that the pipeline simplicity often justifies choosing ORPO. For frontier-quality models, full RLHF with a reward model still produces better results than both.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>ORPO's lambda (beta) needs tuning.</strong> Too small (0.01): the OR penalty is negligible and you get near-SFT behaviour. Too large (1.0): the OR penalty dominates and the model collapses to always outputting the minimum necessary to score higher than rejected, losing helpfulness. Start with beta=0.1 and tune based on win rate on a held-out eval set.</p>
+<p><strong>Chosen and rejected must differ meaningfully.</strong> If chosen and rejected responses are very similar (minor wording differences), the odds ratio provides almost no training signal. The most effective preference pairs have clear quality differences — correct vs. incorrect, specific vs. vague, safe vs. unsafe. Build datasets where a naive observer can immediately tell which response is better.</p>
+<p><strong>Base model matters more for ORPO than DPO.</strong> DPO starts from an SFT model that already knows how to follow instructions. ORPO starts from a base model and must learn instruction following and preference alignment simultaneously. Using a weak base model (e.g., a very small model or a domain-specific model without instruction tuning) produces worse results with ORPO than DPO.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/alignment.html" style="color:var(--accent)">Alignment & RLHF</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

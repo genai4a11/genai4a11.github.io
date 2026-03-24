@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoPE | GenAI Mindmap</title>
+  <meta name="description" content="Rotary Position Embeddings encode position by rotating query and key vectors in pairs of dimensions — giving relative positional awareness that generalises to longer sequences than seen during training." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="RoPE" />
+  <meta property="og:description" content="Rotary Position Embeddings encode position by rotating query and key vectors in pairs of dimensions — giving relative positional awareness that generalises to longer sequences than seen during training." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/rope.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/rope.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "RoPE | GenAI Mindmap",
+  "description": "Rotary Position Embeddings encode position by rotating query and key vectors in pairs of dimensions \u2014 giving relative positional awareness that generalises to longer sequences than seen during training.",
+  "url": "https://genai4a11.github.io/concepts/rope.html",
+  "dateModified": "2026-03-24T23:25:58.512758",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "RoPE | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/rope.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/pos-encoding.html" class="nav-back">← Positional Encoding</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Positional Encoding</span>
+    <h1><em>RoPE</em></h1>
+    <p class="hero-sub">Rotary Position Embeddings encode position by rotating query and key vectors in pairs of dimensions — giving relative positional awareness that generalises to longer sequences than seen during training.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Relative</div><div class="stat-label">Position aware</div></div>
+      <div><div class="stat-num">Used in</div><div class="stat-label">Llama / Mistral</div></div>
+      <div><div class="stat-num">Extrapolates</div><div class="stat-label">Long context</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why positional encoding matters</a></li>
+        <li><a href="#s2" data-num="02">How RoPE works</a></li>
+        <li><a href="#s3" data-num="03">The rotation formula</a></li>
+        <li><a href="#s4" data-num="04">Python implementation</a></li>
+        <li><a href="#s5" data-num="05">RoPE vs sinusoidal vs ALiBi</a></li>
+        <li><a href="#s6" data-num="06">Long-context extrapolation</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why positional encoding matters</h2>
+<p>Self-attention is <em>permutation-equivariant</em>: shuffle the input tokens and you get the same attention outputs, just in a different order. The model has no built-in sense of token order. For language, order is everything — "dog bites man" and "man bites dog" are opposite meanings.</p>
+<p>Positional encoding injects position information into token representations. The original transformer used fixed sinusoidal functions; BERT used learned absolute position embeddings. Both have a problem: they encode absolute position, not relative position. Token i at position 5 has no inherent relationship to token j at position 8 — you have to infer "3 apart" from their absolute encodings.</p>
+<p>RoPE (Su et al. 2021) encodes position directly into the query-key dot product in a way that makes the attention score depend on the <em>relative</em> distance between tokens — regardless of their absolute positions. This is more natural (grammar cares about relative distance) and enables better length generalisation.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>How RoPE works</h2>
+<p>The key insight: if you rotate vector Q[m] (at position m) and vector K[n] (at position n) by angles proportional to their positions, their dot product Q[m]·K[n] will naturally depend only on (m-n) — the relative distance.</p>
+<p>RoPE works on pairs of dimensions. For a d-dimensional vector, it rotates dimension pairs (0,1), (2,3), (4,5), ... by different frequencies. Each pair (2i, 2i+1) gets rotation angle θ_i = position × base<sup>-2i/d</sup>, where base=10000 (same as sinusoidal PE's frequencies).</p>
+<p>For a query q at position m:</p>
+<pre><code>RoPE(q, m)[2i]   = q[2i]   · cos(m·θ_i) - q[2i+1] · sin(m·θ_i)
+RoPE(q, m)[2i+1] = q[2i+1] · cos(m·θ_i) + q[2i]   · sin(m·θ_i)
+</code></pre>
+<p>Applied to both Q and K before the dot product. The result: QK<sup>T</sup>[m,n] = f(q, k, m-n) — only relative position matters, not absolute.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>The rotation formula</h2>
+<pre><code class="language-python">import numpy as np
+
+def get_rope_frequencies(d: int, base: float = 10000.0) -> np.ndarray:
+    # Compute theta for each dimension pair: theta_i = base^(-2i/d)
+    i = np.arange(0, d, 2)           # [0, 2, 4, ..., d-2]
+    return 1.0 / (base ** (i / d))   # shape: (d/2,)
+
+def apply_rope(x: np.ndarray, position: int, freqs: np.ndarray) -> np.ndarray:
+    # x: (d,) vector at position `position`
+    # freqs: (d/2,) rotation frequencies
+    angles = position * freqs          # (d/2,)
+    cos_a = np.cos(angles)             # (d/2,)
+    sin_a = np.sin(angles)             # (d/2,)
+
+    # Split into even/odd dimensions
+    x_even = x[0::2]   # (d/2,)
+    x_odd  = x[1::2]   # (d/2,)
+
+    # Rotate each pair
+    out = np.empty_like(x)
+    out[0::2] = x_even * cos_a - x_odd * sin_a
+    out[1::2] = x_odd  * cos_a + x_even * sin_a
+    return out
+
+# Verify: dot product depends only on relative position
+d = 64
+freqs = get_rope_frequencies(d)
+q = np.random.randn(d)
+k = np.random.randn(d)
+
+q5  = apply_rope(q, position=5, freqs=freqs)
+q10 = apply_rope(q, position=10, freqs=freqs)
+k8  = apply_rope(k, position=8, freqs=freqs)
+k13 = apply_rope(k, position=13, freqs=freqs)
+
+# Both pairs are 3 apart — scores should be similar
+print(f"q5·k8  (dist=3): {q5 @ k8:.4f}")
+print(f"q10·k13 (dist=3): {q10 @ k13:.4f}")  # similar magnitude
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Python implementation</h2>
+<pre><code class="language-python">import torch
+
+def precompute_rope_freqs(d: int, seq_len: int, base: float = 10000.0):
+    # Precompute cos/sin for all positions up to seq_len
+    theta = 1.0 / (base ** (torch.arange(0, d, 2).float() / d))  # (d/2,)
+    positions = torch.arange(seq_len).float()                       # (seq_len,)
+    freqs = torch.outer(positions, theta)                           # (seq_len, d/2)
+    return torch.cos(freqs), torch.sin(freqs)   # each (seq_len, d/2)
+
+def apply_rope_torch(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor):
+    # x: (batch, heads, seq, d_k)
+    # cos, sin: (seq, d_k/2)
+    d = x.shape[-1]
+    x_even = x[..., 0::2]   # (batch, heads, seq, d_k/2)
+    x_odd  = x[..., 1::2]
+
+    # Broadcast cos/sin over batch and heads dimensions
+    cos = cos.unsqueeze(0).unsqueeze(0)   # (1, 1, seq, d_k/2)
+    sin = sin.unsqueeze(0).unsqueeze(0)
+
+    out = torch.empty_like(x)
+    out[..., 0::2] = x_even * cos - x_odd * sin
+    out[..., 1::2] = x_odd  * cos + x_even * sin
+    return out
+
+# In a transformer forward pass:
+d_k, seq_len = 64, 512
+cos_freqs, sin_freqs = precompute_rope_freqs(d_k, seq_len)
+
+Q = torch.randn(2, 8, seq_len, d_k)   # (batch, heads, seq, d_k)
+K = torch.randn(2, 8, seq_len, d_k)
+
+Q_rope = apply_rope_torch(Q, cos_freqs, sin_freqs)
+K_rope = apply_rope_torch(K, cos_freqs, sin_freqs)
+# Use Q_rope, K_rope in scaled dot-product attention
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>RoPE vs sinusoidal vs ALiBi</h2>
+<p><strong>Sinusoidal PE</strong> (original transformer): adds fixed sin/cos patterns to token embeddings before the first layer. Encodes absolute position. Doesn't generalise well beyond training length — no mechanism to extrapolate. Simple and still used in some models.</p>
+<p><strong>Learned absolute PE</strong> (BERT, GPT-2): same as sinusoidal but learned from data. Hard cap at training sequence length — a BERT-base trained on 512 tokens has no positional embedding for position 513. Fine for fixed-length tasks, bad for variable-length generation.</p>
+<p><strong>RoPE</strong> (Llama, Mistral, Qwen, GPT-NeoX): rotates Q and K. Relative positions emerge naturally from the dot product. With tricks like YaRN (Yet another RoPE extension), models can be extended from 4K to 128K context post-training by adjusting the rotation frequencies.</p>
+<p><strong>ALiBi</strong> (BLOOM, MPT): instead of modifying embeddings, subtracts a linear bias from attention scores proportional to distance. Simpler than RoPE, strong extrapolation, but slightly lower quality on long-context retrieval tasks. Chosen for models where simplicity and extrapolation matter more than peak performance.</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Long-context extrapolation</h2>
+<p>RoPE's base frequency determines how positions are encoded. With base=10000 and d=64, the lowest-frequency pair has θ = 10000<sup>-62/64</sup> ≈ 1/9441 — completing one full rotation every ~59,000 tokens. This is why RoPE doesn't degrade until sequences exceed ~10K tokens with the default base.</p>
+<p>To extend context, increase the base (YaRN uses base up to 500,000 for 128K context):</p>
+<pre><code class="language-python"># Standard base — good to ~8K context
+cos, sin = precompute_rope_freqs(d_k=64, seq_len=8192, base=10000.0)
+
+# Extended base (as used in Llama-3.1 for 128K context)
+cos, sin = precompute_rope_freqs(d_k=64, seq_len=131072, base=500000.0)
+
+# Dynamic NTK scaling — increases base as needed at inference
+def dynamic_ntk_base(d: int, seq_len: int, max_trained: int, alpha: float = 1.0):
+    if seq_len <= max_trained:
+        return 10000.0
+    # Increases base proportionally when seq_len exceeds training length
+    return 10000.0 * ((alpha * seq_len / max_trained) - (alpha - 1)) ** (d / (d - 2))
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>RoPE must be applied before, not after, the attention projection.</strong> It rotates Q and K as part of the attention computation. Applying it to the raw embeddings (like adding sinusoidal PE to X before the first layer) breaks the relative-position property — the rotation must happen on the per-head projected Q and K vectors.</p>
+<p><strong>Extending context requires fine-tuning, not just changing the base.</strong> Simply increasing the base at inference time degrades model quality because the model hasn't seen those relative position encodings during training. Effective long-context extension requires continued pre-training on long documents with the new base, plus techniques like YaRN's interpolation.</p>
+<p><strong>RoPE doesn't work on V.</strong> Only Q and K are rotated. V is left as-is. This is intentional — the rotation only needs to affect the dot-product similarity score, not the values that are summed. Applying rotation to V would have no effect on position encoding and just wastes compute.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/pos-encoding.html" style="color:var(--accent)">Positional Encoding</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
