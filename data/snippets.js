@@ -4218,33 +4218,3223 @@ meta_applications:{use:'The final layer: where GenAI capability meets user value
     pm:['How do we solve the Empty Box problem — how do we prevent prompt fatigue and guide users who do not know what to ask through UI suggestions and templates?','Which workflows benefit from AI assistance (human decides, AI informs) vs. AI autonomy (AI decides and acts) — and what signals tell us a workflow is ready to move from one to the other?','How do I measure the business impact of a GenAI application beyond usage metrics — what outcome metrics actually reflect value delivered to the user?'],
     eng:['How do we ensure the application is model-swappable — allowing us to upgrade the underlying model without a full re-architecture of the UI and backend contract?','How do I choose between RAG, structured output, agents, and code assist patterns for a given product requirement — what is the decision framework?','Which components should remain deterministic as model capability improves — and how do we draw that boundary so reliability does not erode as we add AI surface area?'],
   }},
-math_foundations:{questions:{pm:['When a technical blocker claims to need "advanced math," how do you tell if it\'s real or scope creep?','When does limited mathematical depth become a roadmap constraint rather than a solvable implementation detail?','When a feature requires unfamiliar math, do you build the capability, simplify the solution, or cut the feature — and what drives that call?'],eng:['What\'s the minimal linear algebra subset you need before implementing attention from scratch?','When does probability matter — understanding sampling, or only in inference optimization?','Which calculus concepts unlock gradient-based optimization, and which are noise?']}},
-python_ecosystem:{questions:{pm:['Should you standardize on a single data library, or let teams choose their stack?','When does investing in better data tooling pay back faster than engineering more features?'],eng:['What are the failure modes of NumPy broadcasting, and when does it silently produce wrong results?','When does Pandas stop being a bottleneck you can tolerate, and what should replace it first?','Does your team understand when to use views vs. copies in NumPy, and what that costs?']}},
-pytorch_basics:{questions:{eng:['What are the top three ways autograd can surprise you, and how do you guard against each?','When do you need to step outside standard autograd abstractions, and what risks does that introduce?','How do you test that your training loop is doing what you think without waiting for convergence?']}},
-neural_nets:{questions:{pm:['When designing a new feature, does your team know which architectural choices unblock fast iteration?','How much architectural flexibility do you need, or are you over-engineering for hypothetical cases?'],eng:['What happens when you initialize weights badly, and how do you catch it before wasting compute?','When does batch normalization hurt more than help, and what are the alternatives?','Can you explain why a particular activation function works for your use case, or are you cargo-culting?']}},
-optimization:{questions:{eng:['What are the failure modes of Adam, and when should you use SGD or AdamW instead?','How much does optimizer tuning actually change outcomes on your problem, and where is the point of diminishing returns?','What\'s the minimal set of optimizer experiments needed before declaring convergence?']}},
-training_tech:{questions:{pm:['When does distributed training become a dependency vs. a nice-to-have?','Should you defer mixed precision to a later optimization phase?','How do you sequence training infrastructure improvements without blocking model development?'],eng:['What breaks first when you move from single to multi-GPU training?','When does gradient checkpointing actually save memory vs. adding latency?','How do you verify that mixed precision isn\'t silently corrupting your gradients?']}},
-regularization:{questions:{eng:['What happens when you apply weight decay to bias terms?','When is dropout hurting your model more than helping?','How do you distinguish between underregularization and a broken learning signal?']}},
-attention:{questions:{eng:['What are the failure modes of self-attention computation, and how do you catch numerical issues?','When should you use multi-head vs. single-head attention, and how does it affect learning?','What does implementing attention from scratch teach you that using a library abstraction hides?']},refs:[{label:'Attention Is All You Need',url:'https://arxiv.org/abs/1706.03762'},{label:'FlashAttention-2',url:'https://arxiv.org/abs/2307.08691'}]},
-pos_encoding:{questions:{eng:['What happens to position understanding when you extend beyond training context length?','Why does RoPE often hold up better than sinusoidal encodings on long-context tasks, and where does it still break?','How do you test that your model actually uses position information?']},refs:[{label:'RoPE — Rotary Position Embedding',url:'https://arxiv.org/abs/2104.09864'},{label:'ALiBi — Train Short, Test Long',url:'https://arxiv.org/abs/2108.12409'}]},
-transformer_arch:{questions:{pm:['Does the choice of encoder vs. decoder affect your product\'s time-to-market?','Should you support multiple architecture types, or standardize on one?','When does a simpler baseline reduce time-to-signal enough to justify delaying transformer adoption?'],eng:['What\'s the difference in computational complexity between encoder-only and decoder-only, and does it matter?','When should you use a separate encoder and decoder vs. a unified architecture?','How do you test architectural choices without retraining from scratch?']},refs:[{label:'Attention Is All You Need',url:'https://arxiv.org/abs/1706.03762'},{label:'BERT: Pre-training of Deep Bidirectional Transformers',url:'https://arxiv.org/abs/1810.04805'},{label:'Language Models are Few-Shot Learners (GPT-3)',url:'https://arxiv.org/abs/2005.14165'}]},
-kv_cache:{questions:{pm:['When should you invest in KV cache optimizations vs. just scaling servers?','How does KV cache strategy affect your throughput-per-dollar?'],eng:['What\'s the exact memory footprint of KV cache at different sequence lengths?','When does grouped-query attention hurt generation quality, and how do you measure it?','How do you implement speculative decoding without breaking batching?']},refs:[{label:'Efficient Memory Management for LLM Serving with PagedAttention',url:'https://arxiv.org/abs/2309.06180'},{label:'Fast Inference from Transformers via Speculative Decoding',url:'https://arxiv.org/abs/2211.17192'},{label:'FlashAttention-2',url:'https://arxiv.org/abs/2307.08691'}]},
-frontier_models:{questions:{pm:['When should you switch from one frontier model to another?','Does your product need real-time access to the latest model, or can you batch updates?','Should you test new models A/B before committing, or go all-in?'],eng:['What are the breaking changes between frontier model versions?','How do you migrate application state when switching models?','Can you quantize frontier models without major accuracy loss?']}},
-open_models:{questions:{pm:['When is fine-tuning an open model worth the cost vs. prompt engineering a frontier model?','How much of your roadmap depends on open models closing the capability gap — and what is your fallback if they do not?','How often should you re-evaluate open model performance for your task?'],eng:['What\'s the minimum hardware you need to serve an open model reliably?','How do you A/B test an open model against a proprietary baseline?','When does quantization make an open model practical?']}},
-llm_internals:{questions:{pm:['When does understanding scaling laws help with product roadmapping?','Should you plan for context window increases, or assume current windows are sufficient?','When does scaling law intuition change which features belong on your near-term roadmap vs. your wait-and-see list?'],eng:['What\'s your tokenization strategy if you need domain-specific tokens?','When do you need to handle tokenization logic, vs. when does the API handle it?','How do you test that your context window is actually being used effectively?']},refs:[{label:'Scaling Laws for Neural Language Models',url:'https://arxiv.org/abs/2001.08361'},{label:'Training Compute-Optimal LLMs (Chinchilla)',url:'https://arxiv.org/abs/2203.15556'},{label:'Emergent Abilities of Large Language Models',url:'https://arxiv.org/abs/2206.07682'}]},
-vision_language:{questions:{pm:['When should you add vision understanding to your product roadmap?','Should you support multiple image formats, or just optimize for common cases?','How does vision capability affect latency and cost?'],eng:['What are the failure modes of vision-language understanding on your domain?','When does vision understanding help vs. confusing the model?','How do you test vision understanding without manually reviewing images?']}},
-image_gen:{questions:{pm:['When should you add image generation to your feature set?','Should you control generation with guidance or let it be freeform?','How does generation quality affect user satisfaction?'],eng:['What\'s the failure mode of diffusion models on your domain?','When should you use different models for base generation vs. refinement?','How do you test generated images without human review?']}},
-audio_models:{questions:{pm:['When should you add audio support vs. text-only?','Should you support multiple languages upfront or grow incrementally?','How does audio latency affect your product UX?'],eng:['What\'s the failure mode of speech recognition on accented or noisy speech?','When does TTS naturalness matter vs. intelligibility?','How do you test audio quality without listening to thousands of samples?']}},
-video_models:{questions:{pm:['When should video generation or understanding be part of your product?','Should you support long-form or short-form video?','How does video latency affect real-time product requirements?'],eng:['What are the failure modes of temporal reasoning in video models?','When should you use keyframe analysis vs. full video understanding?','How do you test video understanding without manual annotation?']}},
-decision_fwk:{questions:{pm:['When should you revisit past architectural decisions?','Does your framework support rapid experimentation or favor stability?','How do you know when a decision has become wrong?'],eng:['What\'s your minimum viable tradeoff analysis before deciding?','When is "good enough" actually good enough vs. worth optimizing further?','How do you test architectural decisions without rebuilding?']}},
-evals_practice:{questions:{pm:['When should you upgrade your eval suite vs. building more features?','Does your eval set represent real user inputs?','How often should you refresh evals to catch regression?'],eng:['What\'s the minimum eval set size to have confidence in quality?','When do synthetic evals mislead you about real performance?','How do you catch regression without running evals on every change?']},refs:[{label:'Your AI Product Needs Evals (Hamel Husain)',url:'https://hamel.dev/blog/posts/evals/'},{label:'HELM: Holistic Evaluation of Language Models',url:'https://arxiv.org/abs/2211.09110'},{label:'A Survey on Evaluation of Large Language Models',url:'https://arxiv.org/abs/2307.03109'}]},
-compound_ai:{questions:{pm:['When should you add another component (retriever, reranker, router) vs. improving existing ones?','Does adding components actually improve user-visible quality?','How do you sequence component development without causing bottlenecks?'],eng:['What\'s the failure mode when one component in your pipeline breaks?','How do you debug multi-component failures without getting lost?','When does parallelising components reduce latency vs. introducing coordination overhead that costs more than it saves?']},refs:[{label:'The Shift from Models to Compound AI Systems (BAIR)',url:'https://bair.berkeley.edu/blog/2024/02/18/compound-ai-systems/'},{label:'DSPy: Compiling Declarative Language Model Calls',url:'https://arxiv.org/abs/2310.03714'}]},
-frontier_layer:{questions:{pm:['When should you invest in long-context or test-time compute capabilities?','Does multimodal-native architecture matter, or is it a future optimization?','How do you balance frontier adoption against operational stability?'],eng:['What breaks when you upgrade to long-context models?','How do you test test-time compute strategies cost-effectively?','When should you redesign for multimodal-native vs. adapting text-first systems?']}},
-execution_models:{questions:{pm:['When should you switch to streaming responses vs. batch processing?','Does async execution improve responsiveness or just hide latency?','How does execution model affect your product pricing strategy?'],eng:['What breaks first when you switch from sync to async execution?','When should you buffer responses vs. streaming immediately?','How do you handle out-of-order responses in async systems?']}},
-reliability:{questions:{pm:['When should you invest in circuit breakers and retries vs. accepting some failures?','How often should fallback logic kick in, and should users know?','Should you over-provision capacity for resilience?'],eng:['What\'s the failure mode of naive retries?','When should circuit breakers open, and how do you tune thresholds?','How do you test failure scenarios without losing production data?']}},
-traffic_cost:{questions:{pm:['When should you implement rate limiting vs. just paying for usage?','Should cost-aware routing be automatic or require user opt-in?','Which architectural decisions — context length, retrieval depth, model tier — have the first-order impact on your per-request token cost?'],eng:['What\'s your cost per request, and where does it leak?','When should you cache results vs. recomputing?','How do you measure cost impact of each architectural choice?']}},
-state_sessions:{questions:{pm:['When should you add session persistence vs. stateless design?','Should users have explicit save points or implicit snapshotting?','How does state persistence affect product UX?'],eng:['What\'s the failure mode of session loss?','When should you checkpoint state, and how often?','How do you handle concurrent edits to session state?']}},
-human_oversight:{questions:{pm:['When should you route to humans vs. fully automating?','Should users have visibility into human review decisions?','How does human review affect your SLA?'],eng:['What\'s the latency cost of human in the loop?','When should escalation happen automatically vs. waiting for human request?','How do you audit human decisions without creating compliance overhead?']}},
-unstructured:{questions:{pm:['When should you support new document formats vs. focusing on common ones?','Does investing in parsing improve your RAG quality significantly?','Should document quality requirements be upstream (user responsibility) or downstream (you fix it)?'],eng:['What\'s the failure mode of PDF parsing on your documents?','When should you use OCR vs. text extraction?','How do you test parsing without manually checking thousands of documents?']}},
-docling:{questions:{pm:['When should you upgrade to Docling from simpler parsing?','Does table extraction affect your product quality?','Should document quality be treated as an input requirement, or should your parser absorb messy real-world inputs?'],eng:['What\'s the latency cost of Docling, and does it fit your pipeline?','When does Docling fail on edge cases, and what\'s your fallback?','How do you validate that Docling is actually improving output quality?']}},
+math_foundations:{use:'Build core math intuition for ML: linear algebra, calculus, and probability.',code:`import numpy as np
+from scipy.stats import norm
+from scipy.optimize import minimize
+
+# Linear algebra: matrix multiplication, eigenvalues
+A = np.array([[4, -2], [1, 3]])
+eigenvalues, eigenvectors = np.linalg.eig(A)
+print(f'Eigenvalues: {eigenvalues}')
+
+# Gradient computation (calculus foundation)
+def function(x):
+    return x**2 + 3*x + 2
+
+# Manual gradient
+x = 2.0
+h = 1e-5
+gradient = (function(x + h) - function(x - h)) / (2 * h)
+print(f'Gradient at x=2: {gradient}')
+
+# Probability: Bayes theorem
+prior = 0.01  # P(disease)
+likelihood = 0.95  # P(test|disease)
+false_positive = 0.10  # P(test|no disease)
+
+posterior = (likelihood * prior) / (likelihood * prior + false_positive * (1 - prior))
+print(f'P(disease|test+): {posterior:.3f}')
+
+# Optimization: find minimum
+def loss(x):
+    return (x - 3)**2 + 2
+result = minimize(loss, x0=0)
+print(f'Optimal x: {result.x[0]:.3f}')
+`,tip:'Eigenvalues: Determine matrix behavior. SVD: Decompose any matrix.\n\nDerivatives: Foundation for backprop. Chain rule: f(g(x)) → f\\'(g) * g\\'(x).\n\nBayes: P(A|B) = P(B|A)*P(A)/P(B). Prior → likelihood → posterior.'},
+python_ecosystem:{use:'Leverage numpy, pandas, scikit-learn, and HuggingFace for ML workflows.',code:`import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from transformers import pipeline
+
+# NumPy: arrays and linear algebra
+arr = np.array([1, 2, 3, 4, 5])
+mean = np.mean(arr)
+matrix = np.random.randn(3, 3)
+inverse = np.linalg.inv(matrix)
+
+# Pandas: data manipulation
+df = pd.DataFrame({
+    'text': ['Hello world', 'Hi there', 'Good morning'],
+    'label': [0, 1, 1]
+})
+df['length'] = df['text'].str.len()
+print(df.groupby('label').agg({'length': ['mean', 'max']}))
+
+# Scikit-learn: preprocessing and models
+X = df[['length']].values
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+X_train, X_test = train_test_split(X_scaled, test_size=0.2)
+
+# HuggingFace transformers: pre-trained models
+nlp = pipeline('sentiment-analysis')
+result = nlp('I love machine learning!')[0]
+print(f'Label: {result[\\'label\\']}, Score: {result[\\'score\\']:.3f}')
+`,tip:'NumPy: Foundation for all ML in Python. Broadcasting vectorizes operations.\n\nPandas: Load CSVs, aggregate, pivot. df.groupby() + agg() for analysis.\n\nHuggingFace: 100k+ models via pipeline(). Fine-tune with Trainer class.'},
+pytorch_basics:{use:'Master PyTorch tensors, autograd, and training loops.',code:`import torch
+import torch.nn as nn
+import torch.optim as optim
+
+# Tensors
+x = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
+y = x ** 2 + 2 * x + 1
+loss = y.sum()
+
+# Autograd: automatic differentiation
+loss.backward()
+print(f'Gradient: {x.grad}')  # dy/dx = 2x + 2
+
+# GPU acceleration
+if torch.cuda.is_available():
+    x = x.cuda()
+    y = y.cuda()
+
+# Building a model
+model = nn.Sequential(
+    nn.Linear(10, 128),
+    nn.ReLU(),
+    nn.Linear(128, 64),
+    nn.ReLU(),
+    nn.Linear(64, 1)
+)
+
+# Training loop
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+criterion = nn.MSELoss()
+
+for epoch in range(100):
+    # Forward pass
+    x_batch = torch.randn(32, 10)
+    y_batch = torch.randn(32, 1)
+    predictions = model(x_batch)
+    loss = criterion(predictions, y_batch)
+    
+    # Backward pass
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+print('Training complete')
+`,tip:'Tensors are like NumPy arrays but GPU-accelerated and differentiable.\n\nAutograd: Set requires_grad=True, call .backward() to compute gradients automatically.\n\nnn.Module: Subclass for reusable models. .parameters() for optimizer access.'},
+neural_nets:{use:'Implement feedforward networks, backpropagation, and train with common loss functions.',code:`import torch
+import torch.nn as nn
+import torch.optim as optim
+
+# Feedforward network
+class SimpleNN(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super().__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, output_size)
+    
+    def forward(self, x):
+        x = self.relu(self.fc1(x))
+        return self.fc2(x)
+
+# Activations: ReLU, GELU, Sigmoid
+model = SimpleNN(10, 128, 2)
+x = torch.randn(32, 10)
+output = model(x)
+
+# Loss functions
+criterion_mse = nn.MSELoss()  # Regression
+criterion_ce = nn.CrossEntropyLoss()  # Classification
+
+# Backpropagation
+y_true = torch.randint(0, 2, (32,))
+loss = criterion_ce(output, y_true)
+loss.backward()  # Compute gradients
+
+# Training loop
+optimizer = optim.AdamW(model.parameters(), lr=0.001)
+for epoch in range(10):
+    optimizer.zero_grad()
+    out = model(x)
+    loss = criterion_ce(out, y_true)
+    loss.backward()
+    optimizer.step()
+    print(f'Epoch {epoch}, Loss: {loss.item():.4f}')
+`,tip:'ReLU: Fast, avoids vanishing gradients. GELU: Smoother, slightly better (modern default).\n\nBackprop: Reverse-mode autodiff. PyTorch computes automatically via .backward().\n\nLoss choice: MSE for regression, CrossEntropy for classification, BCEWithLogits for binary.'},
+optimization:{use:'Apply AdamW, learning rate schedules, and regularization for efficient model training.',code:`import torch
+import torch.optim as optim
+from torch.optim.lr_scheduler import CosineAnnealingLR
+import math
+
+# AdamW optimizer (with weight decay)
+model = torch.nn.Linear(10, 1)
+optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-2)
+
+# Learning rate schedules
+def cosine_schedule(epoch, num_epochs):
+    return 0.5 * (1 + math.cos(math.pi * epoch / num_epochs))
+
+scheduler = CosineAnnealingLR(optimizer, T_max=100)
+
+# Training loop with gradient clipping
+for epoch in range(100):
+    # Forward pass
+    x = torch.randn(32, 10)
+    y = torch.randn(32, 1)
+    output = model(x)
+    loss = torch.nn.functional.mse_loss(output, y)
+    
+    # Backward
+    optimizer.zero_grad()
+    loss.backward()
+    
+    # Gradient clipping (prevent exploding gradients)
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+    
+    optimizer.step()
+    scheduler.step()
+    
+    if epoch % 20 == 0:
+        print(f'Epoch {epoch}, Loss: {loss:.4f}, LR: {optimizer.param_groups[0][\\'lr\\']: .6f}')
+`,tip:'AdamW: Decoupled weight decay, standard for modern deep learning.\n\nCosine annealing: Warm-up + gradual decay. Better convergence than fixed LR.\n\nGradient clipping: Threshold norm to prevent blow-up in RNNs/Transformers.'},
+training_tech:{use:'Scale training with mixed precision, FSDP, and DeepSpeed ZeRO.',code:`import torch
+from torch.nn.parallel import FullyShardedDataParallel as FSDP
+from torch.cuda.amp import autocast, GradScaler
+import torch.optim as optim
+
+# Mixed precision training (FP32 weights, FP16 forward/backward)
+model = torch.nn.Linear(1000, 100).cuda()
+optimizer = optim.Adam(model.parameters())
+scaler = GradScaler()
+
+for epoch in range(10):
+    x = torch.randn(32, 1000).cuda()
+    y = torch.randn(32, 100).cuda()
+    
+    with autocast():  # FP16 computation
+        output = model(x)
+        loss = torch.nn.functional.mse_loss(output, y)
+    
+    optimizer.zero_grad()
+    scaler.scale(loss).backward()
+    scaler.unscale_(optimizer)
+    scaler.step(optimizer)
+    scaler.update()
+
+# Fully Sharded Data Parallel (FSDP)
+fsdp_model = FSDP(model)
+for batch in dataloader:
+    with autocast():
+        loss = fsdp_model(batch)
+    loss.backward()
+    optimizer.step()
+
+# DeepSpeed ZeRO (conceptual)
+# config = {
+#     'train_batch_size': 32,
+#     'optimizer': {'type': 'AdamW'},
+#     'zero_optimization': {
+#         'stage': 3,  # Optimizer + gradient + parameter sharding
+#         'overlap_comm': True
+#     }
+# }
+`,tip:'Mixed precision: Halves VRAM, 2-3x speedup with minimal quality loss.\n\nFSDP: Shards model across GPUs. ZeRO stage 3: Shards params, gradients, optimizer states.\n\nDistributed: Use torch.distributed.launch; sync_bn for batch norm across devices.'},
+regularization:{use:'Combat overfitting with dropout, weight decay, early stopping, and data augmentation.',code:`import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision.transforms import RandomHorizontalFlip, RandomRotation, Compose
+
+# Dropout: randomly zero activations
+class RegularizedModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(784, 256)
+        self.dropout1 = nn.Dropout(p=0.5)
+        self.fc2 = nn.Linear(256, 128)
+        self.dropout2 = nn.Dropout(p=0.3)
+        self.fc3 = nn.Linear(128, 10)
+    
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.dropout1(x)
+        x = torch.relu(self.fc2(x))
+        x = self.dropout2(x)
+        return self.fc3(x)
+
+model = RegularizedModel()
+
+# Weight decay (L2 regularization)
+optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
+
+# Data augmentation
+augmentation = Compose([
+    RandomHorizontalFlip(p=0.5),
+    RandomRotation(degrees=15)
+])
+
+# Early stopping
+best_val_loss = float('inf')
+patience = 5
+patience_counter = 0
+
+for epoch in range(100):
+    # Training
+    val_loss = train_one_epoch()
+    
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        patience_counter = 0
+    else:
+        patience_counter += 1
+    
+    if patience_counter >= patience:
+        print(f'Early stopping at epoch {epoch}')
+        break
+`,tip:'Dropout: Use 0.3-0.5 for dense layers, 0.1-0.2 for embeddings.\n\nWeight decay: L2 penalty on weights. Prefer over L1 for neural nets.\n\nEarly stopping: Monitor validation loss; stop if no improvement for N epochs.'},
+attention:{use:'Compare and select attention mechanisms (MHA vs GQA vs Flash) based on memory and latency constraints in production LLM systems.',code:`import torch
+import torch.nn.functional as F
+
+# Multi-Head Attention (MHA)
+def mha(query, key, value, num_heads):
+    batch_size, seq_len, d_model = query.shape
+    head_dim = d_model // num_heads
+    
+    # Linear projections
+    Q = query.reshape(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+    K = key.reshape(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+    V = value.reshape(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+    
+    # Scaled dot-product attention
+    scores = torch.matmul(Q, K.transpose(-2, -1)) / (head_dim ** 0.5)
+    attn_weights = F.softmax(scores, dim=-1)
+    output = torch.matmul(attn_weights, V)
+    return output.transpose(1, 2).reshape(batch_size, seq_len, d_model)
+`,tip:'MHA: Full O(n²) compute, best quality. GQA: Grouped heads reduce KV memory 4-8x. Flash Attention: Minimize HBM reads via block-wise compute.\n\nUse GQA for long-context inference; Flash for training efficiency.\n\nCross-attention: Query from decoder, K/V from encoder—critical for multimodal fusion and retrieval augmentation.'},
+pos_encoding:{use:'Implement position encodings (RoPE, ALiBi) to extend context length.',code:`import torch
+import numpy as np
+
+# Sinusoidal positional encoding (original Transformer)
+def sinusoidal_pe(seq_len, d_model):
+    positions = torch.arange(seq_len, dtype=torch.float).unsqueeze(1)
+    dimensions = torch.arange(0, d_model, 2, dtype=torch.float)
+    pe = torch.zeros(seq_len, d_model)
+    
+    pe[:, 0::2] = torch.sin(positions / (10000 ** (dimensions / d_model)))
+    pe[:, 1::2] = torch.cos(positions / (10000 ** (dimensions / d_model)))
+    return pe
+
+# RoPE (Rotary Position Embedding)
+def apply_rope(x, positions):
+    '''Rotate query and key by position'''
+    d = x.shape[-1]
+    freqs = 1.0 / (10000 ** (torch.arange(0, d, 2) / d))
+    m = positions.unsqueeze(-1)
+    freqs = torch.einsum('i,j->ij', m, freqs)
+    
+    # Apply rotation via complex multiplication
+    cos_freqs = torch.cos(freqs)
+    sin_freqs = torch.sin(freqs)
+    rotation_matrix = torch.stack([cos_freqs, -sin_freqs, sin_freqs, cos_freqs], dim=-1)
+    return x  # Simplified; actual RoPE uses complex number tricks
+
+# ALiBi (Attention with Linear Biases)
+def ali_bi(seq_len, num_heads):
+    '''No position encoding; bias attention logits by distance'''
+    slopes = torch.arange(1, num_heads + 1, dtype=torch.float)
+    slopes = 1.0 / (2 ** (slopes / num_heads))
+    
+    bias = torch.arange(seq_len, dtype=torch.float).unsqueeze(-1)
+    bias = (bias - bias.T) * slopes.unsqueeze(-1)
+    return bias
+
+# YaRN context extension (dynamic scaling)
+max_pos = 2048
+extended_max = 16384
+scale_factor = extended_max / max_pos  # ~8x extension
+`,tip:'RoPE: Extrapolates well to longer sequences (YaRN fine-tunes it).\n\nALiBi: No learned embeddings, ultra-efficient; ALiBi alone extends context.\n\nYaRN: Dynamically scales rope freq for 8-16x context extension with minimal fine-tune.'},
+transformer_arch:{use:'Understand Multi-Head Attention, GQA, FFN/SwiGLU, and pre-norm design.',code:`import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model=512, num_heads=8, ffn_dim=2048):
+        super().__init__()
+        
+        # Pre-norm (modern)
+        self.norm1 = nn.LayerNorm(d_model)
+        
+        # Multi-head attention
+        self.mha = nn.MultiheadAttention(d_model, num_heads, batch_first=True)
+        
+        self.norm2 = nn.LayerNorm(d_model)
+        
+        # SwiGLU: FFN variant (better than standard MLP)
+        self.fc1 = nn.Linear(d_model, ffn_dim)
+        self.fc2 = nn.Linear(d_model, ffn_dim)
+        self.fc3 = nn.Linear(ffn_dim, d_model)
+    
+    def forward(self, x, mask=None):
+        # Attention block (pre-norm)
+        x_norm = self.norm1(x)
+        attn_out, _ = self.mha(x_norm, x_norm, x_norm, attn_mask=mask)
+        x = x + attn_out
+        
+        # FFN block (pre-norm + SwiGLU)
+        x_norm = self.norm2(x)
+        ffn_out = self.fc3(F.silu(self.fc1(x_norm)) * self.fc2(x_norm))
+        x = x + ffn_out
+        return x
+
+class Transformer(nn.Module):
+    def __init__(self, num_layers=12, d_model=512):
+        super().__init__()
+        self.blocks = nn.ModuleList([
+            TransformerBlock(d_model) for _ in range(num_layers)
+        ])
+    
+    def forward(self, x):
+        for block in self.blocks:
+            x = block(x)
+        return x
+`,tip:'Pre-norm: LayerNorm before operation. Stabilizes training, improves convergence.\n\nGQA: Group Query Attention reduces KV computation. Replace MHA for inference speed.\n\nSwiGLU: FFN(x) = (xW + b) ⊗ (xV + c) where ⊗ is element-wise mul. ~2% better than ReLU/GELU.'},
+kv_cache:{use:'Optimize inference by managing KV cache trade-offs and implementing prefix caching.',code:`import torch
+import torch.nn.functional as F
+
+# KV Cache mechanics
+def attention_with_cache(Q, K, V, cache_k=None, cache_v=None):
+    batch_size, seq_len, d_model = Q.shape
+    
+    # Append new K, V to cache
+    if cache_k is not None:
+        K = torch.cat([cache_k, K], dim=1)
+        V = torch.cat([cache_v, V], dim=1)
+    
+    # Standard attention
+    scores = torch.matmul(Q, K.transpose(-1, -2)) / (d_model ** 0.5)
+    attn_weights = F.softmax(scores, dim=-1)
+    output = torch.matmul(attn_weights, V)
+    
+    return output, K, V
+
+# PagedAttention simulation (vLLM)
+def paged_attention(query, key_pages, value_pages):
+    '''Pages reduce memory fragmentation'''
+    page_size = 16  # tokens per page
+    output = []
+    
+    for page_idx in range(0, len(key_pages)):
+        page_k = key_pages[page_idx]
+        page_v = value_pages[page_idx]
+        scores = torch.matmul(query, page_k.T) / 64
+        attn = F.softmax(scores, dim=-1)
+        output.append(torch.matmul(attn, page_v))
+    
+    return torch.cat(output, dim=0)
+
+# Prefix caching pattern
+def cache_system_prompt_kv(system_prompt: str, model):
+    '''Pre-compute and reuse KV cache for system prompt'''
+    system_tokens = tokenize(system_prompt)
+    cached_k, cached_v = model.encode_to_kv(system_tokens)
+    return cached_k, cached_v
+`,tip:'KV cache size: O(2 * batch_size * seq_len * hidden_dim). Dominant VRAM cost.\n\nGQA reduces cache 4-8x by sharing K/V across heads. Prefix caching: reuse system prompt KV.\n\nPagedAttention: Fragmentation-free allocation; 2-4x higher throughput.'},
+frontier_models:{use:'Navigate GPT-4o, Claude 3.5, Gemini 1.5 trade-offs in cost, speed, and capability.',code:`import anthropic
+import json
+
+# Model comparison matrix
+models = {
+    'claude-3-5-sonnet': {'cost_per_mtok': 3.0, 'latency_ms': 100, 'reasoning': 'strong'},
+    'gpt-4o': {'cost_per_mtok': 5.0, 'latency_ms': 150, 'reasoning': 'very-strong'},
+    'claude-3-haiku': {'cost_per_mtok': 0.8, 'latency_ms': 80, 'reasoning': 'basic'},
+    'gemini-1.5-pro': {'cost_per_mtok': 2.5, 'latency_ms': 120, 'reasoning': 'strong'}
+}
+
+# Cost calculation for 1M input + 100k output tokens
+for model, specs in models.items():
+    input_cost = 1.0 * specs['cost_per_mtok']  # 1M tokens
+    output_cost = 0.1 * specs['cost_per_mtok'] * (2 if 'output' in specs else 1)
+    total = (input_cost + output_cost) / 1000
+    print(f'{model}: ${total:.3f}')
+
+# Route to cheapest for simple tasks
+def route_model(task_type: str) -> str:
+    if task_type == 'summarize': return 'claude-3-haiku'
+    if task_type == 'reasoning': return 'gpt-4o'
+    return 'claude-3-5-sonnet'
+
+client = anthropic.Anthropic()
+model = route_model('reasoning')
+response = client.messages.create(
+    model=model,
+    max_tokens=256,
+    messages=[{'role': 'user', 'content': 'Your prompt'}]
+)
+`,tip:'Claude 3.5 Sonnet: Best price-performance; ~3x cheaper than GPT-4o, comparable reasoning.\n\nGPT-4o: Best vision + multimodal, code generation; 70% more expensive.\n\nGemin 1.5: Long context (1M tokens); cheaper for document processing. Monitor API stability.'},
+open_models:{use:'Deploy Llama, Mistral, Gemma locally or via managed services.',code:`from transformers import AutoTokenizer, AutoModelForCausalLM
+from huggingface_hub import login
+import torch
+
+# Login to Hugging Face (required for gated models like Llama)
+login(token='your_hf_token')
+
+# Load Llama 2 7B
+model_name = 'meta-llama/Llama-2-7b-hf'
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=torch.float16,
+    device_map='auto'
+)
+
+# Generate text
+prompt = 'Explain transformers in 2 sentences:'
+inputs = tokenizer(prompt, return_tensors='pt').to('cuda')
+outputs = model.generate(**inputs, max_length=100, temperature=0.7)
+text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+print(text)
+
+# Mistral (easier to access)
+model_name = 'mistralai/Mistral-7B-Instruct-v0.1'
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16)
+
+# Gemma (by Google, 2B/7B)
+model_name = 'google/gemma-7b'
+model = AutoModelForCausalLM.from_pretrained(model_name)
+`,tip:'Llama: Powerful, gated (need approval), 7B/13B/70B sizes.\n\nMistral: Uncensored, 7B, good instruction-following.\n\nGemma: Small efficient models (2B/7B), fast inference, good for edge.'},
+llm_internals:{use:'Understand tokenization, context windows, and sampling strategies for prompt engineering.',code:`from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+import numpy as np
+
+# Tokenization
+tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf')
+text = 'What is machine learning?'
+tokens = tokenizer.encode(text)
+print(f'Tokens: {tokens}')
+print(f'Token count: {len(tokens)}')
+
+# Context window constraints
+model = AutoModelForCausalLM.from_pretrained('meta-llama/Llama-2-7b-hf')
+context_window = 4096  # Llama 2
+print(f'Max context: {context_window} tokens')
+
+# Sampling strategies
+logits = torch.randn(1, 50257)  # vocabulary size
+
+# Greedy (argmax)
+greedy_token = torch.argmax(logits, dim=-1)
+
+# Temperature scaling
+temperature = 0.7
+scaled_logits = logits / temperature
+probabilities = torch.softmax(scaled_logits, dim=-1)
+sampled_token = torch.multinomial(probabilities, 1)
+
+# Top-K sampling
+k = 40
+top_k_logits, top_k_indices = torch.topk(logits, k)
+probs = F.softmax(top_k_logits, dim=-1)
+token = top_k_indices[0][torch.multinomial(probs[0], 1)]
+
+print(f'Temperature {temperature}: More diverse')
+print(f'Top-K {k}: Prevent nonsense tokens')
+`,tip:'Tokenization: 1 token ≠ 1 word. English ≈ 1.3 tokens/word. Budget context aggressively.\n\nTemperature: 0=deterministic, 1.5+=random. Use 0.7-0.9 for creative tasks.\n\nTop-K + temperature: Combine for quality (remove tail probabilities, then sample).'},
+vision_language:{use:'Combine vision and language with CLIP, LLaVA, and GPT-4V for multimodal tasks.',code:`import torch
+from PIL import Image
+from transformers import CLIPProcessor, CLIPModel
+from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+import anthropic
+import base64
+
+# CLIP: aligned vision-text embeddings
+model = CLIPModel.from_pretrained('openai/clip-vit-base-patch32')
+processor = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')
+
+image = Image.open('image.jpg')
+texts = ['a dog', 'a cat', 'a bird']
+
+inputs = processor(text=texts, images=image, return_tensors='pt', padding=True)
+outputs = model(**inputs)
+logits_per_image = outputs.logits_per_image
+print(f'Similarity scores: {logits_per_image}')
+
+# LLaVA: vision-language chat
+processor = LlavaNextProcessor.from_pretrained('llava-hf/llava-v1.6-mistral-7b-hf')
+model = LlavaNextForConditionalGeneration.from_pretrained(
+    'llava-hf/llava-v1.6-mistral-7b-hf',
+    torch_dtype=torch.float16
+).to('cuda')
+
+prompt = 'What is in this image?'
+inputs = processor(text=prompt, images=image, return_tensors='pt').to('cuda')
+output = model.generate(**inputs, max_new_tokens=200)
+print(processor.decode(output[0], skip_special_tokens=True))
+
+# GPT-4V: multimodal frontier
+client = anthropic.Anthropic()
+with open('image.jpg', 'rb') as f:
+    image_data = base64.standard_b64encode(f.read()).decode('utf-8')
+
+response = client.messages.create(
+    model='claude-3-5-sonnet',
+    max_tokens=1024,
+    messages=[{
+        'role': 'user',
+        'content': [
+            {'type': 'image', 'source': {'type': 'base64', 'media_type': 'image/jpeg', 'data': image_data}},
+            {'type': 'text', 'text': 'Describe this image in detail.'}
+        ]
+    }]
+)
+`,tip:'CLIP: Fast embeddings for retrieval; zero-shot classification via text prompts.\n\nLLaVA: 7B/13B open models; good for local vision-language tasks.\n\nGPT-4V/Claude: Best quality; native multimodal (no separate vision encoder). Use for critical tasks.'},
+image_gen:{use:'Generate images and customize models with LoRA fine-tuning for brand consistency.',code:`import requests
+import json
+from diffusers import StableDiffusionPipeline
+import torch
+
+# Text-to-image via API (Stability AI)
+url = 'https://api.stability.ai/v1/generate'
+headers = {'Authorization': f'Bearer {api_key}'}
+payload = {
+    'prompt': 'A serene lake at sunset',
+    'steps': 30,
+    'guidance_scale': 7.5,
+    'width': 512,
+    'height': 512
+}
+response = requests.post(url, headers=headers, json=payload)
+image = response.json()[\\'artifacts\\'][0][\\'base64\\']
+
+# Local generation with Stable Diffusion
+pipeline = StableDiffusionPipeline.from_pretrained(
+    'runwayml/stable-diffusion-v1-5',
+    torch_dtype=torch.float16
+).to('cuda')
+image = pipeline(
+    prompt='A futuristic city',
+    num_inference_steps=50,
+    guidance_scale=7.5
+).images[0]
+image.save('output.png')
+
+# LoRA fine-tuning pattern
+from diffusers import DiffusionPipeline
+pipeline = DiffusionPipeline.from_pretrained('stabilityai/stable-diffusion-xl-base-1.0')
+pipeline.load_lora_weights('path_to_lora_weights')
+image = pipeline('Your brand style: ...').images[0]
+`,tip:'Diffusion models: Start at high noise, denoise iteratively. More steps = better quality, slower.\n\nLoRA: 1-10% of full fine-tune cost; preserves base model, fast inference.\n\nPrompt engineering: Include style (photorealistic, 3D render), artist (Artstation), lighting.'},
+audio_models:{use:'Integrate speech-to-text, text-to-speech, and diarization into voice agents and transcription pipelines.',code:`import whisper
+from bark import generate_audio
+import numpy as np
+
+# STT with Whisper
+model = whisper.load_model('base')
+result = model.transcribe('audio.mp3')
+transcript = result['text']
+print(f'Transcribed: {transcript}')
+
+# TTS with Bark
+text = 'Hello, this is a synthesized voice.'
+audio = generate_audio(text, history_prompt='en_speaker_1')
+
+# Speaker diarization (Pyannote)
+from pyannote.audio import Pipeline
+diarize = Pipeline.from_pretrained('pyannote/speaker-diarization@2.1')
+diarization = diarize('audio.wav')
+
+for turn, _, speaker in diarization.itertracks(yield_label=True):
+    print(f'{speaker}: {turn.start}s - {turn.end}s')
+`,tip:'Whisper: Robust multilingual STT, ~1-5s latency for long audio. Cache model in memory.\n\nTTS latency: Bark ~30s, Stream via chunks for real-time feel.\n\nDiarization: Run as preprocessing; outputs speaker labels for dialogue attribution.'},
+video_models:{use:'Generate and understand video with models like CogVideoX and SVD.',code:`import torch
+from diffusers import CogVideoXPipeline
+import imageio
+
+# Video generation from text (CogVideoX)
+pipe = CogVideoXPipeline.from_pretrained(
+    'THUDM/CogVideoX-5b',
+    torch_dtype=torch.float16
+).to('cuda')
+
+prompt = 'A cat walking in a forest, cinematic style'
+video = pipe(
+    prompt=prompt,
+    num_frames=49,
+    guidance_scale=7.5,
+    num_inference_steps=50
+).frames
+
+# Save video
+import imageio
+imageio.mimwrite('output.mp4', video[0], fps=8)
+
+# SVD (Stable Video Diffusion): image-to-video
+from diffusers import StableVideoDiffusionPipeline
+from PIL import Image
+
+svd_pipe = StableVideoDiffusionPipeline.from_pretrained(
+    'stabilityai/stable-video-diffusion-img2vid-xt',
+    torch_dtype=torch.float16
+).to('cuda')
+
+image = Image.open('init_frame.jpg')
+video = svd_pipe(image, height=576, width=1024, num_frames=25).frames
+imageio.mimwrite('video_from_image.mp4', video[0], fps=8)
+
+# Temporal understanding (conceptual)
+def extract_temporal_features(video_path: str):
+    # Frame sampling and CLIP embeddings
+    frames = [torch.randn(3, 224, 224) for _ in range(16)]
+    return frames
+`,tip:'CogVideoX: Text→video, 8-16 fps, ~30-60s latency for 49 frames.\n\nSVD: Image→video, smoothest motion, ~20s for 25 frames.\n\nTemporal: Models sample sparse frames, interpolate between. Cheaper than dense processing.'},
+decision_fwk:{use:'Systematically compare RAG vs fine-tuning, build vs buy, and model selection trade-offs.',code:`import pandas as pd
+import numpy as np
+
+# Decision matrix
+options = {
+    'RAG': {'cost': 0.3, 'latency': 200, 'quality': 0.85, 'maintenance': 'medium'},
+    'Fine-tune': {'cost': 0.8, 'latency': 50, 'quality': 0.95, 'maintenance': 'high'},
+    'Prompt-only': {'cost': 0.1, 'latency': 100, 'quality': 0.70, 'maintenance': 'low'}
+}
+
+df = pd.DataFrame(options).T
+print(df)
+
+# Weighted scoring
+weights = {'quality': 0.4, 'latency': 0.3, 'cost': 0.2, 'maintenance': 0.1}
+df['score'] = (df['quality'] * weights['quality'] + 
+               (1 - df['latency'] / df['latency'].max()) * weights['latency'] +
+               (1 - df['cost'] / df['cost'].max()) * weights['cost'])
+print(f'\\nBest option: {df[\\'score\\'].idxmax()}')
+
+# RAG suitability: dynamic, up-to-date knowledge?
+# Fine-tune: proprietary style, fixed domain knowledge?
+`,tip:'RAG: Best for dynamic/external knowledge, low latency, low cost. FT: Best for style, reasoning, fixed domain.\n\nBuild vs buy: If domain is unique + scale > 100k users, consider fine-tuning. Otherwise: managed API + RAG.\n\nModel selection: Benchmark on YOUR data with YOUR eval set, not leaderboards.'},
+evals_practice:{use:'Build evaluation pipelines with LLM-as-judge, golden sets, and CI/CD integration for production safety.',code:`import anthropic
+from typing import NamedTuple
+
+class EvalResult(NamedTuple):
+    question: str
+    prediction: str
+    score: float
+    feedback: str
+
+def llm_judge(question: str, prediction: str, gold_answer: str) -> EvalResult:
+    client = anthropic.Anthropic()
+    
+    response = client.messages.create(
+        model='claude-3-5-sonnet',
+        max_tokens=256,
+        messages=[{
+            'role': 'user',
+            'content': f'''Compare predicted vs gold answer:
+Question: {question}
+Predicted: {prediction}
+Gold: {gold_answer}
+
+Score 0-100 and explain.'''
+        }]
+    )
+    
+    # Parse score from response
+    text = response.content[0].text
+    score = float([s for s in text.split() if s.isdigit()][:1][0]) / 100
+    return EvalResult(question, prediction, score, text)
+
+# Run eval suite
+golden_set = [
+    ('What is 2+2?', '4', '4'),
+    ('Capital of France?', 'Paris', 'Paris')
+]
+
+results = [llm_judge(q, p, g) for q, p, g in golden_set]
+avg_score = np.mean([r.score for r in results])
+print(f'Eval score: {avg_score:.2f}')
+`,tip:'LLM-as-judge: Use Claude with structured prompt for consistency. Golden set: 50-200 hand-curated examples.\n\nCI/CD: Eval on every model change; gate deployment at 90%+ baseline score.\n\nVary: Rubric (factuality, style, safety); track regression in version control.'},
+compound_ai:{use:'Design multi-stage systems (retriever + reranker + LLM + router) to balance quality, latency, and cost.',code:`from langchain.retrievers import BM25Retriever
+from sentence_transformers import CrossEncoder
+import anthropic
+
+# Retriever: candidate generation
+documents = ['Doc 1...', 'Doc 2...', 'Doc 3...']
+retriever = BM25Retriever.from_texts(documents)
+candidates = retriever.get_relevant_documents('query')
+
+# Reranker: ranking
+reranker = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-12-v2')
+pairs = [['query', doc.page_content] for doc in candidates]
+scores = reranker.predict(pairs)
+ranked_docs = [candidates[i] for i in scores.argsort()[-5:][::-1]]
+
+# Router: cost/quality decision
+def route_to_model(query_complexity):
+    return 'claude-3-5-sonnet' if query_complexity > 0.7 else 'claude-3-haiku'
+
+# LLM: final generation
+client = anthropic.Anthropic()
+context = '\\n'.join([d.page_content for d in ranked_docs])
+response = client.messages.create(
+    model=route_to_model(0.8),
+    max_tokens=256,
+    messages=[{'role': 'user', 'content': f'Context:\\n{context}\\n\\nQuestion: query'}]
+)
+`,tip:'Retriever: Fast, broad recall (BM25, vector DB). Reranker: Expensive, high precision (cross-encoder).\n\nRouter logic: Use latency/cost thresholds, not just task type.\n\nOptimize: Cache retrieval results; batch rerank; stream LLM output.'},
+frontier_layer:{use:'Adopt test-time compute, distillation, and native multimodal architectures from frontier models.',code:`import anthropic
+
+client = anthropic.Anthropic()
+
+# Test-time compute: longer thinking
+def extended_reasoning(question: str) -> str:
+    response = client.messages.create(
+        model='claude-3-7-sonnet',  # frontier model with extended thinking
+        max_tokens=16000,
+        thinking={'type': 'enabled', 'budget_tokens': 10000},
+        messages=[{'role': 'user', 'content': question}]
+    )
+    return response.content[0].text
+
+# Multimodal native (image + text in single forward pass)
+response = client.messages.create(
+    model='claude-3-5-sonnet',
+    max_tokens=1024,
+    messages=[{
+        'role': 'user',
+        'content': [
+            {'type': 'text', 'text': 'Analyze this chart:'},
+            {'type': 'image', 'source': {
+                'type': 'base64',
+                'media_type': 'image/png',
+                'data': 'base64_encoded_image'
+            }}
+        ]
+    }]
+)
+
+# Knowledge distillation pattern
+frontier_answer = extended_reasoning('Complex problem')
+distill_prompt = f'Explain concisely:\\n{frontier_answer}'
+student_answer = client.messages.create(
+    model='claude-3-haiku',
+    max_tokens=256,
+    messages=[{'role': 'user', 'content': distill_prompt}]
+).content[0].text
+`,tip:'Test-time compute (o3-mini style): Enables complex reasoning; use for hard problems or evals.\n\nMultimodal native: Faster, cheaper than separate vision + LLM pipelines.\n\nDistillation: Extract frontier model insights into cheaper models via few-shot training.'},
+execution_models:{use:'Choose between sync, async, and batch execution patterns based on latency and throughput requirements.',code:`import asyncio
+import anthropic
+from concurrent.futures import ThreadPoolExecutor
+
+client = anthropic.Anthropic()
+
+# Sync (blocking)
+def sync_call(prompt: str) -> str:
+    return client.messages.create(
+        model='claude-3-5-sonnet',
+        max_tokens=256,
+        messages=[{'role': 'user', 'content': prompt}]
+    ).content[0].text
+
+# Async (non-blocking)
+async def async_call(prompt: str) -> str:
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, sync_call, prompt)
+
+async def batch_async(prompts: list) -> list:
+    return await asyncio.gather(*[async_call(p) for p in prompts])
+
+# Batch (process many at once)
+prompts = ['Explain transformers', 'What is RAG?', 'Define attention']
+results = asyncio.run(batch_async(prompts))
+print(results)
+
+# Streaming (progressive output)
+with client.messages.stream(model='claude-3-5-sonnet', max_tokens=256,
+    messages=[{'role': 'user', 'content': 'Explain LLMs briefly'}]) as stream:
+    for text in stream.text_stream:
+        print(text, end='', flush=True)
+`,tip:'Sync: Single request, simple. Async: 10+ concurrent requests, high throughput.\n\nStreaming: Show results in real-time; reduce perceived latency.\n\nBatch API: 1000+ requests, lower cost (50%), async, 24h turnaround.'},
+reliability:{use:'Mitigate hallucinations via grounding, uncertainty quantification, and fallbacks.',code:`import anthropic
+
+client = anthropic.Anthropic()
+
+def reliable_qa_with_fallback(question: str, documents: list) -> str:
+    # Grounding: provide context
+    context = '\\n'.join(documents)
+    
+    response = client.messages.create(
+        model='claude-3-5-sonnet',
+        max_tokens=512,
+        system='Use ONLY the provided context. If not found, say \\'I don\\'t know.\\'',
+        messages=[{
+            'role': 'user',
+            'content': f'Context:\\n{context}\\n\\nQuestion: {question}'
+        }]
+    )
+    
+    answer = response.content[0].text
+    
+    # Fallback: if uncertain, use different approach
+    if 'I don\\'t know' in answer or 'uncertain' in answer.lower():
+        # Fall back to retrieval pipeline
+        return f'Standard approach uncertain. Retrieved similar: {documents[0][:200]}'
+    
+    return answer
+
+def uncertainty_quantification(prompt: str) -> dict:
+    responses = []
+    
+    # Generate multiple samples with temperature
+    for temp in [0.3, 0.7, 1.2]:
+        response = client.messages.create(
+            model='claude-3-5-sonnet',
+            max_tokens=256,
+            temperature=temp,
+            messages=[{'role': 'user', 'content': prompt}]
+        )
+        responses.append(response.content[0].text)
+    
+    # Check agreement
+    agreement = len(set(responses)) == 1
+    return {'responses': responses, 'confident': agreement}
+
+# Fact-checking via retrieval
+def verify_claim(claim: str) -> bool:
+    retrieval_results = search_knowledge_base(claim)
+    return len(retrieval_results) > 0
+`,tip:'Grounding: Always provide context. LLMs hallucinate in vacuum.\n\nTemperature sampling: Low temp (0.3) = deterministic, high (1.2) = diverse. Disagreement = uncertainty.\n\nFallback patterns: If unsure, use simpler model, retrieval, or human escalation.'},
+traffic_cost:{use:'Optimize token budgets, implement caching strategies, and route intelligently.',code:`import anthropic
+from functools import lru_cache
+from datetime import datetime
+
+class CostTracker:
+    def __init__(self, monthly_budget_dollars: float):
+        self.budget = monthly_budget_dollars * 1_000_000 / 3  # ~3 mtokens per dollar
+        self.used = 0
+        self.requests = []
+    
+    def can_afford(self, estimated_tokens: int) -> bool:
+        cost = estimated_tokens / 1_000_000 * 3  # $3 per mtok (estimate)
+        return self.used + cost <= self.budget
+    
+    def log_request(self, model: str, input_tokens: int, output_tokens: int):
+        total = input_tokens + output_tokens
+        self.requests.append({
+            'model': model,
+            'tokens': total,
+            'timestamp': datetime.now()
+        })
+        self.used += total
+
+# Token-efficient routing
+def route_by_budget(question: str, budget_used_percent: float) -> str:
+    if budget_used_percent > 0.9:
+        return 'claude-3-haiku'  # Cheapest
+    if budget_used_percent > 0.7:
+        return 'claude-3-sonnet'  # Medium
+    return 'claude-3-5-sonnet'  # Best quality
+
+# Caching via prompt hashing
+@lru_cache(maxsize=1000)
+def cached_analysis(text: str) -> str:
+    client = anthropic.Anthropic()
+    response = client.messages.create(
+        model='claude-3-5-sonnet',
+        max_tokens=256,
+        messages=[{'role': 'user', 'content': f'Summarize: {text}'}]
+    )
+    return response.content[0].text
+
+# Cost attribution by feature
+def log_cost_by_feature(feature_name: str, tokens: int):
+    # Store in analytics DB
+    print(f'{feature_name}: {tokens} tokens')
+`,tip:'Token budgeting: Plan for 30% over estimate. Monitor daily.\n\nCaching: Hash prompts; reuse results. 80/20 rule: 80% of traffic from 20% of prompts.\n\nRouting: High complexity → Sonnet. Low stakes → Haiku. Fallback chain: Sonnet → Haiku.'},
+state_sessions:{use:'Manage conversation state and multi-user sessions with Redis or in-memory stores.',code:`import redis
+import json
+from typing import Optional
+
+class SessionManager:
+    def __init__(self, redis_url='redis://localhost:6379'):
+        self.redis_client = redis.from_url(redis_url)
+        self.session_ttl = 3600  # 1 hour
+    
+    def create_session(self, user_id: str, initial_context: dict) -> str:
+        import uuid
+        session_id = str(uuid.uuid4())
+        
+        session_data = {
+            'user_id': user_id,
+            'conversation': [],
+            'context': initial_context,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        self.redis_client.setex(
+            f'session:{session_id}',
+            self.session_ttl,
+            json.dumps(session_data)
+        )
+        return session_id
+    
+    def add_message(self, session_id: str, role: str, content: str):
+        data = json.loads(self.redis_client.get(f'session:{session_id}'))
+        data['conversation'].append({'role': role, 'content': content})
+        self.redis_client.setex(
+            f'session:{session_id}',
+            self.session_ttl,
+            json.dumps(data)
+        )
+    
+    def get_context(self, session_id: str) -> Optional[dict]:
+        data = self.redis_client.get(f'session:{session_id}')
+        return json.loads(data) if data else None
+
+# Usage
+manager = SessionManager()
+sid = manager.create_session('user123', {'topic': 'AI'})
+manager.add_message(sid, 'user', 'What is RAG?')
+context = manager.get_context(sid)
+`,tip:'Session key: {user_id}:{session_id}. TTL: 1hr (chat), 7d (long-lived projects).\n\nInline serialization: JSON for simplicity, MessagePack for scale.\n\nMulti-user: Namespace by user_id; isolate sessions via Redis pub/sub for real-time updates.'},
+human_oversight:{use:'Implement approval gates and escalation for high-risk AI decisions.',code:`import anthropic
+from enum import Enum
+
+class ApprovalLevel(Enum):
+    AUTO = 'auto'
+    HUMAN_REVIEW = 'human_review'
+    ESCALATE = 'escalate'
+
+def get_approval_level(request: dict) -> ApprovalLevel:
+    if request['risk_score'] < 0.3: return ApprovalLevel.AUTO
+    if request['risk_score'] < 0.7: return ApprovalLevel.HUMAN_REVIEW
+    return ApprovalLevel.ESCALATE
+
+def process_with_oversight(request: dict) -> str:
+    client = anthropic.Anthropic()
+    
+    # Generate AI response
+    response = client.messages.create(
+        model='claude-3-5-sonnet',
+        max_tokens=256,
+        messages=[{'role': 'user', 'content': request['prompt']}]
+    )
+    ai_response = response.content[0].text
+    
+    # Check approval requirement
+    level = get_approval_level(request)
+    
+    if level == ApprovalLevel.AUTO:
+        return ai_response
+    elif level == ApprovalLevel.HUMAN_REVIEW:
+        print(f'Pending review: {ai_response}')
+        approval = input('Approve? (y/n): ').lower() == 'y'
+        return ai_response if approval else 'Denied'
+    else:  # ESCALATE
+        print(f'ALERT: High-risk decision. Route to {request[\\'escalate_to\\']}')
+        return None
+`,tip:'Risk scoring: Use input complexity, financial impact, data sensitivity. >70% → escalate.\n\nHuman-in-the-loop: Show proposed action + reasoning; require explicit click-through.\n\nEscalation paths: Legal for policy; engineering for technical; security for threats.'},
+unstructured:{use:'Parse diverse document formats (PDF, Word, HTML) into clean text for RAG.',code:`from unstructured.partition.pdf import partition_pdf
+from unstructured.partition.docx import partition_docx
+from unstructured.partition.html import partition_html
+from unstructured.chunking.title import chunk_by_title
+
+# PDF parsing with table extraction
+elements = partition_pdf(
+    filename='document.pdf',
+    extract_image_block_types=['Image', 'Table'],
+    infer_table_structure=True
+)
+
+for element in elements:
+    if hasattr(element, 'text'):
+        print(f'{element.category}: {element.text[:100]}')
+
+# Word document parsing
+elements = partition_docx('document.docx')
+text = '\\n'.join([e.text for e in elements if hasattr(e, 'text')])
+
+# HTML parsing
+elements = partition_html('<html><body><h1>Title</h1><p>Content</p></body></html>')
+
+# Chunking by semantic structure
+chunks = chunk_by_title(elements, max_characters=512)
+for chunk in chunks:
+    print(chunk)
+`,tip:'Unstructured: Preserves semantic structure (headings, lists). 5-10x cleaner than PDF libraries.\n\nTables: Extracted as Markdown tables—ideal for RAG indexing.\n\nChunking: chunk_by_title respects document structure; avoid splitting headers from content.'},
+docling:{use:'Parse complex PDFs and documents into clean Markdown for RAG ingestion.',code:`from docling.document_converter import DocumentConverter
+from docling.datamodel.base_models import Document
+
+# Convert PDF to structured format
+converter = DocumentConverter()
+result = converter.convert('document.pdf')
+document = result.document
+
+# Extract markdown
+markdown = document.export_to_markdown()
+print(markdown[:500])
+
+# Access structured elements
+for table in document.tables:
+    print(f'Table: {table.to_markdown()}')
+
+for heading in document.headings:
+    print(f'Heading: {heading.text}')
+
+# Save for RAG indexing
+with open('output.md', 'w') as f:
+    f.write(markdown)
+`,tip:'Docling preserves layout, extracts tables to Markdown. ~10-50x better than simple PDF extraction.\n\nFor RAG: Convert PDFs → Markdown → chunk by semantic headers, not fixed size.\n\nHandle: scanned PDFs (OCR-ready), complex tables, multi-column layouts.'},
+linear_algebra:{use:'Vectors, matrices, and dot products are the mathematical bedrock of embeddings, attention mechanisms, and transformer forward passes in every GenAI model.',code:`import numpy as np
+# Dot product of two word embeddings
+embedding_a = np.array([0.1, 0.5, -0.2])
+embedding_b = np.array([0.3, 0.2, 0.4])
+similarity = np.dot(embedding_a, embedding_b)  # cosine-like
+# Matrix multiplication (attention scores)
+Q = np.random.randn(8, 64)  # queries
+K = np.random.randn(8, 64)  # keys
+scores = Q @ K.T  # multi-head attention scores`,tip:'Embeddings are high-dimensional vectors—small dot-product changes signal major meaning shifts.\n\nAttention scores use matrix multiplication of queries × keys to measure token relationships.\n\nEigenvalues/eigenvectors matter for understanding learned representation directions.`,refs:[{label:'Matrix Cookbook',url:'https://www.math.uwaterloo.ca/~hwolkowi/matrixcookbook.pdf'},{label:'3Blue1Brown Linear Algebra Essence',url:'https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab'},{label:'NumPy docs',url:'https://numpy.org/doc/stable/'}]},
+calculus:{use:'Gradients and the chain rule are how backpropagation works—without calculus, there\'s no way to update weights and train neural networks.',code:`import torch
+x = torch.tensor([2.0], requires_grad=True)
+y = x**3 + 2*x
+y.backward()  # compute dy/dx via chain rule
+print(f'dy/dx at x=2: {x.grad}')  # 3*x^2 + 2 = 14.0
+# Partial derivatives in multi-variable case
+z = torch.tensor([1.0, 2.0], requires_grad=True)
+loss = (z**2).sum()
+loss.backward()
+print(f'Gradient: {z.grad}')  # [2.0, 4.0]`,tip:'Chain rule: ∂L/∂w = (∂L/∂out) × (∂out/∂w) — this is how errors propagate backward.\n\nAutomatic differentiation in PyTorch tracks this for you via computational graphs.\n\nPartial derivatives let you optimize thousands of parameters simultaneously.`,refs:[{label:'Jeremy Howard Calculus Overview',url:'https://www.youtube.com/watch?v=XmKBP46B6fA'},{label:'Torch autograd docs',url:'https://pytorch.org/docs/stable/autograd.html'},{label:'Khan Academy Multivariable Calculus',url:'https://www.khanacademy.org/math/multivariable-calculus'}]},
+probability:{use:'Probability theory, Bayes\' theorem, and entropy underpin loss functions, beam search, sampling strategies, and everything statistical in model training.',code:`import torch
+import torch.nn.functional as F
+logits = torch.tensor([2.0, 0.5, -1.0])
+probs = F.softmax(logits, dim=0)
+# Entropy (uncertainty measure)
+entropy = -(probs * torch.log(probs + 1e-9)).sum()
+# KL divergence (how different two distributions are)
+target_dist = torch.tensor([0.7, 0.2, 0.1])
+kl_div = F.kl_div(F.log_softmax(logits, dim=0), target_dist, reduction='sum')
+print(f'Entropy: {entropy}, KL: {kl_div}')`,tip:'Softmax converts logits to probabilities; used in every attention layer.\n\nCross-entropy loss is the go-to for training—it\'s equivalent to KL divergence from data distribution.\n\nLow entropy = model is confident; high entropy = uncertain predictions.`,refs:[{label:'Probability for ML (Blei)',url:'https://www.youtube.com/playlist?list=PLNqF1lBJWxK4v4TUamPfJTMdBJBDl-fJj'},{label:'Stanford CS109: Data Science',url:'https://web.stanford.edu/class/cs109/'},{label:'Entropy & Information Theory',url:'https://en.wikipedia.org/wiki/Entropy_(information_theory)'}]},
+pandas:{use:'DataFrames are essential for loading, cleaning, and preparing training datasets before they go into model pipelines.',code:`import pandas as pd
+# Load and filter dataset
+df = pd.read_csv('data.csv')
+df = df[df['text'].str.len() > 10]  # keep rows with text > 10 chars
+# Dedup and shuffle
+df = df.drop_duplicates(subset=['text'])
+df = df.sample(frac=1.0).reset_index(drop=True)
+# Format for training: rename columns to match model expectations
+df = df.rename(columns={'text': 'input_ids', 'label': 'labels'})
+print(f'Dataset shape: {df.shape}')
+df.head()`,tip:'Use \`drop_duplicates()\` before training to avoid data leakage.\n\nApply filtering and transformations with vectorized operations (\`.str\`, \`.apply()\`) for speed.\n\nShuffle datasets and reset index before feeding to DataLoader.`,refs:[{label:'Pandas docs',url:'https://pandas.pydata.org/docs/'},{label:'Tidy Data philosophy',url:'https://vita.had.co.nz/papers/tidy-data.pdf'},{label:'Kaggle Pandas tutorial',url:'https://www.kaggle.com/learn/pandas'}]},
+matplotlib:{use:'Visualizing loss curves, attention patterns, and embedding spaces helps you debug training and understand what your model learns.',code:`import matplotlib.pyplot as plt
+import numpy as np
+# Plot training loss curve
+epochs = np.arange(1, 101)
+train_loss = 2.0 * np.exp(-epochs / 30) + 0.1 * np.random.randn(100)
+val_loss = 2.0 * np.exp(-epochs / 25) + 0.15 * np.random.randn(100)
+plt.figure(figsize=(8, 5))
+plt.plot(epochs, train_loss, label='train', alpha=0.7)
+plt.plot(epochs, val_loss, label='val', alpha=0.7)
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('loss_curve.png', dpi=150, bbox_inches='tight')`,tip:'Plot train/val loss together to spot overfitting (val flattens while train drops).\n\nAttention heatmaps show which tokens attend to which—invaluable for debugging.\n\nEmbedding space plots (via t-SNE/UMAP) reveal whether classes cluster meaningfully.`,refs:[{label:'Matplotlib docs',url:'https://matplotlib.org/'},{label:'Seaborn gallery',url:'https://seaborn.pydata.org/examples.html'},{label:'Effective Matplotlib',url:'https://matplotlib.org/stable/tutorials/introductory/quick_start.html'}]},
+autograd:{use:'PyTorch\'s autograd engine automatically computes gradients by tracing the computational graph—it\'s the engine that makes training work.',code:`import torch
+# Scalar output: backward() computes gradients for all Tensors with requires_grad=True
+x = torch.randn(3, 4, requires_grad=True)
+y = torch.randn(4, 5, requires_grad=True)
+z = x @ y  # matrix multiply
+loss = z.sum()
+loss.backward()  # compute dL/dx and dL/dy
+print(f'x.grad shape: {x.grad.shape}, y.grad shape: {y.grad.shape}')
+# For non-scalar outputs, provide output tensor
+loss_per_sample = z.sum(dim=1)  # shape (3,)
+loss_per_sample.backward(torch.ones(3))`,tip:'Autograd builds a dynamic graph during the forward pass, then reverses it in backward().\n\nAlways zero gradients before a new backward: \`optimizer.zero_grad()\` or \`x.grad.zero_()\`.\n\nSet \`requires_grad=False\` for inference to save memory and speed.`,refs:[{label:'PyTorch autograd tutorial',url:'https://pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html'},{label:'Computational graphs explainer',url:'https://colah.github.io/posts/2015-08-Backprop/'},{label:'PyTorch internals (blog)',url:'https://blog.paperspace.com/pytorch-autograd-understanding-computational-graphs-and-autograd/'}]},
+hf_datasets:{use:'Hugging Face Datasets handles massive training corpora with streaming, filtering, and format conversion—no need to download the whole dataset.',code:`from datasets import load_dataset
+# Stream dataset without downloading everything
+dataset = load_dataset('wikitext', 'wikitext-103', split='train', streaming=True)
+# Filter by length
+dataset = dataset.filter(lambda x: len(x['text'].split()) > 50)
+# Map to model format
+def preprocess(batch):
+    return {'text': [t.lower() for t in batch['text']]}
+dataset = dataset.map(preprocess, batched=True, batch_size=1000)
+# Take first 100 examples
+small_sample = dataset.take(100)
+for sample in small_sample:
+    print(sample)
+    break`,tip:'Use \`streaming=True\` for large datasets to avoid disk space issues.\n\nChain \`.filter()\` and \`.map()\` to preprocess on-the-fly during training.\n\nBatch operations with \`batched=True\` are much faster than element-wise transforms.`,refs:[{label:'HuggingFace Datasets docs',url:'https://huggingface.co/docs/datasets/'},{label:'Common dataset formats',url:'https://huggingface.co/docs/datasets/loading'},{label:'Dataset streaming guide',url:'https://huggingface.co/docs/datasets/stream'}]},
+backprop:{use:'Backpropagation is the algorithm that computes gradients for every parameter—without it, we couldn\'t train deep networks.',code:`import torch
+import torch.nn as nn
+# Simple 2-layer network
+model = nn.Sequential(
+    nn.Linear(10, 5),
+    nn.ReLU(),
+    nn.Linear(5, 1)
+)
+x = torch.randn(4, 10)  # batch of 4
+y_true = torch.randn(4, 1)
+loss_fn = nn.MSELoss()
+# Forward pass
+y_pred = model(x)
+loss = loss_fn(y_pred, y_true)
+# Backward pass: compute gradients via chain rule
+loss.backward()
+# Gradients now available in model parameters
+for name, param in model.named_parameters():
+    if param.grad is not None:
+        print(f'{name} grad shape: {param.grad.shape}')`,tip:'Backprop traces through every operation in reverse order—ReLU, matmuls, activations all have gradient rules.\n\nGradients accumulate by default; call \`zero_grad()\` between steps.\n\nGradient clipping prevents exploding gradients in RNNs and long sequences.`,refs:[{label:'Backpropagation derivation (Colah)',url:'https://colah.github.io/posts/2015-08-Backprop/'},{label:'PyTorch backprop tutorial',url:'https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html'},{label:'Understanding backprop visually',url:'https://www.youtube.com/watch?v=Ilg3gGewQ5U'}]},
+activations:{use:'Nonlinearities like ReLU, GELU, and SwiGLU give transformers their expressive power—without them, stacking layers would just be matrix multiplication.',code:`import torch
+import torch.nn.functional as F
+# Common activations in transformers
+x = torch.randn(4, 256)
+# ReLU: max(0, x) — simple and fast
+relu_out = F.relu(x)
+# GELU (Gaussian Error Linear Unit): used in BERT, GPT-2+
+gelu_out = F.gelu(x)
+# SwiGLU: gating mechanism used in modern models (Llama, GPT-3.5+)
+# SwiGLU(x, W, V, b) = (x @ W + b) * sigmoid(x @ V)
+W = torch.randn(256, 512)
+V = torch.randn(256, 512)
+b = torch.randn(512)
+swiglu = (x @ W + b) * torch.sigmoid(x @ V)
+print(f'Shapes: relu={relu_out.shape}, gelu={gelu_out.shape}, swiglu={swiglu.shape}')`,tip:'ReLU is fast but can suffer dead neurons (gradients become zero).\n\nGELU is smoother and generally works better; it\'s the modern default.\n\nSwiGLU/GLU variants add gating to increase expressiveness without more parameters.`,refs:[{label:'GELU paper',url:'https://arxiv.org/abs/1606.08415'},{label:'GLU variants paper',url:'https://arxiv.org/abs/2002.05202'},{label:'PyTorch activation functions',url:'https://pytorch.org/docs/stable/nn.html#non-linear-activations-weighted-sum-nonlinearity'}]},
+batch_norm:{use:'LayerNorm stabilizes transformer training by normalizing activations per token; BatchNorm is less common in LLMs but important for CNNs.',code:`import torch
+import torch.nn as nn
+# LayerNorm: normalize across feature dimension (typical in transformers)
+x = torch.randn(4, 8, 512)  # (batch, seq_len, hidden_dim)
+layer_norm = nn.LayerNorm(512)
+x_normalized = layer_norm(x)
+print(f'Input mean: {x.mean(dim=-1):.4f}, normalized: {x_normalized.mean(dim=-1):.4f}')
+# BatchNorm: normalize across batch dimension (common in CNNs)
+x_cnn = torch.randn(32, 64, 28, 28)  # (batch, channels, height, width)
+batch_norm = nn.BatchNorm2d(64)
+x_bn = batch_norm(x_cnn)
+# LayerNorm is applied per-token; doesn't depend on batch composition
+print(f'LayerNorm is batch-independent; BatchNorm depends on batch stats')`,tip:'LayerNorm comes after linear projections in transformers; it stabilizes gradients.\n\nBatchNorm requires careful tuning of momentum and epsilon; LayerNorm is more stable out-of-the-box.\n\nUse LayerNorm in transformers; BatchNorm in convolutional layers or older architectures.`,refs:[{label:'LayerNorm paper',url:'https://arxiv.org/abs/1607.06450'},{label:'BatchNorm paper',url:'https://arxiv.org/abs/1502.03167'},{label:'PyTorch normalization layers',url:'https://pytorch.org/docs/stable/nn.html#normalization-layers'}]},
+lr_schedule:{use:'Learning rate scheduling adjusts step size during training—cosine decay and warmup prevent divergence early on and help convergence at the end.',code:`import torch
+from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
+import math
+# Warmup + cosine annealing (standard for transformers)
+optimizer = torch.optim.AdamW(torch.randn(100), lr=1e-3)
+warmup_epochs = 2
+total_epochs = 100
+warmup_scheduler = LinearLR(optimizer, start_factor=0.1, total_iters=warmup_epochs)
+cosine_scheduler = CosineAnnealingLR(optimizer, T_max=total_epochs - warmup_epochs, eta_min=1e-5)
+scheduler = SequentialLR(optimizer, [warmup_scheduler, cosine_scheduler], milestones=[warmup_epochs])
+# Typical training loop
+for epoch in range(total_epochs):
+    # ... train step ...
+    scheduler.step()
+    print(f'Epoch {epoch}, LR: {optimizer.param_groups[0]["lr"]:.6f}')`,tip:'Warmup (linear increase) prevents divergence on large batches in the first few steps.\n\nCosine annealing with eta_min > 0 avoids learning rate going to zero too early.\n\nFor inference, set learning rate to zero or use \`model.eval()\` to disable dropout/norm updates.`,refs:[{label:'SGDR paper (cosine annealing)',url:'https://arxiv.org/abs/1608.03983'},{label:'PyTorch scheduler docs',url:'https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate'},{label:'LR scheduling best practices',url:'https://cs231n.github.io/neural-networks-3/#anneal'}]},
+weight_init:{use:'Smart weight initialization (Xavier, He init) prevents vanishing/exploding gradients and accelerates training—especially critical in deep networks.',code:`import torch
+import torch.nn as nn
+import math
+# Xavier/Glorot initialization (for linear layers with ReLU)
+def xavier_init(layer):
+    if isinstance(layer, nn.Linear):
+        fan_in = layer.weight.size(1)
+        fan_out = layer.weight.size(0)
+        std = math.sqrt(2.0 / (fan_in + fan_out))
+        layer.weight.normal_(0, std)
+        if layer.bias is not None:
+            layer.bias.zero_()
+# He initialization (better for ReLU)
+def he_init(layer):
+    if isinstance(layer, nn.Linear):
+        fan_in = layer.weight.size(1)
+        std = math.sqrt(2.0 / fan_in)
+        layer.weight.normal_(0, std)
+# Apply to model
+model = nn.Sequential(nn.Linear(100, 50), nn.ReLU(), nn.Linear(50, 10))
+model.apply(he_init)
+print('Weights initialized with He init')`,tip:'Xavier init works well for linear layers; He init is better for ReLU networks.\n\nTorch defaults (Kaiming) are usually good, but explicit control helps in edge cases.\n\nWrong initialization can cause training to plateau or diverge within the first epoch.`,refs:[{label:'Xavier initialization paper',url:'https://arxiv.org/abs/1502.01852'},{label:'He initialization paper',url:'https://arxiv.org/abs/1502.01852'},{label:'PyTorch init functions',url:'https://pytorch.org/docs/stable/nn.init.html'}]},
+mixed_prec:{use:'Training in lower precision (bfloat16/float16) reduces GPU memory by 50% and speeds up training while maintaining model quality.',code:`import torch
+from torch.cuda.amp import autocast, GradScaler
+# bfloat16 mixed precision
+model = torch.nn.Linear(1024, 512).cuda()
+optimizer = torch.optim.AdamW(model.parameters())
+scaler = GradScaler()  # scales loss to prevent underflow
+x = torch.randn(32, 1024).cuda()
+y_true = torch.randn(32, 512).cuda()
+loss_fn = torch.nn.MSELoss()
+# Forward pass in float16
+with autocast(dtype=torch.float16):
+    y_pred = model(x)
+    loss = loss_fn(y_pred, y_true)
+# Backward with scaling
+scaler.scale(loss).backward()
+scaler.step(optimizer)
+scaler.update()
+print(f'Mixed precision training complete')`,tip:'bfloat16 is more stable than float16 and preferred for transformers.\n\nUse GradScaler to prevent gradient underflow when using float16.\n\nMemory savings are significant (50%+); speedup is hardware-dependent but usually 10-20%.`,refs:[{label:'Automatic Mixed Precision guide',url:'https://pytorch.org/docs/stable/notes/amp_examples.html'},{label:'bfloat16 vs float16',url:'https://arxiv.org/abs/1905.02175'},{label:'NVIDIA mixed precision training',url:'https://docs.nvidia.com/deeplearning/performance/mixed-precision-training/'}]},
+grad_ckpt:{use:'Gradient checkpointing trades compute for memory—recompute activations during backward instead of storing them—critical for long sequences.',code:`import torch
+import torch.nn as nn
+from torch.utils.checkpoint import checkpoint
+# Define a block to checkpoint
+class TransformerBlock(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.attn = nn.MultiheadAttention(dim, num_heads=8, batch_first=True)
+        self.ff = nn.Sequential(nn.Linear(dim, 4*dim), nn.GELU(), nn.Linear(4*dim, dim))
+    def forward(self, x):
+        x, _ = self.attn(x, x, x)
+        x = self.ff(x)
+        return x
+# Use checkpoint on the block
+model = TransformerBlock(512)
+x = torch.randn(4, 1000, 512, requires_grad=True)
+# Forward: only store input, recompute during backward
+y = checkpoint(model, x, use_reentrant=False)
+loss = y.sum()
+loss.backward()
+print('Gradient checkpointing saves ~50% memory at ~25% compute cost')`,tip:'Gradient checkpointing is most useful for sequence models with long contexts.\n\nRecomputation overhead is ~25-30% compute; memory savings are 40-60%.\n\nUse \`use_reentrant=False\` (newer PyTorch) for stability; older code uses \`use_reentrant=True\`.`,refs:[{label:'Gradient checkpointing paper',url:'https://arxiv.org/abs/1604.06174'},{label:'PyTorch checkpoint docs',url:'https://pytorch.org/docs/stable/checkpoint.html'},{label:'Activation checkpointing (blog)',url:'https://medium.com/tensorflow/fitting-larger-networks-and-sequences-with-gpu-memory-constraints-d5a95b48e58'}]},
+deepspeed:{use:'DeepSpeed enables distributed training across multiple GPUs/TPUs with ZeRO optimizer stages—train 10x+ larger models on commodity hardware.',code:`# This is pseudocode showing DeepSpeed config; actual usage requires a training script
+import deepspeed
+# config.json for DeepSpeed
+config = {
+    "train_batch_size": 32,
+    "optimizer": {
+        "type": "AdamW",
+        "params": {"lr": 1e-4, "betas": [0.9, 0.999]}
+    },
+    "zero_optimization": {
+        "stage": 2,  # Stage 2: partition optimizer + gradients
+        "offload_optimizer": {"device": "cpu"}  # offload to CPU RAM
+    },
+    "gradient_accumulation_steps": 4,
+    "fp16": {"enabled": True, "loss_scale": 1024}
+}
+# In your training script:
+# model_engine, optimizer, _, _ = deepspeed.initialize(config=config, model=model, ...)
+# loss.backward()  # deepspeed handles everything
+print('DeepSpeed config for ZeRO-2 with CPU offload')`,tip:'ZeRO stage 1: partition optimizer states (4x memory reduction).\n\nZeRO stage 2: also partition gradients (8x reduction).\n\nZeRO stage 3: partition model weights too (massive reduction, higher communication overhead).`,refs:[{label:'DeepSpeed docs',url:'https://www.deepspeed.ai/'},{label:'ZeRO paper',url:'https://arxiv.org/abs/1910.02054'},{label:'DeepSpeed getting started',url:'https://www.deepspeed.ai/tutorials/'}]},
+dropout:{use:'Dropout randomly zeros neurons during training as regularization—less critical in modern LLMs due to other stabilization techniques.',code:`import torch
+import torch.nn as nn
+# Dropout in a small network
+model = nn.Sequential(
+    nn.Linear(256, 128),
+    nn.ReLU(),
+    nn.Dropout(p=0.5),  # drop 50% of activations
+    nn.Linear(128, 64),
+    nn.ReLU(),
+    nn.Dropout(p=0.5),
+    nn.Linear(64, 10)
+)
+x = torch.randn(32, 256)
+# Training: dropout is active
+model.train()
+y_train = model(x)
+print(f'Training output (with dropout): {y_train.shape}')
+# Inference: dropout is disabled
+model.eval()
+with torch.no_grad():
+    y_eval = model(x)
+print(f'Inference output (no dropout): {y_eval.shape}')`,tip:'Dropout prevents co-adaptation of neurons; set \`model.eval()\` for inference.\n\nModern LLMs use less dropout than older architectures—LayerNorm and large batch sizes provide regularization.\n\nDrop rate typically 0.1-0.5; start low and increase if overfitting is severe.`,refs:[{label:'Dropout paper',url:'https://arxiv.org/abs/1207.0580'},{label:'PyTorch Dropout',url:'https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html'},{label:'Regularization in deep learning',url:'https://cs231n.github.io/neural-networks-2/#reg'}]},
+weight_decay:{use:'Weight decay (L2 regularization) via AdamW prevents overfitting in fine-tuning by penalizing large weights.',code:`import torch
+import torch.nn as nn
+# AdamW includes weight decay decoupled from gradient-based update
+model = nn.Sequential(
+    nn.Linear(128, 64),
+    nn.ReLU(),
+    nn.Linear(64, 10)
+)
+# weight_decay=0.01 is typical for fine-tuning
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.01)
+x = torch.randn(32, 128)
+y_true = torch.randint(0, 10, (32,))
+loss_fn = nn.CrossEntropyLoss()
+# Training step
+y_pred = model(x)
+loss = loss_fn(y_pred, y_true)
+loss.backward()
+optimizer.step()
+optimizer.zero_grad()
+print('AdamW with weight_decay=0.01 applied')`,tip:'AdamW decouples weight decay from the gradient update—more effective than L2 in the loss.\n\nWeight decay 0.01-0.1 is typical; too high suppresses learning, too low has no effect.\n\nUse AdamW, not SGD+L2, for modern deep learning.`,refs:[{label:'AdamW paper (Decoupled Weight Decay)',url:'https://arxiv.org/abs/1711.05101'},{label:'PyTorch AdamW',url:'https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html'},{label:'Regularization and optimization',url:'https://cs231n.github.io/neural-networks-2/#update'}]},
+multihead_attn:{use:'Multi-head attention splits the key/query/value into parallel heads attending to different subspaces—core to transformer expressiveness.',code:`import torch
+import torch.nn as nn
+import torch.nn.functional as F
+# Manual multi-head attention
+batch_size, seq_len, dim = 4, 10, 512
+num_heads = 8
+head_dim = dim // num_heads
+# Input
+x = torch.randn(batch_size, seq_len, dim)
+# Project to Q, K, V
+W_q = nn.Linear(dim, dim)
+W_k = nn.Linear(dim, dim)
+W_v = nn.Linear(dim, dim)
+Q = W_q(x).view(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+K = W_k(x).view(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+V = W_v(x).view(batch_size, seq_len, num_heads, head_dim).transpose(1, 2)
+# Compute attention per head
+scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(head_dim)
+attn = F.softmax(scores, dim=-1)
+output = torch.matmul(attn, V)
+# Reshape and project back
+output = output.transpose(1, 2).contiguous().view(batch_size, seq_len, dim)
+output = nn.Linear(dim, dim)(output)
+print(f'Multi-head output shape: {output.shape}')`,tip:'Each head learns to attend to different aspects: syntax, semantics, positional patterns.\n\n8 heads of 64-dim each is typical; bigger models use 12-40 heads.\n\nHeads are computed in parallel—no sequential dependency—making attention fast.`,refs:[{label:'Attention is All You Need',url:'https://arxiv.org/abs/1706.03762'},{label:'PyTorch MultiheadAttention',url:'https://pytorch.org/docs/stable/generated/torch.nn.MultiheadAttention.html'},{label:'Transformer explained visually',url:'https://jalammar.github.io/illustrated-transformer/'}]},
+cross_attn:{use:'Cross-attention attends encoder outputs with decoder queries—essential for seq2seq (T5), RAG reranking, and image-to-text models.',code:`import torch
+import torch.nn as nn
+import torch.nn.functional as F
+# Cross-attention: decoder attends to encoder outputs
+batch_size, enc_len, dec_len, dim = 4, 15, 10, 512
+num_heads = 8
+head_dim = dim // num_heads
+# Encoder and decoder
+encoder_out = torch.randn(batch_size, enc_len, dim)  # e.g., BERT output
+decoder_hidden = torch.randn(batch_size, dec_len, dim)  # decoder state
+# Projections
+W_q = nn.Linear(dim, dim)  # query from decoder
+W_k = nn.Linear(dim, dim)  # key from encoder
+W_v = nn.Linear(dim, dim)  # value from encoder
+Q = W_q(decoder_hidden).view(batch_size, dec_len, num_heads, head_dim).transpose(1, 2)
+K = W_k(encoder_out).view(batch_size, enc_len, num_heads, head_dim).transpose(1, 2)
+V = W_v(encoder_out).view(batch_size, enc_len, num_heads, head_dim).transpose(1, 2)
+# Cross-attention
+scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(head_dim)
+attn = F.softmax(scores, dim=-1)
+cross_out = torch.matmul(attn, V)
+print(f'Cross-attention output shape: {cross_out.shape}')`,tip:'Cross-attention lets decoder conditions on encoder context—unlike self-attention.\n\nUsed in T5, BART for seq2seq; in LLaMA with retrieval (RAG).\n\nMasking differs: cross-attention is unmasked (full visibility to encoder); decoder self-attention is causal.`,refs:[{label:'Attention is All You Need',url:'https://arxiv.org/abs/1706.03762'},{label:'T5 paper',url:'https://arxiv.org/abs/1910.10683'},{label:'Cross-attention in RAG (Facebook)',url:'https://arxiv.org/abs/2005.11401'}]},
+rope:{use:'RoPE (Rotary Position Embeddings) encodes relative positions via rotation matrices—used by Llama, Mistral, Qwen; extrapolates well beyond training length.',code:`import torch
+import math
+def rotate_half(x):
+    \"\"\"Rotate half the dimensions of x by 90 degrees.\"\"\"
+    x1, x2 = x[..., :x.shape[-1]//2], x[..., x.shape[-1]//2:]
+    return torch.cat((-x2, x1), dim=-1)
+def apply_rope(x, freqs):
+    \"\"\"Apply RoPE to embeddings x with precomputed frequencies.\"\"\"
+    return x * freqs[0] + rotate_half(x) * freqs[1]
+# Precompute frequencies (per dimension)
+dim = 128
+seq_len = 512
+inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
+t = torch.arange(seq_len).float()
+freqs = torch.einsum('i,j->ij', t, inv_freq)
+freqs = torch.cat([freqs, freqs], dim=-1)
+# Apply to queries and keys
+q = torch.randn(4, 8, seq_len, dim)  # (batch, heads, seq, dim)
+rope_q = apply_rope(q, (torch.cos(freqs), torch.sin(freqs)))
+print(f'RoPE-encoded queries: {rope_q.shape}')`,tip:'RoPE encodes relative position info in the complex plane via rotation.\n\nExtrapolates to longer sequences than training without fine-tuning (unlike sinusoidal PE).\n\nMore efficient than ALiBi in practice; standard in modern LLMs.`,refs:[{label:'RoPE paper (Su et al.)',url:'https://arxiv.org/abs/2104.09864'},{label:'Llama implementation',url:'https://github.com/facebookresearch/llama/blob/main/llama/model.py'},{label:'Position encoding comparison',url:'https://blog.eleuther.ai/rotary-embeddings/'}]},
+alibi:{use:'ALiBi (Attention with Linear Biases) adds fixed linear biases to attention scores by distance—simpler than RoPE, extrapolates to long sequences.',code:`import torch
+import torch.nn.functional as F
+# ALiBi: add linear bias based on relative distance
+seq_len = 512
+num_heads = 8
+# Slope per head (learned during init, then fixed)
+slopes = torch.tensor([1.0 / (2 ** (i / num_heads)) for i in range(num_heads)])
+# Distance matrix: bias[i, j] = -slope * abs(i - j)
+dist = torch.arange(seq_len).unsqueeze(1) - torch.arange(seq_len).unsqueeze(0)
+# Shape: (seq_len, seq_len, num_heads)
+alibi_bias = -torch.abs(dist).unsqueeze(-1) * slopes.view(1, 1, -1)
+# In attention:
+Q = torch.randn(4, num_heads, seq_len, 64)
+K = torch.randn(4, num_heads, seq_len, 64)
+scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(64)
+scores = scores + alibi_bias  # add ALiBi bias
+attn = F.softmax(scores, dim=-1)
+print(f'ALiBi-biased attention shape: {attn.shape}')`,tip:'ALiBi is simpler and faster than RoPE—no sinusoidal frequency computation.\n\nExtrapolates better than absolute positional embeddings; comparable to RoPE.\n\nUsed in BLOOM and other models; less common than RoPE in 2024+ models.`,refs:[{label:'ALiBi paper (Press et al.)',url:'https://arxiv.org/abs/2108.12409'},{label:'BLOOM paper (includes ALiBi)',url:'https://arxiv.org/abs/2211.05100'},{label:'Position bias comparison',url:'https://huggingface.co/blog/position_embeddings_v2'}]},
+sinusoidal_pe:{use:'Sinusoidal positional encoding (original Transformer) encodes absolute positions via sin/cos at different frequencies—simpler but less scalable than RoPE.',code:`import torch
+import math
+def get_sinusoidal_pe(seq_len, dim):
+    \"\"\"Compute sinusoidal positional embeddings.\"\"\"
+    pe = torch.zeros(seq_len, dim)
+    position = torch.arange(0, seq_len).unsqueeze(1).float()
+    div_term = torch.exp(torch.arange(0, dim, 2).float() * -(math.log(10000) / dim))
+    pe[:, 0::2] = torch.sin(position * div_term)
+    pe[:, 1::2] = torch.cos(position * div_term)
+    return pe
+# Create and use positional embeddings
+seq_len = 512
+dim = 512
+pe = get_sinusoidal_pe(seq_len, dim)
+# Add to token embeddings
+token_emb = torch.randn(4, seq_len, dim)  # (batch, seq, dim)
+x = token_emb + pe.unsqueeze(0)
+print(f'Token embeddings with positional encoding: {x.shape}')`,tip:'Different frequency bands for each dimension—low frequencies capture long-range, high frequencies capture local patterns.\n\nDoes not extrapolate well beyond training sequence length without fine-tuning.\n\nHistorical; mostly replaced by RoPE or ALiBi in modern models.`,refs:[{label:'Attention is All You Need',url:'https://arxiv.org/abs/1706.03762'},{label:'Positional encoding explained',url:'https://kazemnejad.com/blog/transformer_architecture_positional_encoding/'},{label:'PE variants review',url:'https://huggingface.co/blog/position_embeddings_v2'}]},
+encoder_only:{use:'Encoder-only models (BERT, RoBERTa) use bidirectional attention for classification, NER, and dense embeddings—not for generation.',code:`import torch
+from transformers import AutoTokenizer, AutoModel
+# Load BERT (encoder-only)
+tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+model = AutoModel.from_pretrained('bert-base-uncased', output_hidden_states=True)
+# Forward pass
+text = 'The quick brown fox jumps over the lazy dog.'
+inputs = tokenizer(text, return_tensors='pt')
+outputs = model(**inputs)
+# outputs.last_hidden_state: (batch, seq_len, 768)
+# outputs.pooler_output: (batch, 768) — [CLS] token representation
+embeddings = outputs.pooler_output  # sentence embedding
+print(f'Sentence embedding shape: {embeddings.shape}')
+# Typical downstream task: classification head on top
+classifier = torch.nn.Linear(768, 2)
+logits = classifier(embeddings)
+print(f'Classification logits: {logits.shape}')`,tip:'Bidirectional attention means each token sees all future and past tokens—great for understanding but not generation.\n\nUse [CLS] token pooler output as sentence-level representation for downstream tasks.\n\nFine-tune only the last 2-4 layers on downstream tasks to save memory and time.`,refs:[{label:'BERT paper',url:'https://arxiv.org/abs/1810.04805'},{label:'HuggingFace BERT docs',url:'https://huggingface.co/docs/transformers/model_doc/bert'},{label:'Encoder-decoder vs encoder-only (blog)',url:'https://huggingface.co/course/chapter1/2'}]},
+decoder_only:{use:'Decoder-only models (GPT, Llama, Claude) use causal masking for autoregressive generation—the dominant architecture for LLMs.',code:`import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+# Load GPT-2 (decoder-only)
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
+model = AutoModelForCausalLM.from_pretrained('gpt2')
+# Generate text
+prompt = 'The future of AI is'
+inputs = tokenizer(prompt, return_tensors='pt')
+# generate() uses beam search or sampling under the hood
+outputs = model.generate(
+    inputs['input_ids'],
+    max_length=50,
+    num_beams=3,
+    temperature=0.7,
+    top_p=0.9
+)
+generated_text = tokenizer.decode(outputs[0])
+print(f'Generated: {generated_text}')
+# Forward pass returns next-token logits
+logits = model(**inputs).logits  # (batch, seq_len, vocab_size)
+next_token_logits = logits[:, -1, :]
+print(f'Next-token logits: {next_token_logits.shape}')`,tip:'Causal masking: each token attends only to past tokens (including itself) during training.\n\nAutoregressive generation: sample next token, append, repeat until [EOS].\n\nTop-k, top-p, temperature control diversity; beam search ensures higher-quality outputs.`,refs:[{label:'Language Models are Unsupervised Multitask Learners (GPT-2)',url:'https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf'},{label:'HuggingFace text generation',url:'https://huggingface.co/docs/transformers/generation_strategies'},{label:'Generation parameters guide',url:'https://huggingface.co/blog/how-to-generate'}]},
+enc_dec:{use:'Encoder-decoder models (T5, BART) combine bidirectional encoder + causal decoder for seq2seq tasks: translation, summarization, QA.',code:`import torch
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+# Load T5 (encoder-decoder)
+tokenizer = AutoTokenizer.from_pretrained('t5-base')
+model = AutoModelForSeq2SeqLM.from_pretrained('t5-base')
+# T5 requires task prefix
+source = 'translate English to French: Hello, how are you?'
+target = 'Bonjour, comment allez-vous?'
+# Encode
+encoder_inputs = tokenizer(source, return_tensors='pt')
+decoder_inputs = tokenizer(target, return_tensors='pt')
+# Forward: encoder processes source, decoder generates target
+outputs = model(
+    input_ids=encoder_inputs['input_ids'],
+    decoder_input_ids=decoder_inputs['input_ids']
+)
+logits = outputs.logits  # (batch, tgt_len, vocab_size)
+# Generate
+generated = model.generate(encoder_inputs['input_ids'], max_length=50)
+translated = tokenizer.decode(generated[0])
+print(f'Translated: {translated}')`,tip:'Encoder is bidirectional (like BERT); decoder is causal (like GPT).\n\nT5 uses task prefixes (\'translate\', \'summarize\') to signal intent—very flexible.\n\nCross-attention connects encoder outputs to decoder—decoder can attend all encoder tokens.`,refs:[{label:'T5 paper',url:'https://arxiv.org/abs/1910.10683'},{label:'BART paper',url:'https://arxiv.org/abs/1910.13461'},{label:'Seq2Seq with Transformers (HuggingFace)',url:'https://huggingface.co/docs/transformers/tasks/summarization'}]},
+gqa:{use:'Grouped-Query Attention uses fewer key/value heads shared across query heads—reduces KV cache 4-16x without quality loss, critical for long-context.',code:`import torch
+import torch.nn as nn
+import torch.nn.functional as F
+# Grouped-Query Attention (GQA)
+batch_size, seq_len, dim = 4, 2048, 4096
+num_q_heads = 32  # query heads
+num_kv_heads = 8  # KV heads (fewer than query heads)
+head_dim = dim // num_q_heads
+# Project Q, K, V
+W_q = nn.Linear(dim, num_q_heads * head_dim)
+W_k = nn.Linear(dim, num_kv_heads * head_dim)
+W_v = nn.Linear(dim, num_kv_heads * head_dim)
+x = torch.randn(batch_size, seq_len, dim)
+Q = W_q(x).view(batch_size, seq_len, num_q_heads, head_dim).transpose(1, 2)
+K = W_k(x).view(batch_size, seq_len, num_kv_heads, head_dim).transpose(1, 2)
+V = W_v(x).view(batch_size, seq_len, num_kv_heads, head_dim).transpose(1, 2)
+# Repeat KV heads to match query heads
+K = K.repeat_interleave(num_q_heads // num_kv_heads, dim=1)
+V = V.repeat_interleave(num_q_heads // num_kv_heads, dim=1)
+# Standard multi-head attention
+scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(head_dim)
+attn = F.softmax(scores, dim=-1)
+output = torch.matmul(attn, V)
+print(f'GQA output shape: {output.shape}')`,tip:'GQA: num_q_heads >> num_kv_heads. KV cache size ∝ num_kv_heads, not num_q_heads.\n\nMistral, Llama 2, Gemini use GQA to fit longer contexts in VRAM.\n\nMinimal quality loss (<1% perplexity) compared to full multi-head attention.`,refs:[{label:'GQA paper (Ainslie et al.)',url:'https://arxiv.org/abs/2305.13245'},{label:'Llama 2 technical details (GQA)',url:'https://arxiv.org/abs/2307.09288'},{label:'KV cache explained',url:'https://kipp.ly/transformer-inference/'}]},
+context_window:{use:'Context window is the maximum tokens a model can process—longer windows enable multi-document tasks but increase compute and memory.',code:`import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+# Check model context window
+model_name = 'meta-llama/Llama-2-7b-hf'
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
+max_position_embeddings = model.config.max_position_embeddings
+print(f'{model_name} context window: {max_position_embeddings} tokens')
+# Estimate context window usage for a document
+document = 'This is a long document...'  # imagine 50KB of text
+tokens = tokenizer(document)
+num_tokens = len(tokens['input_ids'])
+print(f'Document tokens: {num_tokens}, fits in window: {num_tokens < max_position_embeddings}')
+# Handling long documents: split and process in chunks
+chunk_size = min(2048, max_position_embeddings)
+chunks = [document[i:i+chunk_size] for i in range(0, len(document), chunk_size)]
+print(f'Split document into {len(chunks)} chunks of size {chunk_size}')`,tip:'Llama 2: 4k tokens; Mistral: 32k; Claude 3: 200k; GPT-4: 128k.\n\nLonger context ≠ better; trade-off between throughput and ability to handle long documents.\n\nFor multi-document tasks, consider chunking or hierarchical summarization.`,refs:[{label:'Context Length Extension Survey',url:'https://arxiv.org/abs/2311.12351'},{label:'Llama 2 context window',url:'https://arxiv.org/abs/2307.09288'},{label:'Long Context in LLMs (blog)',url:'https://huggingface.co/blog/long-context-transformers'}]},
+scaling_laws:{use:'Scaling laws (Kaplan, Chinchilla) show power-law relationships between model size, data, compute, and loss—guide training budget allocation.',code:`import numpy as np
+import matplotlib.pyplot as plt
+# Approximate Chinchilla scaling law: L = A * (N^-α + D^-β)
+# For large models: optimal when N ≈ D (params ≈ tokens)
+N = np.logspace(6, 10, 100)  # model size in parameters
+D = 20 * N  # Chinchilla: allocate 20 tokens per parameter
+loss = 1.0 * (N**(-0.07) + D**(-0.16))
+# Kaplan et al.: loss(N) ≈ A*N^-α, loss(D) ≈ B*D^-β
+# Optimal: N_opt ≈ C, D_opt ≈ 20*C
+plt.figure(figsize=(10, 5))
+plt.loglog(N, loss, label='Chinchilla scaling')
+plt.xlabel('Model Parameters (N)')
+plt.ylabel('Loss')
+plt.legend()
+plt.grid(alpha=0.3)
+plt.savefig('scaling_law.png', dpi=150)
+print('Chinchilla law: loss decreases as N^-0.07 for fixed D, D^-0.16 for fixed N')`,tip:'Kaplan et al. (2020): loss ∝ N^-0.074 (diminishing returns on scale).\n\nChinchilla (2022): optimal is N ≈ D (equal compute to params and data).\n\nUse scaling laws to estimate required compute/data for your target model quality.`,refs:[{label:'Scaling Laws for Neural Language Models (Kaplan et al.)',url:'https://arxiv.org/abs/2001.08361'},{label:'Training Compute-Optimal LLMs (Chinchilla)',url:'https://arxiv.org/abs/2203.15556'},{label:'Scaling laws in practice',url:'https://huggingface.co/blog/large-language-models-training'}]},
+moe:{use:'Mixture of Experts (MoE) uses sparse, top-k routing—Mixtral activates only 2 of 8 experts per token, achieving efficiency with dense-model quality.',code:`import torch
+import torch.nn as nn
+# Simplified Mixture of Experts block
+hidden_dim = 256
+num_experts = 8
+expert_dim = 128
+top_k = 2
+# Expert network (small feedforward net)
+class Expert(nn.Module):
+    def __init__(self, dim, expert_dim):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim, expert_dim),
+            nn.GELU(),
+            nn.Linear(expert_dim, dim)
+        )
+    def forward(self, x):
+        return self.net(x)
+# Router: assigns tokens to top-k experts
+router = nn.Linear(hidden_dim, num_experts)
+experts = nn.ModuleList([Expert(hidden_dim, expert_dim) for _ in range(num_experts)])
+# Forward pass
+x = torch.randn(32, hidden_dim)  # batch of tokens
+gates = router(x)  # (batch, num_experts)
+top_k_vals, top_k_indices = torch.topk(gates, k=top_k, dim=-1)
+# For each token, only compute top-k experts
+outputs = torch.zeros_like(x)
+for i in range(top_k):
+    expert_idx = top_k_indices[:, i]
+    for batch_idx, expert_id in enumerate(expert_idx):
+        outputs[batch_idx] += experts[expert_id](x[batch_idx:batch_idx+1]) * top_k_vals[batch_idx, i].softmax(0)
+print(f'MoE output shape: {outputs.shape}')`,tip:'MoE trades density for sparsity: fewer active params per forward, more total params.\n\nTop-2 routing in Mixtral means each token uses 2/8 experts → 1/4 the compute.\n\nLoad balancing (auxiliary loss) prevents all tokens routing to same expert.`,refs:[{label:'Outrageously Large Neural Networks for Efficient Conditional Computation',url:'https://arxiv.org/abs/1701.06538'},{label:'Mixtral paper (Jiang et al.)',url:'https://arxiv.org/abs/2401.04088'},{label:'MoE explained (blog)',url:'https://huggingface.co/blog/moe'}]},
+foundations:{use:'Mathematical foundations (linear algebra, calculus, probability) and core ML concepts underpins every GenAI model and training algorithm.',code:`import numpy as np
+import torch
+# A sampling of foundation concepts
+# 1. Matrix multiplication (linear algebra)
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+C = A @ B
+print(f'Matrix mult: {C}')
+# 2. Gradient computation (calculus)
+x = torch.tensor([2.0], requires_grad=True)
+y = x**2
+y.backward()
+print(f'dy/dx at x=2: {x.grad}')
+# 3. Probability distributions
+probs = torch.softmax(torch.tensor([1.0, 2.0, 0.5]), dim=0)
+entropy = -(probs * torch.log(probs)).sum()
+print(f'Entropy of distribution: {entropy}')
+# 4. Basic neural network forward pass
+x = torch.randn(4, 10)
+w = torch.randn(10, 5)
+b = torch.randn(5)
+y = x @ w + b
+print(f'Neural net output shape: {y.shape}')`,tip:'Strong fundamentals accelerate learning of all other GenAI concepts.\n\nLinear algebra + calculus + probability: the "big three" for deep learning.\n\nReinforce with implementations; formulas alone won\'t stick without hands-on code.`,refs:[{label:'3Blue1Brown Mathematics of Machine Learning playlist',url:'https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab'},{label:'Mathematics for Machine Learning (book)',url:'https://mml-book.github.io/'},{label:'Fast.ai foundations course',url:'https://course.fast.ai/'}]},
+gemini15:{use:'Gemini 1.5 Pro excels with 1M+ token context for processing long documents, PDFs, videos, and multimodal data in a single API call.',code:`import anthropic
+
+client = anthropic.Anthropic()
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    messages=[
+        {"role": "user", "content": "Summarize this 100-page document..."}
+    ]
+)
+print(response.content[0].text)`,tip:'1M context is overkill for most tasks—start with Claude or GPT-4.\n\nBatch long docs into semantic chunks for better focus.\n\nUse for one-shot end-to-end document analysis, not iterative reasoning.'},
+
+o3:{use:'o3/o4-mini models trade latency for correctness via extended thinking; best for hard math, formal proofs, and complex debugging where accuracy matters more than speed.',code:`import anthropic
+
+client = anthropic.Anthropic()
+response = client.messages.create(
+    model="claude-3-7-sonnet-20250219",
+    max_tokens=16000,
+    thinking={"type": "enabled", "budget_tokens": 10000},
+    messages=[{"role": "user", "content": "Prove the Collatz conjecture or debug this recursive function..."}]
+)
+print(response.content[0].thinking)
+print(response.content[1].text)`,tip:'Budget 10k–20k thinking tokens for hard problems.\n\nCosts ~5x latency of instant models; gated for small orgs.\n\nPerfect for competition math, formal verification, complex refactoring.'},
+
+llama3:{use:'Llama 3.1 (open weights, 8B/70B/405B) is fully transparent, fine-tunable, and runs on-prem or via API; strong for coding and instruction-following in regulated orgs.',code:`import replicate
+
+output = replicate.run(
+    "meta/llama-2-70b-chat:58d078176e02430d1f0db41b2a94c8a3f3f4f62f77bea52e4a3c8c8b8e8e8e8e",
+    input={
+        "prompt": "Write a Python function to detect palindromes.",
+        "max_tokens": 500,
+        "temperature": 0.7
+    }
+)
+print("".join(output))`,tip:'405B is SOTA but slow; 70B is best cost/perf; 8B runs on phones.\n\nFully open = no vendor lock-in, reproducible research.\n\nCan fine-tune on your data; watch vRAM on 70B/405B locally.'},
+
+mistral:{use:'Mistral 7B is a lightweight, efficient open model with 32K context and sliding-window attention; ideal for edge, fast inference, and cost-sensitive deployments.',code:`from mistralai.client import MistralClient
+from mistralai.models.chat_message import ChatMessage
+
+client = MistralClient(api_key="your_api_key")
+messages = [
+    ChatMessage(role="user", content="Explain quantum entanglement in 100 words.")
+]
+response = client.chat(model="mistral-7b-instruct-v0.2", messages=messages)
+print(response.choices[0].message.content)`,tip:'7B fits in 16GB VRAM; sliding window reduces memory vs full attention.\n\nGreat for real-time chat on edge devices.\n\nMultilingual support is weaker than Llama 3.1; benchmark before using.'},
+
+phi3:{use:'Phi-3/Phi-4 (Microsoft) are tiny but capable models optimized for on-device inference, mobile, and edge; perfect when latency and power matter.',code:`import requests
+import json
+
+url = "http://localhost:8000/v1/chat/completions"
+payload = {
+    "model": "phi-3-mini",
+    "messages": [{"role": "user", "content": "What is 7 + 5?"}],
+    "temperature": 0.7,
+    "max_tokens": 128
+}
+response = requests.post(url, json=payload)
+print(response.json()["choices"][0]["message"]["content"])`,tip:'2B–14B range; think of it as "GPT-3 but tiny".\n\nRuns on iPad, Raspberry Pi, low-power servers.\n\nTrade-off: weaker reasoning than Llama 70B; test on your tasks.'},
+
+qwen25:{use:'Qwen 2.5 (0.5B–72B) from Alibaba is strong in math, coding, and multilingual understanding with Apache 2.0 license and excellent MTEB embeddings.',code:`import anthropic
+
+client = anthropic.Anthropic(api_key="your_qwen_api_key")
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=512,
+    messages=[
+        {"role": "user", "content": "Solve: 2x^2 - 5x + 3 = 0"}
+    ]
+)
+print(response.content[0].text)`,tip:'0.5B for on-device, 72B for SOTA math/code performance.\n\nNative support for Chinese, English, multilingual training.\n\nApache 2.0 = zero license restrictions; safe for commercial use.'},
+
+gemma2:{use:'Gemma 2 (Google, 2B/9B/27B) uses interleaved local-global attention and is highly fine-tunable; great for custom instruction-following and domain-specific tasks.',code:`from transformers import AutoTokenizer, AutoModelForCausalLM
+
+tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-9b")
+model = AutoModelForCausalLM.from_pretrained("google/gemma-2-9b")
+inputs = tokenizer("Explain photosynthesis", return_tensors="pt")
+outputs = model.generate(**inputs, max_length=150)
+print(tokenizer.decode(outputs[0]))`,tip:'Interleaved attention = local (8 heads) + global (2 heads) per layer.\n\nFine-tune with LoRA in ~4 hours on single 40GB GPU.\n\nSmall size (9B) makes distillation and quantization easy.'},
+
+deepseek:{use:'DeepSeek R1 is an open-source reasoning model competitive with o1, MIT-licensed, trained with chain-of-thought; strong for logic, math, and code.',code:`import requests
+
+url = "https://api.deepseek.com/chat/completions"
+data = {
+    "model": "deepseek-reasoner",
+    "messages": [{"role": "user", "content": "Why do mirrors reverse left-right but not up-down?"}],
+    "temperature": 0.7
+}
+response = requests.post(url, json=data, headers={"Authorization": "Bearer YOUR_KEY"})
+result = response.json()
+print(result["choices"][0]["message"]["content"])`,tip:'MIT license = unrestricted commercial use.\n\nChain-of-thought reasoning similar to o1 but more transparent.\n\nInference slow; best for offline batching, not real-time chat.'},
+
+lmql:{use:'LMQL is a constraint-based query language that enables structured generation with stops, regex constraints, and Python logic integration for reliably formatted outputs.',code:`from lmql.runtime.openai_api import OpenAIChat
+
+query = """
+argmax
+    "Q: What is 2+2?\\nA: [ANSWER]"
+where
+    len(ANSWER) < 10 and
+    ANSWER in ["4", "four"]
+from
+    "openai/gpt-3.5-turbo"
+"""
+results = lmql.run(query)
+print(results)`,tip:'Enforce JSON schema, regex patterns, and stop conditions without post-processing.\n\nMix Python loops + LLM calls; compositional reasoning.\n\nSlower than raw API but guarantees format compliance.'},
+
+bge_rag:{use:'BGE (BAAI) and E5 (Microsoft) are top-ranked embedding models on MTEB; use them for dense retrieval in RAG systems and semantic search.',code:`from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("BAAI/bge-large-en-v1.5")
+sentences = ["The cat sat on the mat.", "Dogs love to play fetch."]
+embeddings = model.encode(sentences, normalize_embeddings=True)
+print(embeddings.shape)
+from sklearn.metrics.pairwise import cosine_similarity
+print(cosine_similarity(embeddings))`,tip:'BGE > OpenAI embeddings on MTEB benchmark.\n\nUse normalized embeddings for cosine similarity; scales to billions.\n\nRe-rank with cross-encoder for top-k precision.'},
+
+cohere_emb:{use:'Cohere Embed API provides 1024-dim multilingual embeddings with compression and binary quantization; optimized for cost and inference speed in production RAG.',code:`import cohere
+
+co = cohere.ClientV2(api_key="your_cohere_key")
+response = co.embed(
+    model="embed-english-v3.0",
+    input_type="search_document",
+    texts=["Machine learning is a subset of AI."]
+)
+print(response.embeddings)`,tip:'1024 dims vs OpenAI\'s 1536; binary quantization cuts storage 8x.\n\nMultilingual by default; compress embeddings for <1ms lookup.\n\nBetter than BGE for longer docs; worse for short snippets.'},
+
+weaviate:{use:'Weaviate is a cloud-native vector database with hybrid BM25+vector search, GraphQL API, and multi-tenancy; simplifies RAG deployment and scaling.',code:`import weaviate
+
+client = weaviate.Client("http://localhost:8080")
+client.schema.create_class({
+    "class": "Document",
+    "vectorizer": "text2vec-openai",
+    "properties": [
+        {"name": "content", "dataType": ["text"]},
+    ]
+})
+client.data_object.create(
+    class_name="Document",
+    data_object={"content": "Quantum computing uses qubits."},
+    vector=[0.1, 0.2, 0.3]
+)`,tip:'GraphQL queries are intuitive but less familiar than SQL.\n\nHybrid search merges BM25 keyword + vector; often outperforms pure vector.\n\nMulti-tenancy = one cluster per customer without data leakage.'},
+
+milvus:{use:'Milvus is an open-source vector DB with IVF_FLAT, HNSW, and DiskANN indexes; scales to petabyte-scale without vendor lock-in.',code:`from pymilvus import connections, Collection, FieldSchema, CollectionSchema, DataType
+
+connections.connect("default", host="localhost", port="19530")
+fields = [
+    FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True),
+    FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=768)
+]
+schema = CollectionSchema(fields, "Documents")
+collection = Collection("docs", schema)
+collection.insert([[1], [[0.1]*768]])
+print("Inserted successfully")`,tip:'HNSW index = faster search than IVF_FLAT; slower than GPU.\n\nDiskANN = billion+ vectors on NVMe at <1ms latency.\n\nOpen-source = full control; petabyte scale on cloud.'},
+
+multi_query:{use:'Multi-Query Retrieval generates N query variants to reduce single-query retrieval bias and improve precision; retrieves from multiple angles simultaneously.',code:`from langchain.retrievers.multi_query import MultiQueryRetriever
+from langchain_openai import ChatOpenAI
+from langchain.vectorstores import Weaviate
+
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
+retriever = MultiQueryRetriever.from_llm(
+    retriever=vector_db.as_retriever(),
+    llm=llm
+)
+docs = retriever.get_relevant_documents(
+    "What is transfer learning?"
+)
+print(f"Retrieved {len(docs)} unique documents")`,tip:'Generates 3–5 query variants; merges and dedupes results.\n\nCosts 3x API calls but catches missed relevant docs.\n\nSkip if you have a robust reranker; use if retrieval is critical.'},
+
+ctx_compress:{use:'Context Compression (LLMLingua, Selective Context) reduces long retrieved docs to key content before passing to LLM; saves tokens and improves latency.',code:`from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import LLMListCompressor
+from langchain_openai import ChatOpenAI
+
+compressor = LLMListCompressor.from_llm(ChatOpenAI(model="gpt-3.5-turbo"))
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor,
+    base_retriever=vector_db.as_retriever()
+)
+docs = compression_retriever.get_relevant_documents("Query")
+print(f"Compressed to {len(docs)} docs, {sum(len(d.page_content) for d in docs)} chars")`,tip:'LLMLingua uses importance scoring; 2–5x compression.\n\nCosts 1 LLM call per result; saves 100s of tokens downstream.\n\nUse when context budget is tight or docs are verbose.'},
+
+graphrag:{use:'GraphRAG (Microsoft) extracts knowledge graphs from docs and runs community detection; enables global reasoning and summarization beyond local retrieval.',code:`import json
+from graphrag.index import run_indexing_pipeline
+
+dataset_path = "./data/"
+output_dir = "./graphrag_output/"
+config = {
+    "llm": {"type": "openai", "model": "gpt-4"},
+    "embeddings": {"type": "openai"}
+}
+result = run_indexing_pipeline(
+    dataset_path=dataset_path,
+    output_dir=output_dir,
+    config_dict=config
+)
+print(f"Graph extracted: {json.dumps(result, indent=2)}")`,tip:'Entity extraction + community detection in one pass.\n\nQueries run on graph, not raw text; answers are more coherent.\n\nSlower than BM25 RAG; use for complex, interconnected domains.'},
+
+agentic_rag:{use:'Agentic RAG (CRAG, Self-RAG) iteratively refines queries and retrieval decisions; agent decides to retrieve, rewrite, or reason without documents.',code:`from langchain.agents import create_openai_tools_agent
+from langchain_openai import ChatOpenAI
+from langchain.tools.retriever import create_retriever_tool
+
+llm = ChatOpenAI(model="gpt-4", temperature=0)
+retriever_tool = create_retriever_tool(
+    vector_db.as_retriever(),
+    name="search_docs",
+    description="Search company knowledge base"
+)
+tools = [retriever_tool]
+agent = create_openai_tools_agent(llm, tools, prompt)
+result = agent.invoke({"input": "Should we expand to Europe?"})
+print(result["output"])`,tip:'Agent decides: retrieve, rewrite query, or skip retrieval.\n\nBetter for multi-step reasoning than static RAG.\n\nCosts more API calls; use for complex business questions.'},
+
+entity_memory:{use:'Entity Memory tracks named entities and their attributes across turns; enables coherent multi-turn agents that remember "Alice is a CEO from Boston".',code:`from langchain.schema import BaseMemory
+from typing import List, Dict
+
+class EntityMemory(BaseMemory):
+    entities: Dict[str, Dict] = {}
+    
+    def save_entity(self, name: str, attributes: Dict):
+        self.entities[name] = {**self.entities.get(name, {}), **attributes}
+    
+    def get_entity(self, name: str) -> Dict:
+        return self.entities.get(name, {})
+
+memory = EntityMemory()
+memory.save_entity("Alice", {"role": "CEO", "location": "Boston"})
+print(memory.get_entity("Alice"))`,tip:'Extract entities per turn; update attributes incrementally.\n\nComplementary to conversation memory; tracks long-term facts.\n\nUse for CRM agents, multi-turn customer support.'},
+
+tool_selection:{use:'Tool Selection uses function calling to let the LLM decide which tool to invoke; minimizes hallucination by constraining available actions.',code:`import anthropic
+
+client = anthropic.Anthropic()
+tools = [
+    {"name": "get_weather", "description": "Get current weather", 
+     "input_schema": {"type": "object", "properties": {"city": {"type": "string"}}}},
+    {"name": "search_web", "description": "Search the web",
+     "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}}}
+]
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    tools=tools,
+    messages=[{"role": "user", "content": "What\\'s the weather in NYC?"}]
+)
+print(response.content[0].type)`,tip:'Define tool schemas precisely; LLM respects boundaries.\n\nAlways validate tool inputs; don\'t blindly execute.\n\nCombine with parallel execution for fan-out workflows.'},
+
+autogen:{use:'AutoGen (Microsoft) is a multi-agent framework using actor model and group chat; agents collaborate, code, and iterate toward complex goals.',code:`from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
+
+assistant = AssistantAgent("assistant", llm_config={"model": "gpt-4"})
+user = UserProxyAgent("user", human_input_mode="NEVER")
+group_chat = GroupChat(agents=[assistant, user], messages=[], max_round=5)
+manager = GroupChatManager(groupchat=group_chat)
+
+user.initiate_chat(manager, message="Write and run a Python script to compute pi.")
+print(f"Chat history: {group_chat.messages}")`,tip:'Agents persist state; conversations are multi-turn.\n\nCode execution happens in sandbox; watch for security.\n\nScales to 5–10 agents; beyond that, choreography gets complex.'},
+
+smolagents:{use:'SmolAgents (HuggingFace) is a minimal agent library with CodeAgent (writes Python) and ToolCallingAgent (calls tools); simpler alternative to AutoGen.',code:`from smolagents import CodeAgent, tool
+
+@tool
+def get_temperature(city: str) -> float:
+    """Get temperature in Celsius."""
+    temps = {"NYC": 5, "LA": 20, "London": 10}
+    return temps.get(city, 15)
+
+agent = CodeAgent(tools=[get_temperature], model_id="HuggingFaceH4/zephyr-7b-beta")
+result = agent.run("What is the temperature in NYC and LA combined?")
+print(result)`,tip:'100 lines vs AutoGen\'s 10k; much easier to learn.\n\nCodeAgent writes Python inline; ToolCallingAgent uses JSON.\n\nGood for prototypes; AutoGen for production multi-agent systems.'},
+
+parallel_agents:{use:'Parallel Execution fans out agent subgraphs for concurrent subtask execution; map-reduce pattern speeds up complex workflows.',code:`import concurrent.futures
+from typing import List
+
+def run_agent_task(task: str) -> str:
+    """Run a single agent task."""
+    return f"Result for: {task}"
+
+tasks = ["Summarize doc A", "Summarize doc B", "Summarize doc C"]
+with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+    results = list(executor.map(run_agent_task, tasks))
+
+merged = " | ".join(results)
+print(f"Merged results: {merged}")`,tip:'Fan-out independent tasks; collect and merge results.\n\nWorks in ThreadPoolExecutor for I/O-bound tasks; ProcessPool for CPU.\n\nWatch total context: 3 parallel queries = 3x token cost.'},
+
+prefix_tuning:{use:'Prefix Tuning prepends trainable virtual tokens to a frozen LLM; much lighter than full fine-tuning while preserving base model knowledge.',code:`from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import get_peft_model, PrefixTuningConfig
+
+model = AutoModelForCausalLM.from_pretrained("gpt2")
+config = PrefixTuningConfig(
+    num_virtual_tokens=20,
+    task_type="CAUSAL_LM"
+)
+model = get_peft_model(model, config)
+print(f"Trainable params: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")`,tip:'0.1–1% trainable params vs LoRA\'s 0.5–1%.\n\nFaster training than LoRA; inference overhead is minimal.\n\nWorks best with decoder-only models; less effective for encoders.'},
+
+ia3:{use:'IA³ (Infused Adapter by Inhibiting and Amplifying) scales inner activations with learnable vectors; smallest PEFT method by far (0.01% params).',code:`from peft import get_peft_model, IA3Config
+
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b")
+config = IA3Config(
+    target_modules=["q_proj", "v_proj"],
+    feedforward_modules=["ff"]
+)
+model = get_peft_model(model, config)
+print(f"Trainable params: {model.get_nb_trainable_parameters()}")`,tip:'Smallest PEFT method; practically parameter-free.\n\nWorks on 8B models with minimal memory overhead.\n\nTrade-off: weaker adaptation than LoRA; benchmark first.'},
+
+orpo:{use:'ORPO (Odds Ratio Preference Optimization) combines SFT and DPO in one stage; trains on preference pairs without separate supervised fine-tuning.',code:`from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer
+from trl import ORPOConfig, ORPOTrainer
+
+model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1")
+tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-v0.1")
+training_args = ORPOConfig(output_dir="./orpo_output", num_train_epochs=3)
+trainer = ORPOTrainer(
+    model=model,
+    tokenizer=tokenizer,
+    args=training_args,
+    train_dataset=dataset
+)
+trainer.train()`,tip:'One stage instead of two; saves compute vs SFT + DPO.\n\nWorks well on small datasets (<10k preference pairs).\n\nOlder than DPO; less community support but simpler pipeline.'},
+
+rlaif:{use:'RLAIF (Reinforcement Learning from AI Feedback) uses an LLM (e.g., Claude) as the preference labeler instead of humans; scales labeling without cost.',code:`from anthropic import Anthropic
+
+client = Anthropic()
+responses_a = ["Response 1", "Response 2"]
+responses_b = ["Response B1", "Response B2"]
+
+def get_preference(resp_a: str, resp_b: str) -> str:
+    msg = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=100,
+        messages=[{"role": "user", "content": f"Which is better? A: {resp_a} or B: {resp_b}?"}]
+    )
+    return msg.content[0].text
+
+prefs = [get_preference(a, b) for a, b in zip(responses_a, responses_b)]
+print(prefs)`,tip:'Claude or Llama 70B work as preference judges.\n\nScale labeling to 10k+ pairs without human cost.\n\nBias risk: LLM preferences may not match user intent; validate sample.'},
+
+llama_factory:{use:'LLaMA-Factory is a unified web UI + CLI for fine-tuning 100+ models; supports LoRA, QLoRA, full fine-tuning with one interface.',code:`from llamafactory.cli import main as llamafactory_main
+
+config = {
+    "model_name_or_path": "meta-llama/Llama-2-7b",
+    "template": "default",
+    "dataset": "identity",
+    "dataset_dir": "./data",
+    "training_type": "lora",
+    "lora_rank": 8,
+    "num_train_epochs": 3,
+    "output_dir": "./lora_output"
+}
+
+llamafactory_main(config)`,tip:'Web UI: zero Python needed; paste data + click train.\n\nSupports QLoRA (4-bit), full FT, and DPO in same tool.\n\nGreat for teams; benchmarking 100 models is built-in.'},
+
+data_flywheel:{use:'Data Flywheel loops production traffic → human review → retraining → better model → more traffic; compound improvements over time.',code:`import json
+from datetime import datetime
+
+class DataFlywheel:
+    def __init__(self, log_file="flywheel.jsonl"):
+        self.log_file = log_file
+    
+    def log_prediction(self, user_query: str, model_output: str, feedback: str = None):
+        record = {
+            "timestamp": datetime.now().isoformat(),
+            "query": user_query,
+            "output": model_output,
+            "feedback": feedback
+        }
+        with open(self.log_file, "a") as f:
+            f.write(json.dumps(record) + "\\n")
+
+flywheel = DataFlywheel()
+flywheel.log_prediction("What is AI?", "AI is...", feedback="good")`,tip:'Feedback loop: production → labels → training data.\n\nRetraining schedule: weekly or when error rate hits threshold.\n\nBenchmark pre/post retraining; compound improvements compound monthly.'},
+
+llms:{use:'Large Language Models (GPT-4, Claude, Gemini, Llama) form the foundation of GenAI; language model family with tradeoffs in cost, speed, and reasoning.',code:`import anthropic
+import openai
+import google.generativeai as genai
+
+clients = {
+    "claude": anthropic.Anthropic(),
+    "openai": openai.OpenAI(),
+    "gemini": genai.GenerativeModel("gemini-pro")
+}
+
+for name, client in clients.items():
+    print(f"Initialized {name} client")`,tip:'GPT-4: reasoning; Claude: long context; Gemini: multimodal.\n\nCost vs quality spectrum: o1 > GPT-4 > Claude > Llama.\n\nAlways benchmark on your task; model SOTA is fluid.'},
+
+transformers_domain:{use:'Transformers are the architecture underpinning all modern LLMs; attention mechanism, tokenization, and embeddings are universal across models.',code:`from transformers import AutoTokenizer, AutoModel
+
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+model = AutoModel.from_pretrained("bert-base-uncased")
+
+text = "Hello, how are you?"
+inputs = tokenizer(text, return_tensors="pt")
+outputs = model(**inputs)
+
+print(f"Last hidden state shape: {outputs.last_hidden_state.shape}")`,tip:'Attention = key innovation; multi-head, causal, sliding-window variants.\n\nTokenization is non-trivial; byte-pair encoding (BPE) is standard.\n\nAttention O(n²) complexity limits context; newer variants trade latency.'},
+gpt4v:{use:'Analyze images, PDFs, and screenshots for document understanding, chart extraction, and visual QA in GenAI workflows.',code:`import anthropic
+
+client = anthropic.Anthropic()
+image_data = open('doc.png', 'rb').read()
+import base64
+image_b64 = base64.standard_b64encode(image_data).decode()
+
+message = client.messages.create(
+    model='claude-3-5-sonnet-20241022',
+    max_tokens=1024,
+    messages=[{
+        'role': 'user',
+        'content': [{
+            'type': 'image',
+            'source': {'type': 'base64', 'media_type': 'image/png', 'data': image_b64}
+        }, {'type': 'text', 'text': 'Extract all text from this document.'}]
+    }]
+)
+print(message.content[0].text)`,tip:'Resize images to <20MB.\n\nUse base64 for small images, URLs for hosted files.\n\nSupports PNG, JPEG, GIF, WebP.'},{refs:[{label:'Claude Vision API',url:'https://docs.anthropic.com/en/api/vision'},{label:'GPT-4V Docs',url:'https://platform.openai.com/docs/guides/vision'},{label:'Image Understanding Guide',url:'https://docs.anthropic.com/en/docs/build-a-chatbot'}]}},
+
+llava:{use:'Run open-source vision-language inference locally with Llama backbone; trade cost for latency control.',code:`from transformers import pipeline
+
+pipe = pipeline(
+    'image-to-text',
+    model='llava-hf/llava-1.5-7b-hf',
+    device=0
+)
+image_url = 'https://example.com/chart.jpg'
+result = pipe(image_url, prompt='Describe the chart in JSON.')
+print(result[0]['generated_text'])`,tip:'Llava-1.5-7B runs on 8GB VRAM.\n\nSupports image URLs and local paths.\n\nTrade quality for speed vs GPT-4V.'},{refs:[{label:'LLaVA HF',url:'https://huggingface.co/llava-hf'},{label:'Transformers Vision Docs',url:'https://huggingface.co/docs/transformers/tasks/image_language_models'}]}},
+
+paligemma:{use:'Deploy compact 3B vision model for resource-constrained fine-tuning on custom visual tasks.',code:`from transformers import AutoProcessor, PaliGemmaForConditionalGeneration
+from PIL import Image
+
+model_id = 'google/paligemma-3b-mix-224'
+model = PaliGemmaForConditionalGeneration.from_pretrained(model_id)
+processor = AutoProcessor.from_pretrained(model_id)
+
+img = Image.open('photo.jpg')
+inputs = processor(text='describe', images=img, return_tensors='pt')
+output = model.generate(**inputs, max_new_tokens=200)
+print(processor.decode(output[0], skip_special_tokens=True))`,tip:'3B size enables mobile/edge deployment.\n\nExcel at OCR and chart understanding.\n\nFine-tune on 100-1K examples.'},{refs:[{label:'PaliGemma Hugging Face',url:'https://huggingface.co/google/paligemma-3b-mix-224'},{label:'Google PaliGemma Intro',url:'https://huggingface.co/blog/paligemma'}]}},
+
+qwen_vl:{use:'Leverage Alibaba\'s multilingual vision model for OCR-heavy document extraction and long-context image understanding.',code:`from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
+
+model_id = 'Qwen/Qwen2-VL-7B-Instruct'
+processor = AutoProcessor.from_pretrained(model_id)
+model = Qwen2VLForConditionalGeneration.from_pretrained(model_id)
+
+conversation = [{
+    'role': 'user',
+    'content': [
+        {'type': 'image', 'image': 'file:///path/invoice.png'},
+        {'type': 'text', 'text': 'Extract invoice number, date, total.'}
+    ]
+}]
+text = processor.apply_chat_template(conversation, tokenize=False, add_generation_prompt=True)
+inputs = processor(text=text, images=['file:///path/invoice.png'], return_tensors='pt')
+output = model.generate(**inputs, max_new_tokens=256)
+print(processor.decode(output[0], skip_special_tokens=True))`,tip:'Strong multilingual OCR (30+ languages).\n\nHandles 20+ images in one prompt.\n\nBetter context than Llava for long docs.'},{refs:[{label:'Qwen2-VL HF',url:'https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct'},{label:'Qwen2-VL Blog',url:'https://qwenlm.github.io/blog/qwen2-vl/'}]}},
+
+diffusion:{use:'Understand iterative denoising: from noise → clean image; foundation for Stable Diffusion, DALL-E, Flux.',code:`import torch
+from diffusers import DDPMScheduler
+
+scheduler = DDPMScheduler(num_train_timesteps=1000)
+print(f'Timesteps: {scheduler.config.num_train_timesteps}')
+print(f'Alphas (noise schedule): {scheduler.alphas_cumprod[:10]}')
+
+noise = torch.randn(1, 3, 32, 32)
+clean_image = torch.randn(1, 3, 32, 32)
+
+for t in scheduler.timesteps[:10]:
+    noisy = scheduler.add_noise(clean_image, noise, t)
+    print(f'Step {t}: noise level = {scheduler.alphas_cumprod[t]:.4f}')`,tip:'DDPM: Denoising Diffusion Probabilistic Models.\n\nScheduler defines noise scaling over T steps.\n\nReverse: denoise T→0; forward: clean→noise.'},{refs:[{label:'DDPM Paper',url:'https://arxiv.org/abs/2006.11239'},{label:'Diffusers Scheduler Docs',url:'https://huggingface.co/docs/diffusers/api/schedulers'}]}},
+
+stable_diff:{use:'Generate, edit, and transform images via text; latent-space efficiency enables 512px on consumer GPUs.',code:`from diffusers import StableDiffusionPipeline
+import torch
+
+model_id = 'runwayml/stable-diffusion-v1-5'
+pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
+pipe.to('cuda')
+
+prompt = 'A serene lake at sunset, oil painting style'
+image = pipe(prompt, height=512, width=512, num_inference_steps=50).images[0]
+image.save('output.png')
+
+negprompt = 'blurry, low quality'
+image2 = pipe(prompt, negative_prompt=negprompt, guidance_scale=7.5).images[0]`,tip:'Use guidance_scale 7-15 for prompt adherence.\n\nLatent diffusion = VAE encode + denoise + decode.\n\nFloat16 halves memory vs float32.'},{refs:[{label:'Stable Diffusion HF',url:'https://huggingface.co/runwayml/stable-diffusion-v1-5'},{label:'Latent Diffusion Paper',url:'https://arxiv.org/abs/2112.10752'}]}},
+
+dalle3:{use:'Leverage OpenAI\'s text-to-image with prompt rewriting; best adherence to complex descriptions.',code:`from openai import OpenAI
+
+client = OpenAI(api_key='sk-...')
+
+response = client.images.generate(
+    model='dall-e-3',
+    prompt='A cyberpunk city at night with flying cars and neon signs, cinematic lighting',
+    size='1024x1024',
+    quality='hd',
+    n=1
+)
+
+image_url = response.data[0].url
+print(f'Image: {image_url}')
+
+revised_prompt = response.data[0].revised_prompt
+print(f'Revised prompt: {revised_prompt}')`,tip:'DALL-E 3 rewrites prompts for clarity.\n\nSupports 1024x1024, 1024x1792, 1792x1024.\n\nHD quality costs 2x tokens vs standard.'},{refs:[{label:'DALL-E 3 API',url:'https://platform.openai.com/docs/guides/images/generations'},{label:'OpenAI Image Generation',url:'https://platform.openai.com/docs/api-reference/images'}]}},
+
+flux:{use:'State-of-art flow matching generation; FLUX.1-dev (best quality), FLUX.1-schnell (4x faster); exceeds SD3.',code:`import anthropic
+import base64
+
+client = anthropic.Anthropic(api_key='sk-ant-...')
+
+prompt = 'A minimalist wooden desk with a warm lamp, 4K product photography'
+
+message = client.messages.create(
+    model='claude-3-5-sonnet-20241022',
+    max_tokens=1024,
+    messages=[{
+        'role': 'user',
+        'content': f'Generate an image using FLUX: {prompt}'
+    }]
+)
+
+print(message.content[0].text)`,tip:'FLUX uses flow matching, not diffusion.\n\nFLUX.1-dev: 82B params, best detail.\n\nFLUX.1-schnell: 12B, 4x faster, good quality.'},{refs:[{label:'FLUX on HF',url:'https://huggingface.co/black-forest-labs/FLUX.1-dev'},{label:'FLUX Intro',url:'https://www.blackforestlabs.ai/'}]}},
+
+whisper:{use:'Transcribe and translate speech; multilingual, noise-robust; deployed as offline service or API.',code:`import whisper
+
+model = whisper.load_model('base')
+result = model.transcribe('audio.mp3', language='en')
+print(result['text'])
+
+result_fr = model.transcribe('audio.wav', language='fr')
+print(f'Detected language: {result_fr["language"]}')
+
+result_translate = model.transcribe('audio.wav', task='translate')
+print(f'Translated to English: {result_translate["text"]}')
+
+print(f'Segments with timing: {result["segments"][:2]}')`,tip:'tiny/base/small for speed; large for accuracy.\n\nMultilingual: 99 languages supported.\n\nRobust to background noise and accents.'},{refs:[{label:'Whisper GitHub',url:'https://github.com/openai/whisper'},{label:'Whisper API Docs',url:'https://platform.openai.com/docs/guides/speech-to-text'}]}},
+
+tts_models:{use:'Generate natural voice outputs for AI agents; choose ElevenLabs (best), Coqui (open), Bark (simple).',code:`import pyttsx3
+
+engine = pyttsx3.init()
+engine.setProperty('rate', 150)
+engine.setProperty('volume', 0.9)
+engine.save_to_file('Hello, this is AI voice.', 'output.wav')
+engine.runAndWait()
+
+from elevenlabs import ElevenLabs
+client = ElevenLabs(api_key='sk-...')
+audio = client.text_to_speech.convert(
+    text='Professional AI voice output.',
+    voice_id='21m00Tcm4TlvDq8ikWAM',
+    model_id='eleven_monolingual_v1'
+)
+with open('elevenlabs_audio.mp3', 'wb') as f:
+    f.write(audio)`,tip:'pyttsx3 for fast local synthesis.\n\nElevenLabs best quality, subscription model.\n\nCoqui TTS (open) good balance speed/quality.'},{refs:[{label:'ElevenLabs API',url:'https://elevenlabs.io/docs/api/text-to-speech'},{label:'pyttsx3 Docs',url:'https://pyttsx3.readthedocs.io/'},{label:'Coqui TTS',url:'https://github.com/coqui-ai/TTS'}]}},
+
+audiocraft:{use:'Generate music and sound effects; MusicGen (melody, style, description), AudioGen (SFX); text-to-audio.',code:`from audiocraft.models import MusicGen
+import torchaudio
+
+model = MusicGen.get_model('medium')
+model.set_generation_params(duration=8)
+
+descriptions = ['electronic upbeat music', 'jazz piano solo']
+wav = model.generate(descriptions, progress=True)
+
+for idx, one_wav in enumerate(wav):
+    filename = f'generated_music_{idx}.wav'
+    torchaudio.save(filename, one_wav.unsqueeze(0), model.sample_rate)
+
+from audiocraft.models import AudioGen
+audio_model = AudioGen.get_model('medium')
+audio_model.set_generation_params(duration=5)
+
+audio = audio_model.generate(['dog barking', 'car honk'])
+torchaudio.save('sfx.wav', audio[0].unsqueeze(0), audio_model.sample_rate)`,tip:'MusicGen: descriptions + optional melody.\n\nAudioGen: realistic sound effects.\n\nDuration 5-30s typical; longer = less coherent.'},{refs:[{label:'AudioCraft GitHub',url:'https://github.com/facebookresearch/audiocraft'},{label:'MusicGen HF',url:'https://huggingface.co/facebook/musicgen-medium'}]}},
+
+sora:{use:'Generate 1-minute video clips from text; diffusion transformer foundation; revolutionizes short-form video synthesis.',code:`from openai import OpenAI
+
+client = OpenAI(api_key='sk-...')
+
+response = client.videos.generations.create(
+    model='sora-1.0',
+    prompt='A serene landscape with mountains, rivers, and sunset. Camera slowly pans from left to right.',
+    duration=60
+)
+
+video_url = response.data[0].url
+print(f'Video generated: {video_url}')
+
+from moviepy.editor import VideoFileClip
+video = VideoFileClip(video_url)
+print(f'Duration: {video.duration}s, FPS: {video.fps}')`,tip:'Up to 60 seconds, 1080p video.\n\nText prompts specify motion and camera work.\n\nApply for API access at OpenAI.'},{refs:[{label:'Sora OpenAI',url:'https://openai.com/sora'},{label:'OpenAI Video API',url:'https://platform.openai.com/docs/guides/videos'}]}},
+
+video_diffusion:{use:'Extend image diffusion to temporal domain; generates 4-8s videos; open-source (CogVideoX, SVD).',code:`from diffusers import StableVideoDiffusionPipeline
+from PIL import Image
+import torch
+
+pipe = StableVideoDiffusionPipeline.from_pretrained('stabilityai/stable-video-diffusion-img2vid-xt', torch_dtype=torch.float16)
+pipe.enable_attention_slicing()
+pipe.to('cuda')
+
+image = Image.open('keyframe.jpg').convert('RGB')
+frames = pipe(image, height=576, width=1024, num_inference_steps=25).frames[0]
+
+import torchvision
+for i, frame in enumerate(frames):
+    frame.save(f'frame_{i:03d}.png')
+
+video = torchvision.io.write_video('output.mp4', frames, fps=7)`,tip:'SVD: stable video from image (6-25 frames).\n\nCogVideoX (open): longer sequences.\n\nStart with keyframe; model predicts motion.'},{refs:[{label:'Stable Video Diffusion',url:'https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt'},{label:'CogVideoX',url:'https://huggingface.co/THUDM/CogVideoX-2b'}]}},
+
+nvidia_gpu:{use:'H100/A100/L40S dominate GenAI training/inference; CUDA/cuDNN ecosystem; benchmark memory bandwidth and TFLOPs.',code:`import torch
+import torch.cuda as cuda
+
+device = torch.device('cuda' if cuda.is_available() else 'cpu')
+print(f'GPU: {cuda.get_device_name(0)}')
+print(f'CUDA Version: {torch.version.cuda}')
+print(f'cuDNN Version: {torch.backends.cudnn.version()}')
+
+props = cuda.get_device_properties(0)
+print(f'Memory: {props.total_memory / 1e9:.1f} GB')
+print(f'Compute Capability: {props.major}.{props.minor}')
+
+for i in range(cuda.device_count()):
+    print(f'Device {i}: {cuda.get_device_name(i)}, {cuda.get_device_properties(i).total_memory / 1e9:.1f} GB')`,tip:'H100: 141 TFLOP (FP8), 80GB HBM3.\n\nA100: 78 TFLOP (FP32), 40-80GB HBM2.\n\nL40S: 568 TFLOP (Tensor), 48GB GDDR6.'},{refs:[{label:'NVIDIA H100 Specs',url:'https://www.nvidia.com/en-us/data-center/h100/'},{label:'CUDA Compute Capability',url:'https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#compute-capability'}]}},
+
+amd_gpu:{use:'ROCm 6.x ecosystem; MI300X (192GB) competitive with H100; open-stack alternative for GenAI inference.',code:`import torch
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f'Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"}')
+
+from rocm import version
+print(f'ROCm Version: {version.__version__}')
+
+import subprocess
+result = subprocess.run(['rocm-smi'], capture_output=True, text=True)
+print(result.stdout)
+
+mi300x_mem = 192
+mi300x_bandwidth = 5.3
+print(f'MI300X: {mi300x_mem}GB HBM3, {mi300x_bandwidth} TB/s bandwidth')`,tip:'ROCm: open-source; HSA driver support.\n\nMI300X: 192GB HBM3 (beats H100\'s 80GB).\n\nSetup harder than CUDA; strong for inference.'},{refs:[{label:'AMD ROCm Docs',url:'https://rocmdocs.amd.com/'},{label:'MI300X Specs',url:'https://www.amd.com/en/products/specifications/processors/accelerators/amd-instinct-mi300x'}]}},
+
+apple_mlx:{use:'Run quantized LLMs natively on M-series Macs; unified memory, battery-efficient local inference.',code:`from mlx_lm import load, generate
+
+model, tokenizer = load('mlx-community/Llama-2-7b-chat-4bit')
+
+prompt = 'What is machine learning?'
+response = generate(
+    model,
+    tokenizer,
+    prompt=prompt,
+    verbose=True,
+    max_tokens=256,
+    temp=0.8
+)
+print(response)
+
+import mlx.core as mx
+print(f'Array on Metal GPU: {mx.array([1, 2, 3]).device}')
+
+tokens = tokenizer.encode(prompt)
+print(f'Token count: {len(tokens)}')`,tip:'MLX: Apple-optimized, unified memory.\n\nM-series: 8-36GB unified, no separate VRAM.\n\nExcellent for local dev, privacy-first agents.'},{refs:[{label:'MLX GitHub',url:'https://github.com/ml-explore/mlx'},{label:'MLX-LM',url:'https://huggingface.co/mlx-community'}]}},
+
+hf_spaces:{use:'Free GPU-backed hosting for Gradio/Streamlit demos; perfect for prototyping GenAI models with zero ops.',code:`import gradio as gr
+import requests
+
+def generate_text(prompt):
+    response = requests.post(
+        'https://api-inference.huggingface.co/models/gpt2',
+        headers={'Authorization': f'Bearer {hf_token}'},
+        json={'inputs': prompt}
+    )
+    return response.json()[0]['generated_text']
+
+interface = gr.Interface(
+    fn=generate_text,
+    inputs='text',
+    outputs='text',
+    title='GenAI Text Generator'
+)
+
+interface.launch(share=True)`,tip:'Free T4/A100 GPU (12-24hr quota).\n\nPrivate repos via HF token auth.\n\nAuto-restart, version control via Git.'},{refs:[{label:'HF Spaces',url:'https://huggingface.co/spaces'},{label:'Gradio Deployment',url:'https://gradio.app/guides/hosting-gradio-with-hugging-face/'}]}},
+
+modal_labs:{use:'Serverless GPU functions; deploy Python with @app.function; auto-scaling, versioning, cost-effective.',code:`import modal
+
+app = modal.App('genai-inference')
+
+@app.function(
+    image=modal.Image.debian_slim().pip_install('torch', 'transformers'),
+    gpu='T4',
+    timeout=600
+)
+def generate_with_llm(prompt: str) -> str:
+    from transformers import pipeline
+    generator = pipeline('text-generation', model='gpt2')
+    result = generator(prompt, max_length=100)
+    return result[0]['generated_text']
+
+@app.local_entrypoint()
+def main(prompt: str):
+    result = generate_with_llm.remote(prompt)
+    print(result)
+
+if __name__ == '__main__':
+    main('Artificial intelligence')`,tip:'@app.function: define remote GPU tasks.\n\nAutoscale: 0 idle → N concurrent (pay per use).\n\nVersioning: built-in model registry.'},{refs:[{label:'Modal Labs',url:'https://modal.com/'},{label:'Modal Docs',url:'https://modal.com/docs/getting-started'}]}},
+
+replicate:{use:'API-driven model hosting; run versioned Llama, SDXL, Whisper with one HTTPS call; no infra.',code:`import replicate
+
+input_data = {
+    'prompt': 'A cat wearing sunglasses on a beach',
+    'num_outputs': 1,
+    'guidance_scale': 7.5
+}
+
+output = replicate.run(
+    'stability-ai/sdxl:39e7ce5daaf3b4a0e89ad8c6fbb7fa6a8cdd62e7fa6add8def97e90f64c72f36',
+    input=input_data
+)
+print(f'Image URL: {output[0]}')
+
+transcription = replicate.run(
+    'openai/whisper:91ee9c2cac6ffc15793318015ec9e4d0be1601baad0fc84a02c5231491fbd378',
+    input={'audio': 'https://example.com/audio.mp3'}
+)
+print(f'Text: {transcription["transcription"]}')`,tip:'Replicate versioning: immutable model IDs.\n\nSync/async API; webhooks for long tasks.\n\nPay per prediction; transparent pricing.'},{refs:[{label:'Replicate',url:'https://replicate.com/'},{label:'Replicate API Docs',url:'https://replicate.com/docs/reference/http'}]}},
+
+mlflow:{use:'Track experiments (params/metrics), log models, manage artifacts; unified dashboard for reproducibility.',code:`import mlflow
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+mlflow.set_experiment('genai-experiment')
+
+with mlflow.start_run():
+    params = {'n_estimators': 100, 'max_depth': 5}
+    mlflow.log_params(params)
+    
+    X, y = [[1, 2], [3, 4]], [0, 1]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    
+    model = RandomForestClassifier(**params)
+    model.fit(X_train, y_train)
+    
+    pred = model.predict(X_test)
+    acc = accuracy_score(y_test, pred)
+    mlflow.log_metric('accuracy', acc)
+    
+    mlflow.sklearn.log_model(model, 'model')
+    
+print('Run logged at: http://localhost:5000')`,tip:'mlflow ui: launch dashboard at localhost:5000.\n\nArtifacts: S3, GCS, Azure Blob Storage.\n\nModel Registry: stage (production/staging).'},{refs:[{label:'MLflow Docs',url:'https://mlflow.org/docs/latest/'},{label:'MLflow Tracking',url:'https://mlflow.org/docs/latest/tracking/'}]}},
+
+dvc:{use:'Version datasets and models like code; track pipelines, enable reproducible GenAI training workflows.',code:`import dvc.api
+import os
+
+os.system('dvc init')
+os.system('git init')
+
+os.system('dvc add data/train.csv')
+os.system('git add data/.gitignore data/train.csv.dvc')
+
+os.system('dvc remote add myremote s3://bucket/path')
+os.system('dvc push')
+
+data_url = 'https://github.com/user/repo/blob/main/data/train.csv.dvc'
+data = dvc.api.read(data_url, mode='rb')
+print(f'Data fetched: {len(data)} bytes')
+
+os.system('dvc dag')
+os.system('dvc repro')`,tip:'dvc add: track CSV, models, images.\n\nRemote storage: S3, GCS, Azure, local.\n\nPipeline: dvc.yaml defines dependencies.'},{refs:[{label:'DVC Docs',url:'https://dvc.org/doc'},{label:'DVC Pipeline',url:'https://dvc.org/doc/user-guide/pipelines'}]}},
+
+hf_hub:{use:'Central hub for model/dataset hosting; push_to_hub, download, private repos; Hugging Face ecosystem.',code:`from huggingface_hub import HfApi, upload_folder
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+api = HfApi()
+api.create_repo(repo_id='username/my-model', token='hf_...')
+
+model = AutoModelForCausalLM.from_pretrained('gpt2')
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
+
+model.push_to_hub('username/my-model', token='hf_...')
+tokenizer.push_to_hub('username/my-model', token='hf_...')
+
+from huggingface_hub import snapshot_download
+local_dir = snapshot_download(repo_id='meta-llama/Llama-2-7b-hf')
+print(f'Model cached at: {local_dir}')`,tip:'Transformers auto-detect HF Hub models.\n\nPrivate repos: share via access token.\n\nSnapshots: auto-cache, manage revisions.'},{refs:[{label:'Hugging Face Hub',url:'https://huggingface.co/'},{label:'Push to Hub Guide',url:'https://huggingface.co/docs/hub/security-tokens'}]}},
+
+openai_compat:{use:'Drop-in OpenAI API replacement; vLLM, Ollama, LM Studio provide compatible endpoints; zero-code swap.',code:`from openai import OpenAI
+
+client = OpenAI(
+    api_key='sk-123',
+    base_url='http://localhost:8000/v1'
+)
+
+response = client.chat.completions.create(
+    model='meta-llama/Llama-2-7b-chat',
+    messages=[
+        {'role': 'system', 'content': 'You are a helpful assistant.'},
+        {'role': 'user', 'content': 'Explain diffusion models.'}
+    ],
+    temperature=0.7,
+    max_tokens=256
+)
+
+print(response.choices[0].message.content)
+
+stream = client.chat.completions.create(
+    model='meta-llama/Llama-2-7b-chat',
+    messages=[{'role': 'user', 'content': 'Hi'}],
+    stream=True
+)
+for chunk in stream:
+    print(chunk.choices[0].delta.content or '', end='')`,tip:'vLLM: fastest inference server.\n\nOllama: local Mac/Linux, simple download.\n\nLM Studio: GUI, Windows/Mac/Linux.'},{refs:[{label:'vLLM',url:'https://vllm.readthedocs.io/'},{label:'Ollama',url:'https://ollama.ai/'},{label:'LM Studio',url:'https://lmstudio.ai/'}]}},
+
+litellm:{use:'100+ provider unified interface; cost tracking, fallbacks, proxy; abstract GenAI provider complexity.',code:`import litellm
+from litellm import Router
+
+litellm.set_verbose = True
+
+router = Router(
+    model_list=[
+        {'model_name': 'gpt4', 'litellm_params': {'model': 'gpt-4'}},
+        {'model_name': 'claude', 'litellm_params': {'model': 'claude-3-sonnet-20240229', 'api_key': 'sk-ant-...'}},
+        {'model_name': 'llama', 'litellm_params': {'model': 'together_ai/meta-llama/Llama-2-7b-chat-hf'}}
+    ]
+)
+
+response = router.completion(
+    model='gpt4',
+    messages=[{'role': 'user', 'content': 'Hello'}],
+    fallbacks=['claude', 'llama']
+)
+print(response.choices[0].message.content)
+
+print(f'Cost: {response.usage}')`,tip:'Unified completion() API (chat, image, TTS).\n\nFallback: auto-switch on rate limit/error.\n\nProxy server: litellm.proxy_server.'},{refs:[{label:'LiteLLM Docs',url:'https://docs.litellm.ai/'},{label:'LiteLLM GitHub',url:'https://github.com/BerriAI/litellm'}]}},
+
+streamlit:{use:'Rapid Python web apps for LLM demos; st.chat_message, st.session_state, file upload; instant deploy.',code:`import streamlit as st
+from openai import OpenAI
+
+st.title('GenAI Chat Demo')
+
+client = OpenAI(api_key=st.secrets['openai_api_key'])
+
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message['role']):
+        st.markdown(message['content'])
+
+if prompt := st.chat_input('Ask me anything...'):
+    st.session_state.messages.append({'role': 'user', 'content': prompt})
+    
+    with st.chat_message('user'):
+        st.markdown(prompt)
+    
+    response = client.chat.completions.create(
+        model='gpt-4',
+        messages=st.session_state.messages
+    )
+    assistant_msg = response.choices[0].message.content
+    
+    st.session_state.messages.append({'role': 'assistant', 'content': assistant_msg})
+    with st.chat_message('assistant'):
+        st.markdown(assistant_msg)`,tip:'st.session_state: persist across reruns.\n\nst.secrets: load from .streamlit/secrets.toml.\n\nDeploy free on Streamlit Cloud.'},{refs:[{label:'Streamlit Docs',url:'https://docs.streamlit.io/'},{label:'Streamlit Chat',url:'https://docs.streamlit.io/library/api-reference/chat'}]}},
+
+gradio:{use:'HuggingFace\'s lightweight UI framework; gr.ChatInterface, Blocks, file I/O; deploy to HF Spaces instantly.',code:`import gradio as gr
+from openai import OpenAI
+
+client = OpenAI(api_key='sk-...')
+
+def chat_fn(message, history):
+    messages = [{'role': 'user', 'content': msg} for msg, _ in history] + [{'role': 'user', 'content': message}]
+    response = client.chat.completions.create(model='gpt-4', messages=messages, max_tokens=256)
+    return response.choices[0].message.content
+
+demo = gr.ChatInterface(
+    chat_fn,
+    examples=['What is AI?', 'Explain transformers'],
+    title='GenAI Chat'
+)
+
+with gr.Blocks() as custom_ui:
+    image_input = gr.Image(type='pil')
+    text_output = gr.Textbox()
+    gr.Interface(lambda img: f'Image shape: {img.size}', inputs=image_input, outputs=text_output)
+
+demo.launch(share=True)`,tip:'gr.ChatInterface: minimal chat UI.\n\nBlocks: full control, custom layout.\n\nQueueing: set queue=True for concurrency.'},{refs:[{label:'Gradio Docs',url:'https://gradio.app/'},{label:'Gradio Blocks',url:'https://gradio.app/guides/blocks-and-event-listeners/'}]}},
+
+fastapi:{use:'Async Python web framework for production GenAI APIs; streaming, background tasks, validation, CORS.',code:`from fastapi import FastAPI, BackgroundTasks
+from pydantic import BaseModel
+from openai import AsyncOpenAI
+import asyncio
+
+app = FastAPI()
+client = AsyncOpenAI(api_key='sk-...')
+
+class ChatRequest(BaseModel):
+    prompt: str
+    model: str = 'gpt-4'
+
+@app.post('/generate')
+async def generate(request: ChatRequest):
+    response = await client.chat.completions.create(
+        model=request.model,
+        messages=[{'role': 'user', 'content': request.prompt}]
+    )
+    return {'response': response.choices[0].message.content}
+
+@app.get('/stream')
+async def stream(prompt: str):
+    async def event_generator():
+        stream = await client.chat.completions.create(
+            model='gpt-4',
+            messages=[{'role': 'user', 'content': prompt}],
+            stream=True
+        )
+        async for chunk in stream:
+            if chunk.choices[0].delta.content:
+                yield f'data: {chunk.choices[0].delta.content}\\n\\n'
+    return StreamingResponse(event_generator(), media_type='text/event-stream')
+
+from fastapi.responses import StreamingResponse`,tip:'AsyncOpenAI: non-blocking I/O.\n\nserver start: uvicorn main:app --reload\n\nValidation: Pydantic BaseModel.'},{refs:[{label:'FastAPI Docs',url:'https://fastapi.tiangolo.com/'},{label:'FastAPI OpenAI',url:'https://fastapi.tiangolo.com/advanced/security/'}]}},
+
+cognee:{use:'Open-source AI memory + knowledge graph; auto-extract entities, relationships; agent-friendly graph queries.',code:`from cognee import Cognee
+import asyncio
+
+async def setup_memory():
+    cognee = Cognee()
+    
+    documents = [
+        'Alice works at TechCorp as an engineer.',
+        'Bob is Alice\\'s manager at TechCorp.',
+        'TechCorp builds AI products.'
+    ]
+    
+    await cognee.add(documents)
+    
+    await cognee.graph_db.cognify()
+    
+    entities = await cognee.graph_db.get_entities()
+    print(f'Extracted entities: {entities}')
+    
+    relationships = await cognee.graph_db.get_relationships()
+    print(f'Relationships: {relationships}')
+    
+    query_result = await cognee.graph_db.query('Who works at TechCorp?')
+    print(f'Query result: {query_result}')
+
+asyncio.run(setup_memory())`,tip:'Cognee auto-extracts entities from text.\n\nKnowledge graph: queryable relationships.\n\nPerfect for RAG + agent memory.'},{refs:[{label:'Cognee GitHub',url:'https://github.com/talexandru/cognee'},{label:'Cognee Docs',url:'https://cognee.readthedocs.io/'}]}},
+
+copilot:{use:'GitHub-native AI code assistant; inline suggestions, chat (@github), test/PR review; trained on public code.',code:`
+
+import torch
+
+def train_model(model, dataloader, epochs):
+    model.train()
+    optimizer = torch.optim.Adam(model.parameters())
+    
+    for epoch in range(epochs):
+        for batch in dataloader:
+            inputs, targets = batch
+            optimizer.zero_grad()
+            
+            outputs = model(inputs)
+            loss = torch.nn.functional.mse_loss(outputs, targets)
+            loss.backward()
+            optimizer.step()
+        
+        print(f'Epoch {epoch+1} complete')
+
+def evaluate_model(model, test_data):
+    model.eval()
+    with torch.no_grad():
+        predictions = model(test_data)
+    return predictions`,tip:'Copilot X: IDE + chat + PR reviews.\n\nFree for public repos, $10/mo private.\n\nContext: sees your codebase + files.'},{refs:[{label:'GitHub Copilot',url:'https://github.com/features/copilot'},{label:'Copilot Docs',url:'https://docs.github.com/en/copilot'}]}},
+
+aider:{use:'Terminal AI coding assistant; multi-file edits, auto-commits, codebase-aware refactoring; LLM-agnostic.',code:`
+
+import os
+
+def setup_aider_project():
+    os.system('aider --init')
+    
+    os.system('aider src/app.py src/utils.py --model gpt-4')
+    
+    os.system('aider --message "Add error handling to parse_json function"')
+    
+    os.system('aider --test "pytest tests/"')
+    
+    os.system('aider --undo')
+    
+    os.system('aider --map')
+
+setup_aider_project()`,tip:'aider <files>: edit multiple files together.\n\nAuto-commit: each aider edit = git commit.\n\nWorks with gpt-4, claude-3, local models.'},{refs:[{label:'Aider GitHub',url:'https://github.com/paul-gauthier/aider'},{label:'Aider Docs',url:'https://aider.chat/'}]}},
+
+multimodal:{use:'Cross-modal AI: vision (GPT-4V, LLaVA), audio (Whisper, TTS), video (Sora, Diffusion); unified foundation models.',code:`from transformers import pipeline
+from PIL import Image
+import requests
+
+feature_extractor = pipeline('image-classification', model='google/vit-base-patch16-224')
+
+image_url = 'https://example.com/photo.jpg'
+image_data = Image.open(requests.get(image_url, stream=True).raw)
+
+classification = feature_extractor(image_data)
+print(f'Classifications: {classification[:3]}')
+
+from diffusers import StableDiffusionPipeline
+text_prompt = 'A dog wearing a hat'
+pipeline = StableDiffusionPipeline.from_pretrained('runwayml/stable-diffusion-v1-5')
+image = pipeline(text_prompt).images[0]
+image.save('generated.png')
+
+import whisper
+audio = whisper.load_model('base')
+result = audio.transcribe('speech.mp3')
+print(f'Transcribed: {result["text"]}')`,tip:'Multimodal: single model (image + text).\n\nCross-modal: align vision + language space.\n\nUnified embeddings: image→text search.'},{refs:[{label:'Multimodal Models Survey',url:'https://arxiv.org/abs/2309.07915'},{label:'Vision Transformers',url:'https://arxiv.org/abs/2010.11929'}]}},
+instructor_app:{use:'Use Pydantic models to enforce structured LLM outputs; eliminates JSON parsing errors and ensures type safety.',code:`from instructor import Instructor
+from pydantic import BaseModel
+import anthropic
+
+class User(BaseModel):
+    name: str
+    email: str
+    age: int
+
+client = Instructor(anthropic.Anthropic())
+user = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Extract user info"}],
+    response_model=User
+)
+print(user.model_dump_json())`,tip:'Define Pydantic models for each response shape\n\nChain models for nested structures\n\nUse Field(...) for validation rules'},refs:[{label:'Instructor Docs',url:'https://github.com/jxnl/instructor'},{label:'Pydantic Models',url:'https://docs.pydantic.dev'},{label:'Anthropic API',url:'https://docs.anthropic.com/en/docs/about-claude/models/latest'}]},
+
+outlines_app:{use:'Constrain token generation to regex patterns or JSON schemas; reduce hallucinations and guarantee valid outputs.',code:`from outlines import models, generate
+import json
+
+model = models.transformers("gpt2")
+generator = generate.json(
+    model,
+    '{"name": "<|json_string|>", "age": "<|json_number|>"}'
+)
+result = generator("Generate a person")
+print(json.loads(result))`,tip:'Use regex patterns for strict formats\n\nJSON mode for structured data\n\nGrammar-guided for domain-specific outputs'},refs:[{label:'Outlines GitHub',url:'https://github.com/outlines-ai/outlines'},{label:'Constrained Generation',url:'https://outlines-dev.github.io/outlines'},{label:'Token Sampling',url:'https://huggingface.co/blog/constrained-generation'}]},
+
+marvin:{use:'Turn Python type hints into LLM calls with @marvin.fn; natural language functions with automatic prompting.',code:`import marvin
+from typing import Literal
+
+@marvin.fn
+def classify_sentiment(text: str) -> Literal["positive", "negative", "neutral"]:
+    pass
+
+@marvin.fn
+def extract_entities(text: str) -> dict[str, list[str]]:
+    pass
+
+result = classify_sentiment("I love this product!")
+print(result)`,tip:'Decorators eliminate manual prompt engineering\n\nType hints become schema\n\nSupports async/await patterns'},refs:[{label:'Marvin Docs',url:'https://docs.prefect.io/latest/guides/using-marvin'},{label:'Prefect AI',url:'https://www.prefect.io/blog/introducing-marvin'},{label:'Type-Driven',url:'https://github.com/PrefectHQ/marvin'}]},
+
+vanna:{use:'Train a Text-to-SQL model on your schema; answer database queries in natural language with RAG.',code:`from vanna.mistral import Mistral
+from vanna.chromadb import Chroma
+
+model = Mistral(api_key="your-key")
+model.connect_to_sqlite("company.db")
+model.train(
+    sql="SELECT * FROM users WHERE status='active'",
+    question="Show active users"
+)
+answer = model.ask("How many users signed up today?")
+print(answer)`,tip:'Train on DDL + SQL pairs\n\nRetriever uses semantic search\n\nUse for private/custom schemas'},refs:[{label:'Vanna AI',url:'https://www.vanna.ai'},{label:'GitHub Repo',url:'https://github.com/vanna-ai/vanna'},{label:'Text-to-SQL',url:'https://huggingface.co/spaces/vanna-ai/vanna-sqlite'}]},
+
+elevenlabs:{use:'Generate natural speech with emotion, voice cloning, and multilingual support; stream audio for real-time agents.',code:`from elevenlabs.client import ElevenLabs
+from elevenlabs import stream
+
+client = ElevenLabs(api_key="your-key")
+audio = client.generate(
+    text="Hello, how can I help you today?",
+    voice="Rachel",
+    model="eleven_monolingual_v1"
+)
+stream(audio)`,tip:'Voice cloning requires 1-2min samples\n\nStreaming mode for <200ms latency\n\nStability/similarity tradeoff'},refs:[{label:'ElevenLabs API',url:'https://elevenlabs.io/docs'},{label:'Voice Library',url:'https://elevenlabs.io/voice-library'},{label:'Streaming Guide',url:'https://elevenlabs.io/docs/api-reference/streaming'}]},
+
+rag_systems:{use:'RAG pipelines combine retrieval and generation to ground LLM outputs in external knowledge; reduce hallucination and enable knowledge cutoff updates.',code:`from langchain.vectorstores import Chroma
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.document_loaders import PDFLoader
+from langchain.chat_models import ChatAnthropic
+
+loader = PDFLoader("docs.pdf")
+docs = loader.load_and_split()
+embeddings = HuggingFaceEmbeddings()
+db = Chroma.from_documents(docs, embeddings)
+retriever = db.as_retriever()
+qa = RetrievalQA.from_chain_type(
+    llm=ChatAnthropic(),
+    chain_type="stuff",
+    retriever=retriever
+)
+answer = qa.run("What is X?")`,tip:'BM25 + dense hybrid search\n\nChunk size tuning matters\n\nRerank for quality'},refs:[{label:'RAG Survey',url:'https://arxiv.org/abs/2312.10997'},{label:'LangChain RAG',url:'https://python.langchain.com/docs/use_cases/question_answering'},{label:'Advanced RAG',url:'https://docs.llamaindex.ai/en/stable/modules/query_engines/retriever/retriever_rag'}]},
+
+code_assist:{use:'AI coding assistants (Copilot, Cursor, Aider) boost developer velocity; integrate LLMs into IDE workflows and CLI tools.',code:`# Example using Aider (CLI-based)
+# aider --model claude-3-5-sonnet app.py
+# Aider automatically commits working changes
+
+import subprocess
+
+result = subprocess.run(
+    ["aider", "--model", "claude-3-5-sonnet", "src/main.py"],
+    capture_output=True
+)
+print(result.stdout.decode())`,tip:'IDE plugins vs CLI tools\n\nContext windows determine code scope\n\nCommit atomicity prevents breakage'},refs:[{label:'GitHub Copilot',url:'https://github.com/features/copilot'},{label:'Cursor IDE',url:'https://www.cursor.sh'},{label:'Aider',url:'https://aider.chat'}]},
+
+structured_output_app:{use:'Enforce exact schema on LLM responses using Instructor, Outlines, or native JSON modes; eliminate parsing errors.',code:`from anthropic import Anthropic
+import json
+
+client = Anthropic()
+message = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Extract person"}],
+    system="Respond in valid JSON with fields: name, age",
+    temperature=0
+)
+data = json.loads(message.content[0].text)
+print(data)`,tip:'JSON mode reduces token cost\n\nValidate early with Pydantic\n\nFallback parsing for robustness'},refs:[{label:'Claude JSON Mode',url:'https://docs.anthropic.com/en/docs/build-a-claude-app/use-json-mode'},{label:'Instructor',url:'https://github.com/jxnl/instructor'},{label:'Outlines',url:'https://github.com/outlines-ai/outlines'}]},
+
+database_query:{use:'Convert natural language to SQL or pandas code; enable non-technical users to query databases without SQL knowledge.',code:`from langchain.agents import create_sql_agent
+from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+from langchain.chat_models import ChatAnthropic
+from langchain.sql_database import SQLDatabase
+
+db = SQLDatabase.from_uri("sqlite:///company.db")
+toolkit = SQLDatabaseToolkit(db=db, llm=ChatAnthropic())
+agent = create_sql_agent(
+    llm=ChatAnthropic(),
+    toolkit=toolkit,
+    verbose=True
+)
+result = agent.run("Revenue last quarter?")
+print(result)`,tip:'Schema context is critical\n\nValidate queries before execution\n\nBound result set size'},refs:[{label:'Text2SQL Survey',url:'https://arxiv.org/abs/2204.00498'},{label:'Defog.ai',url:'https://defog.ai'},{label:'Spider Benchmark',url:'https://yale-lily.github.io/spider'}]},
+
+voice_agents:{use:'Combine STT→LLM→TTS for real-time voice conversations; optimize latency for interactive experiences.',code:`import asyncio
+from elevenlabs.client import ElevenLabs
+import speech_recognition as sr
+
+async def voice_agent():
+    recognizer = sr.Recognizer()
+    client = ElevenLabs(api_key="key")
+    
+    with sr.Microphone() as source:
+        audio = recognizer.listen(source)
+        text = recognizer.recognize_google(audio)
+        
+    response = "Hello, how can I help?"
+    audio = client.generate(text=response, voice="Rachel")
+    
+voice_agent()`,tip:'STT latency <500ms critical\n\nStream TTS for TTFT <1s\n\nCancel in-flight requests on interrupt'},refs:[{label:'Voice Agents',url:'https://www.anthropic.com/news/voice-api'},{label:'Streaming Best Practices',url:'https://elevenlabs.io/docs/api-reference/streaming'},{label:'Real-Time Latency',url:'https://deepgram.com/learn/real-time-voice-api-latency'}]},
+
+doc_processing:{use:'Extract and chunk PDFs/documents for embedding and retrieval; pipeline for enterprise document intelligence.',code:`from langchain.document_loaders import PDFPlumberLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import HuggingFaceEmbeddings
+
+loader = PDFPlumberLoader("report.pdf")
+docs = loader.load()
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200
+)
+chunks = splitter.split_documents(docs)
+embeddings = HuggingFaceEmbeddings()
+vectors = embeddings.embed_documents([c.page_content for c in chunks])
+print(f"Generated {len(vectors)} embeddings")`,tip:'OCR for scanned PDFs\n\nChunk overlap prevents context loss\n\nMetadata tracks provenance'},refs:[{label:'LangChain Loaders',url:'https://python.langchain.com/docs/modules/data_connection/document_loaders'},{label:'Text Splitters',url:'https://python.langchain.com/docs/modules/data_connection/document_transformers'},{label:'Marker PDFs',url:'https://github.com/VikParuchuri/marker'}]},
+
+framework_tools:{use:'DevOps tools for LLM projects: MLflow for experiment tracking, DVC for data pipelines, HF Hub for model sharing.',code:`import mlflow
+import mlflow.anthropic
+
+mlflow.set_experiment("rag-experiment")
+with mlflow.start_run():
+    mlflow.log_param("model", "claude-3-5-sonnet")
+    mlflow.log_param("temperature", 0.7)
+    
+    response = mlflow.anthropic.log_prediction(
+        model="claude-3-5-sonnet",
+        inputs={"prompt": "Hello"},
+        outputs={"response": "Hi there"}
+    )
+    mlflow.log_metric("latency_ms", 245)`,tip:'MLflow for metric tracking\n\nDVC for data versioning\n\nHF Hub for community models'},refs:[{label:'MLflow',url:'https://mlflow.org/docs'},{label:'DVC',url:'https://dvc.org/doc'},{label:'Hugging Face Hub',url:'https://huggingface.co/docs/hub/security'}]},
+
+rag_vs_ft:{use:'RAG retrieves fresh facts in-context (weeks to months latency); fine-tuning bakes in style and skills (days to retrain).',code:`# RAG: Fresh knowledge
+from langchain.vectorstores import Chroma
+db = Chroma.from_documents(fresh_docs, embeddings)
+context = db.similarity_search("current news")[0].page_content
+
+# Fine-tuning: Learned behavior
+training_data = [
+    {"role": "user", "content": "..."},
+    {"role": "assistant", "content": "..."}
+]
+# Submit to Anthropic batches for FT training`,tip:'RAG for facts, FT for style\n\nCombine both for best results\n\nMeasure accuracy per approach'},refs:[{label:'RAG vs FT',url:'https://huggingface.co/blog/rag-vs-finetuning'},{label:'Anthropic Fine-tuning',url:'https://docs.anthropic.com/en/docs/build-a-claude-app/fine-tuning'},{label:'When to Fine-tune',url:'https://huggingface.co/docs/transformers/training'}]},
+
+build_vs_buy:{use:'OSS for control and customization; APIs for speed; custom for competitive moat. Balance costs, latency, and vendor lock-in.',code:`# OSS: Full control, but maintenance burden
+from transformers import AutoModelForCausalLM
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b")
+
+# API: Fast, managed, but costs per-call
+import anthropic
+client = anthropic.Anthropic(api_key="key")
+resp = client.messages.create(model="claude-3-5-sonnet", max_tokens=100, messages=[...])
+
+# Custom: Fine-tuned on internal data
+# Submit training job to provider`,tip:'OSS for R&D, APIs for production\n\nHybrid: OSS embed, API LLM\n\nCost per 1M tokens is key metric'},refs:[{label:'OSS Models',url:'https://huggingface.co/models?pipeline_tag=text-generation'},{label:'API Pricing',url:'https://www.anthropic.com/pricing'},{label:'Build vs Buy',url:'https://eugeneyan.com/writing/llm-systems-design'}]},
+
+latency_budget:{use:'Decompose end-to-end latency into TTFT (first token), TBT (between tokens), retrieval, and network; allocate per component.',code:`import time
+
+start = time.time()
+# Retrieval: <200ms
+retrieved_docs = retriever.get_relevant_documents(query)
+retrieval_ms = (time.time() - start) * 1000
+
+# LLM TTFT: <500ms
+ttft_start = time.time()
+response = client.messages.create(...)
+ttft_ms = (time.time() - ttft_start) * 1000
+
+# Total budget: <1s
+total_ms = (time.time() - start) * 1000
+print(f"Retrieval: {retrieval_ms}ms, TTFT: {ttft_ms}ms, Total: {total_ms}ms")`,tip:'TTFT > TBT for UX\n\nStream tokens while computing\n\nProfile each component'},refs:[{label:'LLM Latency',url:'https://www.anyscale.com/blog/the-cost-of-llm-inference'},{label:'TTFT/TBT',url:'https://www.anthropic.com/news/streaming-api-features'},{label:'Latency Budget',url:'https://cloud.google.com/blog/products/application-development/scaling-api-perf'}]},
+
+fallback_chains:{use:'Chain multiple models: primary → timeout → fallback → cache. Build resilient systems that degrade gracefully.',code:`import anthropic
+import time
+
+def call_with_fallback(prompt, timeout_s=5):
+    client = anthropic.Anthropic()
+    
+    try:
+        start = time.time()
+        resp = client.messages.create(
+            model="claude-3-5-sonnet",
+            max_tokens=500,
+            messages=[{"role": "user", "content": prompt}],
+            timeout=timeout_s
+        )
+        return resp.content[0].text
+    except Exception:
+        # Fallback to cheaper/faster model
+        resp = client.messages.create(
+            model="claude-3-haiku-20250305",
+            max_tokens=500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return resp.content[0].text`,tip:'Try primary → timeout (3s)\n\nFallback to cheaper model\n\nCache responses for re-reads'},refs:[{label:'Anthropic Models',url:'https://docs.anthropic.com/en/docs/about-claude/models/latest'},{label:'Circuit Breaker',url:'https://martinfowler.com/bliki/CircuitBreaker.html'},{label:'Resilience Patterns',url:'https://www.patterns.dev/posts/resilience-patterns'}]},
+
+system_eval:{use:'Evaluate full pipeline not just LLM output; measure BLEU, accuracy, latency, cost, and user satisfaction together.',code:`from collections import defaultdict
+import json
+
+def evaluate_system(test_cases):
+    metrics = defaultdict(list)
+    
+    for case in test_cases:
+        start = time.time()
+        response = pipeline(case["input"])
+        latency = time.time() - start
+        
+        correct = response == case["expected"]
+        cost = estimate_tokens(response) * 0.001
+        
+        metrics["accuracy"].append(correct)
+        metrics["latency_ms"].append(latency * 1000)
+        metrics["cost"].append(cost)
+    
+    print(f"Accuracy: {sum(metrics['accuracy'])/len(metrics['accuracy']):.2%}")
+    print(f"Latency: {sum(metrics['latency_ms'])/len(metrics['latency_ms']):.1f}ms")
+    print(f"Cost: ${sum(metrics['cost']):.4f}")`,tip:'Trace every component\n\nA/B test via metrics\n\nUser feedback loop'},refs:[{label:'LLM Evaluation',url:'https://huggingface.co/blog/llm-evals'},{label:'HELM',url:'https://crfm.stanford.edu/helm'},{label:'Trace Analysis',url:'https://docs.anthropic.com/en/docs/build-a-claude-app/use-workbench'}]},
+
+multimodal_native:{use:'Build systems that natively handle text+image+audio; avoid bolting on adapters that create latency and complexity.',code:`import anthropic
+import base64
+
+def analyze_media(text_prompt, image_path=None, audio_path=None):
+    client = anthropic.Anthropic()
+    content = [{"type": "text", "text": text_prompt}]
+    
+    if image_path:
+        with open(image_path, "rb") as f:
+            img_data = base64.standard_b64encode(f.read()).decode()
+        content.append({
+            "type": "image",
+            "source": {"type": "base64", "media_type": "image/jpeg", "data": img_data}
+        })
+    
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": content}]
+    )
+    return response.content[0].text`,tip:'Claude natively handles images\n\nAudio requires speech_recognition\n\nAvoid serial pipelines'},refs:[{label:'Claude Vision',url:'https://docs.anthropic.com/en/docs/vision'},{label:'Multimodal Models',url:'https://huggingface.co/tasks/image-text-to-text'},{label:'Vision RAG',url:'https://arxiv.org/abs/2310.06989'}]},
+
+prod_eng:{use:'Production engineering for AI: serving optimization, monitoring, cost control, resilience patterns, and operational maturity.',code:`import logging
+import anthropic
+from datetime import datetime
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def log_llm_call(model, prompt, response, latency_ms, cost):
+    logger.info(
+        "llm_call",
+        extra={
+            "timestamp": datetime.utcnow().isoformat(),
+            "model": model,
+            "input_len": len(prompt),
+            "output_len": len(response),
+            "latency_ms": latency_ms,
+            "cost_usd": cost,
+            "tokens_input": cost / 0.003 * 1000,
+            "tokens_output": cost / 0.015 * 1000
+        }
+    )`,tip:'Log every LLM call\n\nBudget guardrails per user\n\nAlert on cost spikes'},refs:[{label:'ML Ops Best Practices',url:'https://ml-ops.systems'},{label:'Monitoring LLMs',url:'https://huggingface.co/blog/monitoring-llms'},{label:'Cost Optimization',url:'https://www.anthropic.com/news/improving-software-efficiency'}]},
+
+sync_async:{use:'Use sync for prototypes, async for production. asyncio + aiohttp for concurrent LLM calls and high-throughput pipelines.',code:`import asyncio
+import anthropic
+
+async def concurrent_requests(prompts):
+    client = anthropic.AsyncAnthropic(api_key="key")
+    
+    async def call(prompt):
+        return await client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=500,
+            messages=[{"role": "user", "content": prompt}]
+        )
+    
+    results = await asyncio.gather(*[call(p) for p in prompts])
+    return [r.content[0].text for r in results]
+
+asyncio.run(concurrent_requests(["Q1", "Q2", "Q3"]))`,tip:'asyncio for concurrency\n\naiohttp pools connections\n\nRate limit with semaphore'},refs:[{label:'Async Python',url:'https://docs.python.org/3/library/asyncio.html'},{label:'aiohttp',url:'https://docs.aiohttp.org'},{label:'Anthropic Async',url:'https://docs.anthropic.com/en/docs/build-a-claude-app'}]},
+
+streaming_arch:{use:'SSE or WebSocket streaming for token-by-token output; use generator pipelines and handle backpressure.',code:`import anthropic
+
+def stream_response(prompt):
+    client = anthropic.Anthropic(api_key="key")
+    
+    with client.messages.stream(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)
+
+# For web: use SSE
+# For WebSocket: upgrade connection, stream chunks as they arrive`,tip:'SSE for HTTP simplicity\n\nWebSocket for bidirectional\n\nBuffer and retry on disconnect'},refs:[{label:'Streaming API',url:'https://docs.anthropic.com/en/docs/guides/streaming'},{label:'SSE Best Practices',url:'https://html.spec.whatwg.org/multipage/server-sent-events.html'},{label:'WebSocket Protocol',url:'https://datatracker.ietf.org/doc/html/rfc6455'}]},
+
+batch_exec:{use:'Use Anthropic Batch API for offline jobs; process 10K+ requests with 50% cost savings and no rate limits.',code:`import anthropic
+import json
+
+client = anthropic.Anthropic(api_key="key")
+
+requests = [
+    {
+        "custom_id": f"req-{i}",
+        "params": {
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": 500,
+            "messages": [{"role": "user", "content": f"Q{i}"}]
+        }
+    }
+    for i in range(100)
+]
+
+batch = client.beta.messages.batch.create_messages_batch(requests)
+print(f"Batch ID: {batch.id}")
+
+# Poll for completion
+import time
+while True:
+    status = client.beta.messages.batch.retrieve(batch.id)
+    if status.processing_status == "ended":
+        break
+    time.sleep(10)`,tip:'50% discount vs API\n\nNo rate limits or quotas\n\nIdeal for overnight jobs'},refs:[{label:'Batch API',url:'https://docs.anthropic.com/en/docs/guides/batch-processing-guide'},{label:'Cost Optimization',url:'https://www.anthropic.com/news/batch-api'},{label:'Async Processing',url:'https://github.com/anthropics/anthropic-sdk-python'}]},
+
+circuit_breaker:{use:'Fail fast before cascading: track errors, move to half-open for recovery tests, return to open if failures continue.',code:`from tenacity import retry, stop_after_attempt, wait_exponential
+
+class CircuitBreaker:
+    def __init__(self, failure_threshold=5, reset_timeout=60):
+        self.failures = 0
+        self.threshold = failure_threshold
+        self.timeout = reset_timeout
+        self.state = "closed"
+    
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential())
+    def call(self, func, *args):
+        try:
+            result = func(*args)
+            self.failures = 0
+            self.state = "closed"
+            return result
+        except Exception as e:
+            self.failures += 1
+            if self.failures >= self.threshold:
+                self.state = "open"
+            raise
+
+breaker = CircuitBreaker()
+breaker.call(anthropic_call, prompt)`,tip:'Closed: normal\n\nOpen: reject fast\n\nHalf-open: test recovery'},refs:[{label:'Circuit Breaker Pattern',url:'https://martinfowler.com/bliki/CircuitBreaker.html'},{label:'Tenacity',url:'https://tenacity.readthedocs.io'},{label:'Resilience4j',url:'https://resilience4j.readme.io'}]},
+
+timeout_budget:{use:'Set per-component timeouts: retrieval <200ms, LLM <5s, total <10s. Fail fast and try fallbacks.',code:`import anthropic
+import time
+
+def call_with_timeouts(query, timeout_total_s=10):
+    retrieval_start = time.time()
+    docs = retriever.get_relevant_documents(query)
+    
+    if (time.time() - retrieval_start) > 0.2:
+        print("Retrieval timeout")
+        docs = []
+    
+    llm_timeout = timeout_total_s - (time.time() - retrieval_start)
+    client = anthropic.Anthropic()
+    
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=500,
+        messages=[{"role": "user", "content": query}],
+        timeout=llm_timeout
+    )
+    
+    return response.content[0].text`,tip:'Retrieval: <200ms\n\nLLM: <5s\n\nTotal SLA: sum of parts'},refs:[{label:'Timeout Best Practices',url:'https://github.com/grpc/proposal/blob/master/A6-client-retries.md'},{label:'Distributed Tracing',url:'https://opentelemetry.io/docs'},{label:'SLO Targets',url:'https://sre.google/sre-book/service-level-objectives'}]},
+
+rate_limiting:{use:'Token-bucket or sliding-window rate limiting; handle 429s with exponential backoff and jitter.',code:`from ratelimit import limits, sleep_and_retry
+import anthropic
+import random
+
+@sleep_and_retry
+@limits(calls=100, period=60)
+def rate_limited_call(prompt):
+    client = anthropic.Anthropic()
+    max_retries = 3
+    
+    for attempt in range(max_retries):
+        try:
+            return client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=500,
+                messages=[{"role": "user", "content": prompt}]
+            )
+        except anthropic.RateLimitError:
+            wait_ms = (2 ** attempt) * 100 + random.randint(0, 50)
+            time.sleep(wait_ms / 1000)
+    
+    raise Exception("Rate limit exceeded")`,tip:'Token-bucket for fairness\n\nExponential backoff + jitter\n\nMonitor 429 rates'},refs:[{label:'Rate Limiting',url:'https://stripe.com/blog/rate-limiters'},{label:'ratelimit package',url:'https://pypi.org/project/ratelimit'},{label:'Backoff Strategies',url:'https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter'}]},
+
+budget_guard:{use:'Hard-cap monthly spend per user/team; alert at 80%, auto-cutoff at 100%. Prevent runaway costs.',code:`class BudgetGuard:
+    def __init__(self, monthly_limit_usd=100):
+        self.limit = monthly_limit_usd
+        self.spent = 0
+        self.alert_threshold = monthly_limit_usd * 0.8
+    
+    def check_before_call(self, estimated_cost):
+        if self.spent + estimated_cost > self.limit:
+            raise Exception(f"Budget exceeded: {self.spent} + {estimated_cost} > {self.limit}")
+        
+        if self.spent + estimated_cost > self.alert_threshold:
+            logger.warning(f"Budget alert: {self.spent}/{self.limit}")
+    
+    def log_call(self, prompt_tokens, output_tokens):
+        cost = (prompt_tokens * 0.003 + output_tokens * 0.015) / 1000
+        self.spent += cost
+        return cost
+
+guard = BudgetGuard(monthly_limit_usd=100)
+guard.check_before_call(0.01)`,tip:'Track per-user budgets\n\nAlert at 80%\n\nAuto-disable at 100%'},refs:[{label:'Cost Tracking',url:'https://www.anthropic.com/news/batch-api'},{label:'Budget Alerts',url:'https://docs.anthropic.com/en/docs/build-a-claude-app'},{label:'Metering APIs',url:'https://www.cloudflare.com/learning/cdn/glossary/metering'}]},
+
+checkpointing:{use:'Persist intermediate state in long-running agent loops; resume from checkpoints after failures without full restart.',code:`import json
+from pathlib import Path
+
+class CheckpointManager:
+    def __init__(self, checkpoint_dir="./checkpoints"):
+        self.dir = Path(checkpoint_dir)
+        self.dir.mkdir(exist_ok=True)
+    
+    def save(self, task_id, state):
+        checkpoint = {
+            "task_id": task_id,
+            "state": state,
+            "timestamp": time.time()
+        }
+        path = self.dir / f"{task_id}.json"
+        with open(path, "w") as f:
+            json.dump(checkpoint, f)
+    
+    def load(self, task_id):
+        path = self.dir / f"{task_id}.json"
+        if path.exists():
+            with open(path) as f:
+                return json.load(f)
+        return None
+
+manager = CheckpointManager()
+state = manager.load("agent-123")
+if state:
+    print(f"Resuming from step {state['state']['step']}")`,tip:'Save after each step\n\nInclude full state\n\nVersion checkpoints'},refs:[{label:'Fault Tolerance',url:'https://en.wikipedia.org/wiki/Fault_tolerance'},{label:'State Management',url:'https://arxiv.org/abs/2404.10533'},{label:'LangChain Memory',url:'https://python.langchain.com/docs/modules/memory'}]},
+
+audit_trail:{use:'Immutable log of every LLM call, tool invocation, and decision for compliance, debugging, and accountability.',code:`import json
+from datetime import datetime
+from pathlib import Path
+
+class AuditTrail:
+    def __init__(self, log_file="audit.jsonl"):
+        self.log_file = Path(log_file)
+    
+    def log_call(self, user_id, model, prompt, response, metadata=None):
+        entry = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "user_id": user_id,
+            "model": model,
+            "prompt": prompt[:200],
+            "response": response[:200],
+            "metadata": metadata or {}
+        }
+        with open(self.log_file, "a") as f:
+            f.write(json.dumps(entry) + "\\n")
+    
+    def query(self, user_id):
+        logs = []
+        with open(self.log_file) as f:
+            for line in f:
+                entry = json.loads(line)
+                if entry["user_id"] == user_id:
+                    logs.append(entry)
+        return logs
+
+trail = AuditTrail()
+trail.log_call("user123", "claude-3-5-sonnet", "prompt", "response")`,tip:'Append-only log\n\nTimestamp everything\n\nRETENTION policy'},refs:[{label:'Audit Logging',url:'https://owasp.org/www-community/attacks/Audit_Log_Forging'},{label:'Compliance',url:'https://www.anthropic.com/news/enterprise-compliance'},{label:'Immutable Logs',url:'https://www.datadoghq.com/blog/audit-logging'}]},
+
+override_flow:{use:'Allow human override of AI decisions with clear escalation paths; maintain decision audit trail for edge cases.',code:`class OverrideFlow:
+    def __init__(self):
+        self.decisions = []
+    
+    def get_ai_recommendation(self, case):
+        # AI makes recommendation
+        recommendation = {"action": "approve", "confidence": 0.92}
+        return recommendation
+    
+    def record_decision(self, case_id, ai_rec, human_decision, reason):
+        entry = {
+            "case_id": case_id,
+            "ai_recommendation": ai_rec,
+            "human_decision": human_decision,
+            "override": human_decision != ai_rec["action"],
+            "reason": reason,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        self.decisions.append(entry)
+        
+        if entry["override"]:
+            logger.warning(f"Human override: {entry}")
+    
+    def escalate_to_manager(self, case_id):
+        # Route to manager queue
+        pass
+
+flow = OverrideFlow()
+flow.record_decision("case1", {"action": "deny"}, "approve", "special circumstances")`,tip:'Escalation queue for humans\n\nTrack all overrides\n\nAnalyze override patterns'},refs:[{label:'Human-in-Loop',url:'https://arxiv.org/abs/2306.06881'},{label:'Responsible AI',url:'https://www.anthropic.com/news/constitutional-ai'},{label:'Decision Audit',url:'https://www.fairmlbook.org'}]},
+
+meta_governance:{use:'Governance framework: red-teaming, eval benchmarks, guardrails, monitoring, and policy enforcement for responsible AI.',code:`import anthropic
+
+def evaluate_model_safety(test_cases):
+    client = anthropic.Anthropic()
+    results = {"safe": 0, "unsafe": 0, "unclear": 0}
+    
+    for test in test_cases:
+        response = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=500,
+            messages=[{"role": "user", "content": test["prompt"]}]
+        )
+        
+        # Manual or automated safety check
+        safety = check_output_safety(response.content[0].text)
+        results[safety] += 1
+    
+    return results
+
+def check_output_safety(text):
+    # Implement guardrails
+    if "illegal" in text.lower():
+        return "unsafe"
+    return "safe"
+
+safety_results = evaluate_model_safety(test_cases)
+print(safety_results)`,tip:'Red-team for edge cases\n\nBenchmark on standards\n\nAutomate safety checks'},refs:[{label:'Constitutional AI',url:'https://www.anthropic.com/research/constitutional-ai'},{label:'Red Teaming',url:'https://www.anthropic.com/news/red-teaming-contract-work'},{label:'AI Governance',url:'https://www.anthropic.com/news/the-case-for-a-new-generation-of-ai-safety-research'}]},
+
+ml_core_domain:{use:'ML foundations: backpropagation, optimizers (SGD, Adam), regularization (dropout, L2), and scaling laws.',code:`import torch
+import torch.nn as nn
+
+class SimpleNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc1 = nn.Linear(10, 64)
+        self.dropout = nn.Dropout(0.2)
+        self.fc2 = nn.Linear(64, 1)
+    
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.dropout(x)
+        return self.fc2(x)
+
+model = SimpleNet()
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+loss_fn = nn.MSELoss()
+
+# Training loop
+for epoch in range(10):
+    pred = model(x)
+    loss = loss_fn(pred, y)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()`,tip:'Backprop computes gradients\n\nAdam adapts learning rate\n\nDropout prevents overfitting',diag:`    Backprop
+    Input → Forward → Loss → Backward → Update
+         SGD/Adam`,refs:[{label:'Deep Learning',url:'https://www.deeplearningbook.org'},{label:'Scaling Laws',url:'https://arxiv.org/abs/2001.08361'},{label:'Optimization',url:'https://ruder.io/optimizing-gradient-descent'}]},
+
 };
