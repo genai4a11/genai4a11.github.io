@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash Attention - GenAI Mindmap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --indigo: #4f46e5;
+            --indigo-dk: #3730a3;
+            --indigo-lt: #eef2ff;
+            --blue: #2563eb;
+            --sky: #38bdf8;
+            --green: #22c55e;
+            --rose: #f43f5e;
+            --amber: #f59e0b;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --bg-white: #ffffff;
+            --code-bg: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text);
+            background-color: var(--bg);
+            line-height: 1.6;
+        }
+
+        nav {
+            background-color: var(--bg-white);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--indigo);
+        }
+
+        .nav-back {
+            text-decoration: none;
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+
+        .nav-back:hover {
+            color: var(--text);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--sky) 0%, var(--indigo) 100%);
+            color: var(--bg-white);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+
+        .hero h1 em {
+            font-style: normal;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 0 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .hero-sub {
+            font-size: 1.125rem;
+            opacity: 0.95;
+            margin-bottom: 2rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .stat {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-num {
+            font-size: 1.875rem;
+            font-weight: 800;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+
+        .page-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .toc-card {
+            background-color: var(--indigo-lt);
+            border-left: 4px solid var(--indigo);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border-radius: 0.5rem;
+        }
+
+        .toc-heading {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--indigo-dk);
+            margin-bottom: 1rem;
+        }
+
+        .toc-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .toc-list li {
+            font-size: 0.9375rem;
+            color: var(--text);
+        }
+
+        .toc-list li::before {
+            content: attr(data-num) ". ";
+            font-weight: 700;
+            color: var(--indigo);
+        }
+
+        .section-block {
+            margin-bottom: 4rem;
+        }
+
+        .section-marker {
+            display: inline-block;
+            background-color: var(--indigo);
+            color: var(--bg-white);
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-block h2 {
+            font-size: 1.875rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .section-block > p {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .example-box {
+            background-color: var(--code-bg);
+            font-family: 'Fira Code', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            color: #cbd5e1;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border: 1px solid #334155;
+        }
+
+        .callout {
+            padding: 1.5rem;
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            border-radius: 0.5rem;
+            background-color: var(--bg-white);
+        }
+
+        .callout.blue {
+            border-color: var(--blue);
+            background-color: #eff6ff;
+        }
+
+        .callout.amber {
+            border-color: var(--amber);
+            background-color: #fffbeb;
+        }
+
+        .callout.green {
+            border-color: var(--green);
+            background-color: #f0fdf4;
+        }
+
+        .callout.rose {
+            border-color: var(--rose);
+            background-color: #ffe4e6;
+        }
+
+        .callout p {
+            color: var(--text);
+            font-size: 0.9375rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        thead {
+            background-color: var(--indigo-lt);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-weight: 700;
+            color: var(--indigo-dk);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: #fafafa;
+        }
+
+        footer {
+            background-color: var(--bg-white);
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 2rem 1rem;
+            }
+
+            .hero h1 {
+                font-size: 1.875rem;
+            }
+
+            .toc-list {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-stats {
+                gap: 1rem;
+            }
+
+            .section-block h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/index.html" class="nav-brand">GenAI Mindmap</a>
+        <a href="../concepts/index.html" class="nav-back">← Back to Concepts</a>
+    </nav>
+
+    <div class="hero">
+        <span class="hero-tag">Foundations</span>
+        <h1>Flash <em>Attention</em></h1>
+        <p class="hero-sub">IO-aware fused kernel attention mechanism eliminating O(N²) memory bottlenecks and achieving 2-4x speedup</p>
+        <div class="hero-stats">
+            <div class="stat">
+                <span class="stat-num">O(N)</span>
+                <span class="stat-label">Memory</span>
+            </div>
+            <div class="stat">
+                <span class="stat-num">2–4×</span>
+                <span class="stat-label">Speedup</span>
+            </div>
+            <div class="stat">
+                <span class="stat-num">v3</span>
+                <span class="stat-label">Latest Version</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-wrap">
+        <div class="toc-card">
+            <div class="toc-heading">In This Concept</div>
+            <ul class="toc-list">
+                <li data-num="1">The Attention Bottleneck</li>
+                <li data-num="2">Flash Attention Algorithm</li>
+                <li data-num="3">IO-Aware Analysis</li>
+                <li data-num="4">Using Flash Attention</li>
+                <li data-num="5">Flash Attention 2</li>
+                <li data-num="6">Flash Attention 3</li>
+                <li data-num="7">Impact on Training</li>
+            </ul>
+        </div>
+
+        <!-- Section 1: The Attention Bottleneck -->
+        <div class="section-block">
+            <div class="section-marker">1</div>
+            <h2>The Attention Bottleneck</h2>
+            <p>Standard attention mechanism has computational complexity of O(N²) where N is sequence length. This is manageable in compute (GPUs are fast at matrix operations), but the memory bottleneck is severe. During attention computation, the algorithm materializes the full N×N attention matrix in high-bandwidth memory (HBM), requiring O(N²) memory. For a sequence length of 4096 tokens with 12,288-dimensional embeddings, the attention matrix alone requires gigabytes of memory.</p>
+
+            <p>The real bottleneck isn't compute FLOPs; it's data movement. Modern GPUs have substantial compute capacity but limited memory bandwidth. The V100 GPU can do ~7 TFLOPS (trillion float operations per second) but only has ~900 GB/s memory bandwidth. This means reading and writing data to HBM dominates execution time. Standard attention requires multiple passes through HBM: reading Q, K, V from HBM, computing attention scores, reading/writing intermediate matrices, and writing the output.</p>
+
+            <p>Flash Attention solves this by using tiling and online softmax computation, eliminating the need to materialize the full N×N matrix. Instead, the algorithm processes attention in blocks, computing partial sums and max values on-the-fly. This dramatically reduces memory bandwidth requirements and allows sequences that were previously impossible to fit in GPU memory.</p>
+
+            <div class="callout blue">
+                <p><strong>The Roofline Model Insight:</strong> GPU utilization is limited by arithmetic intensity (FLOPs per byte of memory traffic). Attention has low arithmetic intensity, making it memory-bound. Flash Attention improves arithmetic intensity through blocking and fusion, allowing better GPU utilization.</p>
+            </div>
+
+            <div class="example-box"># Memory Requirements Comparison
+
+Sequence Length: N=4096 tokens
+Embedding Dim: d=12288
+
+Standard Attention Memory:
+  Q: 4096 × 12288 × 2 bytes = 100MB
+  K: 4096 × 12288 × 2 bytes = 100MB
+  V: 4096 × 12288 × 2 bytes = 100MB
+  Attention Matrix (QK^T): 4096 × 4096 × 2 = 32MB
+  Softmax output: 4096 × 4096 × 2 = 32MB
+  ────────────────────────────────────
+  Total: ~400MB (O(N²) dominated by 64MB matrix)
+
+Flash Attention Memory:
+  Q: 100MB (kept in HBM)
+  K: 100MB (kept in HBM)
+  V: 100MB (kept in HBM)
+  Intermediate buffers: ~50MB
+  ────────────────────────────────────
+  Total: ~350MB (O(N) scale, no matrix materialization)
+
+For N=32768: Standard requires ~10GB, Flash ~2.5GB
+        <!-- Section 2: Flash Attention Algorithm -->
+        <div class="section-block">
+            <div class="section-marker">2</div>
+            <h2>Flash Attention Algorithm</h2>
+            <p>Flash Attention computes attention using a tiling strategy combined with online softmax. The core insight is that softmax can be computed incrementally without materializing the full score matrix. By processing attention in blocks (tiles), you can compute max and sum statistics on-the-fly and rescale previous outputs as new blocks arrive.</p>
+
+            <p>The algorithm divides the N tokens into blocks of size B_r (e.g., 128), and for each block of queries, iterates through blocks of keys. For each (Q_block, K_block, V_block) triple, it computes a partial attention matrix of size B_r × B_c, runs softmax on this smaller matrix, and accumulates the weighted output. The key technical detail is that when moving to the next KV block, the softmax normalization factors must be updated to account for new score values.</p>
+
+            <div class="example-box"># Using PyTorch 2.0+ Flash Attention
+
+import torch
+import torch.nn.functional as F
+
+# Query, Key, Value shapes: [batch, seq, heads, head_dim]
+q = torch.randn(batch, seq_len, nheads, head_dim, device='cuda')
+k = torch.randn(batch, seq_len, nheads, head_dim, device='cuda')
+v = torch.randn(batch, seq_len, nheads, head_dim, device='cuda')
+
+# Flash Attention via scaled_dot_product_attention
+output = F.scaled_dot_product_attention(
+    q, k, v,
+    dropout_p=0.1,
+    is_causal=True  # For autoregressive
+)
+
+# With flash-attn library (fastest)
+from flash_attn import flash_attn_func
+output = flash_attn_func(q, k, v, dropout_p=0.1, causal=True)
+            </div>
+
+            <p>This online softmax computation is mathematically precise due to the softmax recurrence property. When combining two softmax distributions with different max values, you can efficiently compute the combined normalization factor. This allows Flash Attention to maintain numerical stability while processing attention incrementally.</p>
+
+            <div class="callout green">
+                <p><strong>Tiling Benefit:</strong> If you process Q in blocks of 128 and KV in blocks of 128, instead of reading all N tokens for every Q token, you read Q once and K,V Ceil(N/B_c) times. Total HBM traffic is O(N × Ceil(N/B_c)) instead of O(N²), a significant reduction.</p>
+            </div>
+        </div>
+
+        <!-- Section 3: IO-Aware Analysis -->
+        <div class="section-block">
+            <div class="section-marker">3</div>
+            <h2>IO-Aware Analysis</h2>
+            <p>Flash Attention's core innovation is IO-awareness: designing the algorithm with memory access patterns as a first-class optimization target. Traditional algorithms optimize for FLOPs, but Flash Attention optimizes for bytes transferred (IO). This requires detailed understanding of GPU memory hierarchy: fast but small SRAM (Shared Memory), larger but slower HBM, and how data flows between them.</p>
+
+            <p>The original Flash Attention paper proved that by using optimal block sizes, you can reduce HBM reads/writes to O(N d log(d)) where d is the head dimension. This is provably optimal for computing exact attention with only SRAM as fast memory. The practical speedup varies from 2x to 10x depending on sequence length and hardware.</p>
+
+            <div class="callout blue">
+                <p><strong>Key Metrics:</strong> Standard attention: 465MB HBM traffic per forward pass. Flash Attention: 400MB. Speedup: ~4x through better tiling and fused kernels.</p>
+            </div>
+
+            <div class="example-box"># HBM Traffic Reduction Example
+
+# Standard Attention: O(N²) memory
+# HBM reads: Q, K, V = 3Nd bytes
+# HBM reads (scores): N² bytes
+# HBM reads (after softmax): N² bytes  
+# HBM writes (output): Nd bytes
+# Total: O(N² + Nd) ≈ O(N²) for large N
+
+# Flash Attention: O(N) memory
+# HBM reads: Q, K, V each (N/B × B)d = Nd bytes
+# No N² matrix materialization
+# Total: O(Nd) with better constants
+        </div>
+
+        <!-- Section 4: Using Flash Attention in PyTorch -->
+        <div class="section-block">
+            <div class="section-marker">4</div>
+            <h2>Using Flash Attention in PyTorch</h2>
+            <p>PyTorch 2.0+ includes a scaled_dot_product_attention function that automatically uses Flash Attention when available on compatible hardware. For maximum performance, use the flash-attn library directly.</p>
+
+            <div class="example-box"># PyTorch Built-in Flash Attention
+
+import torch
+import torch.nn.functional as F
+
+# Flash Attention automatically selected if available
+output = F.scaled_dot_product_attention(
+    query, key, value,
+    dropout_p=0.1,
+    is_causal=True
+)
+            </div>
+        </div>
+
+        <!-- Section 5: Flash Attention 2 -->
+        <div class="section-block">
+            <div class="section-marker">5</div>
+            <h2>Flash Attention 2 Improvements</h2>
+            <p>Flash Attention 2 improved practical speedups from 2.5x to 3-4x on A100 GPUs through work partitioning, better GPU utilization, and optimized causal masking. The main innovation was reorganizing block computation for better cache efficiency and reduced register pressure.</p>
+
+            <div class="callout green">
+                <p><strong>v2 Improvements:</strong> Better GPU occupancy, optimized causal masking, 3-4x speedup on A100. Slight numerical differences in backward pass but imperceptible for most models.</p>
+            </div>
+        </div>
+
+        <!-- Section 6: Flash Attention 3 -->
+        <div class="section-block">
+            <div class="section-marker">6</div>
+            <h2>Flash Attention 3 (H100)</h2>
+            <p>Flash Attention 3 optimized for H100 introduces asynchronous GEMM/softmax overlap, FP8 support, and specialized Hopper tensor cores usage. Achieves 4-10x speedups on H100, with higher speedups at longer sequences due to async pipelining benefits.</p>
+
+            <div class="callout blue">
+                <p><strong>H100 Performance:</strong> 4-5x for short sequences, 6-8x for medium sequences, 8-10x for long sequences (32k+ tokens).</p>
+            </div>
+        </div>
+
+        <!-- Section 7: Impact on Training -->
+        <div class="section-block">
+            <div class="section-marker">7</div>
+            <h2>Impact on Model Training</h2>
+            <p>Flash Attention enables long context windows (100k+ tokens), faster training throughput (3-4x for 4k-8k sequences), and better memory efficiency allowing larger batch sizes. This has been crucial for improvements in model quality over 2023-2024.</p>
+
+            <p>Memory savings enable larger batches, which improve training efficiency and gradient stability. Combined with context length scaling, Flash Attention has fundamentally changed what's possible in LLM training and inference.</p>
+
+            <div class="callout amber">
+                <p><strong>Training Note:</strong> Requires CUDA 8.0+ (A100 or newer). Older GPUs get no benefit or may be slower. Always profile on your target hardware.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 GenAI Mindmap. All rights reserved. | Built with expertise and precision.</p>
+    </footer>
+</body>
+</html>

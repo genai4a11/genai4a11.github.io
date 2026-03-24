@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vLLM - GenAI Mindmap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --indigo: #4f46e5;
+            --indigo-dk: #3730a3;
+            --indigo-lt: #eef2ff;
+            --blue: #2563eb;
+            --sky: #38bdf8;
+            --green: #22c55e;
+            --rose: #f43f5e;
+            --amber: #f59e0b;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --bg-white: #ffffff;
+            --code-bg: #1e293b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text);
+            background-color: var(--bg);
+            line-height: 1.6;
+        }
+
+        nav {
+            background-color: var(--bg-white);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--indigo);
+        }
+
+        .nav-back {
+            text-decoration: none;
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+
+        .nav-back:hover {
+            color: var(--text);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--green) 0%, var(--indigo) 100%);
+            color: var(--bg-white);
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+
+        .hero h1 em {
+            font-style: normal;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 0 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .hero-sub {
+            font-size: 1.125rem;
+            opacity: 0.95;
+            margin-bottom: 2rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .stat {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-num {
+            font-size: 1.875rem;
+            font-weight: 800;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+
+        .page-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .toc-card {
+            background-color: var(--indigo-lt);
+            border-left: 4px solid var(--indigo);
+            padding: 2rem;
+            margin-bottom: 3rem;
+            border-radius: 0.5rem;
+        }
+
+        .toc-heading {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--indigo-dk);
+            margin-bottom: 1rem;
+        }
+
+        .toc-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .toc-list li {
+            font-size: 0.9375rem;
+            color: var(--text);
+        }
+
+        .toc-list li::before {
+            content: attr(data-num) ". ";
+            font-weight: 700;
+            color: var(--indigo);
+        }
+
+        .section-block {
+            margin-bottom: 4rem;
+        }
+
+        .section-marker {
+            display: inline-block;
+            background-color: var(--indigo);
+            color: var(--bg-white);
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-block h2 {
+            font-size: 1.875rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .section-block > p {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        .example-box {
+            background-color: var(--code-bg);
+            font-family: 'Fira Code', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            color: #cbd5e1;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            border: 1px solid #334155;
+        }
+
+        .callout {
+            padding: 1.5rem;
+            border-left: 4px solid;
+            margin: 1.5rem 0;
+            border-radius: 0.5rem;
+            background-color: var(--bg-white);
+        }
+
+        .callout.blue {
+            border-color: var(--blue);
+            background-color: #eff6ff;
+        }
+
+        .callout.amber {
+            border-color: var(--amber);
+            background-color: #fffbeb;
+        }
+
+        .callout.green {
+            border-color: var(--green);
+            background-color: #f0fdf4;
+        }
+
+        .callout.rose {
+            border-color: var(--rose);
+            background-color: #ffe4e6;
+        }
+
+        .callout p {
+            color: var(--text);
+            font-size: 0.9375rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        thead {
+            background-color: var(--indigo-lt);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-weight: 700;
+            color: var(--indigo-dk);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: #fafafa;
+        }
+
+        footer {
+            background-color: var(--bg-white);
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 2rem 1rem;
+            }
+
+            .hero h1 {
+                font-size: 1.875rem;
+            }
+
+            .toc-list {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-stats {
+                gap: 1rem;
+            }
+
+            .section-block h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/index.html" class="nav-brand">GenAI Mindmap</a>
+        <a href="../concepts/index.html" class="nav-back">← Back to Concepts</a>
+    </nav>
+
+    <div class="hero">
+        <span class="hero-tag">Production & Infra</span>
+        <h1>v<em>LLM</em></h1>
+        <p class="hero-sub">High-throughput LLM serving engine with PagedAttention for efficient KV cache management and OpenAI-compatible API</p>
+        <div class="hero-stats">
+            <div class="stat">
+                <span class="stat-num">PagedAttention</span>
+                <span class="stat-label">Key Innovation</span>
+            </div>
+            <div class="stat">
+                <span class="stat-num">24×</span>
+                <span class="stat-label">Throughput vs HF</span>
+            </div>
+            <div class="stat">
+                <span class="stat-num">OpenAI-compatible</span>
+                <span class="stat-label">API</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-wrap">
+        <div class="toc-card">
+            <div class="toc-heading">In This Concept</div>
+            <ul class="toc-list">
+                <li data-num="1">The Serving Problem</li>
+                <li data-num="2">PagedAttention</li>
+                <li data-num="3">vLLM Architecture</li>
+                <li data-num="4">Deployment with vLLM</li>
+                <li data-num="5">Performance Tuning</li>
+                <li data-num="6">Advanced Features</li>
+                <li data-num="7">vLLM vs Alternatives</li>
+            </ul>
+        </div>
+
+        <!-- Section 1: The Serving Problem -->
+        <div class="section-block">
+            <div class="section-marker">1</div>
+            <h2>The Serving Problem</h2>
+            <p>Serving large language models in production presents unique challenges. Unlike training where you process fixed batches with known sequence lengths, serving must handle dynamic request arrivals with variable sequence lengths and generation lengths. The primary bottleneck is KV cache memory management. The KV cache (stored key and value tensors for all previous tokens) grows with sequence length and number of requests, consuming significant GPU memory.</p>
+
+            <p>In standard transformer serving, KV cache is allocated statically. If you allocate space for a 2048-token sequence but a request only uses 512 tokens, the remaining 1536 token slots are wasted. Across many requests, this fragmentation can leave 60-80% of allocated KV cache unused. This memory waste forces systems to run with smaller batch sizes, reducing throughput.</p>
+
+            <p>Another serving challenge is request latency variability. Some requests may complete quickly (short generation), others slowly (long generation). With static batching, you must wait for the slowest request before processing a new batch. This leads to inefficient GPU utilization where hardware sits idle waiting for a single slow request to finish.</p>
+
+            <div class="callout blue">
+                <p><strong>KV Cache Problem:</strong> A single 70B parameter model with 2048-token context requires ~280GB of KV cache (both K and V, all layers). If serving 8 requests with average context 512 tokens, you still allocate for 2048, wasting 75% of memory. This forces batch_size=1 or 2, severely limiting throughput.</p>
+            </div>
+
+            <div class="example-box"># KV Cache Memory Waste Example
+
+Model: Llama-2 70B
+Batch Size: 4 requests
+Context Allocated: 2048 tokens (per request)
+Actual Context Sizes: [512, 256, 1024, 768]
+
+Memory Allocation:
+  Request 1: 2048 slots allocated, 512 used (75% waste)
+  Request 2: 2048 slots allocated, 256 used (87% waste)
+  Request 3: 2048 slots allocated, 1024 used (50% waste)
+  Request 4: 2048 slots allocated, 768 used (62% waste)
+  
+  Total Slots Allocated: 8192
+  Total Slots Used: 2560
+  Utilization: 31%
+  
+  If max_context=8192 (more realistic):
+  Total Memory: 70B params × 2 (K+V) × 8192 × 2 bytes
+             = 70B × 4 × 8192 × 2
+             = 4.6TB per batch
+             = Can't fit on any single GPU!
+
+Result: Force max_context=2048 or batch_size=1
+        Serve only 1-2 requests at a time
+        Utilization: ~20-30%
+        </div>
+
+        <!-- Section 2: PagedAttention -->
+        <div class="section-block">
+            <div class="section-marker">2</div>
+            <h2>PagedAttention</h2>
+            <p>PagedAttention is vLLM's core innovation, adapting the virtual memory concept from operating systems. In OS virtual memory, logical pages (512B-4KB chunks) are mapped to physical memory locations, enabling overcommitting memory and dynamic allocation. PagedAttention applies this to KV cache: logical token blocks are mapped to physical blocks in GPU memory.</p>
+
+            <p>The key insight is that KV cache doesn't require contiguous memory. Attention computation can work with scattered memory locations if you maintain a mapping from logical block indices to physical block indices. This allows dynamic allocation: blocks are allocated on-demand as tokens arrive, and released when requests complete. Fragmentation is eliminated because you can allocate any physical block for any logical position.</p>
+
+            <p>With PagedAttention, KV cache is allocated in blocks (e.g., 16 tokens per block). If a request uses 512 tokens, it uses 32 blocks. A different request using 768 tokens uses 48 blocks. The blocks can come from any available physical memory locations; the page table maps them logically. When requests complete, blocks are freed and reused, eliminating fragmentation entirely.</p>
+
+            <div class="callout green">
+                <p><strong>PagedAttention Memory Efficiency:</strong> With 16-token blocks, utilization improves from 31% to ~95%. For the example above, 512-token request uses 32 blocks (512 tokens), 768-token uses 48 blocks. No wasted space. At batch_size=4, actual memory usage: (32+16+64+48) × block_size = 160 blocks vs 256 blocks (62.5% more efficient).</p>
+            </div>
+
+            <div class="example-box"># PagedAttention Mechanism
+
+# Traditional KV Cache (Contiguous)
+kv_cache = torch.zeros(batch, max_seq_len, heads, d)  # Allocate max upfront
+# Request 1: seq_len=512, wastes 1536 slots
+# Request 2: seq_len=256, wastes 1792 slots
+# Total waste: 3328 slots × 2 (K,V) × batch × d
+
+# PagedAttention (Paged/Logical)
+block_size = 16  # tokens per block
+physical_blocks = {}  # Physical memory pool
+
+class PagedKVCache:
+    def __init__(self, max_blocks=1000):
+        self.physical_blocks = torch.zeros(max_blocks, block_size, heads, d)
+        self.page_table = {}  # logical_pos -> physical_block_id
+        self.free_blocks = set(range(max_blocks))
+    
+    def allocate_tokens(self, logical_pos, num_tokens):
+        """Allocate physical blocks for logical token positions"""
+        num_blocks = (num_tokens + block_size - 1) // block_size
+        for i in range(num_blocks):
+            if not self.free_blocks:
+                raise MemoryError("No free blocks available")
+            physical_block = self.free_blocks.pop()
+            self.page_table[logical_pos + i] = physical_block
+    
+    def get_block(self, logical_pos):
+        """Map logical to physical block"""
+        physical_block_id = self.page_table[logical_pos]
+        return self.physical_blocks[physical_block_id]
+    
+    def free_request(self, request_id, logical_range):
+        """Release blocks when request completes"""
+        for logical_pos in logical_range:
+            physical_block = self.page_table.pop(logical_pos)
+            self.free_blocks.add(physical_block)
+
+# Usage
+cache = PagedKVCache(max_blocks=200)
+cache.allocate_tokens(logical_pos=0, num_tokens=512)  # Uses 32 blocks
+cache.allocate_tokens(logical_pos=512, num_tokens=256)  # Uses 16 blocks
+cache.allocate_tokens(logical_pos=768, num_tokens=1024)  # Uses 64 blocks
+cache.allocate_tokens(logical_pos=1792, num_tokens=768)  # Uses 48 blocks
+
+# Total: 160 blocks (vs 256 with static allocation)
+# Utilization: 160/200 = 80% (vs ~62% static)
+
+# When request 1 finishes, 32 blocks freed and reused
+# No fragmentation!
+
+        <!-- Section 3: vLLM Architecture -->
+        <div class="section-block">
+            <div class="section-marker">3</div>
+            <h2>vLLM Architecture</h2>
+            <p>vLLM's architecture consists of several key components: an async scheduling engine, continuous batching, prefix caching, and chunked prefill processing. The scheduler manages incoming requests, decides which requests to batch together, and handles KV cache allocation using PagedAttention.</p>
+
+            <p>Continuous batching (also called dynamic batching) allows requests to be added or removed from the batch at any time, not just at batch boundaries. This is crucial for throughput. When a request finishes generation and is removed from the batch, a new request can immediately start. This eliminates idle time waiting for batches to fill or for the slowest request to complete.</p>
+
+            <p>Prefix caching exploits the fact that many requests share common prefixes (system prompts, function definitions, retrieved documents). vLLM caches KV values for these shared prefixes. When a new request arrives with the same prefix, the cached KV values are reused, avoiding redundant computation and memory usage.</p>
+
+            <p>Chunked prefill separates prefill (processing the initial prompt) from decode (generating one token at a time). Traditionally, these are batched together, but they have different characteristics: prefill is compute-intensive (many tokens at once), decode is memory-bound (one token at a time). By chunking prefill into smaller batches, vLLM can better interleave prefill and decode, improving GPU utilization.</p>
+
+            <div class="callout amber">
+                <p><strong>Continuous Batching Impact:</strong> With traditional static batching, a batch of 8 requests where one finishes quickly must wait for the 7 others. With continuous batching, that request's slot is immediately freed for a new request. For typical request distributions, this can increase throughput by 2-3x.</p>
+            </div>
+
+            <div class="example-box"># vLLM Architecture Overview
+
+Request Flow:
+1. Incoming Request
+   ├─→ Tokenize prompt
+   ├─→ Check prefix cache
+   ├─→ Allocate KV blocks (PagedAttention)
+   └─→ Add to request queue
+
+2. Scheduling Engine
+   ├─→ Dequeue requests (FCFS or priority)
+   ├─→ Chunk prefill (if long)
+   ├─→ Create attention batch
+   └─→ Schedule computation
+
+3. Execution
+   ├─→ Prefill phase: process prompt tokens
+   ├─→ Decode phase: generate one token
+   ├─→ Update KV cache (PagedAttention)
+   └─→ Stream output tokens
+
+4. Completion
+   ├─→ All tokens generated
+   ├─→ Free KV blocks
+   ├─→ Release request
+   └─→ Log stats
+
+# Batching Comparison
+
+Traditional Static Batching:
+  Batch 1: [R1(512tokens), R2(256), R3(1024), R4(768)]
+  Time:    [████████████████████ done]
+           [██████████ done]
+           [██████████████████████████ done]
+           [████████████████ done] ← blocks batch
+  → Batch cycles: 4 cycles (slowest request)
+  → Throughput: 2560 tokens / 4 cycles = 640 tok/cycle
+
+vLLM Continuous Batching:
+  Batch 1: [R1, R2, R3, R4]
+  Time:    [██ done] → New R5 starts
+           [█ done] → New R6 starts
+           [████ done] → New R7, R8 start
+           [███ done] → New R9 starts
+  → Batch cycles: 1-2 cycles per request
+  → Throughput: Continuous, new requests added every cycle
+  → 3-4x better throughput
+
+        <!-- Section 4: Deployment with vLLM -->
+        <div class="section-block">
+            <div class="section-marker">4</div>
+            <h2>Deployment with vLLM</h2>
+            <p>Deploying vLLM is straightforward for basic use cases. Installation via pip, launching an OpenAI-compatible server, and querying via standard client libraries are all simple. For production, you'll want to manage multiple workers (GPU processes), monitor throughput, and handle scaling across multiple nodes.</p>
+
+            <p>vLLM provides an OpenAI-compatible API, meaning clients written for OpenAI's API work unchanged with vLLM. This is significant for adoption because it means no client-side code changes needed. Tools like LangChain, LlamaIndex, and custom applications integrate seamlessly.</p>
+
+            <p>For production deployments, vLLM is often run in containers (Docker) with Kubernetes orchestration. This allows scaling horizontally (adding more GPUs) and managing resource allocation. vLLM supports tensor parallelism for single-GPU memory limits (split model across multiple GPUs on same node) and distributed inference across multiple nodes.</p>
+
+            <div class="example-box"># vLLM Installation and Deployment
+
+# Basic Installation
+pip install vllm
+
+# Launch vLLM Server
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-2-7b-hf \
+    --tensor-parallel-size 1 \
+    --gpu-memory-utilization 0.9 \
+    --max-model-len 4096 \
+    --port 8000
+
+# Client Code (OpenAI-compatible)
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8000/v1",
+    api_key="token-abc123"
+)
+
+completion = client.completions.create(
+    model="meta-llama/Llama-2-7b-hf",
+    prompt="Once upon a time",
+    max_tokens=100,
+    temperature=0.7
+)
+
+print(completion.choices[0].text)
+
+# Chat Completion (also supported)
+chat_completion = client.chat.completions.create(
+    model="meta-llama/Llama-2-7b-hf",
+    messages=[
+        {"role": "user", "content": "Explain quantum computing"}
+    ],
+    max_tokens=500
+)
+
+# Multi-GPU Tensor Parallelism
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-2-70b-hf \
+    --tensor-parallel-size 8 \
+    --max-model-len 4096
+
+# Docker Deployment
+docker run --gpus all \
+    -e HF_TOKEN=hf_xxxxx \
+    -p 8000:8000 \
+    vllm/vllm:latest \
+    --model meta-llama/Llama-2-7b-hf
+
+# Kubernetes Deployment Example
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-deployment
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: vllm
+        image: vllm/vllm:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 8
+        env:
+        - name: MODEL_NAME
+          value: meta-llama/Llama-2-70b-hf
+        - name: TENSOR_PARALLEL_SIZE
+          value: "8"
+
+        <!-- Section 5: Performance Tuning -->
+        <div class="section-block">
+            <div class="section-marker">5</div>
+            <h2>Performance Tuning</h2>
+            <p>vLLM performance depends on many parameters. The main tuning knobs are: tensor parallelism (how many GPUs split the model), pipeline parallelism (less common), quantization (reduce precision), max_num_seqs (batch size), and max_model_len (context length). Understanding these parameters helps you extract maximum throughput.</p>
+
+            <p>Tensor parallelism is crucial for large models. A 70B model doesn't fit on a single A100 (80GB). With tensor parallelism across 8 A100s (640GB total), each GPU holds ~9B parameters, fitting comfortably. Inference latency increases due to communication overhead, but throughput often improves because you can run larger batches. For a 70B model on 8 A100s with max_batch_size=256, you get ~1000+ tokens/sec throughput.</p>
+
+            <p>Quantization reduces memory and bandwidth, allowing larger batches or longer contexts. vLLM supports several quantization schemes: AWQ (Activation-aware Weight Quantization), GPTQ (Generative Pre-trained Transformer Quantization), and FP8. With 4-bit quantization (AWQ/GPTQ), a 70B model uses ~35GB (vs 140GB FP16), enabling single-GPU deployment or larger batches.</p>
+
+            <p>max_num_seqs controls maximum batch size and is the primary lever for throughput vs latency trade-off. Higher max_num_seqs increases throughput but increases latency for individual requests (more requests in queue waiting to be served). Typical values: 256 for high throughput, 64 for balanced, 16 for low latency.</p>
+
+            <div class="callout blue">
+                <p><strong>Tuning Strategy:</strong> Start with max_num_seqs=64, tensor_parallel=ceil(model_size_bytes/48GB), gpu_memory_utilization=0.9. Monitor throughput. If CUDA OOM, reduce max_num_seqs. If underutilized, increase. For latency-sensitive: reduce max_num_seqs, increase tensor_parallel.</p>
+            </div>
+
+            <div class="example-box"># Performance Tuning Parameters
+
+# Basic Server Launch with Tuning
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-2-70b-hf \
+    --tensor-parallel-size 8 \
+    --gpu-memory-utilization 0.9 \
+    --max-model-len 4096 \
+    --max-num-seqs 128 \
+    --seed 42
+
+# Quantization for Single GPU
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-2-70b-awq \
+    --quantization awq \
+    --tensor-parallel-size 1 \
+    --max-num-seqs 256 \
+    --gpu-memory-utilization 0.95
+
+# Performance Measurement
+import requests
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+def send_request(prompt):
+    response = requests.post(
+        "http://localhost:8000/v1/completions",
+        json={
+            "model": "meta-llama/Llama-2-7b-hf",
+            "prompt": prompt,
+            "max_tokens": 100
+        }
+    )
+    return time.time(), response.json()
+
+# Throughput test: concurrent requests
+start = time.time()
+prompts = ["Explain AI"] * 1000
+with ThreadPoolExecutor(max_workers=32) as executor:
+    futures = [executor.submit(send_request, p) for p in prompts]
+    results = [f.result() for f in futures]
+elapsed = time.time() - start
+
+# Calculate metrics
+total_tokens = 1000 * 100  # 1000 requests × 100 tokens
+throughput = total_tokens / elapsed
+latencies = [r[0] - start for r in results]
+p50_latency = sorted(latencies)[len(latencies)//2]
+p99_latency = sorted(latencies)[int(len(latencies)*0.99)]
+
+print(f"Throughput: {throughput:.1f} tokens/sec")
+print(f"P50 Latency: {p50_latency*1000:.1f}ms")
+print(f"P99 Latency: {p99_latency*1000:.1f}ms")
+
+# Expected Results (70B model, 8 GPU tensor parallel, max_num_seqs=128)
+# Throughput: 800-1200 tokens/sec
+# P50 Latency: 50-100ms
+# P99 Latency: 200-500ms
+
+        <!-- Section 6: Advanced Features -->
+        <div class="section-block">
+            <div class="section-marker">6</div>
+            <h2>Advanced Features</h2>
+            <p>Beyond basic serving, vLLM offers several advanced features for production use: speculative decoding, LoRA serving, prefix caching, and multimodal support. These features enable higher throughput, lower costs, and support for more complex workloads.</p>
+
+            <p>Speculative decoding uses a small "draft model" to generate token candidates, which are then verified by the larger model in batches. This parallelizes decode steps, reducing total generation time by 2-3x when the draft model's predictions are correct. The draft model might be a smaller quantized version or a different model entirely.</p>
+
+            <p>LoRA (Low-Rank Adaptation) serving allows serving multiple fine-tuned variants of a model without loading each separately. Multiple requests can share the base model but use different LoRA adapters. This is crucial for multi-tenant scenarios where each customer has their own fine-tuned model. vLLM multiplexes adapter weights efficiently.</p>
+
+            <p>Prefix caching automatically detects common prompts (system messages, retrieved documents) and caches their KV values. Subsequent requests with the same prefix reuse cached KV, reducing computation and memory. For RAG systems where documents are retrieved and prepended to prompts, this provides significant speedup.</p>
+
+            <p>Multimodal support in vLLM (still evolving) includes vision models that process images and text. vLLM handles image tokenization and KV caching for visual tokens, allowing efficient serving of models like LLaVA or GPT-4V-style architectures.</p>
+
+            <div class="callout green">
+                <p><strong>LoRA Serving Benefit:</strong> Instead of loading 8 different 70B fine-tuned models (560GB total), load the base 70B model once (140GB) and 8 LoRA adapters (~200MB each = 1.6GB total). Memory: 141.6GB vs 560GB (75% reduction).</p>
+            </div>
+
+            <div class="example-box"># Advanced Features: Code Examples
+
+# 1. Speculative Decoding
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-2-70b-hf \
+    --speculative-model meta-llama/Llama-2-7b-hf \
+    --tensor-parallel-size 8 \
+    --speculative-num-tokens 5
+
+# 2. LoRA Serving (Multi-tenant)
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-2-7b-hf \
+    --enable-lora \
+    --max-lora-rank 16 \
+    --max-lora-num 10
+
+# Client with LoRA selection
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:8000/v1")
+
+# Request using specific LoRA adapter
+response = client.completions.create(
+    model="meta-llama/Llama-2-7b-hf",
+    prompt="Explain AI",
+    extra_body={
+        "lora_request": {
+            "lora_name": "customer_a_finetune",
+            "lora_int_id": 1
+        }
+    }
+)
+
+# 3. Prefix Caching (Automatic)
+# No code needed! vLLM detects shared prefixes:
+# Request 1: "System: You are helpful\n\nQuestion: Q1"
+# Request 2: "System: You are helpful\n\nQuestion: Q2"
+# → System prompt KV cached, reused
+
+# 4. Multimodal Serving
+python -m vllm.entrypoints.openai.api_server \
+    --model llava-hf/llava-1.5-7b-hf \
+    --max-model-len 2048 \
+    --mm-proj-align-interval 1
+
+# Client code
+response = client.chat.completions.create(
+    model="llava-hf/llava-1.5-7b-hf",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What is in this image?"},
+                {"type": "image_url", 
+                 "image_url": {"url": "https://example.com/image.jpg"}}
+            ]
+        }
+    ]
+)
+
+        <!-- Section 7: vLLM vs Alternatives -->
+        <div class="section-block">
+            <div class="section-marker">7</div>
+            <h2>vLLM vs Alternatives</h2>
+            <p>Several alternatives to vLLM exist for serving large language models: Text Generation Inference (TGI), TensorRT-LLM, Ollama, and llama.cpp. Each has different strengths, use cases, and trade-offs. The choice depends on your deployment context, scale, and requirements.</p>
+
+            <p>Text Generation Inference (HuggingFace) is a robust production-grade server with similar features to vLLM. It emphasizes stability, offers OpenAI-compatible APIs, and integrates well with HuggingFace ecosystem. For teams already using HF models and tools, TGI may be preferable. Performance is comparable to vLLM, though PagedAttention gives vLLM an edge for very high batch sizes.</p>
+
+            <p>TensorRT-LLM is NVIDIA's optimization engine for LLM inference. It provides superior performance on NVIDIA hardware through compiled kernels and advanced optimizations. However, it requires TensorRT model export, more infrastructure knowledge, and is primarily targeting NVIDIA GPUs. For maximum performance on H100s, TensorRT-LLM is unbeatable.</p>
+
+            <p>Ollama and llama.cpp are lightweight, single-machine solutions optimized for CPU and consumer GPUs. They're ideal for local development, research, and resource-constrained environments. Performance is lower than vLLM/TGI, but they're simple to run locally without containers or complex setup.</p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>vLLM</th>
+                            <th>TGI</th>
+                            <th>TensorRT-LLM</th>
+                            <th>Ollama</th>
+                            <th>llama.cpp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Throughput (tok/s)</td>
+                            <td>800-1200</td>
+                            <td>700-1000</td>
+                            <td>1000-2000+</td>
+                            <td>50-200</td>
+                            <td>10-100</td>
+                        </tr>
+                        <tr>
+                            <td>Latency (P99)</td>
+                            <td>200-500ms</td>
+                            <td>250-600ms</td>
+                            <td>100-300ms</td>
+                            <td>1-5s</td>
+                            <td>5-30s</td>
+                        </tr>
+                        <tr>
+                            <td>Setup Complexity</td>
+                            <td>Easy</td>
+                            <td>Easy</td>
+                            <td>Hard</td>
+                            <td>Trivial</td>
+                            <td>Trivial</td>
+                        </tr>
+                        <tr>
+                            <td>GPU Required</td>
+                            <td>Yes (CUDA)</td>
+                            <td>Yes (CUDA)</td>
+                            <td>Yes (NVIDIA only)</td>
+                            <td>Optional</td>
+                            <td>Optional</td>
+                        </tr>
+                        <tr>
+                            <td>Multi-GPU</td>
+                            <td>Yes (Tensor parallel)</td>
+                            <td>Yes (Tensor parallel)</td>
+                            <td>Yes (Multi-method)</td>
+                            <td>No</td>
+                            <td>No</td>
+                        </tr>
+                        <tr>
+                            <td>Quantization Support</td>
+                            <td>AWQ, GPTQ, FP8</td>
+                            <td>GPTQ, bitsandbytes</td>
+                            <td>INT8, INT4</td>
+                            <td>GGUF (builtin)</td>
+                            <td>GGUF (builtin)</td>
+                        </tr>
+                        <tr>
+                            <td>LoRA Support</td>
+                            <td>Yes</td>
+                            <td>Limited</td>
+                            <td>No</td>
+                            <td>No</td>
+                            <td>No</td>
+                        </tr>
+                        <tr>
+                            <td>OpenAI API</td>
+                            <td>Yes</td>
+                            <td>Yes</td>
+                            <td>Via wrapper</td>
+                            <td>Yes</td>
+                            <td>Yes (via ollama)</td>
+                        </tr>
+                        <tr>
+                            <td>Use Case</td>
+                            <td>Production at scale</td>
+                            <td>Production (HF ecosystem)</td>
+                            <td>Max performance (NVIDIA)</td>
+                            <td>Local development</td>
+                            <td>Lightweight, offline</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>vLLM is best suited for production serving at scale, especially for high-throughput batch scenarios. Its PagedAttention innovation, continuous batching, and comprehensive feature set make it the go-to choice for most organizations. If you're deploying in cloud (AWS, GCP, Azure), vLLM is the safest bet.</p>
+
+            <p>For research and prototyping, Ollama or llama.cpp on a laptop or local GPU is unbeatable for simplicity. For NVIDIA-specific optimization, TensorRT-LLM will give you 20-30% better performance. For teams integrated into HuggingFace ecosystem, TGI is a natural fit.</p>
+
+            <div class="callout rose">
+                <p><strong>Decision Framework:</strong> Need max performance on H100s? TensorRT-LLM. Need easy setup for development? Ollama/llama.cpp. Need production at scale with multiple models/LoRAs? vLLM. Already using HF stack extensively? TGI.</p>
+            </div>
+
+            <div class="example-box"># Quick Comparison: Serving Same Model
+
+# vLLM (Production)
+python -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-2-70b-hf \
+    --tensor-parallel-size 8
+# Result: 1000 tok/s, OpenAI API, containerizable
+
+# TGI (Production, HF-native)
+docker run --gpus all \
+    huggingface/text-generation-inference:latest \
+    --model-id meta-llama/Llama-2-70b-hf
+# Result: 850 tok/s, OpenAI API, HF integration
+
+# TensorRT-LLM (Max performance)
+# Requires: Exporting model to TensorRT format
+# Setup: 2-3 hours for first model
+# Result: 1500+ tok/s, NVIDIA only
+
+# Ollama (Local development)
+ollama run llama2:70b
+# Result: 150 tok/s, no setup, laptop-friendly
+# Best for: Testing, research, demos
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 GenAI Mindmap. All rights reserved. | Built with expertise and precision.</p>
+    </footer>
+</body>
+</html>

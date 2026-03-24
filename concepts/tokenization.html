@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tokenization - GenAI Mindmap</title>
+  <style>
+    :root {
+      --indigo: #4f46e5;
+      --blue: #2563eb;
+      --sky: #38bdf8;
+      --green: #22c55e;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      background: var(--bg-white);
+      border-bottom: 1px solid var(--border);
+      max-width: 100%;
+    }
+
+    .nav-brand {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .nav-brand:hover {
+      color: var(--indigo);
+    }
+
+    .nav-back {
+      font-size: 0.95rem;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .nav-back:hover {
+      color: var(--text);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--sky), var(--blue));
+      color: white;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin: 1rem 0;
+      line-height: 1.2;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: #fbbf24;
+    }
+
+    .hero-sub {
+      font-size: 1.25rem;
+      opacity: 0.95;
+      max-width: 700px;
+      margin: 1.5rem auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .stat-num {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .page-wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .toc-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .toc-grid a {
+      display: block;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .toc-grid a:hover {
+      background: var(--sky);
+      color: white;
+      border-color: var(--sky);
+    }
+
+    .toc-grid a::before {
+      content: attr(data-num);
+      font-weight: 700;
+      color: var(--sky);
+      margin-right: 0.75rem;
+    }
+
+    .toc-grid a:hover::before {
+      color: white;
+    }
+
+    .section-block {
+      margin-bottom: 4rem;
+    }
+
+    .section-marker {
+      display: inline-block;
+      color: var(--sky);
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-block h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .section-block p {
+      margin-bottom: 1rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .section-block ul, .section-block ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-block li {
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .example-box {
+      background: var(--code-bg);
+      color: #e2e8f0;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      border-left: 4px solid var(--sky);
+      margin: 1.5rem 0;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .callout {
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid;
+    }
+
+    .callout-blue {
+      background: rgba(37, 99, 235, 0.05);
+      border-left-color: var(--blue);
+      color: var(--text);
+    }
+
+    .callout-amber {
+      background: rgba(245, 158, 11, 0.05);
+      border-left-color: var(--amber);
+      color: var(--text);
+    }
+
+    .callout-green {
+      background: rgba(34, 197, 94, 0.05);
+      border-left-color: var(--green);
+      color: var(--text);
+    }
+
+    .callout-rose {
+      background: rgba(244, 63, 94, 0.05);
+      border-left-color: var(--rose);
+      color: var(--text);
+    }
+
+    .callout strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    table th {
+      background: var(--sky);
+      color: white;
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table tr:hover {
+      background: var(--bg);
+    }
+
+    footer {
+      background: var(--bg-white);
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    strong {
+      color: var(--sky);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Foundations</span>
+    <h1><em>Tokenization</em></h1>
+    <p class="hero-sub">How language models break down text into discrete units called tokens, and why this matters for cost, performance, and behavior.</p>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">BPE</div>
+        <div class="stat-label">Dominant Algorithm</div>
+      </div>
+      <div>
+        <div class="stat-num">~4 chars</div>
+        <div class="stat-label">Per Token (English)</div>
+      </div>
+      <div>
+        <div class="stat-num">100k</div>
+        <div class="stat-label">GPT-4 Vocab Size</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#section-1" data-num="01">Why Tokenization Matters</a>
+        <a href="#section-2" data-num="02">Byte-Pair Encoding (BPE)</a>
+        <a href="#section-3" data-num="03">SentencePiece & WordPiece</a>
+        <a href="#section-4" data-num="04">Tokenizer Quirks</a>
+        <a href="#section-5" data-num="05">Tokenizer Arithmetic</a>
+        <a href="#section-6" data-num="06">Multilingual Tokenization</a>
+        <a href="#section-7" data-num="07">Special Tokens</a>
+      </div>
+    </div>
+
+    <div class="section-block" id="section-1">
+      <div class="section-marker">SECTION 01</div>
+      <h2>Why Tokenization Matters</h2>
+      <p>Large language models don't read text character-by-character. Instead, they operate on sequences of discrete units called <strong>tokens</strong>. A token is typically 2-4 characters for English, but can range from a single byte to entire words.</p>
+      <p>Tokenization sits at the boundary between the user (who thinks in characters and words) and the model (which thinks in token IDs). Understanding tokenization is crucial because it affects three key areas:</p>
+
+      <p><strong>1. Cost & Billing</strong> — API pricing is per token, not per character. The same prompt can have different token counts depending on the tokenizer. A 1000-character prompt might be 200 tokens (common English) or 500 tokens (rare symbols, mixed languages). That's a 2.5x cost difference.</p>
+
+      <p><strong>2. Context Window</strong> — Model context length is measured in tokens, not characters. GPT-4 has a 128k token context window, but in practice you get fewer characters because each token is ~4 characters on average. A 128k token window is roughly 500k characters of English text—substantial, but not infinite.</p>
+
+      <p><strong>3. Behavior & Safety</strong> — Tokenization affects how the model processes text. Unusual tokenization (e.g., token splitting that separates semantically related concepts) can cause unexpected behavior, jailbreaks, or unsafe outputs. For example, if a safety word is tokenized across multiple tokens, some safety fine-tuning might not apply.</p>
+
+      <p>Historically, models operated on character or word vocabularies, which was inefficient. Character-level models needed thousands of steps for short documents. Word-level models couldn't handle out-of-vocabulary words (OOV). BPE solved this by learning a vocabulary of subword units that balances efficiency and expressiveness.</p>
+
+      <div class="callout callout-blue">
+        <strong>Key Insight:</strong> Tokenization is lossy compression. We map human-readable text to a compact sequence of integers. The tokenizer is deterministic, but not all information is preserved—sometimes important semantic or syntactic information gets scattered across token boundaries.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-2">
+      <div class="section-marker">SECTION 02</div>
+      <h2>Byte-Pair Encoding (BPE)</h2>
+      <p>Byte-Pair Encoding is the dominant tokenization algorithm, used by GPT-2, GPT-3, GPT-4, and many other models. BPE builds a vocabulary by iteratively merging the most frequent byte pairs in a corpus.</p>
+
+      <p><strong>How BPE Works</strong></p>
+      <p>Starting with raw bytes (256 basic tokens representing 0-255), BPE repeatedly finds the most common adjacent pair and merges them into a new token:</p>
+      <div class="example-box">
+Iteration 1: Vocabulary = [0-255 bytes]
+Corpus: "hello world hello"
+In bytes: [h=104, e=101, l=108, l=108, o=111, ...]
+
+Count pairs:
+"he" → 2 occurrences
+"el" → 2 occurrences
+"ll" → 2 occurrences
+"lo" → 2 occurrences
+"o " → 1 occurrence
+...
+
+Most frequent: "he" (or any 2-occurrence pair)
+Action: Add new token 256 → "he"
+Update corpus: [256, l=108, l=108, o=111, ...]
+
+Iteration 2: Find next most frequent pair
+"ll" → 2 occurrences
+Action: Add token 257 → "ll"
+...
+
+After 50,000 iterations: Vocabulary ≈ 50k tokens
+      </div>
+
+      <p><strong>Properties of BPE</strong></p>
+      <ul>
+        <li><strong>Learned from data:</strong> Common sequences in training data become tokens; rare sequences stay split.</li>
+        <li><strong>Language-aware:</strong> English tokenizers learn "ing", "ed", "tion" as single tokens. Chinese/Japanese learn character n-grams.</li>
+        <li><strong>Lossless (within BPE):</strong> Any sequence can be represented; BPE never fails (unlike WordPiece with <unk>).</li>
+        <li><strong>Deterministic:</strong> Same text always produces the same tokens (given the same vocab).</li>
+      </ul>
+
+      <p><strong>BPE Tokenization Process</strong></p>
+      <p>Given a trained vocab, tokenizing text is straightforward:</p>
+      <div class="example-box">
+Vocabulary (excerpt):
+256: "he"
+257: "ll"
+258: "hello"
+259: "world"
+...
+
+Text: "hello world"
+Step 1: Encode as bytes: [h=104, e=101, l=108, l=108, o=111, ...]
+Step 2: Greedily merge from left to right:
+  - h=104, e=101 → found "he" (256) ✓
+  - l=108, l=108 → found "ll" (257) ✓
+  - o=111, space=32 → not in vocab
+  - space=32, w=119 → not in vocab
+  ...
+Result: [256 (he), 257 (ll), 111 (o), ...]
+
+Note: Greedy merging (left-to-right) is simple but not optimal.
+      </div>
+
+      <p><strong>GPT Tokenizers (TikToken)</strong></p>
+      <p>OpenAI uses a modified BPE called tiktoken (part of the Python package). Key differences from vanilla BPE:</p>
+      <ul>
+        <li><strong>Regex preprocessing:</strong> Splits on whitespace and punctuation before BPE, improving space handling</li>
+        <li><strong>Special tokens:</strong> Reserved tokens like <|im_start|>, <|im_end|> for chat formats</li>
+        <li><strong>Larger vocab:</strong> GPT-4 has ~100k tokens (larger than GPT-2's ~50k)</li>
+      </ul>
+
+      <div class="example-box">
+# Using tiktoken (Python)
+import tiktoken
+
+enc = tiktoken.encoding_for_model("gpt-4")
+tokens = enc.encode("Hello, world!")
+print(tokens)  # [9906, 11, 1917, 0]
+print(enc.decode(tokens))  # "Hello, world!"
+
+# Count tokens in a string
+def count_tokens(text, model="gpt-4"):
+    enc = tiktoken.encoding_for_model(model)
+    return len(enc.encode(text))
+
+print(count_tokens("The quick brown fox"))  # Usually ~5-6
+print(count_tokens("Supercalifragilisticexpialidocious"))  # 1 or 2
+      </div>
+
+      <div class="callout callout-green">
+        <strong>BPE Advantage:</strong> BPE is simple, fast, and effective. It's learned from data, so it adapts to any language. It always finds a tokenization (lossless). The downside: token boundaries are learned, not linguistic, so occasional quirks emerge.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-3">
+      <div class="section-marker">SECTION 03</div>
+      <h2>SentencePiece & WordPiece</h2>
+      <p>While BPE dominates for large models, alternatives exist with different tradeoffs:</p>
+
+      <p><strong>SentencePiece (Google)</strong></p>
+      <p>SentencePiece is a language-agnostic tokenization framework used by many non-English and multilingual models (T5, mBERT, LLaMA). Key features:</p>
+      <ul>
+        <li><strong>Space preservation:</strong> Treats spaces as explicit tokens (▁), making decoding lossless and readable</li>
+        <li><strong>BPE or Unigram:</strong> Can use BPE or Unigram LM as the merge algorithm</li>
+        <li><strong>Multilingual:</strong> No language-specific preprocessing; works on raw bytes</li>
+        <li><strong>Reversible:</strong> Can always recover original text from tokens</li>
+      </ul>
+
+      <div class="example-box">
+SentencePiece tokens (excerpt):
+<s>: sentence start
+</s>: sentence end
+▁: space (called "underbar")
+e, l, o, h, w, r, d: common characters
+▁The, ▁quick, ▁brown: subword units
+
+Text: "hello world"
+Tokens: [h, e, l, l, o, ▁, w, o, r, l, d]
+
+Or with merging learned:
+Tokens: [hello, ▁world]
+
+Decoding: hello + ▁ + world = "hello world"
+Space is explicit, so no ambiguity.
+      </div>
+
+      <p><strong>WordPiece (Google/BERT)</strong></p>
+      <p>WordPiece is similar to BPE but used different merge strategy. Common in BERT and other encoder models:</p>
+      <ul>
+        <li><strong>Greedy longest-match:</strong> At each position, match the longest token in vocab (vs BPE's frequency-based merging)</li>
+        <li><strong><unk> fallback:</strong> If a character can't be tokenized, use the unknown token <unk></li>
+        <li><strong>Subword prefix:</strong> Uses ## prefix for non-initial subwords (e.g., "un" + "##breakable")</li>
+      </ul>
+
+      <div class="example-box">
+WordPiece tokenization of "unbreakable":
+Step 1: Check "unbreakable" → not in vocab
+Step 2: Check "unbreak" → not in vocab
+Step 3: Check "unbr" → not in vocab
+Step 4: Check "un" → found! Use it
+Remaining: "breakable"
+Step 5: Check "breakable" → not in vocab
+Step 6: Check "break" → found! Use it
+Remaining: "able"
+Step 7: Check "able" → found! Use it
+
+Tokens: ["un", "##break", "##able"]
+      </div>
+
+      <p><strong>Comparison</strong></p>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Aspect</th>
+            <th>BPE</th>
+            <th>SentencePiece</th>
+            <th>WordPiece</th>
+          </tr>
+          <tr>
+            <td>Algorithm</td>
+            <td>Frequency-based merging</td>
+            <td>BPE or Unigram LM</td>
+            <td>Greedy longest-match</td>
+          </tr>
+          <tr>
+            <td>Language-specific?</td>
+            <td>Requires preprocessing</td>
+            <td>Language-agnostic</td>
+            <td>Requires preprocessing</td>
+          </tr>
+          <tr>
+            <td>Space handling</td>
+            <td>Via preprocessing</td>
+            <td>Explicit ▁ token</td>
+            <td>Explicit space token</td>
+          </tr>
+          <tr>
+            <td>Fallback</td>
+            <td>Lossless (always works)</td>
+            <td>Lossless</td>
+            <td><unk> on failure</td>
+          </tr>
+          <tr>
+            <td>Models</td>
+            <td>GPT-2, GPT-4, Llama</td>
+            <td>T5, mBERT, Llama 2</td>
+            <td>BERT, ALBERT</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-block" id="section-4">
+      <div class="section-marker">SECTION 04</div>
+      <h2>Tokenizer Quirks</h2>
+      <p>Tokenization is not always intuitive. Here are common surprises:</p>
+
+      <p><strong>1. Unicode Fragmentation</strong></p>
+      <p>Non-ASCII characters often tokenize into multiple tokens. A single emoji or accented character can be 2-4 tokens:</p>
+      <div class="example-box">
+Text: "café"
+Tokens (GPT-4): [c, a, f, é]
+Token count: 1 + 1 + 1 + 1 = 4 tokens (not 4 characters)
+
+Text: "naïve"
+Tokens: [na, ï, ve] or [n, a, ï, v, e]
+Depends on training data.
+
+Text: "你好" (Chinese "hello")
+Tokens: [n, 你, 好] or just [你, 好]
+Depends on vocab size and training data.
+
+Cost implications: Non-ASCII text is more expensive!
+      </div>
+
+      <p><strong>2. Whitespace Sensitivity</strong></p>
+      <p>Leading/trailing spaces or multiple spaces tokenize differently:</p>
+      <div class="example_box">
+Text: "hello" → tokens: [hello]
+Text: " hello" → tokens: [space, hello]
+Text: "  hello" → tokens: [space, space, hello] or [2-space-token, hello]
+
+Cost: Same word with vs without leading space costs differently.
+      </div>
+
+      <p><strong>3. Number Tokenization</strong></p>
+      <p>Numbers are tokenized digit-by-digit or as number words:</p>
+      <div class="example-box">
+Text: "12345"
+Tokens: [12345] or [123, 45] or [1, 2, 3, 4, 5]
+GPT-4 usually: [123, 45] or similar splits
+
+Implications:
+- Math problems with large numbers are token-expensive
+- Model may struggle with out-of-distribution numbers
+- Arithmetic over 3-4 digit numbers is harder for models
+      </div>
+
+      <p><strong>4. Case Sensitivity</strong></p>
+      <p>BERT and older models are case-insensitive (all tokens are lowercased). GPT models are case-sensitive:</p>
+      <div class="example-box">
+BERT: "HELLO" and "hello" → same tokens
+GPT-4: "HELLO" → [HELLO] or [H, ELL, O]
+        "hello" → [hello]
+
+Cost: All-caps text may tokenize differently.
+      </div>
+
+      <p><strong>5. Punctuation Attachment</strong></p>
+      <p>Punctuation is sometimes attached to words, sometimes separate:</p>
+      <div class="example-box">
+Text: "hello, world"
+Tokens: [hello, ",", world] or [hello, ",world"]
+Depends on training data and vocab.
+
+Text: "don't"
+Tokens: [don, ', t] or [don't] or [do, n't]
+      </div>
+
+      <div class="callout callout-amber">
+        <strong>Practical Tip:</strong> Always count tokens for your specific text and model before assuming cost. Use tiktoken or the model's tokenizer directly. A 1000-character prompt might be 150 tokens or 600 tokens depending on language and punctuation.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-5">
+      <div class="section-marker">SECTION 05</div>
+      <h2>Tokenizer Arithmetic</h2>
+      <p>Estimating and managing token count is a practical necessity when building LLM applications.</p>
+
+      <p><strong>Counting Tokens with TikToken</strong></p>
+      <div class="example-box">
+import tiktoken
+from typing import Optional
+
+def count_tokens(text: str, model: str = "gpt-4") -> int:
+    """Count tokens in text for a given model."""
+    enc = tiktoken.encoding_for_model(model)
+    return len(enc.encode(text))
+
+def estimate_api_cost(
+    text: str,
+    model: str = "gpt-4-turbo",
+    input_cost_per_1k: float = 0.01,
+    output_cost_per_1k: float = 0.03
+) -> dict:
+    """Estimate API cost for a prompt."""
+    input_tokens = count_tokens(text, model)
+    
+    # Estimate output (rough: 30% of input or max 2000)
+    output_estimate = min(int(input_tokens * 0.3), 2000)
+    
+    input_cost = (input_tokens / 1000) * input_cost_per_1k
+    output_cost = (output_estimate / 1000) * output_cost_per_1k
+    
+    return {
+        "input_tokens": input_tokens,
+        "output_estimate": output_estimate,
+        "input_cost": input_cost,
+        "output_cost": output_cost,
+        "total_cost": input_cost + output_cost
+    }
+
+# Example
+text = "Explain quantum computing in 500 words."
+result = estimate_api_cost(text)
+print(f"Tokens: {result['input_tokens']}")
+print(f"Est. cost: ${result['total_cost']:.4f}")
+
+# Context window management
+def truncate_to_context(
+    messages: list[dict],
+    max_tokens: int = 128000,
+    model: str = "gpt-4"
+) -> list[dict]:
+    """Remove oldest messages if context is exceeded."""
+    enc = tiktoken.encoding_for_model(model)
+    total = 0
+    
+    # Count tokens, working backwards
+    kept = []
+    for msg in reversed(messages):
+        msg_tokens = len(enc.encode(msg['content']))
+        if total + msg_tokens <= max_tokens:
+            kept.append(msg)
+            total += msg_tokens
+        else:
+            break
+    
+    return list(reversed(kept))  # Restore order
+      </div>
+
+      <p><strong>Rule-of-Thumb Estimates</strong></p>
+      <p>For quick estimation without calling the API:</p>
+      <ul>
+        <li><strong>English:</strong> ~4 characters per token (divide text length by 4)</li>
+        <li><strong>Code:</strong> ~3 characters per token (denser, more punctuation)</li>
+        <li><strong>Non-ASCII:</strong> ~2 characters per token (unicode overhead)</li>
+        <li><strong>Math/symbols:</strong> ~2 characters per token</li>
+      </ul>
+
+      <p><strong>Cost Optimization Strategies</strong></p>
+      <ul>
+        <li><strong>Summarize context:</strong> Instead of including full documents, summarize them (shorter, cheaper)</li>
+        <li><strong>Use shorter models:</strong> For simple tasks, use GPT-3.5 instead of GPT-4 (cheaper per token, faster)</li>
+        <li><strong>Batch requests:</strong> Process many requests in one API call if possible</li>
+        <li><strong>Cache results:</strong> Store responses to avoid re-processing identical prompts</li>
+        <li><strong>Compress input:</strong> Remove unnecessary whitespace, combine similar requests</li>
+      </ul>
+
+      <div class="callout callout-green">
+        <strong>Example Savings:</strong> Summarizing a 5000-token document to 500 tokens saves ~90% on input cost. If you process this 1000 times/month, that's substantial savings.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-6">
+      <div class="section-marker">SECTION 06</div>
+      <h2>Multilingual Tokenization</h2>
+      <p>English tokenizers are optimized for English but work (inefficiently) on other languages. This creates a fairness issue: non-English users pay more.</p>
+
+      <p><strong>Token Efficiency by Language</strong></p>
+      <p>Different languages have different "fertility ratios"—how many tokens per character:</p>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Language</th>
+            <th>Chars/Token</th>
+            <th>Fertility Ratio</th>
+            <th>Notes</th>
+          </tr>
+          <tr>
+            <td>English</td>
+            <td>~4</td>
+            <td>1.0 (baseline)</td>
+            <td>Optimized for GPT tokenizers</td>
+          </tr>
+          <tr>
+            <td>Spanish/French</td>
+            <td>~3.5</td>
+            <td>1.1x</td>
+            <td>Slightly less efficient</td>
+          </tr>
+          <tr>
+            <td>German</td>
+            <td>~3.2</td>
+            <td>1.25x</td>
+            <td>Longer words</td>
+          </tr>
+          <tr>
+            <td>Japanese</td>
+            <td>~1.5</td>
+            <td>2.7x</td>
+            <td>Each character is a token</td>
+          </tr>
+          <tr>
+            <td>Chinese</td>
+            <td>~1.3</td>
+            <td>3.1x</td>
+            <td>Each character is a token</td>
+          </tr>
+          <tr>
+            <td>Arabic</td>
+            <td>~2</td>
+            <td>2.0x</td>
+            <td>Diacritics, ligatures</td>
+          </tr>
+        </table>
+      </div>
+
+      <p><strong>Why the Difference?</strong></p>
+      <p>English GPT tokenizers learn "the", "and", "ing" as single tokens. Chinese doesn't have word boundaries, so each character is usually its own token. A 100-character Chinese sentence costs ~3x more than the equivalent English sentence.</p>
+
+      <p><strong>Implications for Multilingual Models</strong></p>
+      <p>Multilingual models (like mBERT or mT5) use language-agnostic tokenizers (usually SentencePiece) that are fairer across languages, but less efficient than language-specific tokenizers. The tradeoff:</p>
+      <div class="example-box">
+Language-specific (GPT):
+- English: Very efficient
+- Japanese: Inefficient (no Japanese-specific vocab)
+
+Language-agnostic (SentencePiece):
+- English: Moderate (slightly less efficient than BPE)
+- Japanese: Better (learned Japanese subwords)
+
+Conclusion: Multilingual models often have lower avg efficiency
+but more equitable cost across languages.
+      </div>
+
+      <p><strong>Handling Mixed-Language Text</strong></p>
+      <p>If you're mixing languages (code-switching), be aware:</p>
+      <ul>
+        <li>Switching between English and Japanese in a single sentence is expensive</li>
+        <li>The tokenizer can't efficiently handle both alphabets</li>
+        <li>Each language fragment may require extra tokens</li>
+      </ul>
+
+      <div class="callout callout-rose">
+        <strong>Fairness Concern:</strong> Non-English speakers pay 2-3x more per character for the same API, due to tokenization inefficiency. This is a known issue in the AI industry. Language-agnostic tokenizers and multilingual models partially address this, but the problem persists.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-7">
+      <div class="section-marker">SECTION 07</div>
+      <h2>Special Tokens</h2>
+      <p>Beyond regular tokens, models use <strong>special tokens</strong> for control, structure, and safety. These are reserved tokens with predefined meanings.</p>
+
+      <p><strong>Common Special Tokens</strong></p>
+      <ul>
+        <li><strong>&lt;BOS&gt;:</strong> Beginning of Sequence (marks start of generation)</li>
+        <li><strong>&lt;EOS&gt;:</strong> End of Sequence (marks end)</li>
+        <li><strong>&lt;PAD&gt;:</strong> Padding (for batch processing, fills unused positions)</li>
+        <li><strong>&lt;UNK&gt;:</strong> Unknown token (fallback for OOV words)</li>
+        <li><strong>&lt;MASK&gt;:</strong> Masked token (used in masked language modeling)</li>
+      </ul>
+
+      <p><strong>Chat Format Special Tokens (Claude, GPT)</strong></p>
+      <div class="example-box">
+Claude chat format:
+<|im_start|>user
+What is tokenization?
+<|im_end|>
+<|im_start|>assistant
+Tokenization is...
+<|im_end|>
+
+Each <|im_start|> and <|im_end|> is a special token.
+These tokens are not part of regular vocabulary.
+
+GPT chat format:
+<|begin_header_id|>user<|end_header_id|>
+What is tokenization?
+<|begin_header_id|>assistant<|end_header_id|>
+Tokenization is...
+
+Similar structure with different tokens.
+      </div>
+
+      <p><strong>Adding Custom Tokens</strong></p>
+      <p>If you're fine-tuning a model, you may add new special tokens:</p>
+      <div class="example-box">
+# Using Hugging Face Transformers
+from transformers import AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+
+# Original vocab size
+print(f"Original: {tokenizer.vocab_size}")  # 50257
+
+# Add custom tokens
+new_tokens = ["<CUSTOM_1>", "<CUSTOM_2>", "<|code|>"]
+tokenizer.add_tokens(new_tokens)
+
+print(f"After adding: {tokenizer.vocab_size}")  # 50260
+
+# Save updated tokenizer
+tokenizer.save_pretrained("./custom_tokenizer")
+
+# When fine-tuning, resize model embeddings:
+model.resize_token_embeddings(len(tokenizer))
+# This adds new rows to token embedding matrix
+      </div>
+
+      <p><strong>Token Efficiency in Chat Protocols</strong></p>
+      <p>Special tokens add overhead. A typical chat message costs extra tokens for structure:</p>
+      <div class="example-box">
+Message: "Hello"
+Raw tokens: [Hello] = 1 token
+With chat format: [<|im_start|>, user, \n, Hello, \n, <|im_end|>]
+= 6-7 tokens
+
+Cost: 6-7x overhead for a single-token message!
+
+Optimization: Batch messages, minimize chat wrapper overhead.
+      </div>
+
+      <p><strong>Reserved Tokens & Safety</strong></p>
+      <p>Some models reserve token ranges for safety. For example, certain token IDs might trigger refusals. This is not well-documented for commercial models, but is sometimes used in research:</p>
+      <ul>
+        <li>Token IDs in range [50000, 50100] might be reserved for internal use</li>
+        <li>Trying to force-decode these tokens may cause errors or unexpected behavior</li>
+        <li>Fine-tuning should avoid modifying reserved ranges</li>
+      </ul>
+
+      <div class="callout callout-blue">
+        <strong>Best Practice:</strong> Understand your model's special tokens. Document custom tokens. When fine-tuning, resize embeddings properly. Monitor that token counts match expectations (off-by-one errors are common).
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    © 2026 GenAI Mindmap. All concepts serve learning purposes.
+  </footer>
+</body>
+</html>

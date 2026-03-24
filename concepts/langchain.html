@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LangChain - GenAI Mindmap</title>
+  <style>
+    :root {
+      --indigo: #4f46e5;
+      --blue: #2563eb;
+      --sky: #38bdf8;
+      --green: #22c55e;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      background: var(--bg-white);
+      border-bottom: 1px solid var(--border);
+      max-width: 100%;
+    }
+
+    .nav-brand {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .nav-brand:hover {
+      color: var(--indigo);
+    }
+
+    .nav-back {
+      font-size: 0.95rem;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .nav-back:hover {
+      color: var(--text);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--amber), var(--rose));
+      color: white;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin: 1rem 0;
+      line-height: 1.2;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: #fef3c7;
+    }
+
+    .hero-sub {
+      font-size: 1.25rem;
+      opacity: 0.95;
+      max-width: 700px;
+      margin: 1.5rem auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .stat-num {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .page-wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .toc-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .toc-grid a {
+      display: block;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .toc-grid a:hover {
+      background: var(--amber);
+      color: white;
+      border-color: var(--amber);
+    }
+
+    .toc-grid a::before {
+      content: attr(data-num);
+      font-weight: 700;
+      color: var(--amber);
+      margin-right: 0.75rem;
+    }
+
+    .toc-grid a:hover::before {
+      color: white;
+    }
+
+    .section-block {
+      margin-bottom: 4rem;
+    }
+
+    .section-marker {
+      display: inline-block;
+      color: var(--amber);
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-block h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .section-block p {
+      margin-bottom: 1rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .section-block ul, .section-block ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-block li {
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .example-box {
+      background: var(--code-bg);
+      color: #e2e8f0;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      border-left: 4px solid var(--amber);
+      margin: 1.5rem 0;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .callout {
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid;
+    }
+
+    .callout-blue {
+      background: rgba(37, 99, 235, 0.05);
+      border-left-color: var(--blue);
+      color: var(--text);
+    }
+
+    .callout-amber {
+      background: rgba(245, 158, 11, 0.05);
+      border-left-color: var(--amber);
+      color: var(--text);
+    }
+
+    .callout-green {
+      background: rgba(34, 197, 94, 0.05);
+      border-left-color: var(--green);
+      color: var(--text);
+    }
+
+    .callout-rose {
+      background: rgba(244, 63, 94, 0.05);
+      border-left-color: var(--rose);
+      color: var(--text);
+    }
+
+    .callout strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    table th {
+      background: var(--amber);
+      color: white;
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table tr:hover {
+      background: var(--bg);
+    }
+
+    footer {
+      background: var(--bg-white);
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    strong {
+      color: var(--amber);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Agents & Orchestration</span>
+    <h1><em>LangChain</em></h1>
+    <p class="hero-sub">A composable framework for building production LLM applications with chains, agents, retrievers, and memory.</p>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">2022</div>
+        <div class="stat-label">Founded</div>
+      </div>
+      <div>
+        <div class="stat-num">90k+</div>
+        <div class="stat-label">GitHub Stars</div>
+      </div>
+      <div>
+        <div class="stat-num">LCEL</div>
+        <div class="stat-label">Modern Interface</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#section-1" data-num="01">What is LangChain</a>
+        <a href="#section-2" data-num="02">Core Abstractions</a>
+        <a href="#section-3" data-num="03">LCEL Expression Language</a>
+        <a href="#section-4" data-num="04">RAG with LangChain</a>
+        <a href="#section-5" data-num="05">Agents with LangChain</a>
+        <a href="#section-6" data-num="06">LangSmith Integration</a>
+        <a href="#section-7" data-num="07">LangChain vs Alternatives</a>
+      </div>
+    </div>
+
+    <div class="section-block" id="section-1">
+      <div class="section-marker">SECTION 01</div>
+      <h2>What is LangChain</h2>
+      <p>LangChain is an open-source Python framework for building applications with large language models. Founded in 2022 by Harrison Chase, it has become the de facto standard for LLM orchestration, with over 90k GitHub stars and widespread adoption in startups and enterprises.</p>
+
+      <p><strong>Core Mission:</strong> "Take LLMs from proof-of-concept to production." LangChain abstracts away boilerplate, handles API management, and provides reusable components for common patterns (RAG, agents, memory, evaluation).</p>
+
+      <p><strong>Key Components</strong></p>
+      <ul>
+        <li><strong>Chains:</strong> Sequences of LLM calls and actions. A simple "question → LLM → answer" is a chain.</li>
+        <li><strong>Agents:</strong> LLMs that can decide what tools to use and iterate. "Should I use a calculator, search, or respond directly?"</li>
+        <li><strong>Retrievers:</strong> Objects that fetch documents from knowledge bases. Abstract over vector stores, databases, APIs.</li>
+        <li><strong>Tools:</strong> Functions the agent can call (Google Search, Calculator, database query, etc.)</li>
+        <li><strong>Memory:</strong> Maintains conversation history and context across turns.</li>
+        <li><strong>Evaluators:</strong> Assess LLM outputs against criteria (correctness, safety, relevance).</li>
+      </ul>
+
+      <p><strong>Why Use LangChain?</strong></p>
+      <ul>
+        <li><strong>Rapid prototyping:</strong> Build a RAG app in 50 lines vs 500 without a framework</li>
+        <li><strong>Abstraction over models:</strong> Switch from OpenAI to Anthropic to Ollama with one line change</li>
+        <li><strong>Extensibility:</strong> Custom chains, tools, and retrievers inherit framework capabilities</li>
+        <li><strong>Production features:</strong> Caching, batching, async, streaming, error handling</li>
+        <li><strong>Integrations:</strong> 100+ integrations (vector stores, SQL databases, APIs, chat platforms)</li>
+      </ul>
+
+      <div class="callout callout-blue">
+        <strong>Philosophy:</strong> LangChain is "glue" code. It standardizes interfaces so you can compose models, tools, and data sources. The magic is in simplification and reusability.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-2">
+      <div class="section-marker">SECTION 02</div>
+      <h2>Core Abstractions</h2>
+      <p>LangChain provides unified interfaces for common components:</p>
+
+      <p><strong>1. LLMs & ChatModels</strong></p>
+      <p>Two model types with a consistent interface:</p>
+      <ul>
+        <li><strong>LLM:</strong> Text-in, text-out (e.g., "Complete this: Hello...")</li>
+        <li><strong>ChatModel:</strong> Message-based (e.g., system prompts, user/assistant turns)</li>
+      </ul>
+
+      <div class="example-box">
+from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
+
+# All inherit same interface
+model = ChatOpenAI(model="gpt-4")
+# or
+model = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+# Same code works for both
+response = model.invoke([
+    {"role": "system", "content": "You are a helpful assistant"},
+    {"role": "user", "content": "What is 2+2?"}
+])
+print(response.content)  # "4"
+      </div>
+
+      <p><strong>2. PromptTemplates</strong></p>
+      <p>Parameterized prompts. Define once, reuse with different variables:</p>
+      <div class="example-box">
+from langchain.prompts import ChatPromptTemplate
+
+template = ChatPromptTemplate.from_messages([
+    ("system", "You are a {profession}."),
+    ("user", "Answer this question: {question}")
+])
+
+# Reuse
+prompt_scientist = template.format_messages(
+    profession="scientist",
+    question="What is photosynthesis?"
+)
+# → 2 messages: system=scientist, user=photosynthesis question
+
+prompt_lawyer = template.format_messages(
+    profession="lawyer",
+    question="What is a contract?"
+)
+# → 2 messages: system=lawyer, user=contract question
+      </div>
+
+      <p><strong>3. OutputParsers</strong></p>
+      <p>Parse LLM output (JSON, lists, structured data):</p>
+      <div class="example-box">
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel
+
+class SentimentResponse(BaseModel):
+    sentiment: str  # "positive", "negative", "neutral"
+    confidence: float  # 0-1
+    explanation: str
+
+parser = PydanticOutputParser(pydantic_object=SentimentResponse)
+
+# Use in prompt
+prompt = ChatPromptTemplate.from_template(
+    "Rate sentiment of: {text}\n{format_instructions}"
+).partial(format_instructions=parser.get_format_instructions())
+
+# Parse output automatically
+response = model.invoke(prompt.format(text="I love this!"))
+parsed = parser.parse(response.content)
+# → SentimentResponse(sentiment="positive", confidence=0.95, ...)
+      </div>
+
+      <p><strong>4. Retrievers</strong></p>
+      <p>Abstract interface for document retrieval. Swap vector stores without changing code:</p>
+      <ul>
+        <li>VectorStoreRetriever (Pinecone, Weaviate, FAISS, Chroma)</li>
+        <li>ToolkitRetriever (search APIs, databases)</li>
+        <li>ParentDocumentRetriever (retrieve large docs, return excerpts)</li>
+      </ul>
+
+      <p><strong>5. Tools</strong></p>
+      <p>Functions agents can use. Defined with type hints and descriptions:</p>
+      <div class="example-box">
+from langchain.tools import tool
+
+@tool
+def calculate_area(radius: float) -> float:
+    """Calculate area of a circle given radius."""
+    import math
+    return math.pi * radius ** 2
+
+# Tool has name, description, input schema from signature
+# Agents discover this metadata and decide when to call
+
+agent.invoke(
+    "What's the area of a circle with radius 5?"
+)
+# Agent: "I should use calculate_area tool"
+# → 78.54...
+      </div>
+
+      <div class="callout callout-green">
+        <strong>Abstraction Win:</strong> All components follow the Runnable interface. They all have `.invoke()`, `.stream()`, `.batch()`. This consistency is powerful—compose chains without learning different APIs.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-3">
+      <div class="section-marker">SECTION 03</div>
+      <h2>LangChain Expression Language (LCEL)</h2>
+      <p>LCEL (LangChain Expression Language) is a modern, elegant way to compose chains using the pipe operator (`|`).</p>
+
+      <p><strong>Basic Syntax</strong></p>
+      <div class="example-box">
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+
+# Define components
+prompt = ChatPromptTemplate.from_template("Translate to {language}: {text}")
+model = ChatOpenAI()
+output_parser = StrOutputParser()
+
+# Compose with pipe operator
+chain = prompt | model | output_parser
+
+# Run
+result = chain.invoke({
+    "language": "Spanish",
+    "text": "Hello, world!"
+})
+# → "¡Hola, mundo!"
+
+# Equivalent to:
+# result = output_parser.parse(model.invoke(prompt.format(...)))
+      </div>
+
+      <p><strong>Key Features</strong></p>
+      <ul>
+        <li><strong>Readability:</strong> Pipes show data flow left-to-right</li>
+        <li><strong>Composability:</strong> Chains are Runnables; can be piped further</li>
+        <li><strong>Parallel execution:</strong> Use `RunnableParallel` for concurrent branches</li>
+        <li><strong>Conditional routing:</strong> Use `RunnableIf` to branch based on conditions</li>
+        <li><strong>Streaming:</strong> All chains support streaming by default</li>
+      </ul>
+
+      <p><strong>Advanced: Parallel Execution</strong></p>
+      <div class="example-box">
+from langchain.schema.runnable import RunnableParallel
+
+# Run multiple branches in parallel
+parallel_chain = RunnableParallel(
+    sentiment=sentiment_analyzer,
+    entities=entity_extractor,
+    summary=summarizer
+)
+
+result = parallel_chain.invoke(text)
+# → {"sentiment": "...", "entities": [...], "summary": "..."}
+# All run in parallel!
+      </div>
+
+      <p><strong>Streaming</strong></p>
+      <p>All LCEL chains support streaming by default, enabling real-time response:</p>
+      <div class="example-box">
+chain = prompt | model | output_parser
+
+# Stream tokens as they arrive
+for chunk in chain.stream({"query": "Explain quantum computing"}):
+    print(chunk, end="", flush=True)  # Print progressively
+      </div>
+
+      <div class="callout callout-amber">
+        <strong>LCEL Advantage:</strong> Much more readable than nested function calls. `A | B | C` vs `C(B(A(...)))`. Plus, built-in support for streaming, batching, async.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-4">
+      <div class="section-marker">SECTION 04</div>
+      <h2>RAG with LangChain</h2>
+      <p>Building a production RAG (Retrieval-Augmented Generation) system is straightforward with LangChain:</p>
+
+      <div class="example-box">
+# RAG Pipeline with LangChain
+
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_openai import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.runnable import RunnablePassthrough
+
+# Step 1: Load documents
+loader = PyPDFLoader("quantum.pdf")
+docs = loader.load()
+
+# Step 2: Split into chunks
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200
+)
+chunks = splitter.split_documents(docs)
+
+# Step 3: Create embeddings & vector store
+embeddings = OpenAIEmbeddings()
+vectorstore = Chroma.from_documents(chunks, embeddings)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+
+# Step 4: Create RAG chain
+prompt = ChatPromptTemplate.from_template(
+    "Based on these docs: {context}\n\nAnswer: {question}"
+)
+model = ChatOpenAI()
+
+# Compose RAG chain
+rag_chain = (
+    {
+        "context": retriever,  # Retriever is a Runnable
+        "question": RunnablePassthrough()  # Pass through the question
+    }
+    | prompt
+    | model
+)
+
+# Step 5: Run
+answer = rag_chain.invoke("What is quantum entanglement?")
+print(answer.content)
+      </div>
+
+      <p><strong>Explanation</strong></p>
+      <ul>
+        <li><strong>RunnablePassthrough():</strong> Passes input unchanged. Allows multiple inputs in the chain.</li>
+        <li><strong>RunnableParallel:</strong> The `{...}` syntax creates a parallel Runnable. Both `context` and `question` are computed.</li>
+        <li><strong>Retriever as Runnable:</strong> Retrievers inherit Runnable interface. Can be piped like any other component.</li>
+      </ul>
+
+      <p><strong>Adding Chat History (Memory)</strong></p>
+      <div class="example-box">
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationRetrievalChain
+
+memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    return_messages=True
+)
+
+# ConversationRetrievalChain handles memory automatically
+chain = ConversationRetrievalChain.from_llm(
+    llm=model,
+    retriever=retriever,
+    memory=memory
+)
+
+# First turn
+response1 = chain.invoke({"question": "What is quantum?"})
+# Second turn (remembers "quantum" context)
+response2 = chain.invoke({"question": "And how does it relate to computing?"})
+# Memory enables multi-turn coherence
+      </div>
+
+      <div class="callout callout-green">
+        <strong>RAG Best Practice:</strong> Always chunk documents and include overlap (e.g., 1000 chars, 200 overlap). This prevents semantically important boundaries from being split mid-concept.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-5">
+      <div class="section-marker">SECTION 05</div>
+      <h2>Agents with LangChain</h2>
+      <p>Agents combine LLMs with tools, enabling dynamic reasoning and multi-step problem solving:</p>
+
+      <div class="example-box">
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain_openai import ChatOpenAI
+from langchain.tools import Tool
+import requests
+
+# Define tools
+@tool
+def search_wikipedia(query: str) -> str:
+    """Search Wikipedia for information."""
+    # Implement Wikipedia API call
+    pass
+
+@tool
+def get_weather(location: str) -> str:
+    """Get current weather for a location."""
+    # Implement weather API call
+    pass
+
+tools = [search_wikipedia, get_weather]
+
+# Create ReAct agent (Reasoning + Acting)
+model = ChatOpenAI(model="gpt-4")
+agent = create_react_agent(model, tools, prompt_template)
+
+# Execute agent
+executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+result = executor.invoke({
+    "input": "What's the weather like in Paris, and what's famous there?"
+})
+# Agent decides: "I need weather + Wikipedia search"
+# → Calls both tools iteratively
+# → Synthesizes answer
+      </div>
+
+      <p><strong>Agent Loop</strong></p>
+      <ul>
+        <li><strong>1. Thought:</strong> LLM reasons about the task</li>
+        <li><strong>2. Action:</strong> LLM decides which tool to call</li>
+        <li><strong>3. Observation:</strong> Tool result is returned</li>
+        <li><strong>4. Repeat:</strong> If more tools needed, loop. Otherwise, return final answer.</li>
+      </ul>
+
+      <p><strong>Structured Output Agents</strong></p>
+      <p>For deterministic parsing, use structured agents that output JSON:</p>
+      <div class="example-box">
+from langchain.agents import create_structured_chat_agent
+
+# Agent outputs JSON actions, not text
+agent = create_structured_chat_agent(
+    llm=model,
+    tools=tools,
+    prompt=prompt,
+    output_parser=JsonOutputParser()
+)
+
+# Guaranteed valid JSON, easier to parse
+      </div>
+
+      <div class="callout callout-blue">
+        <strong>Agent Tip:</strong> Agents are powerful but can hallucinate tool calls or get stuck in loops. Use verbose=True to debug. Limit max_iterations to prevent runaway loops. Provide clear tool descriptions.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-6">
+      <div class="section-marker">SECTION 06</div>
+      <h2>LangSmith Integration</h2>
+      <p>LangSmith is LangChain's production platform for tracing, evaluating, and monitoring LLM applications.</p>
+
+      <p><strong>Features</strong></p>
+      <ul>
+        <li><strong>Tracing:</strong> Log all LLM calls, tools, and latencies. See exactly what happened in each request.</li>
+        <li><strong>Evaluation:</strong> Run tests against your chains. Check if outputs meet quality criteria.</li>
+        <li><strong>Prompt Management:</strong> Version prompts. A/B test prompt variations.</li>
+        <li><strong>Monitoring:</strong> Track performance in production. Alert on errors, latency spikes.</li>
+      </ul>
+
+      <p><strong>Setup</strong></p>
+      <div class="example-box">
+import os
+from langchain.callbacks import LangChainTracer
+
+# Set API key
+os.environ["LANGCHAIN_API_KEY"] = "your-api-key"
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_PROJECT"] = "my-rag-app"
+
+# All LangChain calls are automatically traced
+# View in https://smith.langchain.com/
+chain.invoke({"query": "..."})
+# Trace appears in LangSmith dashboard
+      </div>
+
+      <p><strong>Evaluation in LangSmith</strong></p>
+      <div class="example-box">
+from langsmith import evaluate
+
+# Define evaluators
+def check_answer_length(output: dict) -> bool:
+    """Evaluator: answer should be < 200 words."""
+    return len(output["answer"].split()) < 200
+
+def check_factuality(output: dict) -> bool:
+    """Evaluator: use LLM judge for factuality."""
+    judge = ChatOpenAI(model="gpt-4")
+    eval_prompt = f"""Is this answer factually correct?
+    Output: {output['answer']}
+    Return: yes/no"""
+    result = judge.invoke(eval_prompt)
+    return "yes" in result.lower()
+
+# Run evaluation
+results = evaluate(
+    lambda inputs: rag_chain.invoke(inputs),
+    data=[
+        {"question": "What is photosynthesis?", "expected": "..."},
+        {"question": "How does DNA work?", "expected": "..."}
+    ],
+    evaluators=[check_answer_length, check_factuality],
+    experiment_prefix="rag-v1"
+)
+# Results in LangSmith, compare to previous versions
+      </div>
+
+      <p><strong>LangSmith Dashboard Insights</strong></p>
+      <ul>
+        <li><strong>Trace view:</strong> Click into a request to see all LLM calls, latencies, token counts</li>
+        <li><strong>Dataset management:</strong> Version test datasets, track evaluation results over time</li>
+        <li><strong>Comparison:</strong> A/B test new prompts or models against baseline</li>
+        <li><strong>Production monitoring:</strong> Real-time stats on latency, error rates, token usage</li>
+      </ul>
+
+      <div class="callout callout-amber">
+        <strong>LangSmith Cost:</strong> Free tier includes 100 traces/month. Paid plans start at $100/month. Worth it for production monitoring but unnecessary for hobby projects.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-7">
+      <div class="section-marker">SECTION 07</div>
+      <h2>LangChain vs Alternatives</h2>
+      <p>LangChain dominates but isn't alone. Comparison with key alternatives:</p>
+
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Framework</th>
+            <th>Best For</th>
+            <th>Strengths</th>
+            <th>Weaknesses</th>
+          </tr>
+          <tr>
+            <td><strong>LangChain</strong></td>
+            <td>General-purpose LLM apps, RAG, agents</td>
+            <td>Massive ecosystem, LCEL elegance, production-ready (LangSmith)</td>
+            <td>Can be verbose; large codebase; frequent API changes</td>
+          </tr>
+          <tr>
+            <td><strong>LlamaIndex</strong></td>
+            <td>RAG, document indexing, data connectors</td>
+            <td>Best-in-class RAG. 100+ data connectors. Auto-indexing strategies</td>
+            <td>Less focused on agents. Smaller ecosystem</td>
+          </tr>
+          <tr>
+            <td><strong>LangGraph</strong></td>
+            <td>Complex workflows, agents with memory</td>
+            <td>Explicit control flow. Graph-based reasoning. Built by LangChain team</td>
+            <td>Newer, fewer examples. Learning curve for graph thinking</td>
+          </tr>
+          <tr>
+            <td><strong>Pydantic AI</strong></td>
+            <td>Type-safe agents, structured outputs</td>
+            <td>Strong typing. Structured validation. Clean API</td>
+            <td>Newer, less mature. Smaller community</td>
+          </tr>
+          <tr>
+            <td><strong>Raw SDK</strong> (openai, anthropic)</td>
+            <td>Simple scripts, full control</td>
+            <td>Lightweight, no dependencies. Direct model access</td>
+            <td>Manual chain management, boilerplate, no abstractions</td>
+          </tr>
+        </table>
+      </div>
+
+      <p><strong>When to Use Each</strong></p>
+      <div class="example-box">
+Use LangChain if:
+✓ Building a production RAG or agent system
+✓ Need integrations with many vector stores, databases
+✓ Want LangSmith monitoring
+✓ Team is already familiar with it (most common in industry)
+
+Use LlamaIndex if:
+✓ Focus is RAG and document indexing
+✓ Need auto-indexing strategies (hierarchical, hybrid, etc.)
+✓ Working with semi-structured data (Notion, Google Docs)
+
+Use LangGraph if:
+✓ Complex multi-turn workflows with explicit control
+✓ Need shared state across agent loops
+✓ Building stateful applications with memory
+
+Use raw SDK if:
+✓ Simple script or MVP
+✓ Full control is priority over convenience
+✓ Want zero dependencies
+      </div>
+
+      <p><strong>LangChain + LlamaIndex Hybrid</strong></p>
+      <p>In practice, many teams use both: LlamaIndex for RAG indexing, LangChain for agents and orchestration:</p>
+      <div class="example-box">
+# LlamaIndex for indexing
+from llama_index.core import VectorStoreIndex
+
+index = VectorStoreIndex.from_documents(documents)
+llama_retriever = index.as_retriever()
+
+# Wrap in LangChain Retriever interface
+from langchain.tools import Tool
+
+retriever_tool = Tool(
+    name="document_search",
+    func=lambda q: "\n".join([d.text for d in llama_retriever.retrieve(q)]),
+    description="Search documents"
+)
+
+# Use in LangChain agent
+agent = create_react_agent(model, [retriever_tool, ...])
+      </div>
+
+      <div class="callout callout-green">
+        <strong>Recommendation:</strong> Start with LangChain for general work. If RAG becomes complex, add LlamaIndex for indexing. If agents get complex, migrate to LangGraph. Most production systems use LangChain + LangSmith as the core stack.
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    © 2026 GenAI Mindmap. All concepts serve learning purposes.
+  </footer>
+</body>
+</html>

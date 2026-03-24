@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scaling Laws — GenAI Mindmap</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --indigo: #4f46e5;
+            --indigo-dk: #3730a3;
+            --indigo-lt: #eef2ff;
+            --blue: #2563eb;
+            --sky: #38bdf8;
+            --green: #22c55e;
+            --rose: #f43f5e;
+            --amber: #f59e0b;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --bg-white: #ffffff;
+            --code-bg: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background-color: var(--bg);
+            line-height: 1.6;
+        }
+
+        nav {
+            background-color: var(--bg-white);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .nav-back {
+            color: var(--indigo);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-back:hover {
+            color: var(--indigo-dk);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--indigo-lt) 0%, var(--bg) 100%);
+            padding: 3rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-tag {
+            display: inline-block;
+            background-color: var(--indigo);
+            color: var(--bg-white);
+            padding: 0.375rem 0.875rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .hero h1 em {
+            color: var(--indigo);
+            font-style: normal;
+            font-weight: 700;
+        }
+
+        .hero-sub {
+            font-size: 1.125rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+            max-width: 700px;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+        }
+
+        .hero-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hero-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--indigo);
+        }
+
+        .hero-stat-label {
+            font-size: 0.875rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .page-wrap {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .toc-card {
+            background-color: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .toc-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .toc-grid ol {
+            list-style: decimal;
+            margin-left: 1.5rem;
+        }
+
+        .toc-grid li {
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .section-block {
+            margin-bottom: 4rem;
+        }
+
+        .section-marker {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-block h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+        }
+
+        .section-block h2 em {
+            color: var(--indigo);
+            font-style: normal;
+        }
+
+        .section-block p {
+            color: var(--text);
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
+        }
+
+        .example-box {
+            background-color: var(--code-bg);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            border-left: 4px solid var(--sky);
+            white-space: pre-wrap;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+
+        .callout {
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout.info {
+            background-color: #eff6ff;
+            border-left-color: var(--blue);
+            color: var(--text);
+        }
+
+        .callout.amber {
+            background-color: #fffbeb;
+            border-left-color: var(--amber);
+            color: var(--text);
+        }
+
+        .callout.success {
+            background-color: #f0fdf4;
+            border-left-color: var(--green);
+            color: var(--text);
+        }
+
+        .callout.rose {
+            background-color: #fff1f2;
+            border-left-color: var(--rose);
+            color: var(--text);
+        }
+
+        .callout strong {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        thead {
+            background-color: var(--indigo-lt);
+            border-bottom: 2px solid var(--border);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--indigo-dk);
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .img-placeholder {
+            background-color: var(--bg-white);
+            border: 2px dashed var(--border);
+            border-radius: 0.5rem;
+            padding: 3rem;
+            text-align: center;
+            color: var(--muted);
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            background-color: var(--bg-white);
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.875rem;
+            margin-top: 4rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .toc-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .page-wrap {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">🧠 GenAI Mindmap</div>
+        <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-tag">Foundations</div>
+        <h1><em>Scaling Laws</em> for LLMs</h1>
+        <p class="hero-sub">Empirical power-law relationships between model parameters, training data, compute budget, and downstream performance that guide the design and training of large language models at scale.</p>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="hero-stat-value">2020</div>
+                <div class="hero-stat-label">Kaplan et al.</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-value">N·D</div>
+                <div class="hero-stat-label">Compute Budget</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-value">20×</div>
+                <div class="hero-stat-label">Tokens per Param</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-wrap">
+        <div class="toc-card">
+            <h3>Table of Contents</h3>
+            <div class="toc-grid">
+                <ol>
+                    <li>What Are Scaling Laws</li>
+                    <li>Kaplan et al. (2020)</li>
+                    <li>Chinchilla (Hoffman 2022)</li>
+                    <li>Emergent Abilities</li>
+                </ol>
+                <ol start="5">
+                    <li>Compute-Optimal Training</li>
+                    <li>Inference-Time Scaling</li>
+                    <li>Practical Implications</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- SECTION 1 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 01</div>
+            <h2>What Are <em>Scaling Laws</em></h2>
+            <p>Scaling laws describe empirical power-law relationships between model size (number of parameters, N), dataset size (number of training tokens, D), compute budget (C, measured in FLOPs), and model performance (loss or downstream task accuracy). The key insight: loss decreases predictably as you scale model size, data, or compute, following a power law: Loss ≈ C * N^(-α), where α is the scaling exponent (typically 0.05-0.1) and C is a constant.</p>
+            <p>Scaling laws have profound implications. They suggest that: (1) Larger models and more data consistently improve performance—no wall hit, at least at current scales. (2) Performance is predictable: you can forecast downstream task accuracy by measuring loss on a smaller model. (3) Compute is the bottleneck: for a fixed compute budget, there's an optimal split between model size and training data. (4) Efficiency gains persist: past results continue to hold even at much larger scales.</p>
+            <p>The field has moved from trying to understand individual model architectures to asking: "How do the fundamental quantities (N, D, C) relate to performance?" This shift has enabled strategic planning: estimate your compute budget, use scaling laws to predict optimal N and D, and know roughly how well the model will perform before training.</p>
+            <div class="callout success">
+                <strong>Why This Matters</strong>
+                Scaling laws remove uncertainty from model design. Instead of guessing whether a 70B model is better than a 7B model, you calculate the expected performance difference based on scaling exponents. This disciplined approach has driven the field's progress.
+            </div>
+        </div>
+
+        <!-- SECTION 2 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 02</div>
+            <h2>Kaplan et al. <em>(2020)</em> Findings</h2>
+            <p>In "Scaling Laws for Neural Language Models," OpenAI researchers trained models ranging from 10M to 10B parameters on datasets up to 400B tokens. They discovered three independent scaling laws:</p>
+            <p><strong>1. Model Size (N)</strong><br>Loss decreases with model size following: Loss_N = (N_0 / N)^α_N, where α_N ≈ 0.076. In practice: doubling model size improves loss by ~5-6%.</p>
+            <p><strong>2. Dataset Size (D)</strong><br>Loss decreases with dataset size following: Loss_D = (D_0 / D)^α_D, where α_D ≈ 0.095. Doubling dataset size improves loss by ~6-7%.</p>
+            <p><strong>3. Compute (C)</strong><br>Loss decreases with compute budget (measured in FLOPs) following: Loss_C = (C_0 / C)^α_C, where α_C ≈ 0.06. The relationship is weaker than N or D individually, but important for planning.</p>
+            <p><strong>Combined Scaling Law</strong><br>When all three factors are optimized simultaneously: Loss ≈ E + (A / N^α) + (B / D^β) + (C * L^γ), where E is irreducible loss (vocabulary effects, task difficulty), A, B, C are constants, and α, β, γ are exponents. The constants and exponents vary by task and model class.</p>
+            <div class="example-box">Kaplan et al. Equations (Simplified):
+
+For a fixed compute budget C (FLOPs):
+optimal N and D satisfy: N_optimal ≈ C / (6 * D)
+
+This means: if you have C FLOPs to spend:
+- Allocate ~6*C to data (tokens)
+- Allocate C to model (FLOPs for weights)
+
+Example: C = 10^20 FLOPs (typical 7B model training)
+- N_optimal ≈ 10^20 / (6 * D)
+- If you plan D = 10^12 tokens, then N ≈ 1.67 * 10^7 ≈ 17M params
+
+But empirically, larger N works better. See Chinchilla.
+
+Loss scaling (empirical fit):
+L(N, D) ≈ 1.69 + 406 / N^0.34 + 410 / D^0.28
+
+This means:
+- Loss at 10M params, 10B tokens ≈ 1.69 + 406/(10M^0.34) + 410/(10B^0.28)
+- Loss at 100M params, 100B tokens improves roughly linearly in log-log space
+            </div>
+            <p><strong>Implications:</strong> (1) No mysterious wall—loss improves smoothly as you scale. (2) The exponents are consistent across tasks and model families (Transformers with different architectures show similar exponents). (3) You can transfer knowledge: a scaling law fit on small models predicts performance on larger models.</p>
+            <div class="callout info">
+                <strong>Kaplan et al.'s Contribution</strong>
+                First large-scale empirical study of scaling laws. Showed that power-law relationships hold reliably, enabling quantitative forecasting. Their compute-optimal allocation formula (N ≈ C / (6*D)) was influential, though later work (Chinchilla) showed larger models are better.
+            </div>
+        </div>
+
+        <!-- SECTION 3 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 03</div>
+            <h2>Chinchilla <em>(Hoffman 2022)</em>: Balanced Scaling</h2>
+            <p>DeepMind's follow-up work, "Training Compute-Optimal Large Language Models," challenged Kaplan et al.'s conclusion that larger models need fewer tokens. Hoffman et al. trained models from 400M to 70B parameters, each on different token budgets (20T to 1T tokens), and fit their own scaling laws.</p>
+            <p><strong>Key Finding: The 20× Rule</strong><br>For compute-optimal training, model size (N) and data size (D) should scale equally: D ≈ 20 * N (measured in tokens). In other words, train each model on ~20 tokens per parameter. This is roughly 10× more data than Kaplan et al. recommended, and it yields significantly better downstream performance.</p>
+            <p><strong>Compute-Optimal Exponents</strong><br>Chinchilla fit: Loss = E + A / N^α + B / D^β, with α ≈ 0.050 and β ≈ 0.050 (symmetric). This symmetry is intuitive: model size and data size contribute equally to reducing loss. The optimal allocation balances them.</p>
+            <p><strong>Practical Impact</strong><br>A 70B model trained on 1.4T tokens (Chinchilla compute budget) outperforms GPT-3 (175B parameters, 300B tokens) while using less compute. This enabled models like Chinchilla, LLaMA, and Mistral: more compute-efficient than GPT-3, enabling efficient inference and faster iteration.</p>
+            <div class="example-box">Chinchilla Compute-Optimal Formula:
+
+For a compute budget C (measured in FLOPs):
+
+C ≈ 6 * N * D  (approximately, accounting for overhead)
+
+Compute-optimal allocation (N = D / 20):
+- For 7B params: train on 140B tokens
+- For 70B params: train on 1.4T tokens
+- For 1T params: train on 20T tokens
+
+Scaling law fit:
+L(N, D) ≈ a + b/N^0.050 + c/D^0.050
+
+Result: Chinchilla 70B > GPT-3 175B on most benchmarks
+- Chinchilla: 70B params, 1.4T tokens
+- GPT-3: 175B params, 300B tokens
+- Compute for Chinchilla ≈ 70% of GPT-3
+
+Python calculation:
+compute_budget = 5e20  # FLOPs
+optimal_n = (compute_budget / 6) ** 0.5 * 0.5  # roughly sqrt(C)
+optimal_d = optimal_n * 20
+print(f"Optimal N: {optimal_n:.0e}, D: {optimal_d:.0e}")
+            </div>
+            <div class="callout success">
+                <strong>Chinchilla's Impact</strong>
+                Reshaped the field's thinking about compute efficiency. Showed that "bigger is better" needs to be balanced with "more data is crucial." Enabled smaller, more efficient models (LLaMA, Mistral) that compete with much larger models.
+            </div>
+        </div>
+
+        <!-- SECTION 4 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 04</div>
+            <h2><em>Emergent Abilities</em> at Scale</h2>
+            <p>A surprising phenomenon: some capabilities appear suddenly at scale—models below a certain size perform at chance, then above a threshold, accuracy jumps to near-human. Examples: in-context learning (few-shot prompting), chain-of-thought reasoning, and mathematical problem-solving show emergent properties. This raises questions: Are emergent abilities real, or artifacts of evaluation metrics?</p>
+            <p><strong>The Debate:</strong> Some researchers argue emergence is real—there are threshold phenomena where increasing scale unlocks new capabilities. Others (notably Schaeffer et al., 2024) argue emergence is primarily a measurement artifact: if you plot log-loss vs log-model-size, all curves are smooth power laws. The appearance of sudden emergence depends on the specific metric (accuracy on a binary classification task, for example, is a step function even for smooth underlying loss).</p>
+            <p><strong>Evidence for Emergent Abilities:</strong> Few-shot in-context learning improves dramatically at scale. Chain-of-thought reasoning (asking the model to "think step by step") works well for larger models but not smaller ones. Solving complex math problems shows sharp improvements above 100B parameters.</p>
+            <p><strong>Skeptical View:</strong> If you measure loss (not binary accuracy), large models and small models show consistent improvement—no sudden jump. The emergence is an artifact of thresholding: a task has a minimum loss required for success, and crossing that threshold looks sudden. But the underlying loss improves smoothly.</p>
+            <p>In practice, both views are useful. Plan for smooth scaling of loss, but be aware that specific downstream tasks (especially those with discrete success criteria) will show emergent-looking behavior at certain scales.</p>
+            <div class="example-box">Emergent Abilities: Mathematical Reasoning:
+
+Model Size | Math Accuracy (%)
+4B        | 2% (random chance)
+8B        | 3%
+16B       | 5%
+32B       | 8%
+64B       | 15%
+128B      | 42%
+256B      | 67%
+512B      | 83%
+
+Looks emergent: below 64B, performance is near zero. 
+Above 128B, performance jumps.
+
+Alternative view (loss-based):
+Loss smoothly decreases with model size.
+But "correct answer" requires loss < threshold.
+Below 128B, loss hasn't crossed the threshold yet.
+
+Takeaway: Plan for smooth loss improvement, 
+but expect emergent-like jumps in discrete task performance 
+as models cross critical thresholds.
+            </div>
+            <div class="callout amber">
+                <strong>Emergence Caution</strong>
+                Don't assume new capabilities emerge at your scale. Test empirically. Some capabilities (in-context learning, arithmetic) require very large models. Others (text classification, simple summarization) appear at modest scales. Design your training budget around well-understood capabilities, then look for surprises.
+            </div>
+        </div>
+
+        <!-- SECTION 5 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 05</div>
+            <h2><em>Compute-Optimal Training</em> in Practice</h2>
+            <p><strong>Step 1: Estimate Compute Budget</strong><br>How many FLOPs do you have? A training run on 8 H100 GPUs for 30 days, with peak throughput of ~1.5e15 FLOPs/GPU/second, yields roughly C = 8 * 1.5e15 * (30 * 86400) ≈ 3e24 FLOPs. Account for overhead (not all compute is utilized)—typical utilization is 50-70% of peak.</p>
+            <p><strong>Step 2: Apply Chinchilla Formula</strong><br>Given C, compute: N_optimal ≈ sqrt(C / 6), D_optimal ≈ 20 * N_optimal. For C = 3e24: N ≈ 70B params, D ≈ 1.4T tokens.</p>
+            <p><strong>Step 3: Validate Against Empirical Loss Curves</strong><br>Fit scaling laws using small pilot runs (e.g., train a 1B model for a few billion tokens). Measure loss and fit: Loss ≈ E + A / N^0.05 + B / D^0.05. Use the fit to predict downstream performance (MMLU, HellaSwag, etc.) for your target model size.</p>
+            <p><strong>Step 4: Account for Task-Specific Scaling</strong><br>Scaling laws vary by task. Arithmetic is slower to improve than language modeling. Few-shot learning requires larger models. Adjust your allocation based on your primary use case.</p>
+            <p><strong>Step 5: Plan Training Duration</strong><br>For N params and D tokens, effective batch size is key. Typical batch size: 0.5M to 4M tokens per step. Training steps: D / batch_size. A 70B model trained on 1.4T tokens with 2M-token batches = 700k steps. On 8 H100s, ~10k steps per day = 70 days.</p>
+            <div class="example-box">Compute-Optimal Planning Spreadsheet:
+
+Inputs:
+- Compute budget (FLOPs): 1e24
+- Utilization (%): 60%
+- Effective compute: 6e23 FLOPs
+
+Chinchilla formula:
+N_optimal = sqrt(C / 6) = sqrt(1e23) ≈ 10B params
+D_optimal = 20 * N = 200B tokens
+
+Verify:
+- FLOPs for forward/backward: ~6 * N * D
+  = 6 * 10B * 200B = 1.2e24 FLOPs (check: ~2x compute budget, 
+    accounting for validation, checkpointing overhead)
+
+Predict downstream performance:
+- Fit loss curve on small model (1B, 10B tokens)
+- Loss_1B ≈ 3.5
+- Extrapolate to 10B: Loss_10B ≈ 3.5 - A/10B^0.05
+  (assuming A fitted from small model)
+
+Training schedule:
+- Batch size: 2M tokens
+- Training steps: 200B / 2M = 100k steps
+- Steps per day: ~5k (on typical GPU setup)
+- Duration: ~20 days
+
+Result: Predict 10B model performance after 20 days of training
+            </div>
+            <div class="callout info">
+                <strong>Beyond Chinchilla</strong>
+                Chinchilla assumes efficient training. With inference efficiency in mind, some labs use even larger models (80B, 100B) and fewer tokens. This trades training cost for inference efficiency—relevant if you're running a model in production.
+            </div>
+        </div>
+
+        <!-- SECTION 6 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 06</div>
+            <h2><em>Inference-Time</em> Scaling & Test-Time Compute</h2>
+            <p>Traditional scaling laws apply to training. But recent work on inference-time scaling—models like OpenAI's o1 and DeepSeek-R1—show that test-time compute (how much the model reasons/computes before outputting an answer) also improves performance. This opens a new frontier: instead of only scaling training, scale reasoning.</p>
+            <p><strong>Chain-of-Thought and Reasoning:</strong> Models can use more compute at inference time by generating intermediate reasoning steps (chain-of-thought). The model doesn't just jump to an answer—it thinks through the problem. This longer generation requires more inference compute but improves accuracy, especially on hard reasoning tasks (math, coding, logic puzzles).</p>
+            <p><strong>Inference Scaling Laws:</strong> Preliminary results suggest inference performance improves as a power law with compute: Accuracy ≈ f(N) * g(C_test), where N is model size and C_test is inference-time compute. This suggests even modest-sized models can achieve high accuracy on reasoning tasks with enough test-time compute.</p>
+            <p><strong>Practical Implications:</strong> For reasoning-heavy applications (coding assistance, math tutoring, research automation), allocate budget to inference compute, not just training. A smaller model with longer reasoning might outperform a larger model with direct prediction.</p>
+            <div class="example-box">Inference-Time Scaling Example:
+
+Model: 7B parameters (trained on 140B tokens)
+
+Direct answer (1 forward pass):
+- Latency: 0.1 seconds
+- Accuracy on GSM8K (math): 35%
+
+With chain-of-thought (10-20 reasoning steps):
+- Latency: 1 second
+- Accuracy on GSM8K: 65%
+
+With more reasoning (50+ steps):
+- Latency: 5 seconds
+- Accuracy on GSM8K: 72%
+
+Scaling relationship:
+Accuracy(n_steps) ≈ 35% + (50% - 35%) * log(n_steps) / log(100)
+
+This shows inference-time compute compounds performance.
+Compare to training a 70B model (10x larger):
+- Training cost: 10x more
+- Inference cost: 10x more
+- Accuracy gain: ~20-30%
+
+Sometimes more inference compute on smaller model 
+is more efficient than a larger model.
+            </div>
+            <div class="callout success">
+                <strong>Emerging Paradigm</strong>
+                The field is shifting from "bigger models" to "better allocation of compute." Compute can be spent during training (parameters, tokens) or during inference (reasoning steps). This flexibility enables more efficient systems.
+            </div>
+        </div>
+
+        <!-- SECTION 7 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 07</div>
+            <h2><em>Practical Implications</em> for Model Design</h2>
+            <p><strong>Planning a Training Run:</strong> (1) Estimate your compute budget (FLOPs available). (2) Use Chinchilla formula to find N and D. (3) Fit scaling laws on small-scale runs (1-8B parameters on 10-100B tokens). (4) Extrapolate to your target scale. (5) Run the full training and measure downstream task performance. (6) If performance is below target, rerun with updated D and N.</p>
+            <p><strong>Predicting Downstream Performance:</strong> Loss is a proxy for downstream accuracy, but the mapping is nonlinear and task-dependent. Fit loss to downstream task accuracy (e.g., MMLU score) using small models, then extrapolate. Benchmark on a held-out subset of your target tasks at small scale to validate the relationship.</p>
+            <p><strong>Comparing Models:</strong> Use scaling laws to predict performance of models you haven't trained yet. If a competitor released a 70B model trained on 1.4T tokens, use Chinchilla formulas to estimate its performance without training it yourself.</p>
+            <p><strong>Efficiency Targets:</strong> Define your goal: max performance for a given compute budget (Chinchilla), max performance for a given inference cost (larger models, fewer tokens), or balanced (medium models, medium tokens). Adjust N and D accordingly.</p>
+            <div class="callout amber">
+                <strong>Scaling Law Pitfalls</strong>
+                Scaling laws are empirical, fit to specific model families (Transformers with certain architectures, attention patterns). Changing the model class (e.g., using mixture-of-experts) can change the scaling exponents. Always validate on your specific setup. Also, extrapolation is risky: laws fit on 7B-70B models may not hold at 1T parameters.
+            </div>
+            <p><strong>Future Directions:</strong> As compute becomes more abundant, expect focus to shift from scaling training to scaling inference (test-time compute). Multi-modal models may have different scaling laws than pure language models. And continual learning (training on new data without forgetting old data) will have its own scaling dynamics.</p>
+            <div class="callout success">
+                <strong>The Takeaway</strong>
+                Scaling laws transform model development from intuition-based to data-driven. Know your compute budget, plug into Chinchilla, and expect smooth improvements as you scale N and D. This disciplined approach has driven the field's progress from GPT-2 to GPT-4 and beyond.
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        © 2024 GenAI Mindmap. All rights reserved. | Last updated March 2024
+    </footer>
+</body>
+</html>

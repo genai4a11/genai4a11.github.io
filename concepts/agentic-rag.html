@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic RAG - GenAI Mindmap</title>
+  <style>
+    :root {
+      --indigo: #4f46e5;
+      --blue: #2563eb;
+      --sky: #38bdf8;
+      --green: #22c55e;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      background: var(--bg-white);
+      border-bottom: 1px solid var(--border);
+      max-width: 100%;
+    }
+
+    .nav-brand {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .nav-brand:hover {
+      color: var(--indigo);
+    }
+
+    .nav-back {
+      font-size: 0.95rem;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .nav-back:hover {
+      color: var(--text);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--green), var(--sky));
+      color: white;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin: 1rem 0;
+      line-height: 1.2;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: #fef3c7;
+    }
+
+    .hero-sub {
+      font-size: 1.25rem;
+      opacity: 0.95;
+      max-width: 700px;
+      margin: 1.5rem auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .stat-num {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .page-wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .toc-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .toc-grid a {
+      display: block;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .toc-grid a:hover {
+      background: var(--green);
+      color: white;
+      border-color: var(--green);
+    }
+
+    .toc-grid a::before {
+      content: attr(data-num);
+      font-weight: 700;
+      color: var(--green);
+      margin-right: 0.75rem;
+    }
+
+    .toc-grid a:hover::before {
+      color: white;
+    }
+
+    .section-block {
+      margin-bottom: 4rem;
+    }
+
+    .section-marker {
+      display: inline-block;
+      color: var(--green);
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-block h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .section-block p {
+      margin-bottom: 1rem;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .section-block ul, .section-block ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-block li {
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .example-box {
+      background: var(--code-bg);
+      color: #e2e8f0;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      border-left: 4px solid var(--green);
+      margin: 1.5rem 0;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .callout {
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid;
+    }
+
+    .callout-blue {
+      background: rgba(37, 99, 235, 0.05);
+      border-left-color: var(--blue);
+      color: var(--text);
+    }
+
+    .callout-amber {
+      background: rgba(245, 158, 11, 0.05);
+      border-left-color: var(--amber);
+      color: var(--text);
+    }
+
+    .callout-green {
+      background: rgba(34, 197, 94, 0.05);
+      border-left-color: var(--green);
+      color: var(--text);
+    }
+
+    .callout-rose {
+      background: rgba(244, 63, 94, 0.05);
+      border-left-color: var(--rose);
+      color: var(--text);
+    }
+
+    .callout strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    table th {
+      background: var(--green);
+      color: white;
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table tr:hover {
+      background: var(--bg);
+    }
+
+    footer {
+      background: var(--bg-white);
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    strong {
+      color: var(--green);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Retrieval & RAG</span>
+    <h1>Agentic <em>RAG</em></h1>
+    <p class="hero-sub">Multi-step retrieval and reasoning that adapts dynamically, combining the power of agents with retrieval-augmented generation.</p>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">Multi-Step</div>
+        <div class="stat-label">Retrieval</div>
+      </div>
+      <div>
+        <div class="stat-num">Planning + Tools</div>
+        <div class="stat-label">Architecture</div>
+      </div>
+      <div>
+        <div class="stat-num">Self-Correcting</div>
+        <div class="stat-label">Key Property</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#section-1" data-num="01">Beyond Naive RAG</a>
+        <a href="#section-2" data-num="02">Core Patterns</a>
+        <a href="#section-3" data-num="03">Query Decomposition</a>
+        <a href="#section-4" data-num="04">Corrective RAG (CRAG)</a>
+        <a href="#section-5" data-num="05">Self-RAG</a>
+        <a href="#section-6" data-num="06">Building with LangGraph</a>
+        <a href="#section-7" data-num="07">Evaluation & Tracing</a>
+      </div>
+    </div>
+
+    <div class="section-block" id="section-1">
+      <div class="section-marker">SECTION 01</div>
+      <h2>Beyond Naive RAG</h2>
+      <p>Traditional RAG (Retrieval-Augmented Generation) is simple: take a user question, retrieve documents, pass documents + question to an LLM, get an answer. This works for straightforward queries but fails on complex questions that require reasoning, multi-hop retrieval, or adaptive strategies.</p>
+
+      <p><strong>Limitations of Naive RAG:</strong></p>
+      <ul>
+        <li><strong>Single retrieval pass:</strong> If the first retrieval misses relevant docs, the model can't recover. No feedback loop.</li>
+        <li><strong>No query understanding:</strong> Complex questions with multiple sub-queries are treated as monolithic. "What are the causes, symptoms, and treatments of diabetes?" is a single retrieval, missing the fact that each part might need different docs.</li>
+        <li><strong>No self-correction:</strong> If the model realizes retrieved docs are irrelevant, it can't re-query. It has to work with what it got.</li>
+        <li><strong>Context window limits:</strong> Large document collections don't fit in context. Retrieving top-k docs is a bet that top-k is sufficient.</li>
+        <li><strong>No tool use:</strong> The model can only read; it can't run calculations, code, or access real-time data dynamically.</li>
+      </ul>
+
+      <p>Agentic RAG solves these by adding <strong>planning, tool use, and iterative refinement</strong>. Instead of retrieve-once, agentic RAG decomposes questions, retrieves adaptively, evaluates results, and refines as needed.</p>
+
+      <p><strong>Core Idea:</strong> Treat the LLM as an agent with tools. Tools include retrievers, web searchers, calculators, code executors, etc. The agent decides which tools to use and when, creating multi-step workflows that adapt to the question.</p>
+
+      <div class="callout callout-blue">
+        <strong>Why Agentic?</strong> An agent is an LLM that can take actions (use tools), observe outcomes, and decide next steps. Agentic RAG applies this to retrieval: the model doesn't passively read docs; it actively explores, evaluates, and refines.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-2">
+      <div class="section-marker">SECTION 02</div>
+      <h2>Core Patterns</h2>
+      <p>Several patterns enable agentic RAG:</p>
+
+      <p><strong>1. Iterative Retrieval</strong></p>
+      <p>After generating an initial answer, the model checks if it's grounded in the retrieved docs. If not, it reformulates the query and retrieves again:</p>
+      <div class="example-box">
+Loop:
+1. User asks: "How does photosynthesis relate to climate?"
+2. Retrieve docs on photosynthesis
+3. Generate answer based on docs
+4. Check: Is answer grounded? (Self-evaluation)
+5. If not: Reformulate query ("climate change carbon cycle")
+6. Retrieve again
+7. Go to step 3 with expanded context
+8. Repeat until confident
+
+Result: Multi-hop reasoning without explicit prompting.
+      </div>
+
+      <p><strong>2. Query Decomposition</strong></p>
+      <p>Complex questions are broken into sub-queries, each retrieved independently:</p>
+      <ul>
+        <li>"What is the history, current state, and future of AI?" → 3 sub-queries</li>
+        <li>Retrieve docs for each sub-query</li>
+        <li>Synthesize results into a cohesive answer</li>
+      </ul>
+
+      <p><strong>3. Self-Reflection (FLARE)</strong></p>
+      <p>While generating, the model identifies missing information and retrieves on-demand:</p>
+      <ul>
+        <li>Model generates: "The Renaissance was a period of great innovation..."</li>
+        <li>Model identifies: I need specific examples of Renaissance innovations</li>
+        <li>Triggers retrieval: "Renaissance innovations art science"</li>
+        <li>Continues generation with new context</li>
+      </ul>
+
+      <p><strong>4. Adaptive Retrieval</strong></p>
+      <p>The model decides whether it needs retrieval at all. For factual questions, retrieve; for reasoning, sometimes skip retrieval:</p>
+      <ul>
+        <li>Question: "What's 2+2?" → Skip retrieval, answer directly</li>
+        <li>Question: "Who was the first president of France?" → Retrieve</li>
+        <li>Question: "Why is 2+2=4?" → Mix retrieval (math foundations) with reasoning</li>
+      </ul>
+
+      <div class="callout callout-green">
+        <strong>Pattern Advantage:</strong> These patterns are composable. Use query decomposition + iterative refinement + self-reflection for maximum coverage. Or use just one pattern if the question is simple.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-3">
+      <div class="section-marker">SECTION 03</div>
+      <h2>Query Decomposition</h2>
+      <p>Breaking a complex question into logical sub-questions improves retrieval coverage.</p>
+
+      <p><strong>Methods</strong></p>
+      <p><strong>1. Explicit Decomposition</strong> — Prompt the model to break down the question:</p>
+      <div class="example-box">
+User question: "Compare climate policies in the EU and US"
+
+System prompt: "Break this question into 3-5 sub-questions."
+
+Model output:
+1. What are current EU climate policies?
+2. What are current US climate policies?
+3. How do they differ in scope and ambition?
+4. What has been the effectiveness of each approach?
+5. What are future plans in both regions?
+
+Action: Retrieve on each sub-question separately.
+      </div>
+
+      <p><strong>2. Step-Back Prompting</strong> — Ask more abstract questions first to capture broader context:</p>
+      <ul>
+        <li>Original: "What's the impact of federal interest rate decisions on housing prices in California?"</li>
+        <li>Step-back questions:</li>
+        <ul>
+          <li>"How do federal interest rates affect housing markets?"</li>
+          <li>"What economic factors drive California real estate?"</li>
+        </ul>
+        <li>Then retrieve on both abstract and original questions</li>
+      </ul>
+
+      <p><strong>3. HyDE (Hypothetical Document Embeddings)</strong></p>
+      <p>Generate a hypothetical document answering the question, use its embedding to retrieve similar real documents:</p>
+      <div class="example-box">
+Query: "Best practices for distributed training of LLMs"
+
+Step 1: Generate hypothetical document:
+"Distributed training of LLMs involves data parallelism, model
+parallelism, and pipeline parallelism. Data parallelism divides
+the batch across GPUs. Model parallelism divides layers across
+devices..."
+
+Step 2: Embed this hypothetical doc
+Step 3: Search vector store for docs similar to this embedding
+Step 4: Retrieve real docs that are semantically similar
+Result: Retrieves practice-focused docs, not just theoretical ones.
+      </div>
+
+      <p><strong>Implementation Example</strong></p>
+      <div class="example-box">
+from anthropic import Anthropic
+
+def decompose_query(user_question: str, model: str = "claude-3-5-sonnet-20241022") -> list[str]:
+    """Decompose a complex question into sub-queries."""
+    client = Anthropic()
+    
+    response = client.messages.create(
+        model=model,
+        max_tokens=500,
+        messages=[{
+            "role": "user",
+            "content": f"""Break down this question into 3-5 specific sub-questions
+for retrieval. Return as a numbered list.
+
+Question: {user_question}"""
+        }]
+    )
+    
+    # Parse response into sub-queries
+    text = response.content[0].text
+    sub_queries = [
+        line.split('. ', 1)[1] if '. ' in line else line
+        for line in text.split('\n')
+        if line.strip()
+    ]
+    return sub_queries
+
+def retrieve_for_decomposed_query(user_question: str, retriever) -> dict:
+    """Retrieve for each sub-query and aggregate."""
+    sub_queries = decompose_query(user_question)
+    all_docs = {}
+    
+    for i, sub_q in enumerate(sub_queries):
+        docs = retriever.retrieve(sub_q, top_k=5)
+        all_docs[f"sub_query_{i}"] = {
+            "query": sub_q,
+            "docs": docs
+        }
+    
+    return all_docs
+      </div>
+
+      <div class="callout callout-amber">
+        <strong>Tradeoff:</strong> Decomposition increases API calls (one retrieval per sub-query). Use for complex questions. For simple questions, skip decomposition to save cost.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-4">
+      <div class="section-marker">SECTION 04</div>
+      <h2>Corrective RAG (CRAG)</h2>
+      <p>Corrective RAG is a structured approach to handle retrieval failures. If retrieved documents don't answer the question, fall back to web search or knowledge expansion.</p>
+
+      <p><strong>CRAG Flow</strong></p>
+      <div class="example-box">
+1. User question: "Latest breakthroughs in quantum computing 2026"
+2. Retrieve from internal KB
+3. Evaluator judges: Are docs relevant? (binary or scored)
+4a. If YES: Pass to generation step
+4b. If NO: Trigger web search (e.g., Google, Bing)
+4c. If PARTIAL: Retrieve more + web search
+5. Generate answer from best sources
+6. Return with source attribution
+      </div>
+
+      <p><strong>Retrieval Evaluation</strong></p>
+      <p>Key: How do we judge if retrieved docs are relevant? Three approaches:</p>
+      <ul>
+        <li><strong>LLM evaluator:</strong> Use Claude/GPT to rate relevance (slow but accurate)</li>
+        <li><strong>Heuristic evaluator:</strong> Check similarity score, keyword overlap, length (fast but brittle)</li>
+        <li><strong>Hybrid:</strong> Use heuristic first; if uncertain, fall back to LLM eval</li>
+      </ul>
+
+      <p><strong>Implementation</strong></p>
+      <div class="example-box">
+from anthropic import Anthropic
+
+def evaluate_retrieval(question: str, docs: list[str]) -> dict:
+    """Evaluate if docs are relevant to question."""
+    client = Anthropic()
+    
+    docs_text = "\n\n".join(docs[:3])  # Top 3 docs
+    
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=200,
+        messages=[{
+            "role": "user",
+            "content": f"""Rate if these documents answer the question.
+            
+Question: {question}
+
+Documents:
+{docs_text}
+
+Respond with JSON: {{"relevant": true/false, "reason": "..."}}"""
+        }]
+    )
+    
+    import json
+    try:
+        return json.loads(response.content[0].text)
+    except:
+        return {"relevant": False, "reason": "Parse error"}
+
+def corrective_rag(question: str, retriever, web_searcher):
+    """Corrective RAG pipeline."""
+    # Step 1: Initial retrieval
+    docs = retriever.retrieve(question, top_k=5)
+    
+    # Step 2: Evaluate
+    eval_result = evaluate_retrieval(question, docs)
+    
+    # Step 3: Fallback if needed
+    if not eval_result["relevant"]:
+        print(f"Retrieved docs not relevant. Reason: {eval_result['reason']}")
+        print("Falling back to web search...")
+        web_docs = web_searcher.search(question, top_k=5)
+        docs = docs + web_docs  # Combine
+    
+    # Step 4: Generate
+    client = Anthropic()
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1000,
+        messages=[{
+            "role": "user",
+            "content": f"""Based on these documents, answer: {question}
+            
+{chr(10).join([f"- {d}" for d in docs])}"""
+        }]
+    )
+    
+    return response.content[0].text
+      </div>
+
+      <div class="callout callout-green">
+        <strong>CRAG Advantage:</strong> Gracefully handles out-of-KB questions by falling back to web search. Prevents "I don't know" when external data could help.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-5">
+      <div class="section-marker">SECTION 05</div>
+      <h2>Self-RAG</h2>
+      <p>Self-RAG extends the model with special tokens that control when to retrieve, evaluate relevance, and judge output quality. The model learns to use these tokens during fine-tuning.</p>
+
+      <p><strong>Special Tokens in Self-RAG</strong></p>
+      <ul>
+        <li><strong>[Retrieve]:</strong> Signals that retrieval is needed</li>
+        <li><strong>[IsRel]:</strong> Judges if a retrieved doc is relevant (yes/no/irrelevant)</li>
+        <li><strong>[IsSup]:</strong> Checks if generated text is supported by docs (yes/no/partial)</li>
+        <li><strong>[IsUse]:</strong> Evaluates utility (yes/no)</li>
+      </ul>
+
+      <p><strong>Generation with Self-RAG</strong></p>
+      <div class="example-box">
+Question: "What's the latest in quantum error correction?"
+
+Model generates:
+"Recent advances in quantum error correction..."
+[Retrieve: quantum error correction 2025 2026]
+
+[Retrieved: 3 docs on quantum error correction]
+
+[IsRel: yes] (docs are relevant)
+
+"Surface codes have improved efficiency by..."
+[IsRel: yes]
+
+"The leading approach is topological codes, which..."
+[IsSup: partial] (partially supported)
+[IsUse: yes] (still useful)
+
+Final answer synthesized from generation + retrieval steps.
+      </div>
+
+      <p><strong>Advantages Over Naive RAG</strong></p>
+      <ul>
+        <li><strong>Selective retrieval:</strong> Model only retrieves when needed, not always</li>
+        <li><strong>Segment-level granularity:</strong> Can evaluate each sentence's support</li>
+        <li><strong>Beam search:</strong> Top-k candidates considering retrieval quality</li>
+        <li><strong>Interpretable:</strong> Special tokens show reasoning: when to retrieve, if docs are relevant</li>
+      </ul>
+
+      <p><strong>Implementation Note</strong></p>
+      <p>Self-RAG requires fine-tuning to teach the model when to use special tokens. Public models don't support this, but the paper (Asai et al. 2023) provides guidance. For production, you'd need to:</p>
+      <ul>
+        <li>Create training data with [Retrieve], [IsRel], etc. tokens annotated</li>
+        <li>Fine-tune your base model (LLaMA, etc.) with this data</li>
+        <li>Implement custom decoding to interpret special tokens</li>
+      </ul>
+
+      <div class="callout callout-rose">
+        <strong>Complexity Tradeoff:</strong> Self-RAG is powerful but requires fine-tuning. For many use cases, agentic patterns (decomposition, iteration) are sufficient without custom fine-tuning.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-6">
+      <div class="section-marker">SECTION 06</div>
+      <h2>Building Agentic RAG with LangGraph</h2>
+      <p>LangGraph is a framework for building agentic systems. It models workflows as graphs with nodes (compute steps) and edges (transitions). Here's how to build agentic RAG:</p>
+
+      <p><strong>Architecture</strong></p>
+      <ul>
+        <li><strong>Nodes:</strong> Retrieve, Generate, Evaluate, Refine</li>
+        <li><strong>Edges:</strong> Conditional transitions based on evaluation</li>
+        <li><strong>State:</strong> Shared context (question, docs, answer)</li>
+      </ul>
+
+      <p><strong>Implementation Example</strong></p>
+      <div class="example-box">
+from langgraph.graph import StateGraph, END
+from typing import TypedDict, Annotated
+import anthropic
+
+class RAGState(TypedDict):
+    question: str
+    docs: list[str]
+    answer: str
+    iterations: int
+    max_iterations: int
+
+def retrieve_node(state: RAGState) -> RAGState:
+    """Retrieve documents based on question."""
+    # In real code, use actual vector store
+    retriever = VectorStore()  # Placeholder
+    docs = retriever.search(state["question"], top_k=5)
+    state["docs"] = docs
+    return state
+
+def generate_node(state: RAGState) -> RAGState:
+    """Generate answer from docs."""
+    client = anthropic.Anthropic()
+    
+    prompt = f"""Based on these documents:
+{chr(10).join([f"- {d}" for d in state["docs"]])}
+
+Answer: {state["question"]}"""
+    
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=500,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    state["answer"] = response.content[0].text
+    return state
+
+def evaluate_node(state: RAGState) -> str:
+    """Evaluate if answer is grounded."""
+    client = anthropic.Anthropic()
+    
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=100,
+        messages=[{
+            "role": "user",
+            "content": f"""Is this answer well-grounded?
+Docs: {state["docs"]}
+Answer: {state["answer"]}
+Reply: grounded/needs_refinement"""
+        }]
+    )
+    
+    verdict = response.content[0].text.lower()
+    if "grounded" in verdict:
+        return "done"
+    else:
+        return "refine"
+
+def refine_node(state: RAGState) -> RAGState:
+    """Refine question and re-retrieve."""
+    if state["iterations"] >= state["max_iterations"]:
+        return state
+    
+    client = anthropic.Anthropic()
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=100,
+        messages=[{
+            "role": "user",
+            "content": f"""Rephrase for better retrieval:
+Original: {state["question"]}
+Answer failed. Suggest new query."""
+        }]
+    )
+    
+    state["question"] = response.content[0].text
+    state["iterations"] += 1
+    return state
+
+# Build graph
+graph = StateGraph(RAGState)
+
+graph.add_node("retrieve", retrieve_node)
+graph.add_node("generate", generate_node)
+graph.add_node("evaluate", evaluate_node)
+graph.add_node("refine", refine_node)
+
+graph.add_edge("retrieve", "generate")
+graph.add_conditional_edges(
+    "evaluate",
+    lambda s: "done" if "grounded" in s else "refine"
+)
+graph.add_edge("refine", "retrieve")
+
+graph.set_entry_point("retrieve")
+
+rag_app = graph.compile()
+
+# Run
+result = rag_app.invoke({
+    "question": "How does quantum entanglement work?",
+    "docs": [],
+    "answer": "",
+    "iterations": 0,
+    "max_iterations": 3
+})
+
+print(result["answer"])
+      </div>
+
+      <p><strong>Graph Execution</strong></p>
+      <p>LangGraph handles the loop: Retrieve → Generate → Evaluate → (Refine or Done). You define nodes and edges; the framework manages execution.</p>
+
+      <div class="callout callout-blue">
+        <strong>LangGraph Advantage:</strong> Explicit control flow. Easy to debug (see which node runs). Integrates with LangChain tools, models, and evaluation. Supports streaming and real-time updates.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-7">
+      <div class="section-marker">SECTION 07</div>
+      <h2>Evaluation & Tracing</h2>
+      <p>Evaluating agentic RAG systems is more complex than naive RAG because multi-hop reasoning makes ground truth harder to define.</p>
+
+      <p><strong>RAGAS Metrics (Adapted for Agentic)</strong></p>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Metric</th>
+            <th>Definition</th>
+            <th>For Agentic RAG</th>
+          </tr>
+          <tr>
+            <td>Retrieval Precision</td>
+            <td>% of retrieved docs that are relevant</td>
+            <td>Measure per retrieval step; agentic may have 3+ steps</td>
+          </tr>
+          <tr>
+            <td>Context Precision</td>
+            <td>Ranking of relevant docs in retrieval list</td>
+            <td>Track across all retrieval iterations</td>
+          </tr>
+          <tr>
+            <td>Faithfulness</td>
+            <td>Answer is supported by retrieved docs</td>
+            <td>Judge on final answer + all intermediate docs</td>
+          </tr>
+          <tr>
+            <td>Answer Relevance</td>
+            <td>Answer is relevant to question</td>
+            <td>Standard metric; agentic decomposition improves this</td>
+          </tr>
+          <tr>
+            <td>Latency</td>
+            <td>Time to generate answer</td>
+            <td>Agentic adds overhead; monitor iterations vs quality</td>
+          </tr>
+        </table>
+      </div>
+
+      <p><strong>Tracing Multi-Hop Reasoning</strong></p>
+      <p>Key: Log each step to understand where errors occur:</p>
+      <div class="example-box">
+Trace output (structured log):
+{
+  "question": "What are the implications of quantum computing on blockchain?",
+  "steps": [
+    {
+      "step": 1,
+      "action": "decompose_query",
+      "sub_queries": [
+        "How does quantum computing work?",
+        "How does blockchain cryptography work?",
+        "How does quantum computing threaten blockchain?"
+      ]
+    },
+    {
+      "step": 2,
+      "action": "retrieve",
+      "sub_query": "How does quantum computing work?",
+      "results": [
+        {"doc": "Quantum...", "score": 0.89},
+        {"doc": "Superposition...", "score": 0.87}
+      ]
+    },
+    {
+      "step": 3,
+      "action": "evaluate_retrieval",
+      "relevant": true,
+      "reason": "Docs explain quantum fundamentals"
+    },
+    ...
+  ],
+  "final_answer": "...",
+  "total_steps": 8,
+  "total_tokens": 4500,
+  "latency_ms": 3200
+}
+      </div>
+
+      <p><strong>Quality vs Latency Tradeoff</strong></p>
+      <div class="example-box">
+Scenario: Q&A system with agentic RAG
+
+Config 1: No decomposition, 1 retrieval pass
+- Latency: 500ms
+- Accuracy: 72%
+- Cost: $0.05 per query
+
+Config 2: Query decomposition, iterative refinement
+- Latency: 2500ms
+- Accuracy: 88%
+- Cost: $0.20 per query
+
+Trade-off: 5x slower, 4x more expensive, 16pt accuracy gain.
+For high-stakes (medical, legal): worth it. For customer chat: maybe not.
+      </div>
+
+      <p><strong>Debugging Agentic Pipelines</strong></p>
+      <ul>
+        <li><strong>Trace logs:</strong> Which step failed? Was retrieval insufficient? Was generation poor?</li>
+        <li><strong>Human evaluation:</strong> Sample 100 outputs; have humans rate 0-5 (incorrect, partially correct, correct, excellent)</li>
+        <li><strong>Failure analysis:</strong> Group failures by type (retrieval miss, reasoning error, hallucination)</li>
+        <li><strong>A/B tests:</strong> Compare agentic vs naive RAG on same questions</li>
+      </ul>
+
+      <div class="callout callout-green">
+        <strong>Best Practice:</strong> Instrument your agentic RAG with detailed logging. Every retrieval, evaluation, and generation decision should be traceable. Use LangSmith or similar for visualization and debugging.
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    © 2026 GenAI Mindmap. All concepts serve learning purposes.
+  </footer>
+</body>
+</html>

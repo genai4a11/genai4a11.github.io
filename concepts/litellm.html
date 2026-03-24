@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LiteLLM - GenAI Mindmap</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --indigo: #4f46e5;
+      --blue: #2563eb;
+      --sky: #38bdf8;
+      --green: #22c55e;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      background: #1a1f36;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 100%;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: white;
+      text-decoration: none;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .nav-brand:hover {
+      color: var(--sky);
+    }
+
+    .nav-back {
+      font-size: 0.95rem;
+      color: #a0aec0;
+      text-decoration: none;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .nav-back:hover {
+      color: white;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+      color: white;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin: 1rem 0;
+      line-height: 1.2;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: #bfdbfe;
+    }
+
+    .hero-sub {
+      font-size: 1.25rem;
+      opacity: 0.95;
+      max-width: 700px;
+      margin: 1.5rem auto;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .stat-num {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      opacity: 0.9;
+    }
+
+    .page-wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .toc-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .toc-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .toc-list li {
+      list-style: none;
+    }
+
+    .toc-list a {
+      display: block;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .toc-list a:hover {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    .toc-list a::before {
+      content: attr(data-num);
+      font-weight: 700;
+      color: var(--blue);
+      margin-right: 0.75rem;
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      line-height: 24px;
+      background: rgba(37, 99, 235, 0.1);
+      border-radius: 50%;
+      text-align: center;
+      font-size: 0.75rem;
+    }
+
+    .toc-list a:hover::before {
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 2.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .section-marker {
+      display: inline-block;
+      color: var(--blue);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .section-block h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .section-block p {
+      margin-bottom: 1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .section-block ul, .section-block ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-block li {
+      margin-bottom: 0.75rem;
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .example-box {
+      background: var(--code-bg);
+      color: #cbd5e1;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      border-left: 4px solid var(--blue);
+      margin: 1.5rem 0;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.5;
+    }
+
+    .callout {
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid;
+    }
+
+    .callout.blue {
+      background: #eff6ff;
+      border-left-color: var(--blue);
+      color: var(--text);
+    }
+
+    .callout.amber {
+      background: #fffbeb;
+      border-left-color: var(--amber);
+      color: var(--text);
+    }
+
+    .callout.green {
+      background: #f0fdf4;
+      border-left-color: var(--green);
+      color: var(--text);
+    }
+
+    .callout.rose {
+      background: #ffe4e6;
+      border-left-color: var(--rose);
+      color: var(--text);
+    }
+
+    .callout strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    table th {
+      background: var(--blue);
+      color: white;
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table tr:hover {
+      background: var(--bg);
+    }
+
+    footer {
+      background: var(--bg-white);
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    strong {
+      color: var(--blue);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Production & Infra</span>
+    <h1><em>LiteLLM</em></h1>
+    <p class="hero-sub">Call 100+ LLM models with a unified OpenAI-compatible API. Handle routing, fallbacks, cost tracking, and observability.</p>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">100+</div>
+        <div class="stat-label">Providers</div>
+      </div>
+      <div>
+        <div class="stat-num">OpenAI-SDK</div>
+        <div class="stat-label">Interface</div>
+      </div>
+      <div>
+        <div class="stat-num">Built-in</div>
+        <div class="stat-label">Cost Tracking</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#section-1" data-num="01">Provider Fragmentation Problem</a></li>
+        <li><a href="#section-2" data-num="02">Core API</a></li>
+        <li><a href="#section-3" data-num="03">Provider Routing</a></li>
+        <li><a href="#section-4" data-num="04">LiteLLM Proxy Server</a></li>
+        <li><a href="#section-5" data-num="05">Cost & Token Tracking</a></li>
+        <li><a href="#section-6" data-num="06">Observability Integration</a></li>
+        <li><a href="#section-7" data-num="07">Advanced Patterns</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="section-1">
+      <div class="section-marker">SECTION 01</div>
+      <h2>The Provider Fragmentation Problem</h2>
+      <p>LLM providers each have unique SDKs, parameter names, authentication schemes, and error formats. Building a production system that can switch providers or use multiple providers simultaneously becomes a maintenance nightmare.</p>
+
+      <p><strong>The Fragmentation</strong></p>
+      <ul>
+        <li><strong>OpenAI:</strong> `client.chat.completions.create()`, parameters like `temperature`, `max_tokens`, `messages`</li>
+        <li><strong>Anthropic:</strong> `client.messages.create()`, parameters like `max_tokens`, `system`, `messages`</li>
+        <li><strong>Google Gemini:</strong> Different request format, different parameter names</li>
+        <li><strong>Llama (via Together/Replicate):</strong> Different endpoints, different APIs</li>
+        <li><strong>Local Models (Ollama):</strong> Custom server, different protocol</li>
+      </ul>
+
+      <p><strong>The Result:</strong> Code tightly coupled to specific providers. Switching models requires rewriting core logic. Fallback chains require extensive boilerplate. Cost tracking is manual. Observability is provider-specific.</p>
+
+      <p><strong>LiteLLM Solution</strong></p>
+      <p>LiteLLM provides a single, unified OpenAI-compatible interface for all providers. Write code once, swap providers with a single parameter change.</p>
+
+      <div class="callout blue">
+        <strong>Core Value:</strong> "The fastest way to call any LLM is with one line of code." LiteLLM abstracts provider differences so your application code stays clean and portable.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-2">
+      <div class="section-marker">SECTION 02</div>
+      <h2>Core API</h2>
+      <p>LiteLLM's API is OpenAI-compatible but works with any provider:</p>
+
+      <p><strong>completion() - Text Generation</strong></p>
+      <div class="example-box">
+from litellm import completion
+
+# Works with OpenAI
+response = completion(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello"}],
+    temperature=0.7
+)
+
+# Same code, different provider
+response = completion(
+    model="claude-3-5-sonnet-20241022",
+    messages=[{"role": "user", "content": "Hello"}],
+    temperature=0.7
+)
+
+# Or Gemini
+response = completion(
+    model="gemini-pro",
+    messages=[{"role": "user", "content": "Hello"}],
+    temperature=0.7
+)
+
+print(response.choices[0].message.content)
+      </div>
+
+      <p><strong>acompletion() - Async Calls</strong></p>
+      <div class="example-box">
+import asyncio
+from litellm import acompletion
+
+async def call_llm():
+    response = await acompletion(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello"}]
+    )
+    return response
+
+result = asyncio.run(call_llm())
+      </div>
+
+      <p><strong>Response Format</strong></p>
+      <p>Responses are normalized to OpenAI format regardless of provider:</p>
+      <div class="example-box">
+# All providers return this structure
+response.choices[0].message.content  # The text
+response.choices[0].message.tool_calls  # If tool use
+response.usage.prompt_tokens
+response.usage.completion_tokens
+response.model  # "gpt-4", "claude-...", etc
+      </div>
+
+      <p><strong>Environment Setup</strong></p>
+      <p>Set API keys as env vars, LiteLLM auto-detects them:</p>
+      <div class="example-box">
+# Set env vars
+OPENAI_API_KEY=...
+ANTHROPIC_API_KEY=...
+GOOGLE_API_KEY=...
+
+# LiteLLM finds them automatically
+response = completion(model="gpt-4", messages=...)
+response = completion(model="claude-3-5-sonnet-20241022", messages=...)
+      </div>
+
+      <div class="callout green">
+        <strong>Unified Model Naming:</strong> LiteLLM normalizes model names. Use `model="gpt-4"` for OpenAI, `model="claude-3-5-sonnet-20241022"` for Anthropic, etc. The interface stays the same.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-3">
+      <div class="section-marker">SECTION 03</div>
+      <h2>Provider Routing</h2>
+      <p>LiteLLM's killer feature: seamless routing between providers for fallback, load balancing, and cost optimization.</p>
+
+      <p><strong>Fallback: Try Expensive Model, Fall Back to Cheap</strong></p>
+      <div class="example-box">
+from litellm import completion
+
+# Try GPT-4 (more capable, more expensive)
+# If it fails, try Claude (fallback)
+# If that fails, use Llama (cheapest)
+
+fallback_models = [
+    "gpt-4",
+    "claude-3-5-sonnet-20241022",
+    "replicate/llama-2-70b"
+]
+
+for model in fallback_models:
+    try:
+        response = completion(
+            model=model,
+            messages=[{"role": "user", "content": "Solve this math problem"}]
+        )
+        print(f"Success with {model}")
+        break
+    except Exception as e:
+        print(f"{model} failed: {e}")
+        continue
+      </div>
+
+      <p><strong>Load Balancing: Distribute Across Providers</strong></p>
+      <div class="example_box">
+import random
+
+models = ["gpt-4", "gpt-3.5-turbo", "claude-3-5-sonnet-20241022"]
+
+# Random load balancing
+chosen_model = random.choice(models)
+response = completion(model=chosen_model, messages=...)
+
+# Or weighted (e.g., 60% GPT-4, 40% Claude)
+models_weighted = ["gpt-4"] * 6 + ["claude-3-5-sonnet-20241022"] * 4
+chosen_model = random.choice(models_weighted)
+response = completion(model=chosen_model, messages=...)
+      </div>
+
+      <p><strong>Cost-Based Routing</strong></p>
+      <p>Route based on input length and cost:</p>
+      <div class="example-box">
+# For short inputs, use cheap model
+# For complex inputs, use expensive model
+
+input_length = len(messages[0]["content"])
+
+if input_length < 500:
+    model = "gpt-3.5-turbo"  # ~$0.0005 per 1k tokens
+else:
+    model = "gpt-4"  # ~$0.03 per 1k tokens
+
+response = completion(model=model, messages=messages)
+      </div>
+
+      <p><strong>Retry Logic with Backoff</strong></p>
+      <div class="example-box">
+import time
+
+def call_with_retries(model, messages, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            response = completion(model=model, messages=messages)
+            return response
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff
+                print(f"Attempt {attempt+1} failed, retrying in {wait_time}s")
+                time.sleep(wait_time)
+            else:
+                raise
+
+result = call_with_retries("gpt-4", messages)
+      </div>
+
+      <div class="callout amber">
+        <strong>Production Pattern:</strong> Implement a multi-tier routing strategy: try primary model, fallback to secondary, finally fallback to reliable but expensive model. This maximizes cost efficiency while maintaining reliability.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-4">
+      <div class="section-marker">SECTION 04</div>
+      <h2>LiteLLM Proxy Server</h2>
+      <p>The LiteLLM Proxy is a local OpenAI-compatible server that sits between your app and all LLM providers. Enables virtual keys, unified logging, cost tracking, and easier deployment.</p>
+
+      <p><strong>Installation & Start</strong></p>
+      <div class="example-box">
+pip install litellm[proxy]
+
+# Start proxy server
+litellm --model gpt-4 --port 8000
+
+# Or with config file
+litellm --config ./proxy_config.yaml
+      </div>
+
+      <p><strong>config.yaml: Define Models & Keys</strong></p>
+      <div class="example-box">
+model_list:
+  - model_name: "gpt-4"
+    litellm_params:
+      model: "gpt-4"
+      api_key: "${OPENAI_API_KEY}"
+
+  - model_name: "claude"
+    litellm_params:
+      model: "claude-3-5-sonnet-20241022"
+      api_key: "${ANTHROPIC_API_KEY}"
+
+  - model_name: "cheap"
+    litellm_params:
+      model: "replicate/llama-2-70b"
+      api_key: "${REPLICATE_API_KEY}"
+
+router_settings:
+  routing_strategy: "cost-based"  # Route by cost
+  enable_load_balancing: true
+
+general_settings:
+  master_key: "sk-1234..."  # Proxy key
+  database_url: "postgresql://..."  # Log to DB
+      </div>
+
+      <p><strong>Client Calls to Proxy</strong></p>
+      <div class="example-box">
+from openai import OpenAI
+
+# Point to local proxy instead of OpenAI
+client = OpenAI(
+    base_url="http://localhost:8000",
+    api_key="sk-1234..."  # Proxy master key
+)
+
+# Use like normal OpenAI
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+
+# Or request any model the proxy knows about
+response = client.chat.completions.create(
+    model="claude",
+    messages=[...]
+)
+      </div>
+
+      <p><strong>Virtual Keys: Per-User Cost Tracking</strong></p>
+      <div class="example-box">
+# Proxy admin creates virtual key for each user
+# POST /key/generate
+{
+  "user_id": "user-123",
+  "spend_limit": 10,  # $10/month
+  "models": ["gpt-4", "claude"]
+}
+
+# Returns: sk-virtual-user-123
+
+# Client uses virtual key
+client = OpenAI(
+    base_url="http://localhost:8000",
+    api_key="sk-virtual-user-123"
+)
+
+# All calls logged under user-123
+# Proxy enforces $10/month spend limit
+      </div>
+
+      <div class="callout green">
+        <strong>Why Proxy Architecture:</strong> Instead of embedding LiteLLM in your app, run it as a service. Multiple apps can use it. Virtual keys let you track per-user spending. One place to update API keys and routing logic.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-5">
+      <div class="section-marker">SECTION 05</div>
+      <h2>Cost & Token Tracking</h2>
+      <p>LiteLLM automatically calculates cost and token usage for every API call.</p>
+
+      <p><strong>Get Cost from Response</strong></p>
+      <div class="example-box">
+from litellm import completion
+
+response = completion(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+
+print(response.usage.prompt_tokens)       # Tokens in prompt
+print(response.usage.completion_tokens)   # Tokens in response
+print(response.usage.total_tokens)        # Sum
+
+# LiteLLM automatically calculates cost
+# Based on official provider pricing
+cost = response.cost  # $ (float)
+print(f"This call cost ${cost:.4f}")
+      </div>
+
+      <p><strong>Track Cost Across Calls</strong></p>
+      <div class="example-box">
+from litellm import completion
+
+total_cost = 0.0
+total_tokens = 0
+
+messages = [
+    "What is machine learning?",
+    "Explain neural networks",
+    "How do transformers work?"
+]
+
+for query in messages:
+    response = completion(
+        model="gpt-4",
+        messages=[{"role": "user", "content": query}]
+    )
+    
+    total_cost += response.cost
+    total_tokens += response.usage.total_tokens
+    
+    print(f"Query cost: ${response.cost:.4f}")
+
+print(f"Total cost: ${total_cost:.2f} for {total_tokens} tokens")
+      </div>
+
+      <p><strong>Set Spend Limits</strong></p>
+      <div class="example-box">
+import litellm
+
+litellm.max_budget = 10.0  # $10 per session
+litellm.success_callback = log_cost  # Log each call
+
+try:
+    for i in range(100):
+        response = completion(
+            model="gpt-4",
+            messages=[{"role": "user", "content": f"Prompt {i}"}]
+        )
+        # If total spend > $10, raises BudgetExceeded
+except litellm.BudgetExceeded:
+    print("Monthly budget exceeded!")
+      </div>
+
+      <p><strong>Pricing Reference</strong></p>
+      <p>LiteLLM has built-in pricing for 100+ models. Add custom pricing if needed:</p>
+      <div class="example-box">
+import litellm
+
+# Add custom model pricing
+litellm.model_cost["custom-model"] = {
+    "input_cost_per_token": 0.001,
+    "output_cost_per_token": 0.002
+}
+
+response = completion(
+    model="custom-model",
+    messages=[...]
+)
+
+# Cost auto-calculated with custom pricing
+print(response.cost)
+      </div>
+
+      <div class="callout blue">
+        <strong>Best Practice:</strong> Log cost alongside every LLM call. This data helps identify expensive queries, optimize routing, and forecast monthly spend.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-6">
+      <div class="section-marker">SECTION 06</div>
+      <h2>Observability Integration</h2>
+      <p>LiteLLM integrates with leading observability platforms for monitoring, debugging, and auditing LLM calls.</p>
+
+      <p><strong>LangSmith Integration</strong></p>
+      <div class="example-box">
+import litellm
+from langsmith import Client
+
+litellm.langsmith_client = Client(api_key="ls_...")
+
+response = completion(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello"}]
+)
+
+# Automatically logged to LangSmith
+# View in LangSmith dashboard with latency, cost, errors
+      </div>
+
+      <p><strong>Langfuse Integration</strong></p>
+      <div class="example-box">
+import litellm
+from langfuse import Langfuse
+
+litellm.langfuse_client = Langfuse(
+    public_key="pk_...",
+    secret_key="sk_..."
+)
+
+response = completion(
+    model="gpt-4",
+    messages=[...]
+)
+
+# Call logged to Langfuse dashboard
+      </div>
+
+      <p><strong>Custom Callbacks</strong></p>
+      <p>Define custom logging for any system:</p>
+      <div class="example-box">
+import litellm
+
+def log_to_datadog(kwargs):
+    """Called after every completion."""
+    import datadog
+    datadog.statsd.gauge(
+        "llm.completion_time",
+        kwargs["response_time"]
+    )
+    datadog.statsd.gauge(
+        "llm.cost",
+        kwargs.get("cost", 0)
+    )
+
+litellm.success_callback = [log_to_datadog]
+
+response = completion(model="gpt-4", messages=...)
+# log_to_datadog automatically called with stats
+      </div>
+
+      <p><strong>Built-in Monitoring Metrics</strong></p>
+      <ul>
+        <li>Latency (TTFB, full response time)</li>
+        <li>Cost per call and aggregate</li>
+        <li>Token usage (prompt, completion, total)</li>
+        <li>Error rates and error types</li>
+        <li>Model usage distribution</li>
+        <li>API availability and uptime</li>
+      </ul>
+
+      <div class="callout amber">
+        <strong>Production Observability:</strong> Connect LiteLLM to your monitoring stack. Track cost, latency, and errors across all providers. This visibility is crucial for cost control and debugging.
+      </div>
+    </div>
+
+    <div class="section-block" id="section-7">
+      <div class="section-marker">SECTION 07</div>
+      <h2>Advanced Patterns</h2>
+      <p>Beyond basic completion calls, LiteLLM supports advanced use cases:</p>
+
+      <p><strong>Streaming Responses</strong></p>
+      <div class="example-box">
+from litellm import completion
+
+response = completion(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Write a poem"}],
+    stream=True  # Stream tokens as they arrive
+)
+
+for chunk in response:
+    delta = chunk.choices[0].delta.content
+    print(delta, end="", flush=True)
+      </div>
+
+      <p><strong>Function Calling (Tool Use)</strong></p>
+      <div class="example-box">
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get weather for location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {"type": "string"}
+                }
+            }
+        }
+    }
+]
+
+response = completion(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "What's the weather in NYC?"}],
+    tools=tools
+)
+
+# Works across providers (OpenAI, Claude, Gemini)
+if response.choices[0].message.tool_calls:
+    tool_call = response.choices[0].message.tool_calls[0]
+    print(f"Call {tool_call.function.name} with {tool_call.function.arguments}")
+      </div>
+
+      <p><strong>Vision Models</strong></p>
+      <div class="example-box">
+response = completion(
+    model="gpt-4-vision",  # Or "claude-3-5-sonnet-20241022" with vision
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Describe this image"},
+                {"type": "image_url", "image_url": {"url": "https://..."}}
+            ]
+        }
+    ]
+)
+
+print(response.choices[0].message.content)
+      </div>
+
+      <p><strong>Embedding Unification</strong></p>
+      <div class="example-box">
+from litellm import embedding
+
+# All embedding models through same interface
+embeddings = embedding(
+    model="text-embedding-3-small",  # OpenAI
+    input="Hello world"
+)
+
+# Or switch to different provider
+embeddings = embedding(
+    model="voyage-2",  # Voyage AI
+    input="Hello world"
+)
+
+# Same response format, auto-cost calculation
+      </div>
+
+      <div class="callout green">
+        <strong>Unified Abstractions:</strong> Streaming, tool calls, vision, embeddings—all work consistently across providers. LiteLLM normalizes these advanced features so you don't need provider-specific code.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap • Concept Index • Last updated March 2026</p>
+  </footer>
+</body>
+</html>

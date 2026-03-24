@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphRAG — GenAI Mindmap</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --indigo: #4f46e5;
+            --indigo-dk: #3730a3;
+            --indigo-lt: #eef2ff;
+            --blue: #2563eb;
+            --sky: #38bdf8;
+            --green: #22c55e;
+            --rose: #f43f5e;
+            --amber: #f59e0b;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --bg-white: #ffffff;
+            --code-bg: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background-color: var(--bg);
+            line-height: 1.6;
+        }
+
+        nav {
+            background-color: var(--bg-white);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .nav-back {
+            color: var(--indigo);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-back:hover {
+            color: var(--indigo-dk);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--indigo-lt) 0%, var(--bg) 100%);
+            padding: 3rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-tag {
+            display: inline-block;
+            background-color: var(--indigo);
+            color: var(--bg-white);
+            padding: 0.375rem 0.875rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .hero h1 em {
+            color: var(--indigo);
+            font-style: normal;
+            font-weight: 700;
+        }
+
+        .hero-sub {
+            font-size: 1.125rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+            max-width: 700px;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+        }
+
+        .hero-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hero-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--indigo);
+        }
+
+        .hero-stat-label {
+            font-size: 0.875rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .page-wrap {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .toc-card {
+            background-color: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .toc-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .toc-grid ol {
+            list-style: decimal;
+            margin-left: 1.5rem;
+        }
+
+        .toc-grid li {
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .section-block {
+            margin-bottom: 4rem;
+        }
+
+        .section-marker {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-block h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+        }
+
+        .section-block h2 em {
+            color: var(--indigo);
+            font-style: normal;
+        }
+
+        .section-block p {
+            color: var(--text);
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
+        }
+
+        .example-box {
+            background-color: var(--code-bg);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            border-left: 4px solid var(--sky);
+            white-space: pre-wrap;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+
+        .callout {
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .callout.info {
+            background-color: #eff6ff;
+            border-left-color: var(--blue);
+            color: var(--text);
+        }
+
+        .callout.amber {
+            background-color: #fffbeb;
+            border-left-color: var(--amber);
+            color: var(--text);
+        }
+
+        .callout.success {
+            background-color: #f0fdf4;
+            border-left-color: var(--green);
+            color: var(--text);
+        }
+
+        .callout.rose {
+            background-color: #fff1f2;
+            border-left-color: var(--rose);
+            color: var(--text);
+        }
+
+        .callout strong {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        thead {
+            background-color: var(--indigo-lt);
+            border-bottom: 2px solid var(--border);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--indigo-dk);
+            font-size: 0.9rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .img-placeholder {
+            background-color: var(--bg-white);
+            border: 2px dashed var(--border);
+            border-radius: 0.5rem;
+            padding: 3rem;
+            text-align: center;
+            color: var(--muted);
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            background-color: var(--bg-white);
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.875rem;
+            margin-top: 4rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .toc-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .page-wrap {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">🧠 GenAI Mindmap</div>
+        <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
+    </nav>
+
+    <div class="hero">
+        <div class="hero-tag">Retrieval & RAG</div>
+        <h1><em>GraphRAG</em> Overview</h1>
+        <p class="hero-sub">A retrieval augmented generation approach that uses knowledge graphs and hierarchical community detection to capture cross-document relationships and enable sophisticated multi-hop reasoning over large document collections.</p>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="hero-stat-value">2024</div>
+                <div class="hero-stat-label">Microsoft Release</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-value">Entities + Relations</div>
+                <div class="hero-stat-label">Knowledge Graph</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-value">Global + Local</div>
+                <div class="hero-stat-label">Query Modes</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-wrap">
+        <div class="toc-card">
+            <h3>Table of Contents</h3>
+            <div class="toc-grid">
+                <ol>
+                    <li>Why GraphRAG</li>
+                    <li>How GraphRAG Works</li>
+                    <li>Indexing Pipeline</li>
+                    <li>Query Modes</li>
+                </ol>
+                <ol start="5">
+                    <li>Implementation with Microsoft</li>
+                    <li>GraphRAG vs Standard RAG</li>
+                    <li>When to Use GraphRAG</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- SECTION 1 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 01</div>
+            <h2>Why <em>GraphRAG</em></h2>
+            <p>Standard RAG chunksthe documents, embeds each chunk independently, retrieves the k most similar chunks for a query, and passes them to an LLM for synthesis. This works well for factual lookup—"What is the capital of France?"—but struggles with complex, cross-document reasoning—"What are the relationships between Company A's executives and Company B's competitors, across all 500 documents?" because the relevant information is scattered across many chunks, and flat semantic similarity cannot capture the interconnected structure.</p>
+            <p>GraphRAG solves this by building a knowledge graph of entities (persons, organizations, concepts) and their relationships (works_at, competes_with, founded). This graph preserves the semantic structure of the corpus, making it possible to answer questions that require connecting facts across documents. Furthermore, GraphRAG applies community detection algorithms (like the Leiden algorithm) to identify clusters of tightly connected entities, and generates summaries for each community. During retrieval, both local (entity-centric) and global (community-level) search modes are available, enabling better coverage of relevant context.</p>
+            <p>In Microsoft's benchmarks, GraphRAG achieves 40% better accuracy on multi-hop questions and 15% on single-hop questions compared to standard dense retrieval RAG, with lower hallucination rates.</p>
+            <div class="callout success">
+                <strong>Core Insight</strong>
+                Knowledge graphs + hierarchical community detection enable "retrieval by relationship" rather than "retrieval by similarity." The result: better coverage of relevant context, stronger support for multi-hop reasoning, and fewer hallucinations.
+            </div>
+        </div>
+
+        <!-- SECTION 2 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 02</div>
+            <h2>How <em>GraphRAG</em> Works</h2>
+            <p>GraphRAG consists of two phases: indexing (offline) and querying (online).</p>
+            <p><strong>Indexing Phase:</strong> (1) Split documents into chunks. (2) For each chunk, extract entities (named entity recognition) and relationships (using an LLM or extractor). (3) Construct a knowledge graph: nodes are entities, edges are relationships with metadata. (4) Apply community detection (Leiden algorithm) to partition the graph into hierarchical levels. (5) For each community, generate a summary (using an LLM). (6) Store the graph, communities, and summaries in a database.</p>
+            <p><strong>Query Phase:</strong> (1) Parse the user's query. (2) Extract query entities and determine the appropriate search mode (local or global). (3) Local search: find entities mentioned in the query, retrieve their 1-hop and 2-hop neighbors in the graph, and collect their summaries. (4) Global search: retrieve summaries of relevant communities based on the query topic. (5) Aggregate retrieved summaries into context. (6) Pass context to the LLM for synthesis.</p>
+            <p>The key innovation: instead of embedding and matching raw text, the system works with structured graph relationships and hierarchical communities. This preserves meaning across large document spans and enables more sophisticated retrieval logic.</p>
+            <div class="callout info">
+                <strong>Hierarchy Levels</strong>
+                The Leiden algorithm produces hierarchical communities: Level 0 (finest) has small, tightly-knit clusters; Level 1 has larger communities (collections of Level 0 clusters); etc. Queries can search at the appropriate level—fine-grained for specific entity relationships, coarse-grained for high-level topic discovery.
+            </div>
+        </div>
+
+        <!-- SECTION 3 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 03</div>
+            <h2>Indexing <em>Pipeline</em> in Depth</h2>
+            <p><strong>Step 1: Document Chunking</strong><br>Split documents into overlapping chunks (e.g., 1200 tokens with 100-token overlap) to preserve local context and enable entity references that span chunks.</p>
+            <p><strong>Step 2: Entity Extraction</strong><br>For each chunk, use an LLM (e.g., GPT-4 with few-shot examples) to extract entities and their types (PERSON, ORGANIZATION, LOCATION, CONCEPT). The LLM is prompted: "Extract all entities of type [type] from this text." Named Entity Recognition (NER) models can also be used for faster, lighter extraction, though LLMs achieve better precision in multi-hop relationships.</p>
+            <p><strong>Step 3: Relationship Extraction</strong><br>For each chunk, prompt an LLM to extract relationships: "What relationships exist between the extracted entities? List them as (source, relationship_type, target)." Examples: (Alice, WORKS_AT, Acme Corp), (Acme Corp, COMPETES_WITH, TechCorp). This produces a list of edges for the graph.</p>
+            <p><strong>Step 4: Graph Construction</strong><br>Combine entity and relationship data across all chunks into a single knowledge graph. Nodes are deduplicated by entity name (with optional fuzzy matching to handle synonyms). Edges are weighted by frequency (if an entity relationship appears in 5 chunks, the edge weight is higher). The result is a potentially large graph (thousands to millions of nodes for large corpora).</p>
+            <div class="example-box">Entity and Relationship Extraction Prompt:
+
+You are an expert at extracting entities and relationships from text.
+
+TASK: Extract all entities and relationships from the following text.
+
+ENTITIES: Extract entities and classify them as PERSON, ORGANIZATION, LOCATION, CONCEPT, or PRODUCT.
+
+RELATIONSHIPS: Extract relationships in the form (source_entity, relationship_type, target_entity).
+
+Relationship types include: WORKS_AT, FOUNDED, COMPETES_WITH, OWNS, SUPPLIES, LOCATED_IN, etc.
+
+TEXT:
+---
+Alice Chen is the Chief Technology Officer at TechCorp. TechCorp, founded in 2015, 
+develops AI software and competes directly with InnovateLabs, which is based in 
+Silicon Valley. Alice previously worked at CloudSystems.
+---
+
+OUTPUT (JSON):
+{
+  "entities": [
+    {"name": "Alice Chen", "type": "PERSON"},
+    {"name": "TechCorp", "type": "ORGANIZATION"},
+    {"name": "InnovateLabs", "type": "ORGANIZATION"},
+    {"name": "CloudSystems", "type": "ORGANIZATION"},
+    {"name": "Silicon Valley", "type": "LOCATION"}
+  ],
+  "relationships": [
+    {"source": "Alice Chen", "relationship": "WORKS_AT", "target": "TechCorp"},
+    {"source": "TechCorp", "relationship": "FOUNDED", "target": "2015"},
+    {"source": "TechCorp", "relationship": "COMPETES_WITH", "target": "InnovateLabs"},
+    {"source": "InnovateLabs", "relationship": "LOCATED_IN", "target": "Silicon Valley"},
+    {"source": "Alice Chen", "relationship": "PREVIOUSLY_WORKED_AT", "target": "CloudSystems"}
+  ]
+}
+            </div>
+            <p><strong>Step 5: Community Detection</strong><br>Apply the Leiden algorithm (similar to Louvain, but with better quality and stability) to partition the graph into communities. This produces hierarchical levels where each node belongs to a hierarchy of communities. For example, Alice Chen belongs to Community_Level0_5, which belongs to Community_Level1_2, etc.</p>
+            <p><strong>Step 6: Community Summarization</strong><br>For each community (at each level), generate a summary: prompt an LLM with the entities and relationships in that community and ask for a natural-language summary. Example: "Here are the entities and relationships in a community: [list]. Summarize the key themes and relationships in 2-3 sentences." Store these summaries in the database.</p>
+            <p><strong>Step 7: Storage & Indexing</strong><br>Store the graph, community assignments, summaries, and chunks in a database (e.g., Neo4j for the graph, PostgreSQL for metadata). Create indices on entity names and community IDs for fast lookup during querying.</p>
+            <div class="callout amber">
+                <strong>LLM Costs in Indexing</strong>
+                Entity and relationship extraction using LLMs is expensive: for a 1M-token corpus, expect thousands of LLM API calls. Consider using smaller, faster models for extraction (e.g., Llama 2 locally) and reserve expensive models for community summarization.
+            </div>
+        </div>
+
+        <!-- SECTION 4 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 04</div>
+            <h2><em>Query Modes</em>: Local & Global Search</h2>
+            <p><strong>Local Search:</strong> Focused on entities mentioned in the query. The system retrieves the query entities from the graph, finds their immediate neighbors (1-hop and 2-hop relationships), and collects summaries for those entities and their communities. Local search excels at answering entity-specific questions and understanding relationships around known entities. Example: "What are Alice Chen's roles and relationships?" Local search finds Alice, retrieves her connections (works_at, worked_at, etc.), and synthesizes the response.</p>
+            <p><strong>Global Search:</strong> Answers questions about overall themes or patterns in the corpus without relying on specific entities. The system retrieves relevant community summaries based on semantic similarity to the query. For example, "What are the main competitors in the market?" Global search retrieves communities related to competition, companies, and markets, synthesizes their summaries, and generates an answer. Global search is better for exploratory questions and discovering patterns.</p>
+            <p><strong>Drift Search:</strong> A hybrid mode where local and global results are blended. Start with local entity-centric results, then augment with global community summaries if coverage is low.</p>
+            <div class="example-box">Query Processing with Local/Global:
+
+Query: "What companies has Alice Chen worked for?"
+→ Local Search
+1. Extract entities: Alice Chen
+2. Find Alice in graph
+3. Retrieve WORKS_AT and PREVIOUSLY_WORKED_AT edges
+4. Collect: TechCorp, CloudSystems
+5. Retrieve summaries for these entities & related communities
+6. LLM synthesizes: "Alice Chen has worked at..."
+
+---
+
+Query: "What market trends are affecting tech companies?"
+→ Global Search
+1. Extract query intent: trends, market, tech companies
+2. Retrieve communities related to: market, trends, technology
+3. Collect summaries of relevant communities
+4. LLM synthesizes: "Key market trends include..."
+            </div>
+            <div class="callout success">
+                <strong>Search Mode Selection</strong>
+                GraphRAG can automatically select search mode based on query structure. Queries with named entities → local. Abstract, thematic queries → global. The implementation can also return results from both modes and rank them.
+            </div>
+        </div>
+
+        <!-- SECTION 5 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 05</div>
+            <h2><em>Implementation</em> with Microsoft GraphRAG</h2>
+            <p>Microsoft's GraphRAG library (https://github.com/microsoft/graphrag) is open-source and designed for easy integration. Here's a typical workflow:</p>
+            <div class="example-box">GraphRAG Python Setup:
+
+from graphrag.index import create_index
+from graphrag.query import query_local, query_global
+import asyncio
+
+# Configuration
+config = {
+    "llm": {
+        "type": "openai",
+        "api_key": "sk-...",
+        "model": "gpt-4",
+    },
+    "chunking": {
+        "size": 1200,
+        "overlap": 100,
+    },
+    "entity_extraction": {
+        "enabled": True,
+        "types": ["PERSON", "ORGANIZATION", "LOCATION", "CONCEPT"],
+    },
+    "relationship_extraction": {
+        "enabled": True,
+    },
+    "community_detection": {
+        "algorithm": "leiden",
+        "levels": 3,  # 3 hierarchy levels
+    },
+    "summarization": {
+        "enabled": True,
+        "batch_size": 10,
+    },
+}
+
+# Index documents (offline phase)
+documents = [
+    {"id": "doc1", "text": "...document 1..."},
+    {"id": "doc2", "text": "...document 2..."},
+    # ... more documents
+]
+
+index = create_index(
+    documents=documents,
+    config=config,
+    storage_path="./graphrag_index"
+)
+
+# Query documents (online phase)
+async def query_corpus():
+    # Local search
+    local_results = await query_local(
+        index=index,
+        query="What companies has Alice worked for?",
+        top_k=3,
+    )
+    print("Local results:", local_results)
+    
+    # Global search
+    global_results = await query_global(
+        index=index,
+        query="What are market trends affecting tech?",
+        top_k=5,
+    )
+    print("Global results:", global_results)
+
+asyncio.run(query_corpus())
+            </div>
+            <p><strong>Configuration Options:</strong> LLM choice (OpenAI, local Llama, etc.), chunking strategy, entity/relationship types to extract, community detection parameters (algorithm, number of levels), and summarization batch size. Larger corpora benefit from more hierarchy levels and finer-grained community detection.</p>
+            <p><strong>Deployment:</strong> Index once (can take hours for large corpora), then serve queries via an API. Cache community summaries to speed up global search. For very large graphs (millions of nodes), consider sharding by topic or document collection.</p>
+            <div class="callout info">
+                <strong>Customization</strong>
+                You can plug in custom entity extractors, relationship classifiers, or community detection algorithms. For domain-specific knowledge graphs (e.g., scientific papers), fine-tune the entity types and relationship taxonomies.
+            </div>
+        </div>
+
+        <!-- SECTION 6 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 06</div>
+            <h2><em>GraphRAG</em> vs Standard RAG</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aspect</th>
+                            <th>Standard RAG</th>
+                            <th>GraphRAG</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Retrieval Mechanism</strong></td>
+                            <td>Semantic similarity (embedding-based)</td>
+                            <td>Graph relationships + community summaries</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Multi-Hop Q&A</strong></td>
+                            <td>Struggles; requires lucky chunk overlap</td>
+                            <td>Strong; follows graph paths naturally</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Hallucination Rate</strong></td>
+                            <td>Higher; less grounded in structure</td>
+                            <td>Lower; grounded in explicit graph</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Coverage on Complex Questions</strong></td>
+                            <td>Lower; limited context per query</td>
+                            <td>Higher; retrieves all related communities</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Indexing Cost</strong></td>
+                            <td>Low; just chunk and embed</td>
+                            <td>High; LLM-based extraction and summarization</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Query Speed</strong></td>
+                            <td>Fast; vector similarity search</td>
+                            <td>Medium; graph traversal + LLM synthesis</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Interpretability</strong></td>
+                            <td>Low; black-box embeddings</td>
+                            <td>High; explicit entities and relationships</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Domain Adaptation</strong></td>
+                            <td>Fine-tune embeddings</td>
+                            <td>Define entity/relationship types and taxonomies</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Cost-Benefit Analysis:</strong> GraphRAG's higher indexing cost (LLM extraction and summarization) is justified for corpora where multi-hop reasoning and coverage are critical (e.g., legal documents, scientific literature, enterprise knowledge bases). For simple fact lookup or small corpora, standard RAG is faster and cheaper. Many organizations use GraphRAG as a second-pass system: standard RAG retrieves initial candidates, then GraphRAG refines with graph-based reasoning.</p>
+            <div class="callout success">
+                <strong>Hybrid Approach</strong>
+                Combine standard RAG (fast, baseline) with GraphRAG (slower, higher-quality) in a two-stage pipeline. For straightforward queries, return standard RAG results. For complex queries, augment or replace with GraphRAG results. This balances cost and quality.
+            </div>
+        </div>
+
+        <!-- SECTION 7 -->
+        <div class="section-block">
+            <div class="section-marker">SECTION 07</div>
+            <h2>When to Use <em>GraphRAG</em></h2>
+            <p><strong>GraphRAG is ideal when:</strong> (1) Your queries require multi-hop reasoning across documents (e.g., "What is the relationship between entities in document A and entities in document B?"). (2) The corpus is large and diverse, with interconnected entities and relationships. (3) Accuracy and low hallucination are critical. (4) Interpretability matters—stakeholders want to know why a particular answer was retrieved. (5) You have the budget for LLM-based indexing (entity and relationship extraction).</p>
+            <p><strong>Standard RAG is sufficient when:</strong> (1) Queries are factual lookups or single-document questions. (2) The corpus is small or homogeneous. (3) Speed and cost are paramount. (4) Chunk-level retrieval provides sufficient context. (5) Your embedding model is well-aligned with your domain.</p>
+            <p><strong>Concrete Use Cases:</strong><br>GraphRAG excels in: legal document analysis (cross-referencing contracts, precedents, parties), scientific literature synthesis (connecting research across papers and labs), enterprise knowledge management (connecting people, projects, and organizational relationships), competitive intelligence (tracking company relationships, partnerships, market dynamics), and investigative journalism (finding connections between actors, events, and organizations).</p>
+            <div class="example-box">Decision Tree:
+
+Question: Do you need multi-hop reasoning?
+  → YES: Consider GraphRAG
+      → Large corpus with many entities/relationships?
+          → YES: Use GraphRAG (full implementation)
+          → NO: Standard RAG + fact verification (hybrid)
+  → NO: Use standard RAG
+
+Question: How critical is hallucination reduction?
+  → Critical (legal, medical): Use GraphRAG
+  → Important: Hybrid approach
+  → Less critical: Standard RAG
+            </div>
+            <p><strong>Implementation Timeline:</strong> Standard RAG (1-2 days to implement and deploy). GraphRAG (2-4 weeks: design entity/relationship schema, extract and build graph, tune community detection, validate results). Budget accordingly.</p>
+            <div class="callout amber">
+                <strong>Common Pitfalls</strong>
+                Over-extracting entities and relationships (too many nodes/edges makes the graph noisy and slow). Under-specifying entity types (generic "ENTITY" type loses semantic meaning). Insufficient hierarchy levels (makes community summaries too coarse or too fine). Not tuning the LLM prompts for your domain.
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        © 2024 GenAI Mindmap. All rights reserved. | Last updated March 2024
+    </footer>
+</body>
+</html>
