@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Context Window | GenAI Mindmap</title>
+  <meta name="description" content="The context window defines how much text an LLM can process in one forward pass. From 4K to 1M tokens — understanding context length, the KV-cache cost, position encoding limits, and the 'lost in the middle' failure mode." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Context Window" />
+  <meta property="og:description" content="The context window defines how much text an LLM can process in one forward pass. From 4K to 1M tokens — understanding context length, the KV-cache cost, position encoding limits, and the 'lost in the middle' failure mode." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/context-window.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/context-window.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Context Window | GenAI Mindmap",
+  "description": "The context window defines how much text an LLM can process in one forward pass. From 4K to 1M tokens \u2014 understanding context length, the KV-cache cost, position encoding limits, and the 'lost in the middle' failure mode.",
+  "url": "https://genai4a11.github.io/concepts/context-window.html",
+  "dateModified": "2026-03-24T23:44:24.072685",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Context Window | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/context-window.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0369a1;
+      --accent-dark: #0284c7;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0369a1 0%,#0284c7 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/llm-capabilities.html" class="nav-back">← LLM Capabilities</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">LLM Capabilities</span>
+    <h1><em>Context Window</em></h1>
+    <p class="hero-sub">The context window defines how much text an LLM can process in one forward pass. From 4K to 1M tokens — understanding context length, the KV-cache cost, position encoding limits, and the 'lost in the middle' failure mode.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">4K → 1M</div><div class="stat-label">Range today</div></div>
+      <div><div class="stat-num">O(n²)</div><div class="stat-label">KV-cache memory</div></div>
+      <div><div class="stat-num">'Lost in middle'</div><div class="stat-label">Key failure mode</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">What the context window is</a></li>
+        <li><a href="#s2" data-num="02">KV-cache and memory cost</a></li>
+        <li><a href="#s3" data-num="03">Position encoding limits</a></li>
+        <li><a href="#s4" data-num="04">Lost in the middle</a></li>
+        <li><a href="#s5" data-num="05">Long context strategies</a></li>
+        <li><a href="#s6" data-num="06">Model comparison</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>What the context window is</h2>
+<p>The context window (also called context length) is the maximum number of tokens an LLM can attend to in a single forward pass. Input tokens (your prompt + conversation history) and output tokens (the generated response) together must fit within this limit.</p>
+<p>Tokens are roughly 3/4 of a word in English: "hello world" = 2 tokens, a typical paragraph = 100–150 tokens, a typical A4 page = 400–600 tokens. Common benchmarks: 4K tokens ≈ 3,000 words, 128K tokens ≈ 96,000 words ≈ a short novel, 1M tokens ≈ 750,000 words ≈ the full Harry Potter series.</p>
+<p>The context window is not just about length — it's about what the model can reason over. Everything in the context is attended to simultaneously (O(n²) attention), and positions early in the context can affect positions late in the context. This is fundamentally different from a database query or search index.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>KV-cache and memory cost</h2>
+<p>During autoregressive generation, the model computes key and value tensors for every token in the context at every layer. These are cached to avoid recomputation — the KV-cache. Memory cost scales as:</p>
+<p><code>KV-cache bytes = 2 × num_layers × num_kv_heads × head_dim × context_length × bytes_per_element</code></p>
+<p>For Llama 3.1 70B (fp16): 80 layers × 8 KV heads × 128 head_dim × 2 bytes × 2 (K+V) = 328 bytes per token. At 128K tokens: 328 × 128,000 = 42GB of KV-cache alone — more than the model weights.</p>
+<pre><code class="language-python">def kv_cache_gb(num_layers, num_kv_heads, head_dim, seq_len, dtype_bytes=2):
+    # Returns KV-cache memory in GB
+    kv_per_token = 2 * num_layers * num_kv_heads * head_dim * dtype_bytes
+    return kv_per_token * seq_len / 1e9
+
+# Llama 3.1 70B
+print(f"128K context: {kv_cache_gb(80, 8, 128, 128_000):.1f} GB")
+print(f"8K context:   {kv_cache_gb(80, 8, 128, 8_000):.1f} GB")
+# 128K context: 41.9 GB
+# 8K context:    2.6 GB
+</code></pre>
+<p>This is why serving infrastructure matters: long context requests are memory-hungry and require careful batching to avoid OOM.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Position encoding limits</h2>
+<p>LLMs learn position information through positional encodings (RoPE, ALiBi, or absolute). These encodings are trained on sequences up to the training context length. At inference time, extrapolating beyond the training length can degrade quality.</p>
+<p><strong>RoPE (Rotary Position Embedding)</strong>: Used by Llama, Mistral. Can be extrapolated beyond training length using scaling techniques (YaRN, LongRoPE). Models like Llama 3.1 use YaRN scaling to extend 8K training length to 128K inference length.</p>
+<p><strong>ALiBi</strong>: Uses attention biases that scale linearly with distance. Better extrapolation than learned absolute positions, but still degrades for very long contexts.</p>
+<p>The practical implication: a model advertised as "128K context" may actually extrapolate a shorter training context. Check whether quality benchmarks at long context are included in the model card.</p>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Lost in the middle</h2>
+<p>A surprising finding (Liu et al. 2023): LLMs perform best when relevant information is at the <em>start</em> or <em>end</em> of the context, and worst when it's in the <em>middle</em>. Performance degrades roughly in a U-shape across position.</p>
+<pre><code class="language-python"># Demonstrate "lost in the middle" with a simple test
+import openai
+
+def ask_with_position(relevant_doc, irrelevant_docs_before, irrelevant_docs_after, question):
+    context = "
+
+".join(
+        irrelevant_docs_before + [relevant_doc] + irrelevant_docs_after
+    )
+    return client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role":"user","content":f"{context}
+
+Q: {question}"}],
+    ).choices[0].message.content
+
+# Quality drops when relevant_doc is buried in the middle:
+# Position 0/10 docs: ~90% accuracy
+# Position 5/10 docs: ~65% accuracy (middle = worst)
+# Position 10/10 docs: ~85% accuracy
+</code></pre>
+<p>Mitigations: put the most important context at the start or end, use retrieval to return only the most relevant chunks, or re-rank retrieved chunks to place the best ones at the boundaries.</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Long context strategies</h2>
+<p>Given the cost and quality trade-offs, here's when to use different approaches:</p>
+<p><strong>Use long context directly when</strong>: you need to reason over the relationships between many parts of a document (not just retrieve a fact), the document is &lt;50K tokens (cost manageable), or you're prototyping and don't want to build a retrieval pipeline.</p>
+<p><strong>Use RAG instead when</strong>: the total corpus is too large to fit in context, you need to search across many documents, cost is a concern (&gt;50K tokens per query gets expensive), or you need to cite specific sources.</p>
+<p><strong>Hybrid approach</strong>: retrieve the top-K relevant chunks, then pass them in the context. This combines the scalability of retrieval with the reasoning power of in-context processing.</p>
+<p><strong>Chunk-and-summarise</strong>: For very long documents, recursively summarise chunks and query the summaries. Loses detail but scales to arbitrarily long inputs.</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Model comparison</h2>
+<table>
+<thead><tr><th>Model</th><th>Context</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>GPT-4o</td><td>128K</td><td>OpenAI flagship</td></tr>
+<tr><td>Claude 3.5 Sonnet</td><td>200K</td><td>Best long-context quality</td></tr>
+<tr><td>Gemini 1.5 Pro</td><td>1M</td><td>Largest available context</td></tr>
+<tr><td>Llama 3.1 70B</td><td>128K</td><td>Best open-weight long-context</td></tr>
+<tr><td>Mistral 7B v0.3</td><td>32K</td><td>Small model long context</td></tr>
+<tr><td>Qwen 2.5 72B</td><td>128K</td><td>Strong multilingual long ctx</td></tr>
+</tbody></table>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Input vs output tokens</strong>: Context windows include both input and output. If your context is 100K tokens, you have little room left for output. Always reserve capacity: if context window = 128K and input = 120K, max output = 8K.</p>
+<p><strong>Counting tokens</strong>: Use the model's tokenizer to count before sending. A request that exceeds the context limit will fail with an API error. For OpenAI models, use the <code>tiktoken</code> library. For others, use the HF tokenizer.</p>
+<pre><code class="language-python">import tiktoken
+enc = tiktoken.encoding_for_model("gpt-4o")
+token_count = len(enc.encode(your_text))
+print(f"Token count: {token_count}")
+</code></pre>
+<p><strong>Billing</strong>: You pay for the full context on every API call. With a 50K-token system prompt and 128K context models, sending one message costs you 50K input tokens even if the user typed two words.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/llm-capabilities.html" style="color:var(--accent)">LLM Capabilities</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
