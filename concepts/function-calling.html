@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Function Calling | GenAI Mindmap</title>
+  <meta name="description" content="The API-level mechanism for structured tool use: define functions as JSON schemas, and the LLM returns structured call objects — not free text — enabling reliable, type-safe tool dispatch." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Function Calling" />
+  <meta property="og:description" content="The API-level mechanism for structured tool use: define functions as JSON schemas, and the LLM returns structured call objects — not free text — enabling reliable, type-safe tool dispatch." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/function-calling.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/function-calling.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Function Calling | GenAI Mindmap",
+  "description": "The API-level mechanism for structured tool use: define functions as JSON schemas, and the LLM returns structured call objects \u2014 not free text \u2014 enabling reliable, type-safe tool dispatch.",
+  "url": "https://genai4a11.github.io/concepts/function-calling.html",
+  "dateModified": "2026-03-24T17:17:49.546528",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Function Calling | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/function-calling.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #059669;
+      --accent-dark: #047857;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/tool-use.html" class="nav-back">← Tool Use</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Tool Use</span>
+    <h1><em>Function Calling</em></h1>
+    <p class="hero-sub">The API-level mechanism for structured tool use: define functions as JSON schemas, and the LLM returns structured call objects — not free text — enabling reliable, type-safe tool dispatch.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">JSON schema</div><div class="stat-label">Tool definition</div></div>
+      <div><div class="stat-num">Structured</div><div class="stat-label">LLM output</div></div>
+      <div><div class="stat-num">Anthropic +</div><div class="stat-label">OpenAI native</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Function calling vs prompt-based tool use</a></li>
+        <li><a href="#s2" data-num="02">The JSON schema contract</a></li>
+        <li><a href="#s3" data-num="03">Anthropic function calling</a></li>
+        <li><a href="#s4" data-num="04">OpenAI function calling</a></li>
+        <li><a href="#s5" data-num="05">Parallel and forced function calls</a></li>
+        <li><a href="#s6" data-num="06">Building a complete tool loop</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Function calling vs prompt-based tool use</h2>
+<p>Before native function calling existed, developers used prompts like "You have access to these tools: [list]. When you want to use a tool, output exactly: TOOL: tool_name(args)". This worked, but required fragile string parsing, offered no type safety, and the model could generate any text format it liked.</p>
+<p>Native function calling is fundamentally different: you define tools as first-class JSON schemas, the model is trained to output structured <em>tool call objects</em> (not free text), and the API validates the output. The result is reliable, machine-parseable tool dispatch that works consistently even in complex multi-tool scenarios.</p>
+<p>Modern LLMs (Claude, GPT-4, Gemini) are specifically fine-tuned on function calling — they understand JSON schemas natively and know how to select the right tool and fill in its arguments precisely.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>The JSON schema contract</h2>
+<p>A function/tool definition has three parts: name, description (natural language — the LLM uses this to decide when to call the tool), and input_schema (JSON Schema defining the parameters):</p>
+<pre><code class="language-python">weather_tool = {
+    "name": "get_weather",
+    "description": "Get current weather for a city. Use when the user asks about weather conditions.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "city": {
+                "type": "string",
+                "description": "City name, e.g. 'London' or 'Tokyo'"
+            },
+            "units": {
+                "type": "string",
+                "enum": ["celsius", "fahrenheit"],
+                "description": "Temperature units. Default: celsius"
+            }
+        },
+        "required": ["city"]
+    }
+}
+</code></pre>
+<p>The description is not documentation — it's a prompt. Write it like you're instructing the model: "Use this tool when...", "Returns X given Y", "Do not use for Z".</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Anthropic function calling</h2>
+<pre><code class="language-python">import anthropic, json
+
+client = anthropic.Anthropic()
+
+tools = [{
+    "name": "get_weather",
+    "description": "Get current weather for a city.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "city": {"type": "string", "description": "City name"}
+        },
+        "required": ["city"]
+    }
+}]
+
+# Step 1: Model decides to call the tool
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    tools=tools,
+    messages=[{"role": "user", "content": "What's the weather in Tokyo?"}]
+)
+
+print(response.stop_reason)  # "tool_use"
+
+# Extract tool call
+tool_use = next(b for b in response.content if b.type == "tool_use")
+print(tool_use.name)    # "get_weather"
+print(tool_use.input)   # {"city": "Tokyo"}
+
+# Step 2: Execute the tool
+def get_weather(city: str) -> dict:
+    return {"city": city, "temp": 18, "condition": "Partly cloudy"}
+
+tool_result = get_weather(**tool_use.input)
+
+# Step 3: Return result to model
+final = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    tools=tools,
+    messages=[
+        {"role": "user", "content": "What's the weather in Tokyo?"},
+        {"role": "assistant", "content": response.content},
+        {"role": "user", "content": [{
+            "type": "tool_result",
+            "tool_use_id": tool_use.id,
+            "content": json.dumps(tool_result)
+        }]}
+    ]
+)
+print(final.content[0].text)  # "The weather in Tokyo is 18°C and partly cloudy."
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>OpenAI function calling</h2>
+<pre><code class="language-python">from openai import OpenAI
+import json
+
+client = OpenAI()
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get current weather for a city.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "city": {"type": "string"}
+            },
+            "required": ["city"]
+        }
+    }
+}]
+
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Weather in London?"}],
+    tools=tools,
+    tool_choice="auto",  # or "required" or {"type": "function", "function": {"name": "get_weather"}}
+)
+
+# Check if model called a tool
+msg = response.choices[0].message
+if msg.tool_calls:
+    call = msg.tool_calls[0]
+    args = json.loads(call.function.arguments)
+    result = get_weather(**args)
+
+    # Continue conversation with tool result
+    final = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "user", "content": "Weather in London?"},
+            msg,  # assistant message with tool_calls
+            {"role": "tool", "tool_call_id": call.id, "content": json.dumps(result)}
+        ],
+        tools=tools,
+    )
+    print(final.choices[0].message.content)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Parallel and forced function calls</h2>
+<p><strong>Parallel calls</strong>: the model can request multiple tool calls in a single response. Claude groups independent tool calls and returns them together, signalling they can run concurrently:</p>
+<pre><code class="language-python">import asyncio
+
+# Model returns multiple tool_use blocks
+tool_calls = [b for b in response.content if b.type == "tool_use"]
+
+# Execute in parallel
+async def run_all(calls):
+    tasks = [asyncio.to_thread(dispatch_tool, c.name, c.input) for c in calls]
+    return await asyncio.gather(*tasks)
+
+results = asyncio.run(run_all(tool_calls))
+
+# Return all results at once
+tool_results = [
+    {"type": "tool_result", "tool_use_id": c.id, "content": json.dumps(r)}
+    for c, r in zip(tool_calls, results)
+]
+</code></pre>
+<p><strong>Forced function calls</strong>: use <code>tool_choice={"type": "tool", "name": "get_weather"}</code> (Anthropic) or <code>tool_choice={"type": "function", "function": {"name": "get_weather"}}</code> (OpenAI) to force a specific tool call. Useful for structured data extraction where you always want output in a specific format.</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Building a complete tool loop</h2>
+<pre><code class="language-python">import anthropic, json
+
+client = anthropic.Anthropic()
+
+TOOLS = [
+    {"name": "search", "description": "Search the web.", "input_schema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
+    {"name": "calculator", "description": "Evaluate math expressions.", "input_schema": {"type": "object", "properties": {"expression": {"type": "string"}}, "required": ["expression"]}},
+]
+
+def dispatch(name: str, args: dict) -> str:
+    if name == "search":
+        return f"Search results for '{args['query']}': [mock result]"
+    if name == "calculator":
+        try: return str(eval(args["expression"]))
+        except Exception as e: return f"Error: {e}"
+    return "Unknown tool"
+
+def agent_loop(user_query: str, max_steps: int = 5) -> str:
+    messages = [{"role": "user", "content": user_query}]
+    for _ in range(max_steps):
+        resp = client.messages.create(
+            model="claude-sonnet-4-5", max_tokens=1024,
+            tools=TOOLS, messages=messages
+        )
+        if resp.stop_reason == "end_turn":
+            return next(b.text for b in resp.content if hasattr(b, "text"))
+        if resp.stop_reason == "tool_use":
+            messages.append({"role": "assistant", "content": resp.content})
+            tool_results = []
+            for block in resp.content:
+                if block.type == "tool_use":
+                    result = dispatch(block.name, block.input)
+                    tool_results.append({"type": "tool_result", "tool_use_id": block.id, "content": result})
+            messages.append({"role": "user", "content": tool_results})
+    return "Max steps reached"
+
+print(agent_loop("What is the square root of 1764?"))
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Always check stop_reason before parsing.</strong> If you assume the model always returns a tool call and it doesn't (stop_reason="end_turn"), your code will crash trying to find a tool_use block that isn't there. Always branch on stop_reason first.</p>
+<p><strong>Tool results must be returned in the same turn.</strong> Anthropic and OpenAI both expect all tool results from a multi-tool response to be returned in a single user message. Don't send tool results one-by-one in separate API calls.</p>
+<p><strong>The description is load-bearing.</strong> The model decides which tool to call purely from the description. If two tools have similar descriptions, the model will pick the wrong one. Make descriptions mutually exclusive and specific: "Use search for current information. Use calculator for math. Do not use search for math questions."</p>
+<p><strong>Tool errors should return strings, not raise exceptions.</strong> When a tool fails, return an error message string as the tool result. The model can then recover and try a different approach. Propagating exceptions kills the agent loop entirely.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/tool-use.html" style="color:var(--accent)">Tool Use</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conversation Buffer | GenAI Mindmap</title>
+  <meta name="description" content="The simplest agent memory: keeping recent messages in the prompt window so the model remembers what was said earlier in the same session. Two strategies: sliding window (last N turns) and summary compression (LLM compresses old turns into a paragraph)." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Conversation Buffer" />
+  <meta property="og:description" content="The simplest agent memory: keeping recent messages in the prompt window so the model remembers what was said earlier in the same session. Two strategies: sliding window (last N turns) and summary compression (LLM compresses old turns into a paragraph)." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/conversation-buffer.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/conversation-buffer.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Conversation Buffer | GenAI Mindmap",
+  "description": "The simplest agent memory: keeping recent messages in the prompt window so the model remembers what was said earlier in the same session. Two strategies: sliding window (last N turns) and summary compression (LLM compresses old turns into a paragraph).",
+  "url": "https://genai4a11.github.io/concepts/conversation-buffer.html",
+  "dateModified": "2026-03-24T17:17:49.256707",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Conversation Buffer | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/conversation-buffer.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #059669;
+      --accent-dark: #047857;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/agent-memory.html" class="nav-back">← Agent Memory</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Agent Memory</span>
+    <h1><em>Conversation Buffer</em></h1>
+    <p class="hero-sub">The simplest agent memory: keeping recent messages in the prompt window so the model remembers what was said earlier in the same session. Two strategies: sliding window (last N turns) and summary compression (LLM compresses old turns into a paragraph).</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">In-context</div><div class="stat-label">Storage</div></div>
+      <div><div class="stat-num">Window or</div><div class="stat-label">Summary</div></div>
+      <div><div class="stat-num">Zero</div><div class="stat-label">Infra needed</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why agents forget</a></li>
+        <li><a href="#s2" data-num="02">The sliding window approach</a></li>
+        <li><a href="#s3" data-num="03">Summary compression</a></li>
+        <li><a href="#s4" data-num="04">Implementing both strategies</a></li>
+        <li><a href="#s5" data-num="05">LangChain memory classes</a></li>
+        <li><a href="#s6" data-num="06">When to upgrade to long-term memory</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why agents forget</h2>
+<p>LLMs are stateless. Each API call is independent — the model has no inherent memory of what you said last turn. Every message you've exchanged must be re-sent in the <code>messages</code> array for the model to "remember" it. This is short-term memory: it lives in the prompt, and it's bounded by the context window.</p>
+<p>For a simple chatbot, you just append every turn to a list and send the whole list each time. This works until the conversation grows too long and you exceed the context window (or costs become prohibitive). The conversation buffer pattern manages this problem — deciding which past messages to include and how to compress or discard the rest.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>The sliding window approach</h2>
+<p>The simplest solution: keep only the last N turns. Old messages are dropped entirely. This is fast, cheap, and requires no extra LLM calls.</p>
+<pre><code class="language-python">from collections import deque
+
+class SlidingWindowMemory:
+    def __init__(self, max_turns: int = 10):
+        self.history = deque(maxlen=max_turns * 2)  # * 2 for user+assistant pairs
+        self.system_prompt = ""
+
+    def add(self, role: str, content: str):
+        self.history.append({"role": role, "content": content})
+
+    def get_messages(self) -> list[dict]:
+        return list(self.history)
+
+memory = SlidingWindowMemory(max_turns=5)
+
+def chat(user_message: str) -> str:
+    import anthropic
+    memory.add("user", user_message)
+    response = anthropic.Anthropic().messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=512,
+        system="You are a helpful assistant.",
+        messages=memory.get_messages()
+    )
+    reply = response.content[0].text
+    memory.add("assistant", reply)
+    return reply
+
+# Test
+chat("My name is Deepak and I'm building an AI mindmap.")
+chat("What was the project I mentioned?")  # Model still knows
+</code></pre>
+<p>The downside: context before the window is completely lost. If the user mentioned their name 15 turns ago and you only keep 10 turns, the model won't know their name.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Summary compression</h2>
+<p>When the conversation exceeds a threshold, use an LLM to compress old turns into a summary paragraph. The summary is prepended as a "system-level" context, and the window continues from there:</p>
+<pre><code>Full history (20 turns):
+[Turn 1-10] → "Earlier in this conversation: user introduced themselves
+  as Deepak, a developer building a GenAI mindmap. They asked about RAG
+  architecture and we discussed chunking strategies and embedding models."
+[Turn 11-20] → kept verbatim in messages array
+</code></pre>
+<p>This preserves key facts from old turns while keeping the prompt manageable. The summary is a lossy compression — fine details are lost, but the narrative thread is maintained.</p>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Implementing both strategies</h2>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+class SummarisedMemory:
+    def __init__(self, window_size: int = 8, compress_after: int = 16):
+        self.recent: list[dict] = []
+        self.summary: str = ""
+        self.window_size = window_size
+        self.compress_after = compress_after
+
+    def add(self, role: str, content: str):
+        self.recent.append({"role": role, "content": content})
+        if len(self.recent) > self.compress_after:
+            self._compress()
+
+    def _compress(self):
+        # Summarise the oldest half of the window
+        to_compress = self.recent[:self.compress_after // 2]
+        self.recent = self.recent[self.compress_after // 2:]
+
+        turns_text = "
+".join(
+            f"{m['role'].title()}: {m['content']}" for m in to_compress
+        )
+        if self.summary:
+            turns_text = f"Previous summary: {self.summary}
+
+{turns_text}"
+
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=256,
+            messages=[{
+                "role": "user",
+                "content": f"Summarise this conversation in 2-3 sentences, "
+                           f"preserving key facts and names:
+
+{turns_text}"
+            }]
+        )
+        self.summary = resp.content[0].text
+
+    def get_messages(self) -> list[dict]:
+        return self.recent[-self.window_size * 2:]
+
+    def get_system(self, base_system: str) -> str:
+        if self.summary:
+            return f"{base_system}
+
+Conversation so far: {self.summary}"
+        return base_system
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>LangChain memory classes</h2>
+<p>LangChain provides pre-built memory implementations so you don't have to write this yourself:</p>
+<pre><code class="language-python">from langchain.memory import (
+    ConversationBufferMemory,         # keep all turns
+    ConversationBufferWindowMemory,   # sliding window
+    ConversationSummaryMemory,        # full summary compression
+    ConversationSummaryBufferMemory,  # hybrid: summary + recent window
+)
+from langchain_anthropic import ChatAnthropic
+from langchain.chains import ConversationChain
+
+llm = ChatAnthropic(model="claude-haiku-4-5-20251001")
+
+# Hybrid memory: summarise turns beyond token_limit, keep recent ones verbatim
+memory = ConversationSummaryBufferMemory(
+    llm=llm,
+    max_token_limit=1000,
+)
+
+chain = ConversationChain(llm=llm, memory=memory, verbose=True)
+chain.predict(input="Hi, I'm Deepak and I'm building a GenAI mindmap.")
+chain.predict(input="What project did I mention?")  # still knows
+</code></pre>
+<p><code>ConversationSummaryBufferMemory</code> is the most practical for production: it keeps recent turns verbatim (fast, faithful) and summarises older ones (compact). Set <code>max_token_limit</code> to roughly 20-30% of your model's context window.</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>When to upgrade to long-term memory</h2>
+<p>Conversation buffer (short-term memory) is the right choice when: you're building a chatbot or assistant within a single session, the relevant context fits within a few thousand tokens, and you don't need to remember facts across separate conversations.</p>
+<p>You need <strong>long-term memory</strong> (vector store + retrieval) when: users return across multiple sessions, you need to remember facts from weeks or months ago, or the volume of information is too large for even summary compression (e.g., an agent that processes hundreds of documents over time).</p>
+<p>A practical upgrade path: start with <code>ConversationSummaryBufferMemory</code> for per-session context, and add a vector store lookup at the start of each new session to retrieve relevant facts from past conversations. The two systems are complementary, not competing.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Token counting matters.</strong> You can't just count messages — count tokens. A single long user message might be worth more than five short turns. Use <code>anthropic.count_tokens()</code> or tiktoken to track actual token usage before building your memory window.</p>
+<p><strong>Compression is lossy — and the model can't tell.</strong> After summarisation, the model doesn't know what was compressed. If a user references a detail from a compressed turn ("like I said about the edge case in my first question"), the model will have lost that detail. Consider including a note: "earlier turns summarised — ask me if you need specifics".</p>
+<p><strong>System messages are not magic memory.</strong> Prepending summaries to the system prompt works but can "feel" lower quality to the model than actual conversation history in the <code>messages</code> array. For anthropic models, the conversation history format (user/assistant alternation) is the most natural way to provide context.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/agent-memory.html" style="color:var(--accent)">Agent Memory</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
