@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guardrails | GenAI Mindmap</title>
+  <meta name="description" content="Input/output filtering systems that enforce safety, policy compliance, and quality constraints on LLM applications — including NVIDIA NeMo Guardrails, Meta's Llama Guard, and Rebuff for prompt injection defense." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Guardrails" />
+  <meta property="og:description" content="Input/output filtering systems that enforce safety, policy compliance, and quality constraints on LLM applications — including NVIDIA NeMo Guardrails, Meta's Llama Guard, and Rebuff for prompt injection defense." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/guardrails.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/guardrails.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Guardrails | GenAI Mindmap",
+  "description": "Input/output filtering systems that enforce safety, policy compliance, and quality constraints on LLM applications \u2014 including NVIDIA NeMo Guardrails, Meta's Llama Guard, and Rebuff for prompt injection defense.",
+  "url": "https://genai4a11.github.io/concepts/guardrails.html",
+  "dateModified": "2026-03-24T20:43:07.058386",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Guardrails | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/guardrails.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #ef4444;
+      --accent-dark: #dc2626;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/safety-tech.html" class="nav-back">← Safety Tech</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Safety Tech</span>
+    <h1><em>Guardrails</em></h1>
+    <p class="hero-sub">Input/output filtering systems that enforce safety, policy compliance, and quality constraints on LLM applications — including NVIDIA NeMo Guardrails, Meta's Llama Guard, and Rebuff for prompt injection defense.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Input+Output</div><div class="stat-label">Filtering</div></div>
+      <div><div class="stat-num">Llama Guard</div><div class="stat-label">Classifier</div></div>
+      <div><div class="stat-num">Programmable</div><div class="stat-label">Policies</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why guardrails matter</a></li>
+        <li><a href="#s2" data-num="02">Types of guardrails</a></li>
+        <li><a href="#s3" data-num="03">NeMo Guardrails</a></li>
+        <li><a href="#s4" data-num="04">Llama Guard classification</a></li>
+        <li><a href="#s5" data-num="05">Building custom validators</a></li>
+        <li><a href="#s6" data-num="06">Layering multiple guardrails</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why guardrails matter</h2>
+<p>LLMs are trained to be helpful and will attempt to answer almost any question. Without guardrails, production applications will inevitably: generate off-brand content, answer questions outside the intended scope, produce factually wrong confident answers, or be manipulated by adversarial users into bypassing safety measures.</p>
+<p>Guardrails are the defensive layer between user input and LLM output. They operate at three points: <strong>input validation</strong> (reject or modify harmful/off-topic inputs before the LLM sees them), <strong>output validation</strong> (review and reject/modify LLM outputs before showing to users), and <strong>dialogue management</strong> (enforce conversation flow rules, e.g., "always recommend consulting a doctor for medical questions").</p>
+<p>Guardrails are not a substitute for safety training in the underlying model — they're a complementary layer. A well-trained model with guardrails is safer than either alone. And guardrails let you enforce <em>application-specific</em> policies that weren't part of the model's training.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Types of guardrails</h2>
+<p><strong>Rule-based filters</strong>: regex, keyword lists, length limits. Fast and deterministic. Fragile to variations ("H3LP M3" bypasses "HELP ME" keyword filter). Good for obvious violations.</p>
+<p><strong>Classifier-based guardrails</strong>: a separate ML model (often a fine-tuned LLM) that classifies inputs/outputs. Examples: Llama Guard (safe/unsafe categories), Perspective API (toxicity scoring), OpenAI moderation endpoint. More robust than rules but adds latency.</p>
+<p><strong>LLM-as-judge guardrails</strong>: use a secondary LLM to evaluate the primary LLM's output for quality, factual grounding, or policy compliance. Most flexible but highest latency and cost.</p>
+<p><strong>Dialogue flow guardrails</strong>: enforce conversation structure and topic boundaries. NeMo Guardrails is the primary tool here — it lets you define what topics the bot can and can't discuss, required disclaimers, and off-topic deflection behaviour.</p>
+<p><strong>Structured output validation</strong>: validate that LLM outputs conform to a schema (correct JSON format, required fields present, values in valid ranges). Tools: Pydantic, Outlines, Instructor.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>NeMo Guardrails</h2>
+<pre><code class="language-python">pip install nemoguardrails
+
+# NeMo Guardrails uses Colang — a dialogue flow language
+# Create config/config.yml and config/main.co
+
+# config/config.yml:
+# models:
+#   - type: main
+#     engine: anthropic
+#     model: claude-haiku-4-5-20251001
+
+# config/main.co (Colang flow definitions):
+COLANG_CONTENT = '''
+define user ask about medical advice
+  "What medication should I take?"
+  "Do I have cancer?"
+  "Is this symptom serious?"
+
+define bot refuse medical advice
+  "I'm not able to provide medical advice. Please consult a qualified healthcare professional."
+
+define flow medical advice
+  user ask about medical advice
+  bot refuse medical advice
+
+define user ask off topic
+  "What's the weather?"
+  "Tell me a joke"
+  "Write me a poem"
+
+define bot stay on topic
+  "I'm a customer service assistant for Acme Corp. I can only help with questions about our products."
+
+define flow stay on topic
+  user ask off topic
+  bot stay on topic
+'''
+
+import os
+os.makedirs("config", exist_ok=True)
+with open("config/main.co", "w") as f:
+    f.write(COLANG_CONTENT)
+
+from nemoguardrails import RailsConfig, LLMRails
+
+config = RailsConfig.from_path("./config")
+rails = LLMRails(config)
+
+response = rails.generate(
+    messages=[{"role": "user", "content": "What medication should I take for my fever?"}]
+)
+print(response["content"])
+# → "I'm not able to provide medical advice. Please consult..."
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Llama Guard classification</h2>
+<pre><code class="language-python"># Llama Guard: Meta's safety classifier fine-tuned on safety categories
+# Classifies inputs/outputs as safe or unsafe with category labels
+
+# Via HuggingFace (local)
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+
+model_id = "meta-llama/Llama-Guard-3-8B"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, torch_dtype=torch.bfloat16, device_map="auto"
+)
+
+def check_safety(user_message: str, assistant_response: str = None) -> dict:
+    # Format for Llama Guard
+    if assistant_response:
+        conversation = [
+            {"role": "user", "content": user_message},
+            {"role": "assistant", "content": assistant_response},
+        ]
+    else:
+        conversation = [{"role": "user", "content": user_message}]
+
+    input_ids = tokenizer.apply_chat_template(
+        conversation, return_tensors="pt"
+    ).to(model.device)
+
+    output = model.generate(input_ids=input_ids, max_new_tokens=100)
+    response = tokenizer.decode(output[0][input_ids.shape[-1]:], skip_special_tokens=True)
+
+    return {
+        "safe": response.strip().startswith("safe"),
+        "raw": response.strip()
+    }
+
+# Check user input
+result = check_safety("How do I make explosives?")
+print(result)  # {"safe": False, "raw": "unsafe
+S2"}  # S2 = Violent crimes
+
+# Check model output
+result = check_safety(
+    user_message="Tell me about historical chemistry",
+    assistant_response="Here's how to synthesise dangerous compounds..."
+)
+print(result)  # {"safe": False, "raw": "unsafe
+S2"}
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Building custom validators</h2>
+<pre><code class="language-python">from typing import Callable
+import re
+
+class GuardrailPipeline:
+    def __init__(self, llm_fn: Callable):
+        self.llm_fn = llm_fn
+        self.input_validators = []
+        self.output_validators = []
+
+    def add_input_validator(self, validator: Callable) -> "GuardrailPipeline":
+        self.input_validators.append(validator)
+        return self
+
+    def add_output_validator(self, validator: Callable) -> "GuardrailPipeline":
+        self.output_validators.append(validator)
+        return self
+
+    def __call__(self, user_input: str) -> str:
+        # Run input validators
+        for validator in self.input_validators:
+            result = validator(user_input)
+            if result is not None:  # validator blocked the input
+                return result
+
+        # Call LLM
+        response = self.llm_fn(user_input)
+
+        # Run output validators
+        for validator in self.output_validators:
+            result = validator(response)
+            if result is not None:  # validator modified/blocked output
+                response = result
+
+        return response
+
+# Example validators
+def block_pii(text: str):
+    if re.search(r'\d{3}-\d{2}-\d{4}', text):  # SSN pattern
+        return "I cannot process requests containing social security numbers."
+    return None
+
+def enforce_length(max_chars: int):
+    def validator(text: str):
+        return text[:max_chars] + "..." if len(text) > max_chars else None
+    return validator
+
+def require_disclaimer(text: str):
+    if "investment" in text.lower() and "not financial advice" not in text.lower():
+        return text + "
+
+*This is not financial advice. Consult a qualified advisor.*"
+    return None
+
+pipeline = (GuardrailPipeline(my_llm)
+    .add_input_validator(block_pii)
+    .add_output_validator(require_disclaimer)
+    .add_output_validator(enforce_length(2000)))
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Layering multiple guardrails</h2>
+<p>Production guardrail systems layer multiple techniques at different points:</p>
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+def safe_generate(user_input: str, session_context: dict) -> str:
+    # Layer 1: Fast rule-based input check (microseconds)
+    if contains_blocked_keywords(user_input):
+        return "I can't help with that."
+
+    # Layer 2: Length / format checks (fast)
+    if len(user_input) > 4000:
+        return "Your message is too long. Please keep it under 4000 characters."
+
+    # Layer 3: Llama Guard classification (50–200ms)
+    safety = check_safety(user_input)
+    if not safety["safe"]:
+        return "I'm unable to assist with that request."
+
+    # Layer 4: Topic classification (100–300ms, or use Llama Guard)
+    if is_off_topic(user_input, allowed_topics=["product support", "billing"]):
+        return "I'm only able to help with product support and billing questions."
+
+    # Generate response
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001", max_tokens=1024,
+        system="You are a customer service agent for Acme Corp.",
+        messages=[{"role": "user", "content": user_input}]
+    ).content[0].text
+
+    # Layer 5: Output validation (LLM-as-judge for high-stakes responses)
+    if session_context.get("is_medical_domain"):
+        if not has_appropriate_disclaimer(response):
+            response += "
+
+*Please consult a qualified healthcare professional.*"
+
+    return response
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Guardrails add latency.</strong> Each validation layer adds time. Llama Guard takes 50–200ms; an LLM-as-judge validator might take 1–2 seconds. For interactive applications, run validators asynchronously where possible, or use fast classifiers for initial filtering and expensive ones only for suspicious cases. Profile your guardrail pipeline before going to production.</p>
+<p><strong>Adversarial users probe for gaps.</strong> A determined user will find prompts that bypass your guardrails. This is especially true for rule-based filters (easy to rephrase around). Assume bypass is possible and add monitoring to detect unusual patterns. Log blocked attempts and use them to improve classifiers.</p>
+<p><strong>Overly aggressive guardrails harm legitimate users.</strong> A guardrail that blocks all mentions of "medication" to prevent medical advice will also block legitimate questions like "Can I take this product with medication?". Tune thresholds carefully and measure false positive rates, not just false negatives. A guardrail that blocks 30% of legitimate queries is not a safety feature — it's a product bug.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/safety-tech.html" style="color:var(--accent)">Safety Tech</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

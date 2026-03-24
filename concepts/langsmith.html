@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LangSmith | GenAI Mindmap</title>
+  <meta name="description" content="LangChain's platform for debugging, testing, and monitoring LLM applications — trace every LLM call, build evaluation datasets from production traffic, run regression tests on prompts, and track quality over time." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="LangSmith" />
+  <meta property="og:description" content="LangChain's platform for debugging, testing, and monitoring LLM applications — trace every LLM call, build evaluation datasets from production traffic, run regression tests on prompts, and track quality over time." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/langsmith.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/langsmith.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "LangSmith | GenAI Mindmap",
+  "description": "LangChain's platform for debugging, testing, and monitoring LLM applications \u2014 trace every LLM call, build evaluation datasets from production traffic, run regression tests on prompts, and track quality over time.",
+  "url": "https://genai4a11.github.io/concepts/langsmith.html",
+  "dateModified": "2026-03-24T20:43:07.269048",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "LangSmith | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/langsmith.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #8b5cf6;
+      --accent-dark: #7c3aed;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/monitoring.html" class="nav-back">← Observability</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Observability</span>
+    <h1><em>LangSmith</em></h1>
+    <p class="hero-sub">LangChain's platform for debugging, testing, and monitoring LLM applications — trace every LLM call, build evaluation datasets from production traffic, run regression tests on prompts, and track quality over time.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Full traces</div><div class="stat-label">Every LLM call</div></div>
+      <div><div class="stat-num">Datasets</div><div class="stat-label">From production</div></div>
+      <div><div class="stat-num">CI/CD</div><div class="stat-label">Eval integration</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">What LangSmith solves</a></li>
+        <li><a href="#s2" data-num="02">Setting up tracing</a></li>
+        <li><a href="#s3" data-num="03">Exploring traces for debugging</a></li>
+        <li><a href="#s4" data-num="04">Building evaluation datasets</a></li>
+        <li><a href="#s5" data-num="05">Running automated evaluations</a></li>
+        <li><a href="#s6" data-num="06">Production monitoring and alerts</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>What LangSmith solves</h2>
+<p>LLM applications fail in ways that are invisible without observability tooling. A user reports "the chatbot gave a wrong answer" — but which LLM call failed? Was it the retrieval step that pulled the wrong context, the reranker that ranked them poorly, or the generator that ignored good context? Without traces, debugging requires reproducing the issue manually and adding print statements.</p>
+<p>LangSmith traces every LLM call, tool invocation, and chain step — automatically, with no code changes needed if you use LangChain. Each trace shows the full input/output of every step, latency, token counts, and cost. You can filter to failed traces, share traces with teammates, and jump directly to the problematic step.</p>
+<p>Beyond debugging, LangSmith enables: <strong>dataset curation</strong> (collect real user queries from production traces), <strong>regression testing</strong> (run your eval dataset on every prompt change), and <strong>prompt management</strong> (version-control prompts and A/B test them).</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Setting up tracing</h2>
+<pre><code class="language-python">pip install langsmith langchain-anthropic
+
+import os
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = "lsv2_..."
+os.environ["LANGCHAIN_PROJECT"] = "my-rag-app"  # groups traces
+
+# That's it — all LangChain calls are now traced automatically.
+# For non-LangChain code, use the @traceable decorator:
+
+from langsmith import traceable
+import anthropic
+
+client = anthropic.Anthropic()
+
+@traceable(name="claude_call", run_type="llm")
+def call_claude(prompt: str, system: str = "") -> str:
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        system=system,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.content[0].text
+
+@traceable(name="rag_pipeline")
+def answer_question(question: str, context: str) -> str:
+    system = "Answer only using the provided context."
+    prompt = f"Context:
+{context}
+
+Question: {question}"
+    return call_claude(prompt, system)
+
+# This creates a trace with nested spans:
+# rag_pipeline → claude_call (with full input/output, tokens, latency)
+result = answer_question("What is RAGAS?", "RAGAS is a RAG evaluation framework...")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Exploring traces for debugging</h2>
+<p>In the LangSmith UI, each trace shows a waterfall of spans. For a RAG pipeline you'll see something like:</p>
+<pre><code>rag_pipeline (1.2s total)
+├── retriever (0.3s) — query: "what is RAGAS?"
+│   └── vector_search: returned 3 chunks
+├── reranker (0.4s) — reranked to top 2
+└── claude_call (0.5s)
+    ├── Input: "Context:
+[chunk 1]
+[chunk 2]
+Question: what is RAGAS?"
+    ├── Output: "RAGAS is a reference-free RAG evaluation framework..."
+    └── Tokens: 312 prompt + 89 completion = 401 total, $0.0008
+</code></pre>
+<p>Filter techniques that save hours: filter by <code>error=true</code> to see only failed runs; sort by latency descending to find slow outliers; use <code>metadata</code> filtering to see traces for a specific user or session. Click any span to see the exact prompt — copy it to test in the playground.</p>
+<pre><code class="language-python"># Add metadata to traces for filtering
+from langsmith import traceable
+from langchain_core.tracers.context import tracing_v2_enabled
+
+@traceable(metadata={"user_id": "u123", "session_id": "s456"})
+def handle_request(query: str) -> str:
+    return answer_question(query, retrieve(query))
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Building evaluation datasets</h2>
+<pre><code class="language-python">from langsmith import Client
+
+client = Client()
+
+# Create a dataset from scratch
+dataset = client.create_dataset(
+    "rag-eval-v1",
+    description="RAG pipeline evaluation questions"
+)
+
+# Add examples manually
+client.create_examples(
+    inputs=[
+        {"question": "What is constitutional AI?"},
+        {"question": "How does GGUF quantization work?"},
+    ],
+    outputs=[
+        {"answer": "Constitutional AI is Anthropic's method for training helpful, harmless assistants using principles-guided self-critique."},
+        {"answer": "GGUF quantizes model weights to 4-bit or 8-bit integers, reducing memory by 4-8× with minimal quality loss."},
+    ],
+    dataset_id=dataset.id
+)
+
+# Or populate from production traces — find good/bad examples:
+runs = client.list_runs(
+    project_name="my-rag-app",
+    execution_order=1,  # top-level runs only
+    filter='and(gt(total_tokens, 100), lt(latency, 2.0))',
+)
+for run in list(runs)[:20]:
+    # Add to dataset with human-reviewed label
+    client.create_examples(
+        inputs=[run.inputs],
+        outputs=[run.outputs],
+        dataset_id=dataset.id
+    )
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Running automated evaluations</h2>
+<pre><code class="language-python">from langsmith import Client
+from langsmith.evaluation import evaluate, LangChainStringEvaluator
+
+client = Client()
+
+# Define what you're evaluating
+def rag_pipeline(inputs: dict) -> dict:
+    question = inputs["question"]
+    context = retrieve(question)  # your retriever
+    answer = answer_question(question, context)
+    return {"answer": answer}
+
+# Define evaluators
+correctness_evaluator = LangChainStringEvaluator(
+    "labeled_criteria",
+    config={
+        "criteria": {
+            "correctness": "Is the answer factually correct based on the reference answer?"
+        }
+    }
+)
+
+# Run evaluation — calls your pipeline on every dataset example
+results = evaluate(
+    rag_pipeline,
+    data="rag-eval-v1",
+    evaluators=[correctness_evaluator],
+    experiment_prefix="prompt-v2",  # tag this run
+    max_concurrency=4,
+)
+print(results.to_pandas()[["input.question", "feedback.correctness"]].head())
+
+# Compare experiments in the LangSmith UI: prompt-v1 vs prompt-v2
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Production monitoring and alerts</h2>
+<pre><code class="language-python">from langsmith import Client
+
+client = Client()
+
+# Query recent production metrics
+project_stats = client.read_project(project_name="my-rag-app")
+print(f"Total runs today: {project_stats.run_count}")
+print(f"Error rate: {project_stats.error_rate:.1%}")
+print(f"Avg latency: {project_stats.latency_p50:.2f}s (p50)")
+print(f"Total tokens: {project_stats.total_tokens}")
+
+# Find high-latency runs to investigate
+slow_runs = client.list_runs(
+    project_name="my-rag-app",
+    filter="gt(latency, 5.0)",  # >5 seconds
+    limit=10
+)
+
+# Add human feedback programmatically (e.g. thumbs up/down from UI)
+client.create_feedback(
+    run_id="run-uuid-here",
+    key="user_rating",
+    score=1.0,  # or 0.0 for negative
+    comment="User clicked thumbs up"
+)
+
+# Fetch feedback stats — track quality trends over time
+feedback_stats = client.list_feedback(
+    run_ids=[r.id for r in client.list_runs(project_name="my-rag-app", limit=100)],
+    feedback_key="user_rating"
+)
+</code></pre>
+<p>Set up LangSmith automations (in the UI) to alert via email or Slack when error rate exceeds a threshold or when latency p95 spikes.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Tracing slows down local development if the network is slow.</strong> LangSmith traces are sent asynchronously, so in theory they don't add latency. In practice, if the LangSmith API is slow or you're on a bad connection, you'll notice delays. Set <code>LANGCHAIN_TRACING_V2=false</code> in unit tests and only enable tracing in integration tests and production.</p>
+<p><strong>PII ends up in traces by default.</strong> Every input/output is stored. If your users send personal information, configure redaction before enabling tracing in production. Use the <code>hide_inputs</code>/<code>hide_outputs</code> options on <code>@traceable</code> decorators for sensitive spans, or implement a custom redaction callback.</p>
+<p><strong>Dataset drift makes old evals misleading.</strong> Evaluation datasets built from early production traffic may not represent current user behaviour. Refresh your dataset quarterly by sampling recent production traces, especially after product changes that attract new user segments.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/monitoring.html" style="color:var(--accent)">Observability</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ollama | GenAI Mindmap</title>
+  <meta name="description" content="One-command local LLM runner with a library of 100+ models, REST API compatible with OpenAI's format, and GPU acceleration out of the box. The fastest way to run open models on your own hardware." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Ollama" />
+  <meta property="og:description" content="One-command local LLM runner with a library of 100+ models, REST API compatible with OpenAI's format, and GPU acceleration out of the box. The fastest way to run open models on your own hardware." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/ollama.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/ollama.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Ollama | GenAI Mindmap",
+  "description": "One-command local LLM runner with a library of 100+ models, REST API compatible with OpenAI's format, and GPU acceleration out of the box. The fastest way to run open models on your own hardware.",
+  "url": "https://genai4a11.github.io/concepts/ollama.html",
+  "dateModified": "2026-03-24T20:43:07.777071",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Ollama | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/ollama.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #64748b;
+      --accent-dark: #475569;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#64748b 0%,#475569 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/serving.html" class="nav-back">← LLM Serving</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">LLM Serving</span>
+    <h1><em>Ollama</em></h1>
+    <p class="hero-sub">One-command local LLM runner with a library of 100+ models, REST API compatible with OpenAI's format, and GPU acceleration out of the box. The fastest way to run open models on your own hardware.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">1 command</div><div class="stat-label">Setup</div></div>
+      <div><div class="stat-num">100+ models</div><div class="stat-label">Library</div></div>
+      <div><div class="stat-num">OpenAI-compatible</div><div class="stat-label">REST API</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">What Ollama does</a></li>
+        <li><a href="#s2" data-num="02">Installation and first run</a></li>
+        <li><a href="#s3" data-num="03">REST API and Python client</a></li>
+        <li><a href="#s4" data-num="04">Model management</a></li>
+        <li><a href="#s5" data-num="05">Custom Modelfiles</a></li>
+        <li><a href="#s6" data-num="06">Performance tuning</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>What Ollama does</h2>
+<p>Ollama wraps llama.cpp (and other inference backends) in a user-friendly tool that handles model downloading, GPU acceleration, and serving behind a REST API. Instead of configuring CUDA drivers, quantisation settings, and inference parameters manually, you run <code>ollama run llama3</code> and have a working LLM in 60 seconds.</p>
+<p>The REST API is deliberately designed to be a drop-in replacement for the OpenAI API. The same Python code that calls <code>api.openai.com</code> can call <code>localhost:11434</code> with a different <code>base_url</code> — enabling development and testing against local models before incurring API costs in production.</p>
+<p>Ollama is the right tool when: you need total privacy (no data leaves your machine), you're developing offline, you want to avoid per-token costs during heavy development, or you need to serve open models in an on-premises enterprise environment.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Installation and first run</h2>
+<pre><code class="language-python"># macOS / Linux:
+# curl -fsSL https://ollama.com/install.sh | sh
+
+# Windows: download installer from ollama.com
+
+# Pull and run a model
+# ollama run llama3.2          # 3B model, fast on CPU
+# ollama run llama3.1:8b       # 8B, needs 8GB+ RAM
+# ollama run mistral            # 7B, good coding model
+# ollama run deepseek-r1:7b    # reasoning model
+
+# Server starts automatically; also accessible programmatically:
+import subprocess
+import requests
+
+# Check if Ollama is running
+def is_ollama_running() -> bool:
+    try:
+        r = requests.get("http://localhost:11434/api/tags", timeout=2)
+        return r.status_code == 200
+    except:
+        return False
+
+# Start Ollama server (if not already running as a service)
+if not is_ollama_running():
+    subprocess.Popen(["ollama", "serve"])
+    import time; time.sleep(2)
+
+# List available models
+models = requests.get("http://localhost:11434/api/tags").json()
+for m in models["models"]:
+    print(f"{m['name']}: {m['size'] / 1e9:.1f} GB")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>REST API and Python client</h2>
+<pre><code class="language-python"># Option 1: OpenAI SDK (drop-in replacement)
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:11434/v1",
+    api_key="ollama",  # required but ignored
+)
+
+response = client.chat.completions.create(
+    model="llama3.2",
+    messages=[{"role": "user", "content": "Write a Python decorator for retry logic."}],
+    temperature=0.7,
+)
+print(response.choices[0].message.content)
+
+# Option 2: Ollama Python library
+pip install ollama
+
+import ollama
+
+# Simple generation
+response = ollama.chat(
+    model="llama3.2",
+    messages=[{"role": "user", "content": "Explain GQA in 2 sentences."}]
+)
+print(response["message"]["content"])
+
+# Streaming
+for chunk in ollama.chat(
+    model="mistral",
+    messages=[{"role": "user", "content": "Write a haiku about neural networks."}],
+    stream=True
+):
+    print(chunk["message"]["content"], end="", flush=True)
+
+# Embeddings (for local RAG)
+embed_response = ollama.embeddings(
+    model="nomic-embed-text",
+    prompt="The attention mechanism computes weighted sums of values."
+)
+vector = embed_response["embedding"]  # 768-dimensional float list
+print(f"Embedding dim: {len(vector)}")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Model management</h2>
+<pre><code class="language-python">import ollama
+
+# Pull a model (downloads if not present)
+ollama.pull("llama3.1:8b")
+
+# List local models
+models = ollama.list()
+for m in models["models"]:
+    size_gb = m["size"] / 1e9
+    print(f"{m['name']}: {size_gb:.1f} GB, modified {m['modified_at'][:10]}")
+
+# Delete a model to free disk space
+ollama.delete("llama3:latest")
+
+# Copy a model (create an alias)
+ollama.copy("llama3.2", "my-custom-llama")
+
+# Show model details (architecture, parameters, context length)
+info = ollama.show("mistral")
+print(info["modelinfo"])
+
+# Popular models and their use cases:
+RECOMMENDED = {
+    "llama3.2:3b":     "Fast responses, low memory (3GB RAM)",
+    "llama3.1:8b":     "Good quality/speed balance (8GB RAM)",
+    "mistral:7b":      "Strong coding, instruction following (8GB RAM)",
+    "deepseek-r1:7b":  "Reasoning tasks, visible CoT (5GB RAM)",
+    "qwen2.5:7b":      "Multilingual, code generation (5GB RAM)",
+    "nomic-embed-text":"Embeddings for local RAG (274MB)",
+    "llava:7b":        "Vision + language tasks (5GB RAM)",
+}
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Custom Modelfiles</h2>
+<pre><code class="language-python"># Modelfiles let you customise models: system prompts, parameters, base model
+# Save as 'Modelfile' then run: ollama create my-model -f Modelfile
+
+MODELFILE_CONTENT = '''
+FROM llama3.2
+
+# Set a persistent system prompt
+SYSTEM &quot;&quot;&quot;
+You are a senior Python engineer at a fintech company.
+Always write type annotations. Prefer composition over inheritance.
+Include docstrings for all public functions.
+When reviewing code, check for: security vulnerabilities, edge cases, performance.
+&quot;&quot;&quot;
+
+# Model parameters
+PARAMETER temperature 0.1        # Low temp for consistent code output
+PARAMETER top_p 0.9
+PARAMETER num_ctx 8192           # Context window (tokens)
+PARAMETER num_predict 2048       # Max output tokens
+
+# Add example conversations to guide behaviour
+MESSAGE user Review this function: def divide(a, b): return a/b
+MESSAGE assistant The function lacks input validation. Here's an improved version:
+
+```python
+def divide(a: float, b: float) -> float:
+    &quot;&quot;&quot;Divide a by b, raising ValueError for zero division.
+
+    Args:
+        a: Dividend
+        b: Divisor (must be non-zero)
+
+    Returns:
+        The result of a / b
+
+    Raises:
+        ValueError: If b is zero
+    &quot;&quot;&quot;
+    if b == 0:
+        raise ValueError("Cannot divide by zero")
+    return a / b
+```
+'''
+
+# Write and create the model
+with open("/tmp/Modelfile", "w") as f:
+    f.write(MODELFILE_CONTENT)
+
+import subprocess
+subprocess.run(["ollama", "create", "python-reviewer", "-f", "/tmp/Modelfile"])
+
+# Now use your custom model
+response = ollama.chat(
+    model="python-reviewer",
+    messages=[{"role": "user", "content": "Review: def get_user(id): return db.query(f'SELECT * FROM users WHERE id={id}')"}]
+)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Performance tuning</h2>
+<pre><code class="language-python">import os
+
+# GPU layers — offload model layers to GPU for faster inference
+# Set via OLLAMA_GPU_LAYERS env var or in Modelfile:
+# PARAMETER num_gpu 35  (number of layers to offload; -1 = all)
+
+# Parallel requests — how many requests to handle simultaneously
+os.environ["OLLAMA_NUM_PARALLEL"] = "4"  # default 1
+
+# Context window — larger = more memory, slower
+os.environ["OLLAMA_MAX_LOADED_MODELS"] = "2"  # keep 2 models in memory
+
+# Benchmark a model's throughput
+import time
+
+def benchmark(model: str, prompt: str, runs: int = 5) -> dict:
+    times = []
+    token_counts = []
+
+    for _ in range(runs):
+        start = time.time()
+        response = ollama.generate(model=model, prompt=prompt)
+        elapsed = time.time() - start
+        times.append(elapsed)
+        token_counts.append(response.get("eval_count", 0))
+
+    avg_tokens = sum(token_counts) / len(token_counts)
+    avg_time = sum(times) / len(times)
+    return {
+        "model": model,
+        "avg_tokens_per_sec": avg_tokens / avg_time,
+        "avg_latency_s": avg_time,
+    }
+
+result = benchmark("llama3.2", "Write a Python hello world function.")
+print(f"{result['model']}: {result['avg_tokens_per_sec']:.1f} tok/s")
+
+# Typical throughput (approximate):
+# CPU only (M2 MacBook): 15-30 tok/s for 7B models
+# Single RTX 4090:       80-120 tok/s for 7B, 30-50 tok/s for 13B
+# Apple M3 Max:          50-80 tok/s for 7B models
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Cold start latency on first request.</strong> Ollama loads the model into memory on the first request after starting (or after the model was evicted). This can take 5–30 seconds for large models. Warm up the model by sending a dummy request on startup, and configure <code>OLLAMA_KEEP_ALIVE</code> to prevent eviction between requests (default is 5 minutes).</p>
+<p><strong>Context window is not automatically set to maximum.</strong> By default, Ollama uses 2048 tokens of context even if the model supports 128K. If you need long context, explicitly set <code>num_ctx</code> in your Modelfile or pass it in the request. Note that larger context requires proportionally more memory.</p>
+<p><strong>Quantised models have quality differences.</strong> When you run <code>ollama pull llama3.1:8b</code>, you get a Q4_K_M quantised version by default. This is noticeably worse on reasoning-heavy tasks than the FP16 model. For production use cases, benchmark the quantised vs full-precision versions on your specific task.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/serving.html" style="color:var(--accent)">LLM Serving</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

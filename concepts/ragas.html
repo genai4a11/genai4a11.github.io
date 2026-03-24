@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAGAS | GenAI Mindmap</title>
+  <meta name="description" content="Reference-free RAG evaluation framework measuring Faithfulness, Answer Relevance, Context Precision and Context Recall — using LLM judges instead of human annotations to score your pipeline at scale." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="RAGAS" />
+  <meta property="og:description" content="Reference-free RAG evaluation framework measuring Faithfulness, Answer Relevance, Context Precision and Context Recall — using LLM judges instead of human annotations to score your pipeline at scale." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/ragas.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/ragas.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "RAGAS | GenAI Mindmap",
+  "description": "Reference-free RAG evaluation framework measuring Faithfulness, Answer Relevance, Context Precision and Context Recall \u2014 using LLM judges instead of human annotations to score your pipeline at scale.",
+  "url": "https://genai4a11.github.io/concepts/ragas.html",
+  "dateModified": "2026-03-24T20:43:08.061416",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "RAGAS | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/ragas.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #8b5cf6;
+      --accent-dark: #7c3aed;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#8b5cf6 0%,#7c3aed 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/rag-eval.html" class="nav-back">← RAG Evaluation</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">RAG Evaluation</span>
+    <h1><em>RAGAS</em></h1>
+    <p class="hero-sub">Reference-free RAG evaluation framework measuring Faithfulness, Answer Relevance, Context Precision and Context Recall — using LLM judges instead of human annotations to score your pipeline at scale.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">4 core</div><div class="stat-label">Metrics</div></div>
+      <div><div class="stat-num">Reference-free</div><div class="stat-label">Evaluation</div></div>
+      <div><div class="stat-num">LLM-judged</div><div class="stat-label">Quality</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">What RAGAS measures</a></li>
+        <li><a href="#s2" data-num="02">The 4 core metrics explained</a></li>
+        <li><a href="#s3" data-num="03">Setting up RAGAS</a></li>
+        <li><a href="#s4" data-num="04">Evaluating a RAG pipeline end-to-end</a></li>
+        <li><a href="#s5" data-num="05">Interpreting and acting on scores</a></li>
+        <li><a href="#s6" data-num="06">Custom metrics</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>What RAGAS measures</h2>
+<p>Traditional NLP evaluation (BLEU, ROUGE) compares generated text to a reference answer — which requires expensive human-written ground truth for every test case. RAGAS flips this: it uses an LLM judge to evaluate quality dimensions directly, requiring only questions and the retrieved context + generated answer your pipeline produced.</p>
+<p>This means you can evaluate a RAG pipeline with just a list of realistic questions. No need to write expected answers by hand. The LLM judge (GPT-4, Claude, etc.) scores each response on the dimensions that actually matter for RAG: did the answer faithfully use the retrieved context? Was the right context retrieved? Does the answer actually address the question?</p>
+<p>RAGAS works at two levels: <strong>component evaluation</strong> (how good is your retriever? how good is your generator?) and <strong>end-to-end evaluation</strong> (how good is the full pipeline for real user questions?).</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>The 4 core metrics explained</h2>
+<p><strong>Faithfulness</strong>: Does the answer make only claims that are supported by the retrieved context? Measures hallucination. Score 0–1. An answer that invents facts not in the context scores low, even if those facts happen to be true.</p>
+<p><strong>Answer Relevance</strong>: Does the answer actually address the question asked? Measures if the answer is on-topic. Score 0–1. An answer that's factually correct but addresses a different question scores low.</p>
+<p><strong>Context Precision</strong>: Are the retrieved chunks actually relevant to the question? Measures retrieval quality. Score 0–1. If you retrieve 5 chunks but only 1 is relevant, precision is low even if that 1 chunk is enough to answer.</p>
+<p><strong>Context Recall</strong> (requires reference answers): Did the retrieval find all the information needed to answer? Measures retrieval coverage. Needs ground-truth answers to compare against. Score 0–1.</p>
+<p>The three reference-free metrics (Faithfulness + Answer Relevance + Context Precision) form the "RAG Triad" you can run with zero annotation cost.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Setting up RAGAS</h2>
+<pre><code class="language-python">pip install ragas langchain-anthropic
+
+import os
+os.environ["ANTHROPIC_API_KEY"] = "sk-ant-..."
+
+from ragas import evaluate
+from ragas.metrics import (
+    faithfulness,
+    answer_relevancy,
+    context_precision,
+    context_recall,
+)
+from datasets import Dataset
+
+# RAGAS expects a HuggingFace Dataset with these columns:
+# - question: str
+# - answer: str       (generated by your RAG pipeline)
+# - contexts: list[str]  (chunks retrieved by your retriever)
+# - ground_truth: str  (optional — needed for context_recall)
+
+data = {
+    "question": [
+        "What is the capital of France?",
+        "How does attention work in transformers?",
+    ],
+    "answer": [
+        "The capital of France is Paris.",
+        "Attention computes a weighted sum of values based on query-key similarity.",
+    ],
+    "contexts": [
+        ["France is a country in Western Europe. Its capital city is Paris."],
+        ["The attention mechanism allows models to focus on relevant parts of the input by computing similarity scores between queries and keys, then using these scores as weights over values."],
+    ],
+    "ground_truth": [
+        "Paris is the capital of France.",
+        "Attention uses queries, keys, and values to compute weighted sums.",
+    ],
+}
+dataset = Dataset.from_dict(data)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Evaluating a RAG pipeline end-to-end</h2>
+<pre><code class="language-python">from ragas import evaluate
+from ragas.metrics import faithfulness, answer_relevancy, context_precision
+from ragas.llms import LangchainLLMWrapper
+from langchain_anthropic import ChatAnthropic
+
+# Use Claude as the judge LLM
+judge_llm = LangchainLLMWrapper(ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
+    temperature=0
+))
+
+# Evaluate — this calls the judge LLM once per metric per sample
+results = evaluate(
+    dataset=dataset,
+    metrics=[faithfulness, answer_relevancy, context_precision],
+    llm=judge_llm,
+)
+print(results)
+# {'faithfulness': 0.97, 'answer_relevancy': 0.89, 'context_precision': 0.83}
+
+# Get per-sample scores as a DataFrame
+df = results.to_pandas()
+print(df[["question", "faithfulness", "answer_relevancy", "context_precision"]])
+
+# Find your worst-performing questions
+worst = df.nsmallest(5, "faithfulness")
+print(worst[["question", "faithfulness", "answer_relevancy"]])
+</code></pre>
+<p>For real pipelines, generate the <code>answer</code> and <code>contexts</code> columns by running your actual RAG pipeline on each question before calling <code>evaluate()</code>. This lets you test any retriever/generator combination.</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Interpreting and acting on scores</h2>
+<p>Scores under 0.7 signal a serious problem. Scores 0.7–0.85 are typical for early-stage pipelines with room to improve. Above 0.9 across all metrics is production-ready for most use cases.</p>
+<p><strong>Low Faithfulness</strong> → your generator is hallucinating. Fix: add explicit instructions ("answer only using the provided context"), use a less creative model, or lower temperature. Low faithfulness despite good context means the LLM is ignoring retrieved evidence.</p>
+<p><strong>Low Answer Relevancy</strong> → your generated answers are off-topic or verbose. Fix: tighten your system prompt, add examples of good answers, reduce max_tokens to prevent rambling.</p>
+<p><strong>Low Context Precision</strong> → your retriever returns noisy chunks. Fix: increase similarity threshold, use a better embedding model, try hybrid retrieval (BM25 + vector), or add a re-ranker.</p>
+<p>Always segment your evaluation dataset by question type (factual lookup vs. reasoning vs. comparison). A single average score hides category-specific failures.</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Custom metrics</h2>
+<pre><code class="language-python">from ragas.metrics.base import MetricWithLLM
+from ragas.metrics import EvaluationMetric
+from dataclasses import dataclass, field
+
+# Example: measure if the answer cites specific data (custom requirement)
+@dataclass
+class CitationPresence(MetricWithLLM):
+    name: str = "citation_presence"
+
+    async def _ascore(self, row: dict, callbacks) -> float:
+        question = row["question"]
+        answer = row["answer"]
+
+        prompt = (
+            f"Does this answer include specific numbers, dates, or citations?
+"
+            f"Answer: {answer}
+
+"
+            f"Return only: 1 (yes) or 0 (no)"
+        )
+
+        response = await self.llm.agenerate([prompt])
+        text = response.generations[0][0].text.strip()
+        return 1.0 if "1" in text else 0.0
+
+citation_metric = CitationPresence()
+
+# Use with evaluate()
+results = evaluate(
+    dataset=dataset,
+    metrics=[faithfulness, citation_metric],
+    llm=judge_llm,
+)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>The judge LLM's quality sets the ceiling.</strong> If you use a weak judge (GPT-3.5, a small local model), scores become unreliable — the judge can't distinguish subtle faithfulness violations. Use Claude 3 Haiku or GPT-4o-mini minimum; use Claude 3.5 Sonnet for high-stakes evaluations.</p>
+<p><strong>Faithfulness doesn't catch all hallucinations.</strong> RAGAS checks if claims in the answer are supported by retrieved context. It doesn't check if the retrieved context itself is accurate. A confident wrong answer backed by wrong retrieved chunks gets a high faithfulness score.</p>
+<p><strong>Context Recall requires good ground truth.</strong> Writing accurate reference answers is the bottleneck. Bad ground truth (incomplete or ambiguous) produces misleading recall scores. Use domain experts to write at least 50–100 reference answers for your most important question types.</p>
+<p><strong>Evaluation cost adds up.</strong> Each metric calls the judge LLM once per sample. 1000 questions × 3 metrics = 3000 LLM calls. Budget for this in your CI/CD pipeline and use cheaper judge models for fast feedback loops.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/rag-eval.html" style="color:var(--accent)">RAG Evaluation</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
