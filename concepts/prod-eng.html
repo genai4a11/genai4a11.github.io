@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prod Engineering | GenAI Mindmap</title>
+  <meta name="description" content="Production engineering for AI: execution models, reliability patterns, traffic management, session state, and human oversight for production systems." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Prod Engineering" />
+  <meta property="og:description" content="The engineering layer between prototype and production: execution models, reliability patterns, traffic management, session state, and human oversight." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/prod-eng.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Prod Engineering" />
+  <meta name="twitter:description" content="The engineering layer between prototype and production." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/prod-eng.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      overflow-x: auto; margin: 1.2rem 0;
+    }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    thead { background: var(--indigo-lt); }
+    th, td {
+      padding: 0.7rem 0.9rem; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th { font-weight: 700; color: var(--indigo); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(99,102,241,0.04); }
+
+    /* ── CODE ── */
+    .example-box {
+      background: var(--code-bg);
+      color: #e2e8f0;
+      padding: 1rem 1.2rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      border: 1px solid rgba(99,102,241,0.2);
+      margin: 1rem 0;
+    }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Prod Engineering | GenAI Mindmap",
+  "description": "Production engineering for AI: execution models, reliability patterns, traffic management, session state, and human oversight for production systems.",
+  "url": "https://genai4a11.github.io/concepts/prod-eng.html",
+  "dateModified": "2026-03-24T13:18:19.563519",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Prod Engineering | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/prod-eng.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">System Architecture · Production</span>
+  <h1>Prod <em>Engineering</em></h1>
+  <p class="hero-sub">The engineering layer between prototype and production: execution models, reliability patterns, traffic management, session state, and human oversight.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">5</span>
+      <span class="stat-label">Execution models</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">99.9%</span>
+      <span class="stat-label">Uptime target</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Human-in-loop</span>
+      <span class="stat-label">Critical</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#prototype-prod" data-num="1">Prototype to production</a></li>
+      <li><a href="#execution" data-num="2">Execution models</a></li>
+      <li><a href="#reliability" data-num="3">Reliability patterns</a></li>
+      <li><a href="#traffic" data-num="4">Traffic & cost</a></li>
+      <li><a href="#state" data-num="5">State & sessions</a></li>
+      <li><a href="#oversight" data-num="6">Human oversight</a></li>
+      <li><a href="#tools" data-num="7">Patterns & examples</a></li>
+      <li><a href="#references" data-num="8">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. PROTOTYPE TO PROD ── -->
+  <div class="section-block" id="prototype-prod">
+    <div class="section-marker">01 — Challenge</div>
+    <h2>From Prototype to Production</h2>
+    <p>The journey from notebook to production is where AI systems fail most often. A working prototype is not a production system. Production requires: reliability under load, graceful failure handling, cost management, stateless design, observability, and human oversight.</p>
+
+    <h3>Key Differences</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Dimension</th><th>Prototype</th><th>Production</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Availability</strong></td>
+            <td>Works most of the time</td>
+            <td>99.9%+ SLA required</td>
+          </tr>
+          <tr>
+            <td><strong>Failure modes</strong></td>
+            <td>Crash = restart</td>
+            <td>Graceful degradation, fallbacks</td>
+          </tr>
+          <tr>
+            <td><strong>Latency</strong></td>
+            <td>Any latency acceptable</td>
+            <td>P99 latency budget (typically 200-2000ms)</td>
+          </tr>
+          <tr>
+            <td><strong>Throughput</strong></td>
+            <td>Handle current requests</td>
+            <td>Scale to 10x+ under load</td>
+          </tr>
+          <tr>
+            <td><strong>Cost</strong></td>
+            <td>Who cares?</td>
+            <td>Budget-aware scaling, cost per request</td>
+          </tr>
+          <tr>
+            <td><strong>Observability</strong></td>
+            <td>Print statements</td>
+            <td>Structured logging, metrics, traces, alerts</td>
+          </tr>
+          <tr>
+            <td><strong>Testing</strong></td>
+            <td>Manual spot checks</td>
+            <td>Automated testing, canary rollouts</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 1.5rem;">The biggest shock for ML engineers moving to production is discovering that model accuracy isn't the main problem. Reliability is.</p>
+  </div>
+
+  <!-- ── 2. EXECUTION MODELS ── -->
+  <div class="section-block" id="execution">
+    <div class="section-marker">02 — Architecture</div>
+    <h2>Execution Models: Sync, Async, Streaming, Batch</h2>
+    <p>Different use cases require different execution patterns. Each has tradeoffs in latency, throughput, and complexity.</p>
+
+    <h3>Synchronous (Blocking)</h3>
+    <p><strong>User waits for response.</strong> Request → Model inference → Response. Simple but scales poorly. Suitable for: chatbots, real-time classification, low-latency requirements.</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">P99 latency: sub-100ms for language models is rare. Expect 200-2000ms.</li>
+      <li style="margin: 0.5rem 0;">Concurrency limit: each GPU can handle 1-10 concurrent requests (depends on batch size).</li>
+      <li style="margin: 0.5rem 0;">Better approach: queue requests, batch them, return results via webhook.</li>
+    </ul>
+
+    <h3>Asynchronous (Queue-based)</h3>
+    <p><strong>Request is queued, user is notified later.</strong> Request → Queue → Worker pool → Callback. Decouples producer and consumer. Good for: document processing, batch recommendations, report generation.</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">Throughput: much higher (20-100x) because of batching efficiency.</li>
+      <li style="margin: 0.5rem 0;">Latency: can be minutes or hours. Requires callback mechanism (webhook, polling).</li>
+      <li style="margin: 0.5rem 0;">Tooling: Celery, Bull, SQS + Lambda, Kafka consumers.</li>
+    </ul>
+
+    <h3>Streaming</h3>
+    <p><strong>Continuous token-by-token output.</strong> Client receives partial results as they're generated. Essential for: LLM chat, any generative task. Dramatically improves perceived latency.</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">User sees first token in ~100ms instead of waiting 3000ms for full response.</li>
+      <li style="margin: 0.5rem 0;">Requires HTTP streaming (Server-Sent Events) or WebSocket.</li>
+      <li style="margin: 0.5rem 0;">Most LLM APIs (OpenAI, Anthropic) support streaming.</li>
+    </ul>
+
+    <h3>Batch Processing</h3>
+    <p><strong>Process many items at once on schedule.</strong> Suitable for: periodic model scoring, feature generation, nightly reranking. Lowest cost per request.</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">Latency: minutes to hours. Results stored in database or file system.</li>
+      <li style="margin: 0.5rem 0;">Throughput: maximum, because of GPU/CPU batching efficiency.</li>
+      <li style="margin: 0.5rem 0;">Cost: minimum per request.</li>
+    </ul>
+
+    <h3>Example: Retry Pattern</h3>
+    <p>Production systems must handle transient failures (network hiccups, rate limits, temporary service outages). Implement exponential backoff retries:</p>
+
+    <div class="example-box">import logging
+import anthropic
+from datetime import datetime
+from functools import wraps
+import time
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def llm_call_with_retry(max_retries=3, backoff=2.0):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_retries):
+                start = time.time()
+                try:
+                    result = func(*args, **kwargs)
+                    latency_ms = (time.time() - start) * 1000
+                    logger.info(f"llm_call_success latency_ms={latency_ms:.0f} attempt={attempt}")
+                    return result
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        raise
+                    wait = backoff ** attempt
+                    logger.warning(f"llm_call_retry attempt={attempt} error={e} wait={wait}s")
+                    time.sleep(wait)
+        return wrapper
+    return decorator</div>
+  </div>
+
+  <!-- ── 3. RELIABILITY ── -->
+  <div class="section-block" id="reliability">
+    <div class="section-marker">03 — Resilience</div>
+    <h2>Reliability Patterns</h2>
+    <p>Production systems fail. Graceful degradation beats perfect failure modes.</p>
+
+    <h3>Retry with Backoff</h3>
+    <p>Transient failures often recover within milliseconds. Retry with exponential backoff: 100ms, 200ms, 400ms, 800ms, etc. Prevents cascading failures when upstream services flake.</p>
+
+    <h3>Circuit Breaker</h3>
+    <p>If an external service is failing, stop calling it and fail fast instead of burning up timeouts. Circuits have three states: closed (normal), open (failing, fast-fail), half-open (probe for recovery).</p>
+
+    <h3>Fallback Responses</h3>
+    <p>Always have a plan when a service fails. For recommendations: return popular items. For translations: return original text. For moderation: default to safe (block). Don't just error out.</p>
+
+    <h3>Bulkheads</h3>
+    <p>Isolate critical resources. If one model inference is slow, don't let it block other requests. Use separate thread pools, queues, or machines for different tasks.</p>
+
+    <h3>Timeouts</h3>
+    <p>Never wait forever. Set aggressive timeouts (100-2000ms). Better to fail fast than hang. Cascading timeouts are your enemy: if A→B→C each waits 30s, total is 90s.</p>
+
+    <h3>Load Shedding</h3>
+    <p>When overloaded, reject low-priority requests instead of degrading everything. Queue capacity is a feature, not a bug.</p>
+  </div>
+
+  <!-- ── 4. TRAFFIC & COST ── -->
+  <div class="section-block" id="traffic">
+    <div class="section-marker">04 — Efficiency</div>
+    <h2>Traffic Management & Cost Control</h2>
+    <p>As traffic grows, costs grow. LLM inference is expensive. A single call to Claude costs $0.0015-$0.10 depending on model. With millions of requests, this adds up fast.</p>
+
+    <h3>Cost Per Request</h3>
+    <p>Track and optimize:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Prompt tokens:</strong> Minimize context window. Reuse system prompts. Cache long documents.</li>
+      <li style="margin: 0.5rem 0;"><strong>Completion tokens:</strong> Set max_tokens to prevent runaway generations. Use smaller models when possible.</li>
+      <li style="margin: 0.5rem 0;"><strong>Cache misses:</strong> Prompt caching can reduce cost 10-100x. Use with long-context tasks (RAG, summarization).</li>
+      <li style="margin: 0.5rem 0;"><strong>Model selection:</strong> Cheaper models (Haiku, Llama-3-8B) are often fast enough. A/B test before committing to expensive models.</li>
+    </ul>
+
+    <h3>Traffic Scaling</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Horizontal scaling:</strong> Add more workers (containers, Lambda instances) as demand grows.</li>
+      <li style="margin: 0.5rem 0;"><strong>Vertical scaling:</strong> Use better hardware (GPUs, TPUs). Can hit capacity limits.</li>
+      <li style="margin: 0.5rem 0;"><strong>Predictive scaling:</strong> Scale before peak traffic (based on day-of-week, time-of-day patterns).</li>
+      <li style="margin: 0.5rem 0;"><strong>Rate limiting:</strong> Prevent abuse. Quotas per user, token bucket algorithms, sliding windows.</li>
+    </ul>
+
+    <h3>Cost vs. Quality Tradeoff</h3>
+    <p>Not every request needs the best model. Route intelligently:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">Simple questions → fast, cheap model (Haiku).</li>
+      <li style="margin: 0.5rem 0;">Complex reasoning → full model (Claude 3.5 Sonnet).</li>
+      <li style="margin: 0.5rem 0;">Uncertain cases → human review (not model at all).</li>
+    </ul>
+  </div>
+
+  <!-- ── 5. STATE & SESSIONS ── -->
+  <div class="section-block" id="state">
+    <div class="section-marker">05 — Statefulness</div>
+    <h2>State & Session Management</h2>
+    <p>Production systems must be stateless for horizontal scaling. Session data (conversation history, user preferences) must live outside the application server.</p>
+
+    <h3>Conversation State</h3>
+    <p>For stateful interactions (chatbots, multi-turn conversations), store session history in a database or cache, not in memory. Options:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Redis:</strong> Fast in-memory store. Good for sessions. Scales with master-slave replication.</li>
+      <li style="margin: 0.5rem 0;"><strong>PostgreSQL:</strong> Durable, transactional. Slower than Redis but more reliable.</li>
+      <li style="margin: 0.5rem 0;"><strong>DynamoDB:</strong> Serverless, scales automatically. No ops burden.</li>
+      <li style="margin: 0.5rem 0;"><strong>Vector databases:</strong> For RAG systems, store embeddings for quick retrieval.</li>
+    </ul>
+
+    <h3>Session Size</h3>
+    <p>Conversation history grows with each turn. Long conversations cause:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">Higher latency (more tokens to process).</li>
+      <li style="margin: 0.5rem 0;">Higher cost (proportional to prompt token count).</li>
+      <li style="margin: 0.5rem 0;">Storage bloat (millions of conversations).</li>
+    </ul>
+
+    <p style="margin-top: 1rem;">Solution: Summarization. Periodically compress old messages into a summary, discarding originals. Trade memory for one model call.</p>
+
+    <h3>Idempotency</h3>
+    <p>If a request is retried (due to network failure), it should produce the same result. Use idempotency keys: client provides a unique ID, server deduplicates.</p>
+  </div>
+
+  <!-- ── 6. HUMAN OVERSIGHT ── -->
+  <div class="section-block" id="oversight">
+    <div class="section-marker">06 — Control</div>
+    <h2>Human Oversight Loops</h2>
+    <p>AI systems make mistakes. Building human oversight into the loop is not a limitation—it's essential for safety and quality.</p>
+
+    <h3>Common Patterns</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>Review before publish:</strong> Human approves before output goes to users. Works for small volumes (support tickets, content moderation).</li>
+      <li style="margin: 0.5rem 0;"><strong>Review after fact:</strong> System publishes, humans spot-check later. Catches systematic failures (bias, accuracy drift).</li>
+      <li style="margin: 0.5rem 0;"><strong>Escalation:</strong> System handles simple cases, humans handle hard ones. Reduces workload (80/20 rule).</li>
+      <li style="margin: 0.5rem 0;"><strong>Feedback loops:</strong> Users thumbs-up/down responses. Train models to predict user satisfaction.</li>
+      <li style="margin: 0.5rem 0;"><strong>Uncertainty routing:</strong> High-confidence predictions pass through. Borderline cases → human review.</li>
+    </ul>
+
+    <h3>Building Effective Workflows</h3>
+    <p>Make human oversight easy and attractive:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">Show confidence scores. Humans approve 95% confident, review 70%, reject 50%.</li>
+      <li style="margin: 0.5rem 0;">Provide context. Show source documents, similar past cases, model reasoning.</li>
+      <li style="margin: 0.5rem 0;">Make actions fast. One-click approve/reject. No forms.</li>
+      <li style="margin: 0.5rem 0;">Measure quality. How often do humans agree with the model? Track and improve.</li>
+    </ul>
+  </div>
+
+  <!-- ── 7. TOOLS & PATTERNS ── -->
+  <div class="section-block" id="tools">
+    <div class="section-marker">07 — Ecosystem</div>
+    <h2>Production Tools & Infrastructure</h2>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-name">Modal</div>
+        <div class="tool-category">Serverless GPU</div>
+        <div class="tool-desc">Deploy Python functions as serverless endpoints. Auto-scales, pay-per-use. Great for models.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Ray Serve</div>
+        <div class="tool-category">Model Serving</div>
+        <div class="tool-desc">Serve models at scale. Batching, versioning, A/B testing built-in. Open source.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">vLLM</div>
+        <div class="tool-category">LLM Inference</div>
+        <div class="tool-desc">Fast LLM serving. Paged attention, KV cache optimization. SOTA performance.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">BentoML</div>
+        <div class="tool-category">Model Packaging</div>
+        <div class="tool-desc">Package models as versioned services. Deploy anywhere (cloud, edge, on-prem).</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Kubernetes</div>
+        <div class="tool-category">Orchestration</div>
+        <div class="tool-desc">Industry standard for container orchestration. Complex but powerful.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Docker</div>
+        <div class="tool-category">Containerization</div>
+        <div class="tool-desc">Package models + dependencies as images. Reproducible, portable.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Prometheus</div>
+        <div class="tool-category">Metrics</div>
+        <div class="tool-desc">Time-series metrics database. Scrape endpoints, set alerts.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Datadog</div>
+        <div class="tool-category">Monitoring</div>
+        <div class="tool-desc">Full-stack monitoring. Logs, traces, metrics, APM. Comprehensive.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Temporal</div>
+        <div class="tool-category">Workflows</div>
+        <div class="tool-desc">Durable async workflows. Survives restarts, handles retries, auditable.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">OpenTelemetry</div>
+        <div class="tool-category">Observability</div>
+        <div class="tool-desc">Standard instrumentation for logs, traces, metrics. Vendor-agnostic.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHILD CLUSTERS ── -->
+  <div class="section-block">
+    <div class="section-marker">08 — Related Topics</div>
+    <h2>Deep Dive into Subclusters</h2>
+    <p>Production engineering breaks into specialized domains:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.7rem 0;"><strong><a href="./execution-models.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Execution Models</a>:</strong> Sync vs async, streaming, batch processing, request queuing.</li>
+      <li style="margin: 0.7rem 0;"><strong><a href="./reliability.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Reliability Patterns</a>:</strong> Retries, circuit breakers, fallbacks, bulkheads, timeouts.</li>
+      <li style="margin: 0.7rem 0;"><strong><a href="./traffic-cost.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Traffic & Cost</a>:</strong> Scaling, rate limiting, cost optimization, model routing.</li>
+      <li style="margin: 0.7rem 0;"><strong><a href="./state-sessions.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">State & Sessions</a>:</strong> Session storage, conversation history, idempotency, stateless design.</li>
+      <li style="margin: 0.7rem 0;"><strong><a href="./human-oversight.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Human Oversight</a>:</strong> Review workflows, escalation, uncertainty routing, feedback loops.</li>
+    </ul>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">09 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Key Papers &amp; Reports</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Sculley, D. et al. (2015).
+        <em>Hidden Technical Debt in Machine Learning Systems.</em>
+        NeurIPS. —
+        <a href="https://arxiv.org/abs/1503.04811" target="_blank">arxiv.org/abs/1503.04811 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Breck, E. et al. (2016).
+        <em>The ML Test Score: A Rubric for ML Production Readiness and Technical Debt Reduction.</em>
+        IEEE BigData. —
+        <a href="https://arxiv.org/abs/1605.02874" target="_blank">arxiv.org/abs/1605.02874 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> vLLM documentation. <a href="https://docs.vllm.ai/" target="_blank">docs.vllm.ai ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Ray Serve guide. <a href="https://docs.ray.io/en/latest/serve/" target="_blank">ray.io/serve ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> OpenTelemetry. <a href="https://opentelemetry.io/docs/" target="_blank">opentelemetry.io/docs ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> Site Reliability Engineering book. <a href="https://sre.google/books/" target="_blank">sre.google/books ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Chip Huyen. (2022). <em>ML Systems Design Interview.</em> —
+        <a href="https://huyenchip.com/ml-systems-design/" target="_blank">huyenchip.com ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Jeff Dean. (2021). <em>Systems for Machine Learning: Operations and Deployment at Scale.</em> —
+        <a href="https://ctuning.org/cms/index.html" target="_blank">ctuning.org ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <a class="concept-nav-prev" href="inference-optimization.html">← Inference Optimization</a>
+  <span class="concept-nav-cat">Production Engineering</span>
+  <a class="concept-nav-next" href="execution-models.html">→ Execution Models</a>
+</nav>
+</body>
+</html>

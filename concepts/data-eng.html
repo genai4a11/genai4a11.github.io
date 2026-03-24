@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Engineering | GenAI Mindmap</title>
+  <meta name="description" content="Data engineering for AI systems: ingestion pipelines, metadata design, labeling, synthetic data, versioning, and data contracts that make the difference in production." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Data Engineering" />
+  <meta property="og:description" content="The data layer that makes or breaks AI systems: ingestion pipelines, metadata design, labeling, synthetic data, versioning, and data contracts." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/data-eng.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Data Engineering" />
+  <meta name="twitter:description" content="The data layer that makes or breaks AI systems." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/data-eng.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-Y9590EJKQX');
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      overflow-x: auto; margin: 1.2rem 0;
+    }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    thead { background: var(--indigo-lt); }
+    th, td {
+      padding: 0.7rem 0.9rem; text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th { font-weight: 700; color: var(--indigo); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(99,102,241,0.04); }
+
+    /* ── CODE ── */
+    .example-box {
+      background: var(--code-bg);
+      color: #e2e8f0;
+      padding: 1rem 1.2rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      border: 1px solid rgba(99,102,241,0.2);
+      margin: 1rem 0;
+    }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Data Engineering | GenAI Mindmap",
+  "description": "Data engineering for AI systems: ingestion pipelines, metadata design, labeling, synthetic data, versioning, and data contracts that make the difference in production.",
+  "url": "https://genai4a11.github.io/concepts/data-eng.html",
+  "dateModified": "2026-03-24T13:18:18.290727",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Data Engineering | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/data-eng.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">System Architecture · Building</span>
+  <h1>Data <em>Engineering</em></h1>
+  <p class="hero-sub">The data layer that makes or breaks AI systems: ingestion pipelines, metadata design, labeling, synthetic data, versioning, and data contracts.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">5</span>
+      <span class="stat-label">Pipeline stages</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Quality</span>
+      <span class="stat-label">Beats models</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Govern</span>
+      <span class="stat-label">Your data</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-data" data-num="1">Why data engineering matters</a></li>
+      <li><a href="#pipeline" data-num="2">5-stage pipeline</a></li>
+      <li><a href="#ingestion" data-num="3">Ingestion & cleaning</a></li>
+      <li><a href="#labeling" data-num="4">Labeling & annotation</a></li>
+      <li><a href="#versioning" data-num="5">Versioning & governance</a></li>
+      <li><a href="#antipatterns" data-num="6">Common pitfalls</a></li>
+      <li><a href="#tools" data-num="7">Ecosystem tools</a></li>
+      <li><a href="#references" data-num="8">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY DATA ENGINEERING ── -->
+  <div class="section-block" id="why-data">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>Why Data Engineering Matters</h2>
+    <p>Every machine learning system is only as good as its underlying data. In production AI systems, data quality issues account for more failures than model defects. Yet data engineering is systematically overlooked in tutorials and courses that focus on architectures and training techniques.</p>
+
+    <h3>The Data Quality Principle</h3>
+    <p>A perfect model on bad data beats a bad model on perfect data. The inverse is not true: good data can recover from mediocre models through retraining. Bad data cannot be recovered from—it compounds through the system.</p>
+
+    <h3>The Five-Stage Pipeline</h3>
+    <p>Data engineering for AI breaks down into five core stages:</p>
+
+    <div class="workflow">
+      <div class="workflow-step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Ingestion:</strong> Collect raw data from sources (APIs, databases, documents, sensors, web). Handle heterogeneous formats, incomplete records, and inconsistent schemas.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Cleaning & normalization:</strong> Remove duplicates, standardize formats, handle missing values, filter outliers. Establish quality thresholds.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Labeling & annotation:</strong> Assign ground truth labels for supervised learning. Manage labeling workflows, track annotator disagreement, measure label quality.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Versioning:</strong> Track dataset snapshots, record schema changes, maintain audit trails. Link datasets to model versions.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">5</div>
+        <div class="step-text"><strong>Governance & contracts:</strong> Define data ownership, lineage, and quality guarantees. Establish data contracts between teams.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. INGESTION PIPELINE ── -->
+  <div class="section-block" id="ingestion">
+    <div class="section-marker">02 — Collection</div>
+    <h2>Ingestion & Cleaning Pipelines</h2>
+    <p>Data ingestion is the critical first stage. Real-world data is messy: documents are unstructured, databases have schema drift, APIs have rate limits, and logs contain mixed formats. A robust ingestion layer normalizes everything into standardized, versioned datasets.</p>
+
+    <h3>Source Types</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Source</th><th>Challenge</th><th>Typical tools</th><th>Frequency</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Documents (PDF, Word, HTML)</strong></td>
+            <td>Format variance, layout complexity</td>
+            <td>Docling, LangChain loaders, Trafilatura</td>
+            <td>Batch or incremental</td>
+          </tr>
+          <tr>
+            <td><strong>Databases</strong></td>
+            <td>Schema evolution, sync at scale</td>
+            <td>SQLAlchemy, Fivetran, Airbyte</td>
+            <td>Incremental, CDC</td>
+          </tr>
+          <tr>
+            <td><strong>REST/GraphQL APIs</strong></td>
+            <td>Rate limits, pagination, auth</td>
+            <td>httpx, requests, LangChain connectors</td>
+            <td>Batch or streaming</td>
+          </tr>
+          <tr>
+            <td><strong>Event streams</strong></td>
+            <td>Volume, ordering, late arrivals</td>
+            <td>Kafka, Kinesis, Pub/Sub</td>
+            <td>Real-time streaming</td>
+          </tr>
+          <tr>
+            <td><strong>Unstructured text/images</strong></td>
+            <td>Metadata extraction, preprocessing</td>
+            <td>Custom parsers, embedding APIs</td>
+            <td>Batch or incremental</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Building a Robust Ingestion Layer</h3>
+    <p>A production ingestion system requires error handling, retry logic, idempotency, and observability. Here's a pattern for building versioned datasets from raw sources:</p>
+
+    <div class="example-box">from datasets import load_dataset, DatasetDict
+from pathlib import Path
+import json
+
+def build_training_dataset(raw_dir: str, output_path: str) -> DatasetDict:
+    """Build a versioned, split dataset from raw files."""
+    records = []
+    for p in Path(raw_dir).glob("*.jsonl"):
+        with open(p) as f:
+            records.extend(json.loads(l) for l in f)
+    
+    from datasets import Dataset
+    ds = Dataset.from_list(records)
+    ds = ds.filter(lambda x: len(x["text"]) > 50)  # quality filter
+    splits = ds.train_test_split(test_size=0.1, seed=42)
+    splits.save_to_disk(output_path)
+    return splits</div>
+
+    <h3>Anti-Patterns</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>No idempotency:</strong> Running ingestion twice creates duplicates. Use deduplication keys and checksums.</li>
+      <li style="margin: 0.5rem 0;"><strong>Silent failures:</strong> Partial ingestion runs silently corrupt datasets. Log all errors and validate completeness.</li>
+      <li style="margin: 0.5rem 0;"><strong>Lossy normalization:</strong> Aggressive cleaning (lowercasing, removing punctuation) loses signal. Keep raw text and normalized variants separately.</li>
+      <li style="margin: 0.5rem 0;"><strong>No schema enforcement:</strong> Drifting schemas lead to quiet errors downstream. Use schema validation at ingestion.</li>
+    </ul>
+  </div>
+
+  <!-- ── 3. LABELING ── -->
+  <div class="section-block" id="labeling">
+    <div class="section-marker">03 — Annotation</div>
+    <h2>Labeling & Quality Management</h2>
+    <p>High-quality labels are the foundation of supervised learning. Labeling is labor-intensive, error-prone, and bottlenecked by human annotators. Managing labeling workflows requires infrastructure for task distribution, quality control, and disagreement resolution.</p>
+
+    <h3>Labeling Strategies</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Strategy</th><th>Cost</th><th>Quality</th><th>Speed</th><th>Use case</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Crowdsourcing</strong></td>
+            <td>Low</td>
+            <td>Variable</td>
+            <td>Fast</td>
+            <td>Large datasets, simple tasks</td>
+          </tr>
+          <tr>
+            <td><strong>Expert annotation</strong></td>
+            <td>High</td>
+            <td>Excellent</td>
+            <td>Slow</td>
+            <td>Complex tasks, medical/legal domains</td>
+          </tr>
+          <tr>
+            <td><strong>Weak supervision</strong></td>
+            <td>Very low</td>
+            <td>Moderate</td>
+            <td>Instant</td>
+            <td>Programmatic rules, distant supervision</td>
+          </tr>
+          <tr>
+            <td><strong>Active learning</strong></td>
+            <td>Medium</td>
+            <td>High</td>
+            <td>Iterative</td>
+            <td>When labeling budget is tight</td>
+          </tr>
+          <tr>
+            <td><strong>Semi-supervised</strong></td>
+            <td>Low</td>
+            <td>Good</td>
+            <td>Medium</td>
+            <td>Bootstrap training with unlabeled data</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Quality Control Metrics</h3>
+    <p>Always measure labeling quality. Inter-annotator agreement (Cohen's kappa) quantifies disagreement. Disagreement often reveals label ambiguity—fix the label definition, not the annotators.</p>
+
+    <h3>Tools for Labeling Workflows</h3>
+    <p>Use specialized labeling platforms to manage annotators, distribute work, and track quality. Common options include Label Studio (self-hosted), Argilla (self-hosted, strong for NLP), and commercial services like Labelbox and Scale AI.</p>
+  </div>
+
+  <!-- ── 4. SYNTHETIC DATA ── -->
+  <div class="section-block" id="versioning">
+    <div class="section-marker">04 — Versioning</div>
+    <h2>Data Versioning & Governance</h2>
+    <p>Datasets change over time: new records arrive, labels are corrected, schemas evolve. Without versioning, you cannot reproduce model training or debug failures. Data governance establishes ownership and lineage.</p>
+
+    <h3>Version Control for Data</h3>
+    <p>Git is designed for source code, not gigabyte-scale datasets. Use specialized data versioning systems:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;"><strong>DVC (Data Version Control):</strong> Git-like interface for data. Integrates with Git for metadata, stores large files in object storage (S3, Azure, GCS).</li>
+      <li style="margin: 0.5rem 0;"><strong>Hugging Face Datasets:</strong> Version datasets on Hub. Easy sharing and reproduction. Great for NLP work.</li>
+      <li style="margin: 0.5rem 0;"><strong>Pachyderm:</strong> Versioned data pipelines. Each pipeline stage outputs versioned datasets, enabling reproducibility.</li>
+      <li style="margin: 0.5rem 0;"><strong>MLflow Model Registry:</strong> Tracks model versions alongside data snapshots. Links training runs to dataset versions.</li>
+    </ul>
+
+    <h3>Data Contracts</h3>
+    <p>A data contract is a formal agreement between data producers and consumers about format, schema, and quality guarantees. Contracts prevent silent failures when upstream data changes.</p>
+
+    <h3>Governance Best Practices</h3>
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.5rem 0;">Assign clear ownership: who maintains this dataset?</li>
+      <li style="margin: 0.5rem 0;">Document lineage: where did this data come from?</li>
+      <li style="margin: 0.5rem 0;">Set SLAs: how fresh does data need to be?</li>
+      <li style="margin: 0.5rem 0;">Track usage: which models depend on this dataset?</li>
+      <li style="margin: 0.5rem 0;">Audit changes: who modified labels? When? Why?</li>
+    </ul>
+  </div>
+
+  <!-- ── 5. ANTI-PATTERNS ── -->
+  <div class="section-block" id="antipatterns">
+    <div class="section-marker">05 — Pitfalls</div>
+    <h2>Common Data Engineering Anti-Patterns</h2>
+
+    <h3>Data Leakage</h3>
+    <p>Training and test sets share information, inflating apparent model performance. Classic case: splitting on time but test data arrives before training data. Solution: define splits before any preprocessing.</p>
+
+    <h3>Label Noise</h3>
+    <p>Incorrect labels harm more than missing labels. A model can ignore missing features, but incorrect labels teach wrong patterns. Measure label quality. If noise is high, collect fewer high-quality labels instead of more noisy ones.</p>
+
+    <h3>Distribution Mismatch</h3>
+    <p>Training and production data differ in subtle ways: season, geography, user cohort, etc. This causes performance degradation. Solution: monitor production data drift and regularly retrain.</p>
+
+    <h3>Format Mismatch Between Stages</h3>
+    <p>Ingestion outputs CSV, labeling pipeline expects Parquet, training code expects TFRecord. Format conversions introduce bugs. Define a standard interchange format (JSON-L or Arrow) and stick to it.</p>
+
+    <h3>No Test Sets for Data</h3>
+    <p>You test code, but not data. Create held-out test sets before data engineering work begins. Run data quality checks on test sets before every training run.</p>
+  </div>
+
+  <!-- ── 6. TOOLS & ECOSYSTEM ── -->
+  <div class="section-block" id="tools">
+    <div class="section-marker">06 — Ecosystem</div>
+    <h2>Data Engineering Tools</h2>
+
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-name">DVC</div>
+        <div class="tool-category">Data Versioning</div>
+        <div class="tool-desc">Git for datasets and ML pipelines. Version control, reproducibility, experiment tracking.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Great Expectations</div>
+        <div class="tool-category">Data Quality</div>
+        <div class="tool-desc">Test data like code. Validate schemas, stats, distributions. Catch quality regressions early.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Label Studio</div>
+        <div class="tool-category">Annotation Platform</div>
+        <div class="tool-desc">Open-source labeling UI. Supports NLP, vision, audio. Self-hosted, extensible.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Argilla</div>
+        <div class="tool-category">Data Annotation</div>
+        <div class="tool-desc">Collaborative annotation for NLP and LLMs. Strong tooling for active learning.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Hugging Face Datasets</div>
+        <div class="tool-category">Dataset Hub</div>
+        <div class="tool-desc">1000+ ready-to-use datasets. Version control, streaming, cross-dataset operations.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Pachyderm</div>
+        <div class="tool-category">Data Pipelines</div>
+        <div class="tool-desc">Versioned, containerized data pipelines. Reproducible ML workflows.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Apache Airflow</div>
+        <div class="tool-category">Workflow Orchestration</div>
+        <div class="tool-desc">DAG-based pipeline orchestration. Mature, widely adopted in data teams.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Prefect</div>
+        <div class="tool-category">Workflow Orchestration</div>
+        <div class="tool-desc">Modern alternative to Airflow. Better UX, easier debugging, native async support.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Airbyte</div>
+        <div class="tool-category">Data Integration</div>
+        <div class="tool-desc">ELT pipelines. 300+ connectors. Syncs from databases, APIs, SaaS to data warehouses.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">dbt</div>
+        <div class="tool-category">Data Transformation</div>
+        <div class="tool-desc">Transform raw data in warehouse using SQL. Version control, testing, documentation.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Polars</div>
+        <div class="tool-category">Data Processing</div>
+        <div class="tool-desc">Fast, expressive dataframe library. Faster than Pandas, cleaner API.</div>
+      </div>
+
+      <div class="tool-card">
+        <div class="tool-name">Ray Data</div>
+        <div class="tool-category">Distributed Processing</div>
+        <div class="tool-desc">Distributed data processing. Map, shuffle, groupby at scale across clusters.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHILD CLUSTERS ── -->
+  <div class="section-block">
+    <div class="section-marker">07 — Related Topics</div>
+    <h2>Deep Dive into Subclusters</h2>
+    <p>Data engineering breaks down into specialized topics. Explore each for production systems:</p>
+
+    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
+      <li style="margin: 0.7rem 0;"><strong><a href="./data-ingestion.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Ingestion & Pipelines</a>:</strong> PDF parsing, web scraping, database connectors, API ingestion, incremental updates, pipeline orchestration.</li>
+      <li style="margin: 0.7rem 0;"><strong><a href="./data-labeling.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Labeling & Annotation</a>:</strong> Crowdsourcing, annotation platforms, quality metrics, active learning workflows.</li>
+      <li style="margin: 0.7rem 0;"><strong><a href="./synthetic-data.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Synthetic Data</a>:</strong> Generating training data, augmentation, few-shot learning, simulation-based approaches.</li>
+      <li style="margin: 0.7rem 0;"><strong><a href="./data-governance.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Data Governance</a>:</strong> Lineage tracking, quality contracts, compliance, ownership models.</li>
+      <li style="margin: 0.7rem 0;"><strong><a href="./data-centric.html" style="color: var(--indigo); text-decoration: none; font-weight: 500;">Data-Centric Training</a>:</strong> Prioritizing data over models, error analysis, continuous improvement.</li>
+    </ul>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Key Papers &amp; Reports</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Zha, D. et al. (2023).
+        <em>Data-Centric AI: Perspectives and Challenges.</em>
+        JMLR. —
+        <a href="https://arxiv.org/abs/2301.04819" target="_blank">arxiv.org/abs/2301.04819 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Polyzotis, N. et al. (2021).
+        <em>Data Validation for Machine Learning.</em>
+        VLDB. —
+        <a href="https://arxiv.org/abs/1906.00617" target="_blank">arxiv.org/abs/1906.00617 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Scandinaro, N. (2021).
+        <em>Software Engineering for Machine Learning: A Case Study.</em>
+        ICSE. —
+        <a href="https://arxiv.org/abs/1909.09090" target="_blank">arxiv.org/abs/1909.09090 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Documentation &amp; Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> DVC documentation. <a href="https://dvc.org/doc" target="_blank">dvc.org/doc ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Great Expectations. <a href="https://docs.greatexpectations.io/" target="_blank">docs.greatexpectations.io ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Hugging Face Datasets. <a href="https://huggingface.co/docs/datasets/" target="_blank">huggingface.co/docs/datasets ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> Label Studio. <a href="https://labelstud.io/guide/" target="_blank">labelstud.io/guide ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> MLOps.community data engineering resources. <a href="https://mlops.community/" target="_blank">mlops.community ↗</a></li>
+    </ul>
+
+    <div class="ref-group-title">Practitioner Writing</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Andrew Ng. (2021). <em>Data-centric AI is the trend.</em> —
+        <a href="https://www.deeplearning.ai/the-batch/data-centric-ai-is-the-trend/" target="_blank">deeplearning.ai ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Databricks. (2024). <em>Data Governance for AI: Building Trust in ML Systems.</em> —
+        <a href="https://databricks.com/" target="_blank">databricks.com ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Made With ML. (2023). <em>Data Engineering for ML.</em> —
+        <a href="https://madewithml.com/" target="_blank">madewithml.com ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <a class="concept-nav-prev" href="data-pipeline.html">← Data Pipeline Architecture</a>
+  <span class="concept-nav-cat">Data Engineering</span>
+  <a class="concept-nav-next" href="data-ingestion.html">→ Data Ingestion & Pipelines</a>
+</nav>
+</body>
+</html>

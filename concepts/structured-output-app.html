@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Structured Outputs | GenAI Mindmap</title>
+  <meta name="description" content="Extract typed, validated data from unstructured text using schemas and constrained generation." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Structured Outputs" />
+  <meta property="og:description" content="Extract typed, validated data from unstructured text using schemas and constrained generation." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/structured-output-app.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Structured Outputs" />
+  <meta name="twitter:description" content="Extract typed, validated data from unstructured text using schemas and constrained generation." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/structured-output-app.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Structured Outputs | GenAI Mindmap",
+  "description": "Extract typed, validated data from unstructured text using schemas and constrained generation.",
+  "url": "https://genai4a11.github.io/concepts/structured-output-app.html",
+  "dateModified": "2026-03-24T13:18:19.890052",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Structured Outputs | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/structured-output-app.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">APPLICATIONS & SYSTEMS</span>
+  <h1>Structured <em>Outputs</em></h1>
+  <p class="hero-sub">Extract typed, validated data from unstructured text using JSON schemas, constrained generation, and Pydantic validation.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">schema → LLM → parsing</span>
+      <span class="stat-label">the pattern</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">zero parsing errors</span>
+      <span class="stat-label">constraint-based guarantee</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Instructor & Outlines</span>
+      <span class="stat-label">popular libraries</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#problem-definition" data-num="1">The parsing problem</a></li>
+      <li><a href="#approaches" data-num="2">Three approaches</a></li>
+      <li><a href="#instructor-deep" data-num="3">Instructor library</a></li>
+      <li><a href="#outlines-overview" data-num="4">Outlines framework</a></li>
+      <li><a href="#pydantic-schemas" data-num="5">Pydantic schemas</a></li>
+      <li><a href="#error-handling" data-num="6">Error handling & retry</a></li>
+      <li><a href="#production-patterns" data-num="7">Production patterns</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. PROBLEM ── -->
+  <div class="section-block" id="problem-definition">
+    <div class="section-marker">01 — Context</div>
+    <h2>The Parsing Problem</h2>
+    <p>LLMs generate text token-by-token, unconstrained. For structured extraction — entity recognition, classification, JSON generation — we need guaranteed outputs matching a schema. Naive approach: ask the LLM to return JSON, parse it, pray it's valid. This fails regularly.</p>
+
+    <h3>Common Failures</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Failure mode</th><th>Frequency</th><th>Cause</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Invalid JSON (trailing comma, unquoted key)</td><td>5–15%</td><td>LLM doesn't enforce JSON spec</td></tr>
+          <tr><td>Missing required fields</td><td>3–10%</td><td>LLM forgets constraint</td></tr>
+          <tr><td>Wrong type (string instead of int)</td><td>2–8%</td><td>LLM guesses data type</td></tr>
+          <tr><td>Field name typo</td><td>1–5%</td><td>Variation in field names</td></tr>
+          <tr><td>Extra unexpected fields</td><td>2–7%</td><td>LLM adds context it thinks helpful</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Naive fix: add "return JSON" to prompt. Better: constrain generation. Best: guarantee schema compliance at token level.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> Structured output extraction is less about asking nicely, more about enforcing constraints at the generation level. Three approaches exist, with different tradeoffs.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. APPROACHES ── -->
+  <div class="section-block" id="approaches">
+    <div class="section-marker">02 — Solutions</div>
+    <h2>Three Approaches to Structured Generation</h2>
+    <p>Different techniques exist, ranging from simple to sophisticated. Choose based on robustness needs, latency budget, and what your model supports.</p>
+
+    <h3>Approach 1: Native JSON Mode (Simple)</h3>
+    <p><strong>How:</strong> Some LLMs (Claude, GPT-4) support a "JSON mode" flag that constrains output to valid JSON. <strong>Pros:</strong> Simple, fast, one API parameter. <strong>Cons:</strong> Only validates JSON format, not schema adherence. Still need client-side validation. <strong>Best for:</strong> Quick prototypes, high-confidence tasks.</p>
+
+    <h3>Approach 2: Post-Processing & Retry (Practical)</h3>
+    <p><strong>How:</strong> Generate response, validate against schema, retry if invalid. Use Instructor library for this. <strong>Pros:</strong> Works with any LLM, simple to implement, handles ambiguous schemas. <strong>Cons:</strong> Latency overhead (retries add 100–500ms), not guaranteed to succeed after N retries. <strong>Best for:</strong> Production systems where reliability matters and latency is acceptable.</p>
+
+    <h3>Approach 3: Constrained Decoding (Guaranteed)</h3>
+    <p><strong>How:</strong> Use Outlines or LMQL to enforce constraints at the token level. At each step, only allow tokens that keep output schema-valid. <strong>Pros:</strong> Guaranteed valid output, no retries needed. <strong>Cons:</strong> Requires access to model logits, only works with certain inference engines (vLLM, Ollama). <strong>Best for:</strong> Self-hosted models, strict schema requirements.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Approach</th><th>Latency</th><th>Schema guarantee</th><th>Ease of use</th><th>Model support</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Native JSON mode</td><td>Fast</td><td>Format only</td><td>Easiest</td><td>Claude, GPT-4</td></tr>
+          <tr><td>Post-processing + retry (Instructor)</td><td>Medium</td><td>With retries</td><td>Easy</td><td>All</td></tr>
+          <tr><td>Constrained decoding (Outlines)</td><td>Medium</td><td>Guaranteed</td><td>Medium</td><td>vLLM, local</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Recommendation:</strong> Start with Instructor + JSON mode. Fast to implement, covers 90% of cases. Move to Outlines if you need hard schema guarantees.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. INSTRUCTOR ── -->
+  <div class="section-block" id="instructor-deep">
+    <div class="section-marker">03 — Instructor Library</div>
+    <h2>Instructor: Structured Extraction at Scale</h2>
+    <p>Instructor is a Python library (works with many LLM APIs) that wraps LLMs and enforces Pydantic schema compliance. Define your data type as a Pydantic model, call the LLM, get back validated objects. Simple and powerful.</p>
+
+    <h3>Core Pattern</h3>
+    <p><strong>Step 1:</strong> Define Pydantic model (your schema). <strong>Step 2:</strong> Create instructor client. <strong>Step 3:</strong> Call LLM with response_model=YourModel. <strong>Step 4:</strong> Get back validated instance. <strong>Step 5:</strong> Retries happen transparently if validation fails.</p>
+
+    <div class="example-box">from instructor import Instructor
+from pydantic import BaseModel, Field
+from anthropic import Anthropic
+
+# Define schema
+class Person(BaseModel):
+    name: str = Field(description="Full name")
+    age: int = Field(description="Age in years, or None if unknown")
+    email: str | None = Field(description="Email address")
+    role: str = Field(description="Job title or role")
+
+# Create client (wraps Anthropic)
+client = Instructor(Anthropic())
+
+# Extract with guarantee of valid schema
+person = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=256,
+    response_model=Person,
+    messages=[{
+        "role": "user",
+        "content": "Extract: John Doe, 28, john@company.com, Software Engineer"
+    }]
+)
+
+# person is a validated Person instance
+print(person.name)  # "John Doe"
+print(person.age)   # 28
+print(person.role)  # "Software Engineer"
+    
+    <h3>Instructor Features</h3>
+    <p><strong>Automatic retry:</strong> If response fails validation, Instructor re-prompts with error message. Typical flow: 1 main call + 0–2 retries. <strong>Multiple models:</strong> Works with OpenAI, Anthropic, Cohere, local models. <strong>Async support:</strong> Full async/await support for concurrent extraction. <strong>Validation hooks:</strong> Use Pydantic field validators for custom logic.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Cost of retries:</strong> Each retry is a full LLM call (tokens). For 100k extraction tasks with 5% failure rate, expect ~5k retries = 5k extra API calls. Budget accordingly or tune prompt to reduce failures.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. OUTLINES ── -->
+  <div class="section-block" id="outlines-overview">
+    <div class="section-marker">04 — Constrained Decoding</div>
+    <h2>Outlines: Token-Level Schema Enforcement</h2>
+    <p>Outlines (formerly Guides) is a framework for constrained decoding. It modifies the LLM's generation to only produce tokens that maintain schema validity. Zero failures, by design.</p>
+
+    <h3>How Outlines Works</h3>
+    <p><strong>Tokenization:</strong> Convert schema (JSON Schema, Pydantic, regex) to finite automaton. <strong>Generation:</strong> At each token, mask invalid options based on automaton state. LLM can only choose valid tokens. <strong>Output:</strong> Generated text is guaranteed valid schema.</p>
+
+    <h3>Comparison with Instructor</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>Instructor</th><th>Outlines</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Validation method</td><td>Post-generation, with retries</td><td>Token-level constraints</td></tr>
+          <tr><td>Success rate</td><td>~95% (after retries)</td><td>100% (by design)</td></tr>
+          <tr><td>Latency per call</td><td>Single + retries</td><td>Slightly slower (masking overhead)</td></tr>
+          <tr><td>Model support</td><td>API models (OpenAI, Anthropic)</td><td>vLLM, Ollama (local models)</td></tr>
+          <tr><td>Ease of use</td><td>Very simple</td><td>Medium (requires inference engine)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Outlines limitation:</strong> Requires access to model logits and inference control. Only works with vLLM, Ollama, or custom inference servers. Can't use OpenAI or Anthropic APIs directly (they don't expose token masking).</span>
+    </div>
+  </div>
+
+  <!-- ── 5. PYDANTIC SCHEMAS ── -->
+  <div class="section-block" id="pydantic-schemas">
+    <div class="section-marker">05 — Schema Definition</div>
+    <h2>Pydantic Schemas for Extraction</h2>
+    <p>Whether using Instructor, Outlines, or native JSON mode, define schemas with Pydantic. It's the standard for Python-based LLM extraction.</p>
+
+    <h3>Writing Good Extraction Schemas</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Use descriptive fields <em>— Clarity helps LLM</em></h3>
+          <p>Field descriptions guide the LLM. Be explicit about what you want.</p>
+          <ul>
+            <li>Bad: name: str</li>
+            <li>Good: name: str = Field(description="Person's full name (first and last)")</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Use optional for ambiguous fields <em>— Reduce failures</em></h3>
+          <p>If a field might not exist, make it Optional. Reduces retry loops.</p>
+          <ul>
+            <li>phone: str | None = Field(default=None)</li>
+            <li>Allows LLM to omit if not found</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Use enums for categories <em>— Constrain choices</em></h3>
+          <p>For classification, use Enum instead of str.</p>
+          <ul>
+            <li>from enum import Enum</li>
+            <li>class Sentiment(str, Enum): positive = "positive" ...</li>
+            <li>Outlines can guarantee exact enum values</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Nest models for structure <em>— Compose schemas</em></h3>
+          <p>Complex extractions use nested models.</p>
+          <ul>
+            <li>class Address(BaseModel): street, city, country</li>
+            <li>class Person(BaseModel): name, address: Address</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="example-box">from pydantic import BaseModel, Field
+from enum import Enum
+from typing import Optional
+
+class Sentiment(str, Enum):
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+    NEUTRAL = "neutral"
+
+class ReviewExtraction(BaseModel):
+    product_name: str = Field(description="Name of product reviewed")
+    rating: int = Field(ge=1, le=5, description="1-5 star rating")
+    sentiment: Sentiment = Field(description="Overall sentiment")
+    summary: str = Field(description="2-3 sentence summary of review")
+    reviewer_name: Optional[str] = Field(default=None, description="Name of reviewer, if given")
+
+# Instructor guarantees ReviewExtraction instance
+# All fields present, rating 1-5, sentiment in enum, no extra fields
+    
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Schema design rule:</strong> When in doubt, make it Optional. An Optional field that's None is better than an exception. LLM can always omit uncertain data.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. ERROR HANDLING ── -->
+  <div class="section-block" id="error-handling">
+    <div class="section-marker">06 — Robustness</div>
+    <h2>Error Handling and Retry Strategies</h2>
+    <p>Even with Instructor's automatic retries, some extractions fail. Plan for it.</p>
+
+    <h3>Common Failure Patterns</h3>
+    <p><strong>LLM refusal:</strong> LLM declines to extract (safety filter). Handle gracefully. <strong>Ambiguous input:</strong> Text doesn't clearly contain requested data. Return Optional None instead of hallucinating. <strong>Timeout:</strong> Extraction takes >30s (stuck in retry loop). Implement max_retries. <strong>Malformed JSON:</strong> Rare with Instructor, but can happen with native JSON mode.</p>
+
+    <h3>Best Practices</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Scenario</th><th>Solution</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Extraction fails after N retries</td><td>Return partial result or None, log for review</td></tr>
+          <tr><td>Input is too short or ambiguous</td><td>Set optional fields to None; don't retry</td></tr>
+          <tr><td>LLM refuses to extract</td><td>Catch exception, fallback to manual/default</td></tr>
+          <tr><td>Want to debug failure</td><td>Log full prompt, response, error; analyze</td></tr>
+          <tr><td>Batch extraction with high volume</td><td>Set max_retries=2, timeout per task, skip problematic items</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Retry strategy:</strong> 1–2 retries is usually enough. Beyond that, diminishing returns. If it fails twice, it's likely the input is genuinely ambiguous. Better to return None and flag for human review than waste tokens on retries.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. PRODUCTION ── -->
+  <div class="section-block" id="production-patterns">
+    <div class="section-marker">07 — Scale & Production</div>
+    <h2>Production Extraction Patterns</h2>
+    <p>Structured extraction at scale requires monitoring, batching, and fallbacks.</p>
+
+    <h3>Patterns for Production</h3>
+    <p><strong>Batch extraction:</strong> Queue incoming tasks, extract in batches (10–100). Cheaper and faster than one-by-one. <strong>Caching:</strong> Same input → same output. Cache results for duplicate texts. <strong>Model selection:</strong> Use fast models (Haiku) for simple schemas, larger models (Sonnet) for complex ones. <strong>Monitoring:</strong> Track success rate, latency, cost per extraction. Alert on drops. <strong>Fallback:</strong> If extraction fails, either return None, use rule-based fallback, or queue for human review.</p>
+
+    <h3>Example: Production Extraction Pipeline</h3>
+    <p>1. Receive document. 2. Check cache. 3. If miss, queue extraction. 4. Call Instructor with timeout=10s, max_retries=2. 5. If success, cache result, return. 6. If fail after retries, log + route to human review queue. 7. Monitor: track success%, avg latency, cost/task.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Cost optimization:</strong> Structured extraction can be expensive at scale. 100k tasks × $0.001 per task = $100 base, plus retries. Optimize by: reducing schema complexity, using cheaper models where possible, caching aggressively.</span>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References and Related Concepts</h2>
+
+    <div class="ref-group-title">Child Concepts</div>
+    <ul class="ref-list">
+      <li><a href="instructor-app.html">Instructor</a> — Python library for structured extraction</li>
+      <li><a href="outlines-app.html">Outlines</a> — Constrained decoding framework</li>
+      <li><a href="marvin.html">Marvin</a> — High-level structured extraction library</li>
+    </ul>
+
+    <div class="ref-group-title">Related Concepts</div>
+    <ul class="ref-list">
+      <li><a href="output-control.html">Output Control</a> — Controlling LLM generation format</li>
+      <li><a href="function-calling.html">Function Calling</a> — Tool use and structured generation</li>
+      <li><a href="programmatic-prompting.html">Programmatic Prompting</a> — DSLs for LLM control</li>
+    </ul>
+
+    <div class="ref-group-title">Papers & Resources</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        <a href="https://github.com/jxnl/instructor" target="_blank">Instructor GitHub ↗</a> — Open source Python library
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        <a href="https://outlines-dev.github.io/" target="_blank">Outlines Documentation ↗</a> — Constrained generation framework
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Pydantic v2 Guide — Schema validation and field descriptions
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <span></span>
+  <span class="concept-nav-cat">Applications</span>
+  <a class="concept-nav-next" href="database-query.html">→ Text-to-Data</a>
+</nav>
+</body>
+</html>

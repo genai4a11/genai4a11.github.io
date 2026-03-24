@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building | GenAI Mindmap</title>
+  <meta name="description" content="How to build GenAI apps: prompting, RAG, agents, fine-tuning, data engineering, and dev tools." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Building" />
+  <meta property="og:description" content="How to build GenAI apps: prompting, RAG, agents, fine-tuning, data engineering, and dev tools." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/meta-building.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Building" />
+  <meta name="twitter:description" content="How to build GenAI apps: prompting, RAG, agents, fine-tuning, data engineering, and dev tools." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/meta-building.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 8px;
+      padding: 1rem 1rem 1rem 1.2rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid;
+      display: flex; gap: 0.8rem;
+      align-items: flex-start;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: -0.1rem; }
+    .callout.blue {
+      background: rgba(37,99,235,0.08);
+      border-color: var(--blue);
+    }
+    .callout.green {
+      background: rgba(34,197,94,0.08);
+      border-color: var(--green);
+    }
+    .callout.rose {
+      background: rgba(244,63,94,0.08);
+      border-color: var(--rose);
+    }
+    .callout.amber {
+      background: rgba(245,158,11,0.08);
+      border-color: var(--amber);
+    }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border: 1px solid rgba(226,232,240,0.15);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin: 1.2rem 0 1.5rem;
+      color: #e2e8f0;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* ── METHODS LIST ── */
+    .methods-list {
+      display: grid; grid-template-columns: 1fr;
+      gap: 1.2rem; margin: 1.5rem 0;
+    }
+    .method-card {
+      display: flex; gap: 1rem;
+      padding: 1.2rem; border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .method-num {
+      font-size: 1.8rem; font-weight: 800;
+      color: var(--indigo); flex-shrink: 0;
+      width: 40px; text-align: center;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+    .method-body p { margin: 0; font-size: 0.88rem; color: var(--muted); }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.8rem; text-align: left; font-weight: 600;
+    }
+    tbody td {
+      padding: 0.8rem; border-top: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) { background: var(--bg); }
+
+    /* ── REFERENCE LIST ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .ref-list li {
+      padding: 0.8rem; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: 0.88rem; line-height: 1.6;
+    }
+    .ref-badge {
+      display: inline-block; font-size: 0.65rem;
+      font-weight: 700; letter-spacing: 0.05em;
+      padding: 0.3rem 0.6rem; border-radius: 4px;
+      margin-right: 0.6rem; text-transform: uppercase;
+    }
+    .badge-paper { background: rgba(79,70,229,0.2); color: var(--indigo); }
+    .badge-blog { background: rgba(34,197,94,0.2); color: var(--green); }
+    .badge-docs { background: rgba(37,99,235,0.2); color: var(--blue); }
+    .ref-list a {
+      color: var(--indigo); text-decoration: none;
+    }
+    .ref-list a:hover { color: var(--blue); }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      max-width: 1040px; margin: 5rem auto 0;
+      padding: 2rem; text-align: center;
+      font-size: 0.88rem; color: var(--muted);
+      display: flex; gap: 2rem; justify-content: space-between; flex-wrap: wrap;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { color: var(--blue); }
+
+    .concept-nav {
+      position: sticky; bottom: 0; z-index: 100;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 0.8rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 50px; font-size: 0.88rem;
+    }
+    .concept-nav-cat {
+      color: #94a3b8;
+    }
+    .concept-nav-next {
+      color: var(--indigo); text-decoration: none;
+      font-weight: 500; transition: color 0.15s;
+    }
+    .concept-nav-next:hover { color: var(--sky); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .toc-list { grid-template-columns: 1fr; }
+      .page-wrap { padding: 2rem 1rem; }
+      .hero h1 { font-size: 1.5rem; }
+      .method-card { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Building | GenAI Mindmap",
+  "description": "How to build GenAI apps: prompting, RAG, agents, fine-tuning, data engineering, and dev tools.",
+  "url": "https://genai4a11.github.io/concepts/meta-building.html",
+  "dateModified": "2026-03-24T13:18:19.022661",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Building | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/meta-building.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+<nav>
+  <a class="nav-brand" href="../index.html">
+    <span class="dot">●</span> GenAI
+  </a>
+  <a class="nav-back" href="../index.html">← Mindmap</a>
+</nav>
+
+<div class="hero">
+  <span class="hero-tag">Core Techniques</span>
+  <h1>Building with <em>GenAI</em></h1>
+  <p class="hero-sub">Combining prompting, retrieval, agents, and fine-tuning into a working system. Learn how to choose the right tool for each problem.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">5</span>
+      <span class="stat-label">Building Blocks</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">1</span>
+      <span class="stat-label">Decision Framework</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+  <!-- ── TOC ── -->
+  <div class="toc-card">
+    <div class="toc-heading">On This Page</div>
+    <ul class="toc-list">
+      <li><a href="#overview" data-num="1">Overview</a></li>
+      <li><a href="#decision-tree" data-num="2">Decision Tree</a></li>
+      <li><a href="#five-blocks" data-num="3">Five Blocks</a></li>
+      <li><a href="#build-vs-buy" data-num="4">Build vs Buy</a></li>
+      <li><a href="#frameworks" data-num="5">Frameworks</a></li>
+      <li><a href="#integration" data-num="6">Integration</a></li>
+    </ul>
+  </div>
+
+  <!-- ── 1. OVERVIEW ── -->
+  <div class="section-block" id="overview">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>Building with GenAI: The 5 Core Blocks</h2>
+    <p>Most tutorials teach each GenAI technique in isolation: here's how to prompt, here's how to build RAG, here's how to build agents. But in practice, you rarely use just one technique. Real applications combine multiple blocks depending on the problem constraints. This page teaches you the decision framework for choosing between them and how they fit together.</p>
+    
+    <h3>The Five Building Blocks</h3>
+    <p><strong>Prompting</strong> is the foundation. Feed an LLM a task and get an answer. No external data, no tools, no loops. It's fast, cheap, and deterministic — but it only works for tasks the model can solve from its training data.</p>
+    <p><strong>Retrieval-Augmented Generation (RAG)</strong> solves the knowledge problem. When your task requires specific facts, documents, or domain data the model doesn't know, retrieve relevant context from a vector database or search index and inject it into the prompt. Now the model answers from facts, not from faulty memory.</p>
+    <p><strong>Agents</strong> solve the action problem. When the task requires multiple steps, external data, or decisions based on observation, give the LLM tools and let it call them in a loop. It reasons, acts, observes, and repeats until the goal is met.</p>
+    <p><strong>Fine-Tuning</strong> optimizes for task-specific performance. When prompting doesn't give enough accuracy, or when you need task-specific reasoning patterns or output formats, train the model on examples of correct behavior. This improves quality but costs time and data.</p>
+    <p><strong>Data Engineering</strong> is the glue. Clean, structured, labeled data feeds every technique above. Without good data, prompting fails, RAG retrieves garbage, agents make wrong decisions, and fine-tuning learns from noise.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key principle:</strong> Start with prompting. Only add complexity when prompting fails. Each layer (RAG, agents, fine-tuning) adds latency, cost, and operational burden. Use them only when necessary.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. DECISION TREE ── -->
+  <div class="section-block" id="decision-tree">
+    <div class="section-marker">02 — Strategy</div>
+    <h2>The GenAI Building Decision Tree</h2>
+    <p>Use this decision tree to choose the right combination of techniques for your problem. Answer each question in order and follow the path.</p>
+
+    <div class="example-box">START: Can prompting alone solve this?
+
+  YES? → Use prompting. Ship it.
+       (If the LLM knows enough facts to answer correctly, 
+        no RAG, no agents needed. Fast, cheap, done.)
+
+  NO? → Does the task need context injection?
+
+    YES? → Build RAG
+        (The LLM needs specific facts from your data.
+         Retrieve documents, inject into prompt.
+         LLM answers from facts, not hallucinations.)
+
+    NO? → Does the task need actions/tools?
+
+      YES? → Build Agents
+          (The task requires tools, external APIs, 
+           or steps that depend on observation.
+           Agent loops: reason → act → observe → repeat.)
+
+      NO? → Does the task need task-specific accuracy?
+
+        YES? → Fine-tune
+            (Prompting gives 70% accuracy, not enough.
+             Train on labeled examples of correct behavior.)
+
+        NO? → Data Engineering
+            (The problem is noisy, inconsistent data.
+             Clean, normalize, label. Then try prompting again.)
+        <h3>Reading the Tree</h3>
+    <p>Start at the top with "Can prompting alone solve this?" and follow branches down. Each decision eliminates options and narrows the solution. The tree encodes the principle: use the simplest approach that solves the problem. Never use agents when RAG works. Never fine-tune when prompting is sufficient.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Real-world example:</strong> Customer support. Can prompting answer FAQs? Probably. Add RAG if you need company-specific policies. Add agents if you need to look up customer accounts or create tickets. Fine-tune if accuracy matters more than speed. Data engineering if tickets are messy.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. FIVE BLOCKS ── -->
+  <div class="section-block" id="five-blocks">
+    <div class="section-marker">03 — Techniques</div>
+    <h2>The Five Building Blocks Explained</h2>
+    <p>Each block solves a specific class of problems. Know what each is for, when it works, and when it fails.</p>
+
+    <h3>1. Prompting</h3>
+    <p><strong>What:</strong> Feed a task to an LLM and get an answer. <strong>When to use:</strong> Task knowledge is in the model's training data, and answer depends only on reasoning or common knowledge. <strong>Examples:</strong> Summarizing text, answering trivia, drafting emails, classifying sentiment. <strong>Latency:</strong> One LLM call, ~100ms-1s. <strong>Cost:</strong> Low. <strong>Failure mode:</strong> Model doesn't know the facts, hallucinates.</p>
+
+    <h3>2. Retrieval-Augmented Generation (RAG)</h3>
+    <p><strong>What:</strong> Retrieve relevant documents from a database, inject them into the prompt, then let the LLM answer from that context. <strong>When to use:</strong> Task requires specific facts, policies, or domain data that aren't in the model's training data. <strong>Examples:</strong> Customer support, legal document Q&A, internal knowledge search, product documentation. <strong>Latency:</strong> Retrieval (~50-200ms) + LLM call (~100ms-1s). <strong>Cost:</strong> Moderate (vector DB lookups + LLM). <strong>Failure mode:</strong> Retriever doesn't find relevant documents, or documents don't answer the question.</p>
+
+    <h3>3. Agents</h3>
+    <p><strong>What:</strong> Give the LLM tools and let it decide when to use them. The agent loops: reason about task, call a tool, observe the result, repeat until done. <strong>When to use:</strong> Task requires multiple steps, external data that changes dynamically, or decisions based on intermediate results. <strong>Examples:</strong> Multi-step research, debugging code, booking travel, exploring a database. <strong>Latency:</strong> Multiple LLM calls (3-10x slower than single call). <strong>Cost:</strong> High (per-step LLM calls). <strong>Failure mode:</strong> Agent picks wrong tools, loops infinitely, or forgets context.</p>
+
+    <h3>4. Fine-Tuning</h3>
+    <p><strong>What:</strong> Train an LLM on examples of correct behavior for your specific task, then use the tuned model for inference. <strong>When to use:</strong> Prompting gives 60-80% accuracy and you need 90%+. Task has specific output format, tone, or reasoning pattern. <strong>Examples:</strong> Specialized classification, domain-specific content generation, output parsing. <strong>Latency:</strong> Same as prompting (~100ms-1s). <strong>Cost:</strong> High upfront (training), then low per-call. <strong>Failure mode:</strong> Not enough training data, model overfits to examples, training teaches wrong patterns.</p>
+
+    <h3>5. Data Engineering</h3>
+    <p><strong>What:</strong> Clean, validate, label, and structure your data so that prompting, RAG, and fine-tuning work better. <strong>When to use:</strong> Raw data is messy, incomplete, or inconsistent. You need reliable ground truth for evaluation or training. <strong>Examples:</strong> Cleaning customer records for fine-tuning, labeling examples for evaluation, extracting structured fields from unstructured text. <strong>Latency:</strong> Offline work, not part of inference. <strong>Cost:</strong> High (manual labeling or automation). <strong>Failure mode:</strong> Labels are wrong or biased, affecting all downstream tasks.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>The hidden cost:</strong> Data engineering often takes 60% of project time but is invisible until it's missing. Allocate time for data cleaning and labeling early, not as an afterthought.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. BUILD VS BUY ── -->
+  <div class="section-block" id="build-vs-buy">
+    <div class="section-marker">04 — Mindset</div>
+    <h2>Build vs Buy: When to Roll Your Own</h2>
+    <p>Every GenAI technique can be built from scratch or bought as a managed service. Know when each makes sense.</p>
+
+    <h3>Build Your Own</h3>
+    <p><strong>Prompting:</strong> Always build. Prompting is free and requires no infrastructure. <strong>RAG:</strong> Build if you have full control of documents and queries. Buy if you need commercial-grade retrieval, enterprise scaling, or managed updates. <strong>Agents:</strong> Build simple agents in-house using frameworks like LangGraph. Buy if you need multi-agent orchestration, human-in-the-loop, or production monitoring. <strong>Fine-tuning:</strong> Build if you have compute budget and 100+ labeled examples. Buy managed tuning (OpenAI, Anthropic) if you want hands-off training. <strong>Data engineering:</strong> Always build this in-house — it's domain-specific and iterative.</p>
+
+    <h3>Buy/Use a Service</h3>
+    <p>Managed services (LLamaIndex, Pinecone, LangChain+Platform, Anthropic Workbench) reduce operational overhead. They handle infrastructure, scaling, monitoring, and updates. Cost per request is higher, but total cost is often lower because you don't pay for engineering time and ops burden.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Decision rule:</strong> Build if it's core to your competitive advantage. Buy if it's a commodity. Most companies should buy RAG and use their own prompting/evaluation.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. FRAMEWORKS ── -->
+  <div class="section-block" id="frameworks">
+    <div class="section-marker">05 — Tools</div>
+    <h2>Dev Frameworks and Tools</h2>
+    <p>Frameworks wrap the five blocks into higher-level abstractions. They handle common patterns, reduce boilerplate, and add features like memory, monitoring, and multi-step pipelines.</p>
+
+    <h3>Multi-Purpose Frameworks</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3><a href="../concepts/framework_tools.html" style="color: var(--indigo); text-decoration: none;">LangChain</a></h3>
+          <p>Swiss Army knife for LLM applications. Components for prompts, chains, memory, agents, RAG. Best for rapid prototyping and building with many models.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3><a href="../concepts/framework_tools.html" style="color: var(--indigo); text-decoration: none;">LangGraph</a></h3>
+          <p>State machines for agents. Explicit control flow, human-in-the-loop, streaming. Better for production agents than basic LangChain.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3><a href="../concepts/framework_tools.html" style="color: var(--indigo); text-decoration: none;">LlamaIndex</a></h3>
+          <p>Purpose-built for RAG. Data loaders, indexing, retrieval, evaluation. Stronger than LangChain for production RAG systems.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3><a href="../concepts/framework_tools.html" style="color: var(--indigo); text-decoration: none;">DSPy</a></h3>
+          <p>Composable LLM pipelines with automatic optimization. Define what you want, DSPy optimizes prompts and fine-tunes models.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Framework selection:</strong> Start with prompting (no framework). Add LangChain when you need memory or chains. Graduate to LangGraph for agents, LlamaIndex for RAG. Don't over-engineer.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. INTEGRATION ── -->
+  <div class="section-block" id="integration">
+    <div class="section-marker">06 — Practice</div>
+    <h2>Integration: A Complete Example</h2>
+    <p>Here's how a real application combines multiple blocks. This is a code documentation Q&A system: user asks questions about code, system retrieves relevant files (RAG), then uses an agent to search docs and run code analysis, finally answers with citations.</p>
+
+    <div class="example-box">import anthropic
+from vector_db import retrieve_files
+from subprocess import run
+
+# Block 1: Set up prompting with context
+system_prompt = """You are a code documentation expert.
+Answer questions about our codebase accurately.
+Always cite the file and line number."""
+
+# Block 2: Set up RAG
+def get_context(query: str) -> list[str]:
+    # Retrieve relevant files from vector DB
+    return retrieve_files(query, top_k=5)
+
+# Block 3: Set up agent tools
+tools = [
+    {
+        'name': 'search_docs',
+        'description': 'Search documentation',
+        'input_schema': {'query': {'type': 'string'}}
+    },
+    {
+        'name': 'run_test',
+        'description': 'Run unit tests',
+        'input_schema': {'pattern': {'type': 'string'}}
+    }
+]
+
+# Block 4/5: Execute integrated pipeline
+def answer_question(user_question: str) -> str:
+    # Step 1: Retrieve context (RAG)
+    documents = get_context(user_question)
+    context_str = '\n'.join(documents)
+    
+    # Step 2: Set up agent with tools
+    client = anthropic.Anthropic()
+    messages = [
+        {'role': 'user', 'content': 
+         f'{user_question}\n\nRelevant files:\n{context_str}'}
+    ]
+    
+    # Step 3: Agent loop
+    while True:
+        resp = client.messages.create(
+            model='claude-opus-4-5',
+            max_tokens=1024,
+            system=system_prompt,
+            tools=tools,
+            messages=messages
+        )
+        
+        if resp.stop_reason == 'end_turn':
+            # Prompting succeeded
+            return next(
+                (b.text for b in resp.content if hasattr(b, 'text')),
+                'No answer'
+            )
+        
+        # Process tool calls (agent reasoning)
+        tool_results = []
+        for block in resp.content:
+            if block.type == 'tool_use':
+                if block.name == 'search_docs':
+                    result = get_context(block.input['query'])
+                elif block.name == 'run_test':
+                    result = run(['pytest', '-k',
+                                 block.input['pattern']]).stdout
+                tool_results.append({
+                    'type': 'tool_result',
+                    'tool_use_id': block.id,
+                    'content': str(result)
+                })
+        
+        # Feed back to agent
+        messages.append({'role': 'assistant', 'content': resp.content})
+        messages.append({'role': 'user', 'content': tool_results})
+
+# This combines all five blocks:
+# - Prompting: system prompt guides the LLM
+# - RAG: retrieve_files injects context
+# - Agents: agent loop with tools
+# - Data engineering: documents must be clean, indexed
+# - Fine-tuning: (optional) could train on Q&A pairs
+        <h3>How This Works</h3>
+    <p><strong>User asks:</strong> "How do I authenticate with the payment API?" <strong>RAG kicks in:</strong> Retrieves payment module files. <strong>Agent reasons:</strong> "I need more details about authentication patterns." <strong>Agent acts:</strong> Calls search_docs for "OAuth". <strong>Prompting concludes:</strong> LLM synthesizes answer from context and tool results. <strong>User gets:</strong> Answer with file citations.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Integration principle:</strong> Each block solves one problem. RAG solves "where is the data?", agents solve "what steps?", prompting solves "how to reason?". Combine them in order of simplicity, adding complexity only when needed.</span>
+    </div>
+  </div>
+
+  <!-- ── CHILD CLUSTERS ── -->
+  <div class="section-block">
+    <div class="section-marker">07 — Explore</div>
+    <h2>Deep Dives: Each Building Block</h2>
+    <p>Each technique deserves its own deep dive. Start with whichever block you're weakest on, then explore them in order of your application's complexity.</p>
+
+    <h3>Core Building Blocks</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3><a href="prompting.html" style="color: var(--indigo); text-decoration: none;">Prompting</a></h3>
+          <p>Prompt engineering, few-shot learning, chain-of-thought reasoning, and how to get the best results from an LLM without external data.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3><a href="rag.html" style="color: var(--indigo); text-decoration: none;">RAG</a></h3>
+          <p>Retrieval-augmented generation: chunking, embedding, vector search, ranking, and context injection for fact-based answers.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3><a href="agents.html" style="color: var(--indigo); text-decoration: none;">Agents</a></h3>
+          <p>Agent architecture: tool calling, ReAct loops, planning, memory, and frameworks for multi-step autonomous behavior.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3><a href="finetuning.html" style="color: var(--indigo); text-decoration: none;">Fine-Tuning</a></h3>
+          <p>Model adaptation: training procedures, data labeling, hyperparameter tuning, and when fine-tuning beats prompting.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">5</div>
+        <div class="method-body">
+          <h3><a href="data_eng.html" style="color: var(--indigo); text-decoration: none;">Data Engineering</a></h3>
+          <p>Data infrastructure: cleaning, labeling, versioning, and pipelines that make every other block work reliably.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Learning path:</strong> Prompting → RAG → Data Engineering → Agents → Fine-Tuning. Master prompting first. Data engineering fixes most problems. Agents and fine-tuning are for advanced use cases.</span>
+    </div>
+  </div>
+
+  <!-- ── PRODUCTION TIPS ── -->
+  <div class="section-block">
+    <h3>Production Checklist</h3>
+    <p>Before shipping a GenAI application, ensure you've covered these across all five blocks.</p>
+    
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Prompting:</strong> Version control your prompts. Test against edge cases. Monitor for model drift. <strong>RAG:</strong> Measure retrieval quality. Update docs when they change. Monitor retrieval latency. <strong>Agents:</strong> Set loop limits. Log every tool call. Monitor for infinite loops. <strong>Fine-tuning:</strong> Reserve 20% of data for evaluation. Monitor for overfitting. Retrain as data changes. <strong>Data:</strong> Establish labeling standards. Version datasets. Track data lineage.</span>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Core Concepts</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Anthropic.
+        <em>Building effective agents.</em> —
+        <a href="https://www.anthropic.com/research/building-effective-agents" target="_blank">Building effective agents ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Lewis, P. et al. (2020).
+        <em>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks.</em> —
+        <a href="https://arxiv.org/abs/2005.11401" target="_blank">arXiv:2005.11401 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Frameworks</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        LangChain.
+        <em>LangChain: Build LLM Applications.</em> —
+        <a href="https://python.langchain.com/" target="_blank">LangChain Docs ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        LangGraph.
+        <em>Agentic Frameworks.</em> —
+        <a href="https://langchain-ai.github.io/langgraph/" target="_blank">LangGraph Docs ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        LlamaIndex.
+        <em>Data Framework for LLM Applications.</em> —
+        <a href="https://www.llamaindex.ai/" target="_blank">LlamaIndex ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        DSPy.
+        <em>Programming with Language Models.</em> —
+        <a href="https://github.com/stanfordnlp/dspy" target="_blank">DSPy ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Learning Resources</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Gurnee, W. & Marks, S.
+        <em>Language Models Represent Beliefs: Optimizing for Alignment Improves Capabilities.</em> —
+        <a href="https://arxiv.org/abs/2406.06493" target="_blank">arXiv:2406.06493 ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <span></span>
+  <span class="concept-nav-cat">Building & Development</span>
+  <a class="concept-nav-next" href="prompting.html">→ Prompting</a>
+</nav>
+</body>
+</html>

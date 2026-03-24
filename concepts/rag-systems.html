@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Systems | GenAI Mindmap</title>
+  <meta name="description" content="Document Q&A, enterprise search, and knowledge management — production RAG pipelines combining retrieval and generation." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="RAG Systems" />
+  <meta property="og:description" content="Document Q&A, enterprise search, and knowledge management — production RAG pipelines combining retrieval and generation." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/rag-systems.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="RAG Systems" />
+  <meta name="twitter:description" content="Document Q&A, enterprise search, and knowledge management — production RAG pipelines combining retrieval and generation." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/rag-systems.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "RAG Systems | GenAI Mindmap",
+  "description": "Document Q&A, enterprise search, and knowledge management \u2014 production RAG pipelines combining retrieval and generation.",
+  "url": "https://genai4a11.github.io/concepts/rag-systems.html",
+  "dateModified": "2026-03-24T13:18:19.719151",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "RAG Systems | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/rag-systems.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">APPLICATIONS & SYSTEMS</span>
+  <h1>RAG <em>Systems</em></h1>
+  <p class="hero-sub">Production document Q&A, enterprise search, and knowledge management pipelines that reduce hallucination and enable dynamic knowledge updates.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">retrieve → generate</span>
+      <span class="stat-label">the basic pattern</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">chunking strategy</span>
+      <span class="stat-label">quality foundation</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">access control</span>
+      <span class="stat-label">enterprise requirement</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#what-is-rag" data-num="1">What is RAG?</a></li>
+      <li><a href="#pipeline-stages" data-num="2">Pipeline stages</a></li>
+      <li><a href="#framework-comparison" data-num="3">Framework comparison</a></li>
+      <li><a href="#chunking-critical" data-num="4">Chunking strategies</a></li>
+      <li><a href="#embedding-models" data-num="5">Embedding models</a></li>
+      <li><a href="#vector-stores" data-num="6">Vector database choice</a></li>
+      <li><a href="#enterprise-rag" data-num="7">Enterprise considerations</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHAT IS RAG ── -->
+  <div class="section-block" id="what-is-rag">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>What Is RAG?</h2>
+    <p>RAG (Retrieval-Augmented Generation) is a pattern where an LLM generates answers using external knowledge: retrieve relevant documents from a corpus → feed them to the LLM as context → the LLM generates grounded responses. This solves two critical problems: <strong>hallucination</strong> (LLMs making up facts) and <strong>knowledge cutoff</strong> (LLMs frozen at training time).</p>
+    
+    <p>Unlike fine-tuning (expensive, permanent, requires retraining), RAG allows you to update knowledge by simply adding new documents to the corpus. The LLM sees fresh context at query time, making RAG ideal for domains where facts change frequently: legal documents, medical records, product catalogs, financial reports.</p>
+
+    <h3>When RAG Makes Sense</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Use Case</th><th>Fit for RAG?</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Document Q&A (PDFs, manuals)</td><td>Excellent</td><td>Answers grounded in docs</td></tr>
+          <tr><td>Enterprise search (Wiki, intranet)</td><td>Excellent</td><td>Dynamic content, access control</td></tr>
+          <tr><td>Customer support (FAQs)</td><td>Excellent</td><td>Consistent, traceable answers</td></tr>
+          <tr><td>Medical/legal domain</td><td>Excellent</td><td>High accuracy requirement, citations</td></tr>
+          <tr><td>General knowledge Q&A</td><td>Good</td><td>Helps with hallucination</td></tr>
+          <tr><td>Creative writing</td><td>Poor</td><td>Creativity shouldn't be grounded</td></tr>
+          <tr><td>Real-time analytics</td><td>Poor</td><td>Data changes faster than indexing</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> RAG is not a replacement for fine-tuning — it's orthogonal. You can combine both: fine-tune for style/format, use RAG for facts. For fact-heavy domains, RAG nearly always outperforms vanilla LLMs.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. PIPELINE STAGES ── -->
+  <div class="section-block" id="pipeline-stages">
+    <div class="section-marker">02 — Architecture</div>
+    <h2>RAG Pipeline Stages</h2>
+    <p>A production RAG system has clear stages: <strong>offline indexing</strong> (happens once or in batch) and <strong>online serving</strong> (happens per-query). Separating these allows optimization: indexing can be slow/expensive, serving must be fast.</p>
+
+    <h3>Offline Indexing</h3>
+    <p><strong>Document ingestion:</strong> Load PDFs, HTML, databases, Slack dumps, etc. <strong>Parsing:</strong> Extract text, tables, images. Preserve structure. <strong>Chunking:</strong> Split into retrieval-sized pieces (typically 256–1024 tokens). <strong>Enrichment:</strong> Add metadata (source, date, author), summaries, keywords. <strong>Embedding:</strong> Convert chunks to dense vectors. <strong>Storage:</strong> Index in vector DB + maintain metadata store.</p>
+
+    <div class="example-box">Indexing pipeline pseudocode:
+
+docs = load_pdfs("knowledge_base/")
+chunks = []
+for doc in docs:
+    parsed = parse_pdf(doc)  # text, tables, metadata
+    doc_chunks = split_into_chunks(
+        parsed.text, 
+        chunk_size=512,
+        chunk_overlap=64,
+        preserve_boundaries=True
+    )
+    for chunk in doc_chunks:
+        chunk.metadata = {
+            "source": doc.filename,
+            "page": parsed.current_page,
+            "date": doc.created_date
+        }
+    chunks.extend(doc_chunks)
+
+embeddings = embed_batch(chunks, model="BAAI/bge-large")
+vectorstore.index(chunks, embeddings)
+metadata_db.store(chunks)  # for re-ranking, filtering
+    </div>
+
+    <h3>Online Serving</h3>
+    <p><strong>Query embedding:</strong> Convert user query to vector using same embedding model. <strong>Retrieval:</strong> Semantic search in vector DB → top-k candidates. <strong>Optional re-ranking:</strong> Cross-encoder scores candidates by relevance → top-n. <strong>Context assembly:</strong> Grab full documents or passages. <strong>Prompt construction:</strong> Format context + query for LLM. <strong>Generation:</strong> LLM reads context and generates grounded answer. <strong>Citations:</strong> Track which documents supported answer.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Best practice:</strong> Index early and often. Small updates → incremental indexing. Large corpus changes → full re-index offline, swap indexes at serve time. Never block serving on re-indexing.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. FRAMEWORK COMPARISON ── -->
+  <div class="section-block" id="framework-comparison">
+    <div class="section-marker">03 — Framework Ecosystem</div>
+    <h2>Framework Comparison: Haystack vs LlamaIndex vs LangChain</h2>
+    <p>Three mature frameworks dominate the RAG ecosystem. Each has different philosophy, maturity, and strengths. Choice depends on your team's background and deployment target.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Framework</th><th>Philosophy</th><th>Best for</th><th>Learning curve</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Haystack</strong></td><td>Retrieval-first, pipeline-based</td><td>RAG specialists, production systems</td><td>Medium</td></tr>
+          <tr><td><strong>LlamaIndex</strong></td><td>Data indexing, query translation</td><td>Diverse data sources, structured queries</td><td>Low</td></tr>
+          <tr><td><strong>LangChain</strong></td><td>Chains + agents, wide integrations</td><td>Rapid prototyping, complex workflows</td><td>Medium</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Haystack (Production-Grade RAG)</h3>
+    <p>Originally built at Deepset specifically for RAG. Strong document pipeline, excellent for multi-document workflows. Pipelines are explicit DAGs you can visualize. Great for teams committed to RAG as core feature. Good OSS community, commercial support available.</p>
+
+    <h3>LlamaIndex (Query Translation)</h3>
+    <p>Focused on indexing diverse data sources: PDFs, databases, APIs, Notion. Excels at translating high-level queries into data-specific access patterns. Lightweight. Great for prototyping. Growing agent support. Simpler than Haystack for beginners.</p>
+
+    <h3>LangChain (General Purpose)</h3>
+    <p>Broadest tool ecosystem. Not RAG-specific — emphasizes chains (workflows), agents (tool use), memory. Better for applications that mix RAG with other LLM capabilities (code generation, arithmetic, APIs). Largest community. Heavy on abstractions, can be opinionated.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Framework lock-in risk:</strong> Choose frameworks early — switching later is costly. None are significantly better; pick based on team familiarity and your primary use case. RAG patterns are framework-agnostic; the code won't be.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. CHUNKING CRITICAL ── -->
+  <div class="section-block" id="chunking-critical">
+    <div class="section-marker">04 — Retrieval Precision</div>
+    <h2>Chunking Strategies: The Foundation</h2>
+    <p>Chunking is arguably the single most important decision in RAG. Bad chunking breaks retrieval; good chunking makes everything else easy. Chunk size affects recall (smaller = more docs retrieved), precision (larger = fewer false positives), and latency (more chunks = slower embedding).</p>
+
+    <h3>Fixed-Size Chunking</h3>
+    <p>Split every N tokens, optionally with overlap. Simplest approach. Deterministic. Problem: breaks mid-sentence, splits concepts. Best for diverse corpora where structure isn't known.</p>
+
+    <h3>Semantic Chunking</h3>
+    <p>Split at sentence or paragraph boundaries, then merge until chunk reaches target size. Respects semantics. Better coherence. Slightly slower at index time. Recommended for structured documents: reports, articles, wikis.</p>
+
+    <h3>Hierarchical (Parent-Child)</h3>
+    <p>Index small chunks for precision, but fetch parent chunk for context. Example: 256-token chunks for retrieval, but show 1024-token parent to LLM. Combines precision and context. Requires document hierarchy awareness (sections, chapters).</p>
+
+    <h3>Snippet Size Guidelines</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Document type</th><th>Recommended chunk size</th><th>Overlap</th><th>Method</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>PDFs, papers</td><td>512 tokens</td><td>64–128 tokens</td><td>Semantic</td></tr>
+          <tr><td>Web pages, blogs</td><td>256–512 tokens</td><td>32–64 tokens</td><td>Fixed or semantic</td></tr>
+          <tr><td>Code files</td><td>256 tokens</td><td>32 tokens</td><td>Language-aware splitting</td></tr>
+          <tr><td>Tables/structured</td><td>128 tokens</td><td>0 tokens</td><td>Table-aware parsing</td></tr>
+          <tr><td>Long documents</td><td>Small (256) primary, 1024 parent</td><td>64 tokens</td><td>Hierarchical</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Pro tip:</strong> Start with semantic chunking at 512 tokens with 64 token overlap. Benchmark against your golden dataset. Tune down if precision suffers, up if recall drops. Different document types may need different settings.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. EMBEDDING MODELS ── -->
+  <div class="section-block" id="embedding-models">
+    <div class="section-marker">05 — Vector Representation</div>
+    <h2>Embedding Model Selection</h2>
+    <p>Your embedding model determines what "semantic similarity" means to your RAG system. Choice affects both quality and cost. General-purpose models (OpenAI, Anthropic) are good defaults. Domain-specific models (legal, medical, code) can be better if you have the budget.</p>
+
+    <h3>Popular Embedding Models</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Dense (API)</div>
+        <div class="tool-name">OpenAI text-embedding-3</div>
+        <div class="tool-desc">High quality, 3072 dimensions, fast. $0.02 per 1M tokens. Proprietary.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Dense (OSS)</div>
+        <div class="tool-name">BAAI/bge-large-en-v1.5</div>
+        <div class="tool-desc">Strong general-purpose, 1024 dims. Free, can run on-device.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Dense (OSS)</div>
+        <div class="tool-name">e5-base-v2</div>
+        <div class="tool-desc">Lightweight, good for latency-sensitive apps. 768 dims.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Dense (API)</div>
+        <div class="tool-name">Cohere Embed v3</div>
+        <div class="tool-desc">Multilingual, 4096 dims, can compress to 128. API-based.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Sparse</div>
+        <div class="tool-name">BM25 (Elasticsearch)</div>
+        <div class="tool-desc">Exact keyword matching. Fast, interpretable. Often used hybrid with dense.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Hybrid</div>
+        <div class="tool-name">ColBERT</div>
+        <div class="tool-desc">Token-level dense embeddings. Better precision than pure dense.</div>
+      </div>
+    </div>
+
+    <h3>Embedding Quality vs Cost</h3>
+    <p><strong>High quality (proprietary):</strong> OpenAI text-embedding-3-large. Better generalization, higher cost. <strong>Balanced (open):</strong> BAAI/bge-large. Strong performance, free, can self-host. <strong>Fast (lightweight):</strong> e5-base-v2, all-MiniLM-L6. Lower latency, smaller models, acceptable quality.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Recommendation:</strong> For production, test 2–3 models against your golden dataset. OpenAI's model is reliable baseline if budget allows. BAAI/bge-large is excellent OSS default. For proprietary data, consider fine-tuning embeddings on domain examples.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. VECTOR STORES ── -->
+  <div class="section-block" id="vector-stores">
+    <div class="section-marker">06 — Indexing & Retrieval</div>
+    <h2>Vector Database Choice</h2>
+    <p>Vector DBs store high-dimensional embeddings and answer nearest-neighbor queries fast. Dozens exist; choice depends on scale, latency budget, and whether you need hybrid (dense+sparse) search.</p>
+
+    <h3>Vector Database Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Database</th><th>Type</th><th>Scale</th><th>Hybrid search</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Chroma</td><td>OSS/managed</td><td>Small-medium</td><td>No</td><td>Prototypes, demos</td></tr>
+          <tr><td>Weaviate</td><td>OSS/managed</td><td>Medium-large</td><td>Yes</td><td>GraphQL queries, hybrid</td></tr>
+          <tr><td>Pinecone</td><td>Managed</td><td>Very large</td><td>No (dense only)</td><td>Production, serverless</td></tr>
+          <tr><td>Milvus</td><td>OSS</td><td>Medium-large</td><td>No</td><td>Scalable OSS deployments</td></tr>
+          <tr><td>Qdrant</td><td>OSS/managed</td><td>Medium-large</td><td>Yes (sparse)</td><td>Hybrid, production-ready</td></tr>
+          <tr><td>Elasticsearch</td><td>OSS/managed</td><td>Large</td><td>Yes (native)</td><td>Hybrid BM25+dense</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Key Considerations</h3>
+    <p><strong>Hybrid search:</strong> If your corpus has domain-specific terminology (legal, medical, code), combine dense embeddings with BM25. Weaviate, Qdrant, Elasticsearch all support this. <strong>Scale:</strong> Small corpus (<100k docs) → Chroma is fine. Large corpus (millions) → Pinecone or self-hosted Qdrant/Milvus. <strong>Latency:</strong> Managed (Pinecone) is simpler ops; self-hosted gives you control. <strong>Cost:</strong> Chroma/Milvus/Qdrant OSS are free; Pinecone charges per query.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Vector DB lock-in:</strong> Embedding model and vector DB are coupled (you can't easily switch). Start with Chroma for prototyping; plan your migration path to production DB early.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. ENTERPRISE RAG ── -->
+  <div class="section-block" id="enterprise-rag">
+    <div class="section-marker">07 — Production Maturity</div>
+    <h2>Enterprise RAG Considerations</h2>
+    <p>Moving RAG from prototype to production requires handling scale, reliability, and governance that lab settings don't require. Enterprise RAG introduces access control, data freshness, multi-tenancy, and auditability.</p>
+
+    <h3>Access Control & Multi-Tenancy</h3>
+    <p>In enterprise, different users see different documents. A single shared vector DB can't enforce this naively. Solutions: <strong>document-level filtering</strong> (tag chunks with user_id, filter at retrieval time), <strong>per-user indexes</strong> (overkill for most cases), <strong>row-level security in vector DB</strong> (Qdrant, Weaviate support metadata-based filtering). Recommended: tag chunks with accessible_users and filter before ranking.</p>
+
+    <h3>Data Freshness</h3>
+    <p>How often do you re-index? Daily/weekly is typical; minutes requires streaming indexing (harder). Strategy: <strong>batch indexing</strong> (new docs → index offline → swap at midnight), <strong>incremental indexing</strong> (new docs → add to existing index immediately), <strong>document versioning</strong> (keep old chunks, mark as stale, weight new higher). For real-time data (stock prices, live scores), RAG isn't the right tool alone.</p>
+
+    <h3>Observability & Audit</h3>
+    <p>What was retrieved? What was generated? Did we hallucinate? Track: <strong>queries and results</strong> (audit trail), <strong>retrieval quality</strong> (MRR, NDCG metrics), <strong>answer quality</strong> (user feedback, LLM-based scoring), <strong>latency per stage</strong> (retrieve, rerank, generate). Log sources of answers for compliance.</p>
+
+    <h3>Best Practices Checklist</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>Consideration</th><th>Implementation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Access Control</td><td>Different users, different documents</td><td>Metadata-based filtering + user context</td></tr>
+          <tr><td>Data Freshness</td><td>How old is the corpus?</td><td>Batch or incremental indexing cadence</td></tr>
+          <tr><td>Version Control</td><td>Track document updates</td><td>Timestamp, hash, version field in metadata</td></tr>
+          <tr><td>Monitoring</td><td>Quality metrics</td><td>RAGAS or similar evaluation framework</td></tr>
+          <tr><td>Latency</td><td>Per-stage timings</td><td>Instrument retrieval, ranking, generation</td></tr>
+          <tr><td>Fallback</td><td>What if retrieval fails?</td><td>Graceful degradation, fallback to LLM-only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Enterprise gotcha:</strong> Access control is often an afterthought. Design it in from the start. Document-level filtering is simpler than per-index solutions and scales better.</span>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References and Related Concepts</h2>
+
+    <div class="ref-group-title">Child Concepts</div>
+    <ul class="ref-list">
+      <li><a href="haystack.html">Haystack</a> — Production RAG framework by Deepset</li>
+      <li><a href="cognee.html">Cognee</a> — Graph-based knowledge management for RAG</li>
+    </ul>
+
+    <div class="ref-group-title">Related Concepts</div>
+    <ul class="ref-list">
+      <li><a href="advanced-rag.html">Advanced RAG Patterns</a> — Query transformation, reranking, multi-hop</li>
+      <li><a href="retrieval-tech.html">Retrieval Technologies</a> — Dense, sparse, and hybrid search</li>
+      <li><a href="vector-dbs.html">Vector Databases</a> — Storage and indexing for embeddings</li>
+      <li><a href="embeddings.html">Embeddings</a> — Vector representations for semantic search</li>
+      <li><a href="chunking.html">Chunking Strategies</a> — Document splitting for retrieval</li>
+    </ul>
+
+    <div class="ref-group-title">Papers & Guides</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Lewis, P. et al. (2020).
+        <em>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</em> — arXiv:2005.11401
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        Haystack Documentation. <a href="https://docs.haystack.deepset.ai" target="_blank">docs.haystack.deepset.ai ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        LlamaIndex Documentation. <a href="https://docs.llamaindex.ai" target="_blank">docs.llamaindex.ai ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Embedding Quality & Model Selection. <a href="https://huggingface.co/spaces/mteb/leaderboard" target="_blank">MTEB Leaderboard ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <span></span>
+  <span class="concept-nav-cat">Applications</span>
+  <a class="concept-nav-next" href="doc-processing.html">→ Document Processing</a>
+</nav>
+</body>
+</html>

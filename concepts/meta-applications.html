@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Applications | GenAI Mindmap</title>
+  <meta name="description" content="Real-world GenAI application patterns: RAG systems, code assistants, structured outputs, text-to-data, voice agents, and document processing." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Applications" />
+  <meta property="og:description" content="Real-world GenAI application patterns: RAG systems, code assistants, structured outputs, text-to-data, voice agents, and document processing." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/meta-applications.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Applications" />
+  <meta name="twitter:description" content="Real-world GenAI application patterns: RAG systems, code assistants, structured outputs, text-to-data, voice agents, and document processing." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/meta-applications.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 8px;
+      padding: 1rem 1rem 1rem 1.2rem;
+      margin: 1.5rem 0;
+      border-left: 4px solid;
+      display: flex; gap: 0.8rem;
+      align-items: flex-start;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: -0.1rem; }
+    .callout.blue {
+      background: rgba(37,99,235,0.08);
+      border-color: var(--blue);
+    }
+    .callout.green {
+      background: rgba(34,197,94,0.08);
+      border-color: var(--green);
+    }
+    .callout.rose {
+      background: rgba(244,63,94,0.08);
+      border-color: var(--rose);
+    }
+    .callout.amber {
+      background: rgba(245,158,11,0.08);
+      border-color: var(--amber);
+    }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border: 1px solid rgba(226,232,240,0.15);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin: 1.2rem 0 1.5rem;
+      color: #e2e8f0;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.8rem; text-align: left; font-weight: 600;
+    }
+    tbody td {
+      padding: 0.8rem; border-top: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:nth-child(even) { background: var(--bg); }
+
+    /* ── METHODS LIST ── */
+    .methods-list {
+      display: grid; grid-template-columns: 1fr;
+      gap: 1.2rem; margin: 1.5rem 0;
+    }
+    .method-card {
+      display: flex; gap: 1rem;
+      padding: 1.2rem; border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+    .method-num {
+      font-size: 1.8rem; font-weight: 800;
+      color: var(--indigo); flex-shrink: 0;
+      width: 40px; text-align: center;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+    .method-body p { margin: 0; font-size: 0.88rem; color: var(--muted); }
+
+    /* ── REFERENCE LIST ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .ref-list li {
+      padding: 0.8rem; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: 0.88rem; line-height: 1.6;
+    }
+    .ref-badge {
+      display: inline-block; font-size: 0.65rem;
+      font-weight: 700; letter-spacing: 0.05em;
+      padding: 0.3rem 0.6rem; border-radius: 4px;
+      margin-right: 0.6rem; text-transform: uppercase;
+    }
+    .badge-paper { background: rgba(79,70,229,0.2); color: var(--indigo); }
+    .badge-blog { background: rgba(34,197,94,0.2); color: var(--green); }
+    .badge-docs { background: rgba(37,99,235,0.2); color: var(--blue); }
+    .ref-list a {
+      color: var(--indigo); text-decoration: none;
+    }
+    .ref-list a:hover { color: var(--blue); }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      max-width: 1040px; margin: 5rem auto 0;
+      padding: 2rem; text-align: center;
+      font-size: 0.88rem; color: var(--muted);
+      display: flex; gap: 2rem; justify-content: space-between; flex-wrap: wrap;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { color: var(--blue); }
+
+    .concept-nav {
+      position: sticky; bottom: 0; z-index: 100;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 0.8rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 50px; font-size: 0.88rem;
+    }
+    .concept-nav-cat {
+      color: #94a3b8;
+    }
+    .concept-nav-next {
+      color: var(--indigo); text-decoration: none;
+      font-weight: 500; transition: color 0.15s;
+    }
+    .concept-nav-next:hover { color: var(--sky); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .toc-list { grid-template-columns: 1fr; }
+      .page-wrap { padding: 2rem 1rem; }
+      .hero h1 { font-size: 1.5rem; }
+      .method-card { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Applications | GenAI Mindmap",
+  "description": "Real-world GenAI application patterns: RAG systems, code assistants, structured outputs, text-to-data, voice agents, and document processing.",
+  "url": "https://genai4a11.github.io/concepts/meta-applications.html",
+  "dateModified": "2026-03-24T13:18:18.899825",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Applications | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/meta-applications.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+<nav>
+  <a class="nav-brand" href="../index.html">
+    <span class="dot">●</span> GenAI
+  </a>
+  <a class="nav-back" href="../index.html">← Mindmap</a>
+</nav>
+
+<div class="hero">
+  <span class="hero-tag">Production Patterns</span>
+  <h1>GenAI <em>Applications</em></h1>
+  <p class="hero-sub">Six canonical application patterns that repeatedly work in production. Learn which one fits your use case and how to avoid common pitfalls.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">6</span>
+      <span class="stat-label">Application Patterns</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">3</span>
+      <span class="stat-label">Complexity Tiers</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+  <!-- ── TOC ── -->
+  <div class="toc-card">
+    <div class="toc-heading">On This Page</div>
+    <ul class="toc-list">
+      <li><a href="#six-patterns" data-num="1">Six Patterns</a></li>
+      <li><a href="#comparison" data-num="2">Comparison</a></li>
+      <li><a href="#rag-systems" data-num="3">RAG Systems</a></li>
+      <li><a href="#code-assist" data-num="4">Code Assistants</a></li>
+      <li><a href="#structured" data-num="5">Structured Output</a></li>
+      <li><a href="#pitfalls" data-num="6">Common Pitfalls</a></li>
+    </ul>
+  </div>
+
+  <!-- ── 1. SIX PATTERNS ── -->
+  <div class="section-block" id="six-patterns">
+    <div class="section-marker">01 — Overview</div>
+    <h2>Six Canonical Application Patterns</h2>
+    <p>GenAI applications fall into a small number of repeatable patterns. Each has different complexity, cost, and latency characteristics. Know the six, match your use case to one, and adapt the proven architecture.</p>
+
+    <h3>The Six Patterns</h3>
+    <p><strong>1. RAG Systems:</strong> User asks a question, system retrieves relevant documents, LLM answers from context. Use for Q&A over documents, knowledge bases, product docs. Latency: 500ms-2s. Complexity: Medium. Maturity: High.</p>
+    <p><strong>2. Code Assistants:</strong> User writes code, AI provides completions, suggestions, or analysis. Use for IDE plugins, code review, auto-fix. Latency: 100ms-500ms. Complexity: Low-Medium. Maturity: High.</p>
+    <p><strong>3. Structured Output Apps:</strong> User provides text/image, AI extracts structured data (JSON, tables, labels). Use for form extraction, data classification, entity recognition. Latency: 200ms-1s. Complexity: Low. Maturity: Very High.</p>
+    <p><strong>4. Text-to-Data (Text-to-SQL):</strong> User asks a natural language question, system converts to query (SQL, API call), executes, returns results. Use for business intelligence, database exploration. Latency: 500ms-3s. Complexity: High. Maturity: Medium.</p>
+    <p><strong>5. Voice Agents:</strong> User speaks, system transcribes, reasons, acts, then speaks back. Use for customer support, hands-free control, conversational interfaces. Latency: 1-5s. Complexity: Very High. Maturity: Medium.</p>
+    <p><strong>6. Document Processing:</strong> User uploads document, system extracts text, chunks, analyzes, summarizes, or processes at scale. Use for invoice processing, contract review, knowledge extraction. Latency: 1-10s per document. Complexity: Medium-High. Maturity: High.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Pattern selection:</strong> Match your use case to the pattern, not vice versa. If you're forcing a use case into the wrong pattern, the architecture will fight you. RAG for knowledge lookup, agents for multi-step tasks, structured output for extraction.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. COMPARISON ── -->
+  <div class="section-block" id="comparison">
+    <div class="section-marker">02 — Analysis</div>
+    <h2>Pattern Comparison</h2>
+    <p>Use this table to compare patterns across key dimensions.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Pattern</th>
+            <th>Best For</th>
+            <th>Latency</th>
+            <th>Complexity</th>
+            <th>Cost/Request</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>RAG Systems</strong></td>
+            <td>Q&A, knowledge lookup</td>
+            <td>500ms-2s</td>
+            <td>Medium</td>
+            <td>Low-Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Code Assistants</strong></td>
+            <td>Completions, analysis</td>
+            <td>100-500ms</td>
+            <td>Low</td>
+            <td>Low</td>
+          </tr>
+          <tr>
+            <td><strong>Structured Output</strong></td>
+            <td>Extraction, classification</td>
+            <td>200ms-1s</td>
+            <td>Low</td>
+            <td>Very Low</td>
+          </tr>
+          <tr>
+            <td><strong>Text-to-SQL</strong></td>
+            <td>DB queries, analytics</td>
+            <td>500ms-3s</td>
+            <td>High</td>
+            <td>Medium</td>
+          </tr>
+          <tr>
+            <td><strong>Voice Agents</strong></td>
+            <td>Conversational, hands-free</td>
+            <td>1-5s</td>
+            <td>Very High</td>
+            <td>High</td>
+          </tr>
+          <tr>
+            <td><strong>Document Processing</strong></td>
+            <td>Batch analysis, extraction</td>
+            <td>1-10s/doc</td>
+            <td>Medium</td>
+            <td>Medium</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Production rule:</strong> Structured output and code assistants are safest first products (low complexity, proven). RAG is next (higher complexity but well-understood). Text-to-SQL and voice agents need experienced teams. Document processing is good for internal tools.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. RAG SYSTEMS ── -->
+  <div class="section-block" id="rag-systems">
+    <div class="section-marker">03 — Pattern 1</div>
+    <h2>RAG Systems</h2>
+    <p>Retrieval-augmented generation is the most common production pattern. User asks a question, system retrieves relevant documents from a knowledge base or vector database, then feeds those documents to an LLM to answer. The LLM answers from facts, not hallucinations.</p>
+
+    <h3>When to Use</h3>
+    <p>Customer support knowledge bases. Product documentation Q&A. Internal wiki search. Legal document search. Financial reports Q&A. Medical literature review. Any domain where up-to-date, accurate facts are critical and hallucination is unacceptable.</p>
+
+    <h3>Key Decisions</h3>
+    <p><strong>Chunking:</strong> How to split documents (by paragraph, by token, by semantic boundary). <strong>Retrieval:</strong> Hybrid search (keyword + semantic), BM25, dense vectors, or traditional SQL. <strong>Ranking:</strong> Re-rank results by relevance. <strong>Prompting:</strong> How to format retrieved documents in the prompt.</p>
+
+    <h3>Common Pitfalls</h3>
+    <p><strong>Stale documents:</strong> If knowledge base isn't updated, answers are outdated. <strong>Retriever failure:</strong> Wrong documents retrieved = wrong answer. <strong>Context overload:</strong> Too many documents in prompt confuses the LLM. <strong>No evaluation:</strong> Can't measure retrieval quality without test set.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>RAG debugging:</strong> Build three things in parallel: the retriever (measure recall/precision), the prompt (measure BLEU/exact match), and the evaluation set (measure end-to-end). Most RAG failures are retriever failures, not LLM failures.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. CODE ASSISTANTS ── -->
+  <div class="section-block" id="code-assist">
+    <div class="section-marker">04 — Pattern 2</div>
+    <h2>Code Assistants</h2>
+    <p>AI that understands and generates code. Used in IDEs (Copilot, Cursor), as code review tools, and for auto-fix. The LLM sees the current file, project context, and generates the next line(s) or explains code.</p>
+
+    <h3>When to Use</h3>
+    <p>Code completion in IDEs. Pull request review and suggestions. Refactoring and migration. Bug detection and fixes. Documentation generation from code. Test generation.</p>
+
+    <h3>Key Decisions</h3>
+    <p><strong>Context window:</strong> How much file and project context to give the LLM (more = better understanding, slower). <strong>Model:</strong> Specialized code models (Claude, GPT-4, Codestral) vs general models. <strong>Interaction pattern:</strong> Real-time streaming vs batch. <strong>Integration:</strong> IDE plugin, API, or web UI.</p>
+
+    <h3>Common Pitfalls</h3>
+    <p><strong>Context pollution:</strong> Including too much boilerplate context confuses the model. <strong>Security:</strong> Sending proprietary code to external APIs. <strong>False suggestions:</strong> AI suggests syntactically correct but semantically wrong code. <strong>No feedback loop:</strong> Can't improve without measuring suggestion quality.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Code context matters:</strong> Include method signatures, type hints, recent similar functions, and test examples. Avoid including large dependencies or build artifacts. Specialized code models (Claude) are worth the cost.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. STRUCTURED OUTPUT ── -->
+  <div class="section-block" id="structured">
+    <div class="section-marker">05 — Pattern 3</div>
+    <h2>Structured Output Apps</h2>
+    <p>Extract structured data from text or images. User provides input, LLM outputs JSON, table, or labeled fields. Used for classification, extraction, entity recognition, and data enrichment.</p>
+
+    <h3>When to Use</h3>
+    <p>Form extraction from documents. Product classification and tagging. NER (named entity recognition). Sentiment analysis and emotion detection. Data augmentation and enrichment. Invoice/receipt processing. Resume parsing.</p>
+
+    <h3>Key Decisions</h3>
+    <p><strong>Output schema:</strong> Define JSON schema or table structure. <strong>Validation:</strong> Constrain LLM output to schema (use Instructor, JSON mode, or regex). <strong>Fallback:</strong> What to do if LLM can't extract field. <strong>Batch vs real-time.</strong></p>
+
+    <h3>Common Pitfalls</h3>
+    <p><strong>Invalid JSON:</strong> LLM violates schema despite instructions. Use tool like Instructor to enforce. <strong>Missing fields:</strong> LLM skips optional fields or hallucinates values. <strong>No validation:</strong> Extracted data isn't checked for type or range. <strong>Bad schema:</strong> Schema doesn't match actual data, causing mismatches.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Best practice:</strong> Use Instructor library (Python) or similar to enforce schema. Define schema in code, not prose. Test on diverse examples. Always validate output before using it downstream.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. COMMON PITFALLS ── -->
+  <div class="section-block" id="pitfalls">
+    <div class="section-marker">06 — Lessons</div>
+    <h2>Common Production Pitfalls (All Patterns)</h2>
+    <p>Regardless of pattern, these failures repeat across applications. Know them, avoid them.</p>
+
+    <h3>Latency Problems</h3>
+    <p><strong>Issue:</strong> Application is slow, users see spinners for seconds. <strong>Root causes:</strong> LLM latency (choosing smaller or faster models helps), retrieval latency (optimize vector search), network hops. <strong>Fix:</strong> Streaming responses to users while inference runs, use smaller models for fast paths, cache common queries.</p>
+
+    <h3>Cost Explosions</h3>
+    <p><strong>Issue:</strong> API bills are higher than expected. <strong>Root causes:</strong> Excessive context (RAG with 10K docs per call), many retries, large models on cheap-to-implement features. <strong>Fix:</strong> Monitor per-request token usage, cap retrieval results, use smaller models for simple tasks, cache responses.</p>
+
+    <h3>Quality Drift</h3>
+    <p><strong>Issue:</strong> Quality was good in testing but degraded in production. <strong>Root causes:</strong> Different data distribution in production, model updates, upstream data changes (e.g., docs updated). <strong>Fix:</strong> Continuous evaluation on real data, version control prompts, monitor quality metrics, re-baseline after model updates.</p>
+
+    <h3>Hallucinations & False Positives</h3>
+    <p><strong>Issue:</strong> LLM confidently gives wrong answers. <strong>Root causes:</strong> LLM doesn't know the answer but invents one. <strong>Fix:</strong> Use retrieval (RAG) to inject facts, constrain outputs with schema, use exact-match confidence thresholds, add human review for high-stakes decisions.</p>
+
+    <h3>Integration Friction</h3>
+    <p><strong>Issue:</strong> Hard to integrate GenAI into existing systems. <strong>Root causes:</strong> API incompatibilities, latency mismatch, stateless vs stateful design, data privacy. <strong>Fix:</strong> Design for async/queued processing, plan data privacy early, version your API, use inference services with enterprise support.</p>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>The production reality:</strong> 70% of GenAI problems aren't algorithmic — they're operational. Latency, cost, monitoring, error handling, and data freshness matter more than model size. Plan for ops early.</span>
+    </div>
+  </div>
+
+  <!-- ── CHILD CLUSTERS ── -->
+  <div class="section-block">
+    <div class="section-marker">07 — Explore</div>
+    <h2>Deep Dives: Each Application Pattern</h2>
+    <p>Each pattern deserves a detailed deep dive. Start with the pattern that matches your use case.</p>
+
+    <h3>Application Patterns</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3><a href="rag_systems.html" style="color: var(--indigo); text-decoration: none;">RAG Systems</a></h3>
+          <p>Retrieval-augmented generation: indexing, retrieval, re-ranking, and fact-grounding for question answering.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3><a href="code_assist.html" style="color: var(--indigo); text-decoration: none;">Code Assistants</a></h3>
+          <p>Code understanding and generation: completion, review, refactoring, and test generation.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3><a href="structured_output_app.html" style="color: var(--indigo); text-decoration: none;">Structured Output</a></h3>
+          <p>Extraction and classification: enforcing schemas, validation, and structured data generation.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3><a href="database_query.html" style="color: var(--indigo); text-decoration: none;">Text-to-Data</a></h3>
+          <p>Natural language to SQL/API: converting questions to queries, execution, and result formatting.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">5</div>
+        <div class="method-body">
+          <h3><a href="voice_agents.html" style="color: var(--indigo); text-decoration: none;">Voice Agents</a></h3>
+          <p>Conversational AI: speech recognition, reasoning, action, and speech synthesis at scale.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">6</div>
+        <div class="method-body">
+          <h3><a href="doc_processing.html" style="color: var(--indigo); text-decoration: none;">Document Processing</a></h3>
+          <p>Batch and streaming analysis: chunking, extraction, summarization, and scale processing.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Implementation order:</strong> Start with structured output (lowest risk, fastest feedback), then RAG (highest ROI), then code assistants. Graduate to voice and text-to-SQL once you have ops experience.</span>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Application Patterns</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Anthropic.
+        <em>Building effective agents.</em> —
+        <a href="https://www.anthropic.com/research/building-effective-agents" target="_blank">Building effective agents ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        LlamaIndex.
+        <em>RAG Best Practices.</em> —
+        <a href="https://www.llamaindex.ai/" target="_blank">LlamaIndex ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Production Engineering</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Krishnan, P.
+        <em>LLMOps: Production Patterns for LLM Applications.</em> —
+        <a href="https://mlops.community/" target="_blank">MLOps Community ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Frameworks & Libraries</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        Instructor.
+        <em>Structured outputs for LLMs.</em> —
+        <a href="https://github.com/jxnl/instructor" target="_blank">Instructor ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        LangChain.
+        <em>Production-grade LLM applications.</em> —
+        <a href="https://www.langchain.com/" target="_blank">LangChain ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <span></span>
+  <span class="concept-nav-cat">Applications & Deployment</span>
+  <a class="concept-nav-next" href="rag_systems.html">→ RAG Systems</a>
+</nav>
+</body>
+</html>

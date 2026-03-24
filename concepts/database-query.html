@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text-to-Data | GenAI Mindmap</title>
+  <meta name="description" content="Natural language interfaces for SQL, NoSQL, and knowledge graphs. Text-to-SQL and pandas code generation." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Text-to-Data" />
+  <meta property="og:description" content="Natural language interfaces for SQL, NoSQL, and knowledge graphs. Text-to-SQL and pandas code generation." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/database-query.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Text-to-Data" />
+  <meta name="twitter:description" content="Natural language interfaces for SQL, NoSQL, and knowledge graphs. Text-to-SQL and pandas code generation." />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/database-query.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Text-to-Data | GenAI Mindmap",
+  "description": "Natural language interfaces for SQL, NoSQL, and knowledge graphs. Text-to-SQL and pandas code generation.",
+  "url": "https://genai4a11.github.io/concepts/database-query.html",
+  "dateModified": "2026-03-24T13:18:18.417555",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Text-to-Data | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/database-query.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<div class="hero">
+  <span class="hero-tag">APPLICATIONS & SYSTEMS</span>
+  <h1>Text-to-<em>Data</em></h1>
+  <p class="hero-sub">Convert natural language questions into SQL, pandas code, and API calls. Enable non-technical users to query databases without SQL knowledge.</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">schema → LLM → query</span>
+      <span class="stat-label">the pattern</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">SQL + NoSQL + KGs</span>
+      <span class="stat-label">all query languages</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">safety & guardrails</span>
+      <span class="stat-label">critical for production</span>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-text-to-sql" data-num="1">Why Text-to-SQL matters</a></li>
+      <li><a href="#how-it-works" data-num="2">How it works</a></li>
+      <li><a href="#schema-context" data-num="3">Schema and context</a></li>
+      <li><a href="#few-shot" data-num="4">Few-shot learning</a></li>
+      <li><a href="#vanna-approach" data-num="5">Vanna AI approach</a></li>
+      <li><a href="#safety" data-num="6">Safety and guardrails</a></li>
+      <li><a href="#production" data-num="7">Production challenges</a></li>
+    </ol>
+  </div>
+
+  <div class="section-block" id="why-text-to-sql">
+    <div class="section-marker">01 — Motivation</div>
+    <h2>Why Text-to-SQL Matters</h2>
+    <p>SQL is powerful but requires technical expertise. Non-technical users struggle with JOIN syntax, aggregations, subqueries. Text-to-SQL bridges this: ask a natural language question, get back results. Democratizes data access.</p>
+
+    <h3>Use Cases</h3>
+    <p><strong>Business analytics:</strong> Execs query sales data without consulting data engineers. <strong>Customer support:</strong> Agents pull customer records in real-time. <strong>Internal tools:</strong> Teams explore logs, metrics, historical data. <strong>Data exploration:</strong> Data scientists prototype queries faster.</p>
+
+    <h3>Challenges</h3>
+    <p>SQL is precise; LLMs are probabilistic. A small mistake (wrong table, incorrect JOIN) breaks the query. Safety is critical: you can't let an LLM blindly run DELETE statements. Schema understanding is hard: a thousand-column database requires explaining the LLM which columns matter.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> Text-to-SQL success depends 80% on schema quality and context, 20% on LLM capability. A clear schema with good descriptions beats a fancy LLM on a bad schema.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="how-it-works">
+    <div class="section-marker">02 — Architecture</div>
+    <h2>How Text-to-SQL Works</h2>
+    <p>The basic pipeline: user question → schema context → LLM generates SQL → validate → execute → explain result.</p>
+
+    <h3>Step-by-Step</h3>
+    <p><strong>1. Receive question:</strong> "What were our top 5 products by revenue last quarter?" <strong>2. Schema retrieval:</strong> Identify relevant tables. Use sparse search (keyword matching) or dense (embedding-based) or both. <strong>3. Context assembly:</strong> Build prompt with schema description, example queries, business rules. <strong>4. LLM generation:</strong> Prompt the LLM with context + question. <strong>5. Validation:</strong> Parse SQL, check syntax, enforce guardrails (no DELETE, no cross-db access). <strong>6. Execution:</strong> Run on prod DB with timeout, row limits. <strong>7. Explanation:</strong> Summarize results in natural language.</p>
+
+    <div class="example-box">Prompt assembly example:
+
+You are a SQL expert. Generate a single SQL query based on:
+
+Database: sales_db
+Tables:
+  - orders (id, user_id, product_id, order_date, amount)
+  - products (id, name, category, price)
+  - users (id, name, email, country)
+
+Example queries:
+  Q: "Top 3 customers by spend"
+  A: SELECT u.name, SUM(o.amount) as spend
+     FROM orders o JOIN users u ON o.user_id = u.id
+     GROUP BY u.id ORDER BY spend DESC LIMIT 3
+
+Question: What were our top 5 products by revenue last quarter?
+
+Your response (SQL only, no markdown):
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Best practice:</strong> Always parse before execution. Never run untrusted SQL directly. Implement query timeout (5s) and row limits (10k) to prevent runaway queries.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="schema-context">
+    <div class="section-marker">03 — Schema Representation</div>
+    <h2>Schema and Context</h2>
+    <p>LLM performance on Text-to-SQL is dominated by schema clarity. A vague schema ("customer_id INT") loses to a clear one ("customer_id INT — Foreign key to users.id, required").</p>
+
+    <h3>Schema Description Best Practices</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Include column descriptions <em>— Context helps</em></h3>
+          <ul>
+            <li>Bad: user_id INT</li>
+            <li>Good: user_id INT, foreign key to users.id</li>
+            <li>Better: user_id INT, FK→users(id), created_date TIMESTAMP</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Note enum/categorical values <em>— Constrain choices</em></h3>
+          <ul>
+            <li>status VARCHAR, enum: 'pending', 'approved', 'rejected'</li>
+            <li>Helps LLM use correct WHERE clauses</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Highlight important columns <em>— Priority hints</em></h3>
+          <ul>
+            <li>Mark frequently-queried columns</li>
+            <li>Mention denormalization or composite keys</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Provide sample data <em>— Concrete examples</em></h3>
+          <ul>
+            <li>Show 2–3 rows for each table</li>
+            <li>Helps LLM reason about data format</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h3>Schema Compression</h3>
+    <p>Large schemas overwhelm LLMs. For a 100-table database, LLMs only see ~20 most relevant tables (selected by keyword matching). Techniques: <strong>semantic chunking</strong> (split by business domain), <strong>relevance ranking</strong> (use embedding similarity to rank tables), <strong>dynamic selection</strong> (parse question first, retrieve relevant tables).</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Schema context token cost:</strong> A detailed schema for 50 tables = ~2k tokens. Multiply that across queries. For high volume, cache schema context in prompt templates or use shorter schema digests.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="few-shot">
+    <div class="section-marker">04 — Learning Techniques</div>
+    <h2>Few-Shot Learning for SQL</h2>
+    <p>Providing example queries (few-shot) dramatically improves LLM SQL generation. Examples show style, common patterns, and business logic.</p>
+
+    <h3>Few-Shot Example Strategy</h3>
+    <p><strong>Include 3–5 diverse examples:</strong> simple (SELECT from single table), moderate (JOIN 2–3 tables), complex (subqueries, aggregation). <strong>Show realistic patterns:</strong> how do we typically filter by date? Which tables JOIN together? <strong>Use actual question/answer pairs from prod:</strong> log successful queries and use them as examples. <strong>Group by domain:</strong> separate examples for finance queries vs. product queries.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Few-Shot quality</th><th>LLM SQL accuracy</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>No examples</td><td>50–65%</td><td>Baseline, schema only</td></tr>
+          <tr><td>Generic examples (simple CRUD)</td><td>65–75%</td><td>SELECT, JOIN, GROUP BY</td></tr>
+          <tr><td>Domain-specific examples</td><td>75–85%</td><td>Real questions from your biz</td></tr>
+          <tr><td>Dynamic example selection</td><td>80–90%</td><td>Retrieve similar past queries</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Pro tip:</strong> Maintain a corpus of high-quality queries from your analysts. Use embedding similarity to find similar past queries when new questions arrive. Include those in the few-shot context. This leverages domain knowledge automatically.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="vanna-approach">
+    <div class="section-marker">05 — Vanna AI</div>
+    <h2>The Vanna Approach: RAG + Fine-Tuning</h2>
+    <p>Vanna AI is a commercial Text-to-SQL platform that combines RAG (retrieve past successful queries) with optional fine-tuning. Instead of relying purely on prompting, it learns from your data.</p>
+
+    <h3>How Vanna Works</h3>
+    <p><strong>Indexing:</strong> Vanna ingests your schema + successful SQL queries from prod. <strong>Retrieval:</strong> When a new question arrives, it retrieves similar past queries (by embedding or semantic search). <strong>Augmentation:</strong> Includes retrieved examples in prompt. <strong>Optional fine-tuning:</strong> With enough examples (100+), fine-tune a smaller model on your domain.</p>
+
+    <h3>Vanna vs LangChain SQL Agent</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Aspect</th><th>Vanna</th><th>LangChain SQL Agent</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Learning mechanism</td><td>RAG + optional FT</td><td>Prompt engineering</td></tr>
+          <tr><td>Accuracy (typical)</td><td>75–85%</td><td>60–75%</td></tr>
+          <tr><td>Setup complexity</td><td>Medium (index queries)</td><td>Low (plug and play)</td></tr>
+          <tr><td>Fine-tuning support</td><td>Yes (proprietary)</td><td>No (DIY)</td></tr>
+          <tr><td>Cost</td><td>Managed service</td><td>Free (OSS)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Vanna lock-in:</strong> Vanna's fine-tuning is proprietary; your data is on their servers. For sensitive data, stick with open-source (LangChain + local examples).</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="safety">
+    <div class="section-marker">06 — Safety</div>
+    <h2>Safety and Guardrails</h2>
+    <p>LLMs can generate dangerous SQL (DELETE, DROP) or inefficient queries (Cartesian products). Guardrails are non-negotiable in production.</p>
+
+    <h3>Safety Checks</h3>
+    <p><strong>Blocklist dangerous operations:</strong> Reject queries with DELETE, DROP, ALTER, INSERT. <strong>Whitelist tables:</strong> Only allow queries against safe tables. <strong>Row limits:</strong> Cap results at 10k rows; prevent full-table scans. <strong>Timeout:</strong> Kill queries exceeding 5–10s. <strong>Cost limits:</strong> For cloud DBs, cap query cost. <strong>Validation:</strong> Parse SQL, check syntax before execution. <strong>Audit:</strong> Log all generated queries, results, user, timestamp.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Guardrail</th><th>Implementation</th><th>False positive risk</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Blocklist (DELETE, DROP)</td><td>Regex or AST parse</td><td>None</td></tr>
+          <tr><td>Whitelist tables</td><td>Check table names in query</td><td>Low (schema dependent)</td></tr>
+          <tr><td>Row limit</td><td>Append LIMIT clause</td><td>None</td></tr>
+          <tr><td>Timeout</td><td>Execute with timeout_ms=5000</td><td>None (slow queries rejected)</td></tr>
+          <tr><td>Cost cap (cloud)</td><td>Cloud provider API</td><td>None</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Guardrail layering:</strong> Use multiple defenses (blocklist + timeout + row limit). No single check is bulletproof. An attacker might evade regex but not AST parsing.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="production">
+    <div class="section-marker">07 — Production</div>
+    <h2>Production Challenges</h2>
+    <p>Moving Text-to-SQL from prototype to prod surfaces real issues: schema changes, query errors, monitoring, user expectations.</p>
+
+    <h3>Key Challenges</h3>
+    <p><strong>Schema versioning:</strong> Your schema evolves. How do you handle renamed tables/columns? <strong>Query errors:</strong> LLM generates invalid SQL. Retry with error feedback? <strong>Incorrect results:</strong> Query succeeds but answer is wrong. How do you detect this? <strong>Latency:</strong> Text-to-SQL adds ~500ms–1s over direct SQL. <strong>User trust:</strong> Users trust SQL but distrust LLM-generated SQL. Requires good UX (show query, allow editing).</p>
+
+    <h3>Best Practices</h3>
+    <p><strong>Show the query:</strong> Always display generated SQL to users. Let them edit or reject. <strong>Validate results:</strong> Check that row counts are reasonable. Alert on suspiciously high/low results. <strong>Cache results:</strong> Same question → same SQL. Cache results for re-runs. <strong>Error recovery:</strong> If SQL fails, retry with error message in prompt. <strong>Monitoring:</strong> Track success rate, query execution time, user satisfaction. <strong>Feedback loop:</strong> Log user corrections; use them to improve examples and schema clarity.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>MVP approach:</strong> Start with read-only queries (SELECT only). Add complexity (JOINs, aggregates) incrementally. Move to write queries (INSERT, UPDATE) only once you're confident. Measure success by user adoption and query success rate.</span>
+    </div>
+  </div>
+
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References and Related Concepts</h2>
+
+    <div class="ref-group-title">Child Concepts</div>
+    <ul class="ref-list">
+      <li><a href="text2sql.html">Text-to-SQL</a> — Core Text-to-SQL techniques and libraries</li>
+      <li><a href="vanna.html">Vanna AI</a> — Commercial Text-to-SQL platform</li>
+    </ul>
+
+    <div class="ref-group-title">Related Concepts</div>
+    <ul class="ref-list">
+      <li><a href="function-calling.html">Function Calling</a> — Tool use for structured execution</li>
+      <li><a href="few-shot-prompting.html">Few-Shot Prompting</a> — Learning from examples</li>
+      <li><a href="output-control.html">Output Control</a> — Constraining generation format</li>
+    </ul>
+
+    <div class="ref-group-title">Resources</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        LangChain SQL Agent — <a href="https://python.langchain.com/docs/agents/agent_types/sql" target="_blank">docs ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Vanna AI — <a href="https://vanna.ai" target="_blank">vanna.ai ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <span></span>
+  <span class="concept-nav-cat">Applications</span>
+  <a class="concept-nav-next" href="voice-agents.html">→ Voice Agents</a>
+</nav>
+</body>
+</html>
