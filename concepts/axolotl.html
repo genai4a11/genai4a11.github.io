@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Axolotl — GenAI Mindmap Deep Dive</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f1117;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    a { color: #a78bfa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .back { display: inline-block; margin-bottom: 2rem; font-size: 0.9rem; color: #7c3aed; }
+    .back:hover { color: #a78bfa; }
+    h1 { font-size: 2.4rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.4rem; }
+    .meta { font-size: 0.85rem; color: #94a3b8; margin-bottom: 2.5rem; }
+    .badge {
+      display: inline-block;
+      background: #1e1e2e;
+      border: 1px solid #7c3aed;
+      color: #a78bfa;
+      border-radius: 999px;
+      padding: 0.2rem 0.75rem;
+      font-size: 0.78rem;
+      margin-right: 0.4rem;
+    }
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #c4b5fd;
+      margin: 2.5rem 0 0.8rem;
+      border-left: 3px solid #7c3aed;
+      padding-left: 0.75rem;
+    }
+    p { margin-bottom: 1rem; color: #cbd5e1; }
+    ul { margin: 0.5rem 0 1rem 1.5rem; color: #cbd5e1; }
+    li { margin-bottom: 0.4rem; }
+    pre {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin: 1rem 0 1.5rem;
+      border: 1px solid #2d2d3f;
+    }
+    code { font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace; }
+    .tip-box {
+      background: #1e1e2e;
+      border-left: 4px solid #7c3aed;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+      color: #c4b5fd;
+    }
+    .tip-box strong { color: #a78bfa; }
+    .warn-box {
+      background: #1c1a10;
+      border-left: 4px solid #eab308;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      color: #fef08a;
+    }
+    .refs { margin-top: 2.5rem; }
+    .refs a {
+      display: inline-block;
+      background: #1e1e2e;
+      border: 1px solid #3d3d5c;
+      border-radius: 6px;
+      padding: 0.4rem 0.9rem;
+      margin: 0.3rem 0.3rem 0.3rem 0;
+      font-size: 0.88rem;
+      color: #a78bfa;
+      transition: border-color 0.2s;
+    }
+    .refs a:hover { border-color: #7c3aed; text-decoration: none; }
+    .diagram {
+      background: #1e1e2e;
+      border: 1px solid #2d2d3f;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #cdd6f4;
+      white-space: pre;
+      overflow-x: auto;
+      margin: 1rem 0 1.5rem;
+      line-height: 1.5;
+    }
+    footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid #1e1e2e; text-align: center; font-size: 0.8rem; color: #475569; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <a class="back" href="../index.html">← Back to Mindmap</a>
+
+  <h1>Axolotl</h1>
+  <div class="meta">
+    <span class="badge">finetuning</span>
+    <span class="badge">ft_tools</span>
+    <span class="badge">code</span>
+  </div>
+
+  <h2>What It Is</h2>
+  <p>Axolotl is an open-source Python library that wraps HuggingFace Transformers, PEFT, and TRL behind a single YAML configuration file. Instead of writing hundreds of lines of boilerplate training code, you describe your entire fine-tuning job — model, dataset, adapter settings, quantization, output format — in a declarative config and run one command. Axolotl handles the rest: dataset loading and formatting, tokenization, LoRA/QLoRA adapter injection, multi-GPU setup, and checkpointing.</p>
+
+  <p>It was created to lower the barrier for practitioners who want to fine-tune open-source LLMs (Llama, Mistral, Gemma, Phi, Qwen) without needing to re-implement the same training scaffolding every time. The project has become a community standard for reproducible fine-tuning experiments, partly because YAML configs are version-controllable and shareable — a config file is effectively a complete recipe for reproducing any training run.</p>
+
+  <p>Under the hood, Axolotl delegates to battle-tested libraries. Quantization is handled by bitsandbytes (4-bit NF4 for QLoRA). Adapter injection comes from PEFT. The actual training loop uses TRL's SFTTrainer or DPOTrainer depending on the training objective. Flash Attention 2 can be enabled with a single flag. Gradient checkpointing, DeepSpeed ZeRO, and FSDP are all supported through config fields, making it straightforward to scale from a single GPU to a multi-node cluster.</p>
+
+  <p>Axolotl supports multiple prompt formats out of the box — Alpaca, ShareGPT, ChatML, and raw completion — so you rarely need to write custom dataset preprocessing. For custom formats, you can provide a Python function. It also integrates with Weights &amp; Biases for experiment tracking and supports pushing trained adapters directly to the HuggingFace Hub on completion.</p>
+
+  <p>The typical workflow is: pick a base model from HuggingFace Hub, prepare a dataset in JSONL format, write (or copy and edit) a YAML config, and run <code>axolotl train config.yml</code>. For most standard fine-tuning jobs on a single A100 or H100, this is genuinely the fastest path from dataset to trained adapter.</p>
+
+  <h2>When to Use It</h2>
+  <p>Use Axolotl when you want to fine-tune an open-source LLM for a specific task (instruction following, domain adaptation, chat style, function calling) and you want to move fast without reinventing training infrastructure. It is especially well-suited for:</p>
+  <ul>
+    <li>LoRA and QLoRA experiments where you want to iterate quickly on rank, alpha, and target modules</li>
+    <li>Supervised fine-tuning (SFT) on instruction datasets in standard formats (Alpaca, ShareGPT, ChatML)</li>
+    <li>DPO and ORPO alignment training without writing custom reward pipelines</li>
+    <li>Teams that want reproducible, config-driven training pipelines checked into version control</li>
+    <li>Running on cloud spot instances (Modal, RunPod, Lambda Labs) where you need a reliable, restartable training job</li>
+  </ul>
+  <p>Axolotl is less appropriate when you need highly custom training loops, non-standard model architectures, or when you're doing pre-training from scratch at scale (use Megatron-LM or NeMo for that).</p>
+
+  <h2>Architecture / Workflow</h2>
+  <div class="diagram">Axolotl fine-tuning pipeline:
+
+  config.yml
+      │
+      ▼
+  ┌─────────────────────────────────────────┐
+  │  Dataset loading &amp; formatting            │
+  │  • JSONL / HF Hub / local CSV           │
+  │  • Prompt template (Alpaca/ShareGPT/    │
+  │    ChatML / custom Python fn)           │
+  │  • Tokenisation + packing               │
+  └───────────────┬─────────────────────────┘
+                  │
+                  ▼
+  ┌─────────────────────────────────────────┐
+  │  Model loading                          │
+  │  • HF AutoModelForCausalLM              │
+  │  • Optional: bitsandbytes 4-bit (QLoRA) │
+  │  • Optional: Flash Attention 2          │
+  └───────────────┬─────────────────────────┘
+                  │
+                  ▼
+  ┌─────────────────────────────────────────┐
+  │  PEFT adapter injection                 │
+  │  • LoraConfig (r, alpha, target_mods)   │
+  │  • Only adapter weights are trained     │
+  └───────────────┬─────────────────────────┘
+                  │
+                  ▼
+  ┌─────────────────────────────────────────┐
+  │  Training loop (TRL SFTTrainer/DPO)     │
+  │  • Gradient checkpointing               │
+  │  • DeepSpeed ZeRO / FSDP (optional)     │
+  │  • W&amp;B / MLflow logging                 │
+  └───────────────┬─────────────────────────┘
+                  │
+                  ▼
+  Saved adapter (≈ 25–300 MB)
+  → Push to HF Hub or merge into base model</div>
+
+  <h2>Full Code Example</h2>
+  <p>A minimal QLoRA fine-tuning setup with Axolotl. Save as <code>config.yml</code> then run <code>axolotl train config.yml</code>:</p>
+  <pre><code># config.yml — Axolotl QLoRA fine-tuning on Llama-3.1-8B
+# pip install axolotl[flash-attn,deepspeed]
+
+base_model: meta-llama/Meta-Llama-3.1-8B
+model_type: LlamaForCausalLM
+tokenizer_type: AutoTokenizer
+
+# 4-bit QLoRA quantization
+load_in_4bit: true
+adapter: lora
+
+lora_r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+lora_target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+
+# Dataset — ShareGPT format JSONL
+datasets:
+  - path: ./data/train.jsonl
+    type: sharegpt
+    conversation: chatml
+
+dataset_prepared_path: ./prepared_data
+val_set_size: 0.02
+sequence_len: 4096
+sample_packing: true       # Pack short examples to fill context — improves GPU util
+
+# Training
+num_epochs: 3
+micro_batch_size: 2
+gradient_accumulation_steps: 4
+learning_rate: 2e-4
+lr_scheduler: cosine
+warmup_steps: 50
+optimizer: adamw_bnb_8bit  # 8-bit Adam saves memory
+
+# Efficiency
+flash_attention: true
+gradient_checkpointing: true
+bf16: true
+tf32: true
+
+# Output
+output_dir: ./axolotl-output
+save_steps: 100
+eval_steps: 100
+logging_steps: 10
+
+# Optional: push adapter to HF Hub on completion
+# hub_model_id: your-username/my-fine-tuned-model
+# hub_strategy: end
+
+# Experiment tracking
+wandb_project: axolotl-runs
+wandb_name: llama3.1-8b-qlora-run1</code></pre>
+
+  <p>To run training (single GPU):</p>
+  <pre><code># Install
+pip install axolotl[flash-attn]
+
+# Train
+axolotl train config.yml
+
+# Resume from checkpoint if interrupted
+axolotl train config.yml --resume-from-checkpoint ./axolotl-output/checkpoint-200
+
+# Merge LoRA adapter back into base model weights
+axolotl merge-lora config.yml --lora-model-dir ./axolotl-output
+
+# Inference test after training
+axolotl inference config.yml --lora-model-dir ./axolotl-output \
+  --prompter ShareGPT --message "Explain gradient checkpointing"</code></pre>
+
+  <p>Python API for programmatic use:</p>
+  <pre><code># You can also drive Axolotl from Python (useful in notebooks / CI)
+from axolotl.cli import do_train
+from axolotl.utils.config import normalize_config
+from omegaconf import OmegaConf
+
+cfg = OmegaConf.load("config.yml")
+cfg = normalize_config(cfg)
+do_train(cfg)
+
+# Or use the lower-level HF objects Axolotl builds for you:
+from axolotl.utils.models import load_model, load_tokenizer
+from axolotl.utils.data import prepare_dataset
+
+tokenizer = load_tokenizer(cfg)
+model, _ = load_model(cfg, tokenizer)
+train_dataset, eval_dataset = prepare_dataset(cfg, tokenizer)
+# ... hand off to your own Trainer if needed</code></pre>
+
+  <h2>Key Variants &amp; Alternatives</h2>
+  <ul>
+    <li><strong>Unsloth</strong> — Faster training (2–5×) via hand-written CUDA kernels. Great for speed; less config flexibility than Axolotl. Can be used as the backend inside Axolotl.</li>
+    <li><strong>LLaMA-Factory</strong> — Similar YAML-driven approach with a web UI. Broader model coverage; slightly less community-tested than Axolotl.</li>
+    <li><strong>TRL (raw)</strong> — More control, more boilerplate. Use when Axolotl's abstractions get in the way of custom training objectives.</li>
+    <li><strong>torchtune</strong> — PyTorch-native, from Meta. More explicit and transparent; better for research; less plug-and-play than Axolotl.</li>
+    <li><strong>Modal / RunPod + Axolotl</strong> — Common production pattern: run Axolotl inside a containerised cloud GPU job for cost-effective spot-instance training.</li>
+  </ul>
+
+  <h2>Common Gotchas</h2>
+  <ul>
+    <li><strong>sample_packing + eval hang</strong> — Set <code>eval_sample_packing: false</code> in your config. Evaluation with packing enabled can deadlock or produce incorrect metrics.</li>
+    <li><strong>Sequence length vs GPU memory</strong> — <code>sequence_len: 4096</code> with a 7B model in 4-bit needs ~18–20 GB VRAM with packing + gradient checkpointing. Reduce <code>sequence_len</code> before reducing batch size if you OOM.</li>
+    <li><strong>Chat template mismatch</strong> — Using <code>type: sharegpt</code> with a model that expects Llama-3 instruct format will produce garbled outputs. Always check <code>tokenizer.chat_template</code> matches your dataset type.</li>
+    <li><strong>Missing EOS token loss</strong> — Axolotl trains on loss over the full sequence by default. Set <code>train_on_inputs: false</code> to mask the prompt tokens and only compute loss on completions — this almost always gives better results for instruction tuning.</li>
+    <li><strong>LoRA rank too low for complex tasks</strong> — r=8 or r=16 works for style and format; for domain-specific knowledge (medical, legal, code), use r=64 or r=128 with correspondingly higher alpha.</li>
+  </ul>
+
+  <h2>References</h2>
+  <div class="refs">
+    <a href="../index.html">📖 Back to Mindmap</a>
+    <a href="https://github.com/axolotl-ai-cloud/axolotl" target="_blank">Axolotl GitHub</a>
+    <a href="https://axolotl-ai-cloud.github.io/axolotl/docs/" target="_blank">Axolotl Docs</a>
+    <a href="https://huggingface.co/docs/peft/index" target="_blank">PEFT Docs (HF)</a>
+    <a href="https://github.com/huggingface/trl" target="_blank">TRL (HuggingFace)</a>
+  </div>
+
+  <footer>GenAI Mindmap — Deepak Mehta · Concept page auto-generated 2026-03-21</footer>
+
+</div>
+</body>
+</html>
