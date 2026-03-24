@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Latency Budget | GenAI Mindmap</title>
+  <meta name="description" content="Break down end-to-end response time into components: embedding, retrieval, LLM TTFT, generation, and post-processing. Set budgets per component, identify bottlenecks, and apply targeted optimisations — from caching to speculative decoding." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Latency Budget" />
+  <meta property="og:description" content="Break down end-to-end response time into components: embedding, retrieval, LLM TTFT, generation, and post-processing. Set budgets per component, identify bottlenecks, and apply targeted optimisations — from caching to speculative decoding." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/latency-budget.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/latency-budget.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Latency Budget | GenAI Mindmap",
+  "description": "Break down end-to-end response time into components: embedding, retrieval, LLM TTFT, generation, and post-processing. Set budgets per component, identify bottlenecks, and apply targeted optimisations \u2014 from caching to speculative decoding.",
+  "url": "https://genai4a11.github.io/concepts/latency-budget.html",
+  "dateModified": "2026-03-24T23:52:41.174318",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Latency Budget | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/latency-budget.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #166534;
+      --accent-dark: #15803d;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#166534 0%,#15803d 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/performance-design.html" class="nav-back">← Performance Design</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Performance Design</span>
+    <h1><em>Latency Budget</em></h1>
+    <p class="hero-sub">Break down end-to-end response time into components: embedding, retrieval, LLM TTFT, generation, and post-processing. Set budgets per component, identify bottlenecks, and apply targeted optimisations — from caching to speculative decoding.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">TTFT vs TPOT</div><div class="stat-label">Two latency metrics</div></div>
+      <div><div class="stat-num">P99 not mean</div><div class="stat-label">Target metric</div></div>
+      <div><div class="stat-num">Budget decomposition</div><div class="stat-label">Design approach</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Two latency metrics: TTFT and TPOT</a></li>
+        <li><a href="#s2" data-num="02">Decomposing the latency budget</a></li>
+        <li><a href="#s3" data-num="03">Measuring each component</a></li>
+        <li><a href="#s4" data-num="04">Optimisation levers</a></li>
+        <li><a href="#s5" data-num="05">Caching strategies</a></li>
+        <li><a href="#s6" data-num="06">P99 vs mean</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Two latency metrics: TTFT and TPOT</h2>
+<p>LLM latency has two distinct components that require different optimisations:</p>
+<p><strong>TTFT (Time to First Token)</strong>: The time from when the request is sent until the first output token is received. This is dominated by: network round-trip + prefill computation (processing the input prompt). For a 1000-token prompt, prefill takes 0.5–2s on typical API infrastructure. This is what the user experiences as "the model thinking".</p>
+<p><strong>TPOT (Time Per Output Token)</strong>: The time to generate each subsequent token after the first. Typically 20–80ms/token for frontier models, giving 12–50 tokens/second. For a 500-token response, this adds 10–40 seconds of total generation time.</p>
+<p>For interactive applications, optimising TTFT improves perceived responsiveness more than TPOT — users tolerate slow token generation more than a long initial pause. Streaming output makes TPOT less important for user experience.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Decomposing the latency budget</h2>
+<p>A typical RAG application has these latency components. Set a budget for each based on your overall SLA:</p>
+<table>
+<thead><tr><th>Component</th><th>Typical range</th><th>Budget (5s SLA)</th></tr></thead>
+<tbody>
+<tr><td>Query embedding</td><td>20–100ms</td><td>100ms</td></tr>
+<tr><td>Vector search</td><td>10–50ms</td><td>50ms</td></tr>
+<tr><td>Reranking (if used)</td><td>100–500ms</td><td>200ms</td></tr>
+<tr><td>LLM TTFT</td><td>200ms–2s</td><td>1,500ms</td></tr>
+<tr><td>LLM generation</td><td>1–10s</td><td>2,500ms</td></tr>
+<tr><td>Post-processing</td><td>10–50ms</td><td>50ms</td></tr>
+<tr><td>Network overhead</td><td>50–200ms</td><td>100ms</td></tr>
+</tbody></table>
+<p>If any component consistently exceeds its budget, focus optimisation there before elsewhere.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Measuring each component</h2>
+<pre><code class="language-python">import time
+from functools import wraps
+
+def latency_tracker(component_name: str):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            start = time.perf_counter()
+            result = await func(*args, **kwargs)
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            # Log to your metrics system
+            metrics.histogram(f"latency.{component_name}", elapsed_ms,
+                              tags={"p50": ..., "p99": ...})
+            if elapsed_ms > BUDGET[component_name]:
+                logger.warning(f"{component_name} exceeded budget: {elapsed_ms:.0f}ms")
+            return result
+        return wrapper
+    return decorator
+
+@latency_tracker("embedding")
+async def embed_query(text: str) -> list:
+    return await embed_client.create(text)
+
+@latency_tracker("vector_search")
+async def search(embedding: list, k: int = 5) -> list:
+    return await vector_store.query(embedding, top_k=k)
+
+@latency_tracker("llm_generation")
+async def generate(prompt: str) -> str:
+    chunks = []
+    async for chunk in llm_client.stream(prompt):
+        chunks.append(chunk)
+        if len(chunks) == 1:
+            metrics.record("ttft_ms", (time.perf_counter() - start) * 1000)
+    return "".join(chunks)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Optimisation levers</h2>
+<p><strong>Embedding latency</strong>: Cache query embeddings (same query = same vector). Use a local embedding model (no network round-trip) for queries — embedding models are small (100–400MB). Batch embedding requests at ingestion time.</p>
+<p><strong>Vector search</strong>: Approximate Nearest Neighbor (ANN) indices (HNSW, IVF) trade slight recall for 10–100× faster search vs exact search. Pre-filter by metadata before vector search to reduce the search space.</p>
+<p><strong>LLM TTFT</strong>: Reduce prompt length (shorter system prompts, fewer retrieved chunks). Use speculative decoding. Use a smaller model if quality allows. Cache common prompt prefixes (KV-cache warming in TGI/vLLM).</p>
+<p><strong>LLM generation</strong>: Use streaming — don't wait for full generation. Limit max_tokens aggressively. Use faster/smaller models for tasks where quality requirements are lower.</p>
+<p><strong>System-level</strong>: Use async throughout (no blocking I/O). Parallelize embedding + metadata lookup. Keep your application server co-located with the LLM API region.</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Caching strategies</h2>
+<pre><code class="language-python">import hashlib
+from functools import lru_cache
+import redis
+
+r = redis.Redis()
+
+def cache_key(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()[:16]
+
+async def embed_with_cache(text: str) -> list:
+    key = f"emb:{cache_key(text)}"
+    cached = r.get(key)
+    if cached:
+        return json.loads(cached)
+    embedding = await embed_client.create(text)
+    r.setex(key, 3600, json.dumps(embedding))  # 1 hour TTL
+    return embedding
+
+# Semantic cache for LLM responses
+async def query_with_semantic_cache(query: str, threshold: float = 0.95) -> str:
+    query_emb = await embed_with_cache(query)
+    # Search for similar past queries
+    similar = await semantic_cache_store.search(query_emb, top_k=1)
+    if similar and similar[0].similarity > threshold:
+        return similar[0].cached_response  # reuse cached answer
+    # Cache miss: run full RAG pipeline
+    response = await full_rag_pipeline(query)
+    await semantic_cache_store.store(query_emb, query, response)
+    return response
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>P99 vs mean</h2>
+<p>Always track P99 (99th percentile) latency, not mean. The mean hides outliers that cause user-visible timeout errors. In LLM systems, P99 is often 3–5× the mean due to: occasional long-context requests hitting rate limits, cold model starts after scaling events, and occasional slow responses from LLM provider infrastructure.</p>
+<p>Set SLAs in terms of P95 and P99: "95% of requests complete in &lt;3s, 99% in &lt;8s." Mean-based SLAs are meaningless for user-facing applications.</p>
+<p>Tools: add latency histograms to your metrics (Prometheus histogram, Datadog distribution). Set alerting thresholds at P99, not mean. Log the full latency breakdown for any request exceeding the P99 budget to identify which component caused the outlier.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Async doesn't always help</strong>: Running embedding and LLM calls in parallel only helps if they're independent. In a standard RAG pipeline, you need the embedding before searching, and the search results before calling the LLM — these are sequential by nature. Parallelise what you can (e.g., retrieve while streaming previous tokens).</p>
+<p><strong>Context window affects TTFT nonlinearly</strong>: LLM prefill cost scales roughly quadratically with input length (due to attention). A 4K-token prompt takes ~4× longer to prefill than a 2K-token prompt. Reducing prompt length has outsized latency benefits for long-context applications.</p>
+<p><strong>Cold starts in serverless</strong>: If deploying on serverless (Lambda, Cloud Run), cold start times (200ms–2s) can dominate latency for infrequent users. Keep instances warm with periodic ping requests or use always-on minimum instances.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/performance-design.html" style="color:var(--accent)">Performance Design</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG vs Fine-tuning | GenAI Mindmap</title>
+  <meta name="description" content="The most important architectural decision in GenAI: when to use retrieval-augmented generation vs fine-tuning vs prompting alone. A decision framework covering knowledge freshness, data availability, latency, cost, and task type." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="RAG vs Fine-tuning" />
+  <meta property="og:description" content="The most important architectural decision in GenAI: when to use retrieval-augmented generation vs fine-tuning vs prompting alone. A decision framework covering knowledge freshness, data availability, latency, cost, and task type." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/rag-vs-finetuning.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/rag-vs-finetuning.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "RAG vs Fine-tuning | GenAI Mindmap",
+  "description": "The most important architectural decision in GenAI: when to use retrieval-augmented generation vs fine-tuning vs prompting alone. A decision framework covering knowledge freshness, data availability, latency, cost, and task type.",
+  "url": "https://genai4a11.github.io/concepts/rag-vs-finetuning.html",
+  "dateModified": "2026-03-24T23:52:41.883380",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "RAG vs Fine-tuning | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/rag-vs-finetuning.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #166534;
+      --accent-dark: #15803d;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#166534 0%,#15803d 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/design-decisions.html" class="nav-back">← Design Decisions</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Design Decisions</span>
+    <h1><em>RAG vs Fine-tuning</em></h1>
+    <p class="hero-sub">The most important architectural decision in GenAI: when to use retrieval-augmented generation vs fine-tuning vs prompting alone. A decision framework covering knowledge freshness, data availability, latency, cost, and task type.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">3 options</div><div class="stat-label">RAG / FT / Prompting</div></div>
+      <div><div class="stat-num">Knowledge freshness</div><div class="stat-label">Key RAG advantage</div></div>
+      <div><div class="stat-num">Task adaptation</div><div class="stat-label">Key FT advantage</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The decision framework</a></li>
+        <li><a href="#s2" data-num="02">When to choose RAG</a></li>
+        <li><a href="#s3" data-num="03">When to choose fine-tuning</a></li>
+        <li><a href="#s4" data-num="04">When prompting alone is sufficient</a></li>
+        <li><a href="#s5" data-num="05">Combining RAG and fine-tuning</a></li>
+        <li><a href="#s6" data-num="06">Cost comparison</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The decision framework</h2>
+<p>Choosing between RAG, fine-tuning, and prompting is the single most impactful architectural decision in a GenAI system. Many teams default to fine-tuning because it feels more "serious" or technical, but RAG is often faster, cheaper, and more maintainable. The right choice depends on the problem dimensions:</p>
+<table>
+<thead><tr><th>Dimension</th><th>RAG wins</th><th>Fine-tuning wins</th><th>Prompting wins</th></tr></thead>
+<tbody>
+<tr><td>Knowledge freshness</td><td>✓ Real-time updates</td><td>✗ Requires retraining</td><td>✗ Static</td></tr>
+<tr><td>Knowledge volume</td><td>✓ Unlimited (external store)</td><td>✗ Limited by weights</td><td>✗ Limited by context</td></tr>
+<tr><td>Style/format adaptation</td><td>✗ Hard</td><td>✓ Strong</td><td>✓ Moderate (via examples)</td></tr>
+<tr><td>Task specialisation</td><td>✗ Weak</td><td>✓ Strong</td><td>✓ Moderate</td></tr>
+<tr><td>Data privacy</td><td>✓ Data stays in retrieval store</td><td>✓ Data baked in weights</td><td>✗ Data in every prompt</td></tr>
+<tr><td>Time to deploy</td><td>✓ Days</td><td>✗ Weeks–months</td><td>✓ Hours</td></tr>
+</tbody></table>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>When to choose RAG</h2>
+<p>RAG is the right choice when the core requirement is <strong>knowledge</strong> — accessing facts that the base model doesn't know or that change over time.</p>
+<p><strong>Best use cases for RAG</strong>:</p>
+<ul>
+<li><strong>Enterprise knowledge bases</strong>: Internal documents, policies, procedures that change frequently and aren't in the base model's training data.</li>
+<li><strong>Customer support</strong>: Product documentation, FAQs, troubleshooting guides that need to reference specific, current information.</li>
+<li><strong>Research assistants</strong>: Access to recent papers, news, or domain-specific corpora.</li>
+<li><strong>Compliance and legal</strong>: Regulatory documents that must be cited accurately and updated as regulations change.</li>
+</ul>
+<p>The killer use case for RAG: any system that must cite its sources. RAG can show users exactly which document chunk informed the answer — fine-tuning cannot.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>When to choose fine-tuning</h2>
+<p>Fine-tuning is the right choice when the requirement is <strong>behaviour</strong> — how the model responds — rather than what it knows.</p>
+<p><strong>Best use cases for fine-tuning</strong>:</p>
+<ul>
+<li><strong>Output format consistency</strong>: Always returning JSON in a specific schema, always using a particular tone, always structuring responses in a certain way.</li>
+<li><strong>Domain language</strong>: Medical, legal, or technical terminology where the base model uses incorrect vocabulary or the wrong level of formality.</li>
+<li><strong>Instruction following improvements</strong>: The base model misunderstands certain task types; fine-tuning on examples teaches it correctly.</li>
+<li><strong>Reducing inference cost</strong>: A fine-tuned small model (7B) can match a large model (70B) on specific tasks, at 10× lower cost.</li>
+<li><strong>Reasoning style</strong>: Teaching the model to follow your company's specific analytical framework or reasoning approach.</li>
+</ul>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>When prompting alone is sufficient</h2>
+<pre><code class="language-python"># Start here before considering RAG or fine-tuning
+# A well-crafted system prompt solves many problems that seem to require more
+
+system_prompt = (
+    "You are a customer support agent for Acme Inc. "
+    "You help users with billing, account management, and product questions.
+
+"
+    "Communication style:
+"
+    "- Be concise and direct. No filler phrases.
+"
+    "- Always verify you understand the issue before suggesting solutions.
+"
+    "- For billing questions, always ask for account number first.
+"
+    "- Escalate to human agent for: fraud claims, legal threats, medical emergencies.
+
+"
+    "Format: Use numbered steps for instructions. Plain prose for explanations."
+)
+
+# This handles: tone, format, escalation rules, communication style
+# Without: training data, fine-tuning time, model hosting costs
+
+# Add few-shot examples to handle edge cases:
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": "How do I cancel my subscription?"},
+    {"role": "assistant", "content": "I can help with that. To cancel...[example]"},
+    {"role": "user", "content": actual_user_question},
+]
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Combining RAG and fine-tuning</h2>
+<p>RAG and fine-tuning are complementary, not mutually exclusive. The pattern that works best for high-stakes production systems:</p>
+<ol>
+<li><strong>Start with prompting</strong>: Define the task, format, and constraints in a well-crafted system prompt. Measure quality.</li>
+<li><strong>Add RAG</strong>: Retrieve relevant knowledge from your domain corpus. Measure quality improvement.</li>
+<li><strong>Fine-tune the reader</strong>: If the model still produces wrong formats or tone, fine-tune it on examples of correct RAG-augmented outputs. This teaches it to use retrieved context correctly.</li>
+</ol>
+<p>The fine-tuned RAG model is the gold standard for production: it has domain knowledge (via retrieval), learned citation behaviour (via fine-tuning), and up-to-date facts (via fresh retrieval at query time).</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Cost comparison</h2>
+<p>Rough cost estimates for building a company knowledge base assistant (10,000 documents):</p>
+<p><strong>RAG (medium scale)</strong>: Document ingestion: ~$50 (OpenAI embeddings for 50M tokens). Infrastructure: $200–500/month (vector DB + API calls). Time to deploy: 1–2 weeks. No training data needed.</p>
+<p><strong>Fine-tuning (7B model)</strong>: Training data collection: 4–8 weeks of annotation. Training: $500–5,000 per run on managed services. Hosting: $500–2,000/month (dedicated GPU). Time to deploy: 2–3 months. Fine-tuning needed for each model update.</p>
+<p><strong>Verdict</strong>: For most knowledge base use cases, RAG has 10–50× lower initial cost and is deployable 10× faster. Fine-tuning becomes cost-effective when: you have 100K+ annotated examples, you need to serve millions of requests/day (amortising hosting cost), or the quality improvement from fine-tuning is critical for your product.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Fine-tuning doesn't add new knowledge reliably</strong>: A common misconception is that fine-tuning on your documents "teaches" the model your domain knowledge. In reality, fine-tuned models have limited ability to recall specific facts trained into their weights, and they hallucinate about details. Use RAG for facts; use fine-tuning for behaviour.</p>
+<p><strong>RAG doesn't fix model capability limits</strong>: If the base model can't reason well about a topic, adding retrieval won't fix it — the model will misinterpret the retrieved context. If reasoning quality is the issue, consider a more capable base model or fine-tuning on reasoning examples.</p>
+<p><strong>Hybrid is often the answer</strong>: Production teams that start with "RAG or fine-tuning?" often end up with both. Budget for this possibility when planning your roadmap.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/design-decisions.html" style="color:var(--accent)">Design Decisions</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

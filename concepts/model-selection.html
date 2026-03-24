@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model Selection | GenAI Mindmap</title>
+  <meta name="description" content="How to choose the right LLM for your production system. A structured framework covering task requirements, quality-cost-latency trade-offs, API vs self-hosted, frontier vs open models, and how to run your own benchmarks." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Model Selection" />
+  <meta property="og:description" content="How to choose the right LLM for your production system. A structured framework covering task requirements, quality-cost-latency trade-offs, API vs self-hosted, frontier vs open models, and how to run your own benchmarks." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/model-selection.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/model-selection.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Model Selection | GenAI Mindmap",
+  "description": "How to choose the right LLM for your production system. A structured framework covering task requirements, quality-cost-latency trade-offs, API vs self-hosted, frontier vs open models, and how to run your own benchmarks.",
+  "url": "https://genai4a11.github.io/concepts/model-selection.html",
+  "dateModified": "2026-03-24T23:52:41.401031",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Model Selection | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/model-selection.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #166534;
+      --accent-dark: #15803d;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#166534 0%,#15803d 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/design-decisions.html" class="nav-back">← Design Decisions</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Design Decisions</span>
+    <h1><em>Model Selection</em></h1>
+    <p class="hero-sub">How to choose the right LLM for your production system. A structured framework covering task requirements, quality-cost-latency trade-offs, API vs self-hosted, frontier vs open models, and how to run your own benchmarks.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Quality/Cost/Latency</div><div class="stat-label">3-way trade-off</div></div>
+      <div><div class="stat-num">Benchmark first</div><div class="stat-label">Key principle</div></div>
+      <div><div class="stat-num">TCO matters</div><div class="stat-label">Beyond API price</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The selection framework</a></li>
+        <li><a href="#s2" data-num="02">Frontier API models</a></li>
+        <li><a href="#s3" data-num="03">Open-weight self-hosted models</a></li>
+        <li><a href="#s4" data-num="04">Running your own benchmarks</a></li>
+        <li><a href="#s5" data-num="05">Cost modelling</a></li>
+        <li><a href="#s6" data-num="06">Latency requirements</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The selection framework</h2>
+<p>Model selection should be driven by systematic evaluation, not brand preference or benchmark rankings. The framework:</p>
+<ol>
+<li><strong>Define requirements first</strong>: What task (classification, generation, reasoning, code)? What quality bar (human parity, 90% of GPT-4, etc.)? What latency budget (real-time &lt;1s, interactive &lt;5s, batch &lt;60s)? What cost budget (per-query, per-month)?</li>
+<li><strong>Build a golden test set</strong>: 100–500 representative inputs with expected outputs or quality criteria. This is non-negotiable — you cannot select a model without a domain-specific eval.</li>
+<li><strong>Shortlist candidates</strong>: 3–5 models that plausibly meet your requirements. Include the obvious frontrunners and one or two cheaper alternatives.</li>
+<li><strong>Benchmark systematically</strong>: Run all candidates on your golden test set. Score automatically where possible, sample-human-review otherwise.</li>
+<li><strong>Calculate total cost of ownership</strong>: API cost + infrastructure + maintenance + model update costs.</li>
+</ol>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Frontier API models</h2>
+<p>The current frontier model landscape (as of early 2025):</p>
+<table>
+<thead><tr><th>Model</th><th>Provider</th><th>Strengths</th><th>Input $/1M</th></tr></thead>
+<tbody>
+<tr><td>GPT-4o</td><td>OpenAI</td><td>Balanced, vision, function calling</td><td>$2.50</td></tr>
+<tr><td>Claude 3.5 Sonnet</td><td>Anthropic</td><td>Coding, long context, instruction following</td><td>$3.00</td></tr>
+<tr><td>Gemini 1.5 Pro</td><td>Google</td><td>1M context, multimodal, cost-efficient at scale</td><td>$3.50</td></tr>
+<tr><td>GPT-4o-mini</td><td>OpenAI</td><td>Fast, cheap, surprisingly capable</td><td>$0.15</td></tr>
+<tr><td>Claude 3 Haiku</td><td>Anthropic</td><td>Fastest Anthropic model, cheap</td><td>$0.25</td></tr>
+<tr><td>Gemini 1.5 Flash</td><td>Google</td><td>Multimodal, long context at low cost</td><td>$0.35</td></tr>
+</tbody></table>
+<p>For most production use cases: start with GPT-4o-mini or Claude Haiku for high-volume/low-stakes tasks, GPT-4o or Claude 3.5 Sonnet for quality-sensitive tasks.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Open-weight self-hosted models</h2>
+<p>Self-hosted open models are cost-effective at high volume and necessary for data privacy requirements:</p>
+<table>
+<thead><tr><th>Model</th><th>Size</th><th>VRAM (4-bit)</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>Llama 3.1 8B Instruct</td><td>8B</td><td>5 GB</td><td>General tasks, budget</td></tr>
+<tr><td>Llama 3.1 70B Instruct</td><td>70B</td><td>40 GB</td><td>Quality + privacy</td></tr>
+<tr><td>Mistral 7B v0.3</td><td>7B</td><td>4 GB</td><td>Apache 2.0 licence</td></tr>
+<tr><td>Qwen 2.5 72B</td><td>72B</td><td>40 GB</td><td>Multilingual, coding</td></tr>
+<tr><td>Phi-4 14B</td><td>14B</td><td>9 GB</td><td>Reasoning, on-device</td></tr>
+</tbody></table>
+<p>Break-even point for self-hosting: typically 1–5M tokens/day, where hosting cost (GPU cloud) becomes cheaper than API calls. Below this, API is almost always more economical when you include engineering overhead.</p>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Running your own benchmarks</h2>
+<pre><code class="language-python">import openai
+from anthropic import Anthropic
+import json, asyncio
+
+async def benchmark_models(test_cases: list, models: list) -> dict:
+    results = {}
+    for model_config in models:
+        scores = []
+        for tc in test_cases:
+            # Run the model
+            output = await call_model(model_config, tc["input"])
+            # Score the output
+            score = await llm_judge(tc["input"], output, tc.get("expected"))
+            scores.append({"input": tc["input"], "output": output, "score": score})
+        results[model_config["name"]] = {
+            "scores": scores,
+            "mean_score": sum(s["score"] for s in scores) / len(scores),
+            "pass_rate": sum(1 for s in scores if s["score"] >= 0.7) / len(scores),
+            "avg_latency_ms": ...,
+            "avg_cost_usd": ...,
+        }
+    return results
+
+# Sort by quality/cost ratio
+ranked = sorted(results.items(), key=lambda x: x[1]["mean_score"] / x[1]["avg_cost_usd"], reverse=True)
+for name, metrics in ranked:
+    print(f"{name}: score={metrics['mean_score']:.2f}, cost=${metrics['avg_cost_usd']:.4f}")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Cost modelling</h2>
+<pre><code class="language-python">def monthly_cost_estimate(
+    daily_queries: int,
+    avg_input_tokens: int,
+    avg_output_tokens: int,
+    input_price_per_m: float,
+    output_price_per_m: float,
+) -> float:
+    monthly_queries = daily_queries * 30
+    input_cost = monthly_queries * avg_input_tokens / 1_000_000 * input_price_per_m
+    output_cost = monthly_queries * avg_output_tokens / 1_000_000 * output_price_per_m
+    return input_cost + output_cost
+
+# Example: customer support bot
+daily_queries = 10_000
+avg_input = 1500   # system prompt + conversation history + user message
+avg_output = 300   # typical response
+
+print("GPT-4o:", monthly_cost_estimate(daily_queries, avg_input, avg_output, 2.50, 10.00))
+print("GPT-4o-mini:", monthly_cost_estimate(daily_queries, avg_input, avg_output, 0.15, 0.60))
+print("Claude Haiku:", monthly_cost_estimate(daily_queries, avg_input, avg_output, 0.25, 1.25))
+
+# GPT-4o:     $12,900/month
+# GPT-4o-mini:  $846/month  — if quality is acceptable, huge savings
+# Claude Haiku: $1,275/month
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Latency requirements</h2>
+<p>Latency is often the deciding factor that overrides quality considerations:</p>
+<ul>
+<li><strong>Real-time (&lt;500ms)</strong>: Voice assistants, autocomplete, live search. Only fast API models (GPT-4o-mini, Gemini Flash) or self-hosted small models (7B, quantised). No 70B+ models.</li>
+<li><strong>Interactive (&lt;5s)</strong>: Chat interfaces, form assistance. Most API models qualify. Consider streaming for perceived latency — first token in 500ms feels fast even if full response takes 4s.</li>
+<li><strong>Batch (&gt;10s acceptable)</strong>: Document processing, overnight analysis. Use larger, higher-quality models. Batch APIs (OpenAI, Anthropic) give 50% cost reduction at 24h turnaround.</li>
+</ul>
+<p>Streaming is critical for user-facing applications: <code>stream=True</code> in API calls means users see tokens as they're generated, dramatically improving perceived responsiveness even when total latency is unchanged.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Public benchmarks don't predict your task performance</strong>: MMLU, HumanEval, and MT-Bench measure specific capabilities. A model that ranks 5th on MMLU may rank 1st on your classification task. Always evaluate on your domain data.</p>
+<p><strong>Model versions change silently</strong>: OpenAI and Anthropic update models behind the same API endpoint. <code>gpt-4o</code> in March 2024 is not the same model as <code>gpt-4o</code> in December 2024. Pin to specific model versions (e.g., <code>gpt-4o-2024-08-06</code>) in production to avoid silent quality regressions.</p>
+<p><strong>Rate limits matter at scale</strong>: Enterprise tier rate limits are 10–100× higher than free/standard tiers. Factor in the lead time to upgrade limits — OpenAI rate limit increases can take days or weeks to approve.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/design-decisions.html" style="color:var(--accent)">Design Decisions</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

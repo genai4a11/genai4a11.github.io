@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parent-Child Chunking | GenAI Mindmap</title>
+  <meta name="description" content="Store large parent chunks and small child chunks. Retrieve small child chunks for precision, but return their parent chunks to the LLM for full context. The Goldilocks strategy: embedding precision without context poverty." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Parent-Child Chunking" />
+  <meta property="og:description" content="Store large parent chunks and small child chunks. Retrieve small child chunks for precision, but return their parent chunks to the LLM for full context. The Goldilocks strategy: embedding precision without context poverty." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/parent-child-chunking.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/parent-child-chunking.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Parent-Child Chunking | GenAI Mindmap",
+  "description": "Store large parent chunks and small child chunks. Retrieve small child chunks for precision, but return their parent chunks to the LLM for full context. The Goldilocks strategy: embedding precision without context poverty.",
+  "url": "https://genai4a11.github.io/concepts/parent-child-chunking.html",
+  "dateModified": "2026-03-24T23:52:41.628490",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Parent-Child Chunking | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/parent-child-chunking.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #7c2d12;
+      --accent-dark: #9a3412;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#7c2d12 0%,#9a3412 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/chunking.html" class="nav-back">← Chunking Strategies</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Chunking Strategies</span>
+    <h1><em>Parent-Child Chunking</em></h1>
+    <p class="hero-sub">Store large parent chunks and small child chunks. Retrieve small child chunks for precision, but return their parent chunks to the LLM for full context. The Goldilocks strategy: embedding precision without context poverty.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Small chunks</div><div class="stat-label">For embedding</div></div>
+      <div><div class="stat-num">Large parent</div><div class="stat-label">For synthesis</div></div>
+      <div><div class="stat-num">Best of both</div><div class="stat-label">Worlds</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The parent-child idea</a></li>
+        <li><a href="#s2" data-num="02">LlamaIndex implementation</a></li>
+        <li><a href="#s3" data-num="03">LangChain parent document retriever</a></li>
+        <li><a href="#s4" data-num="04">Hierarchical chunk design</a></li>
+        <li><a href="#s5" data-num="05">Storage architecture</a></li>
+        <li><a href="#s6" data-num="06">When it outperforms alternatives</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The parent-child idea</h2>
+<p>Parent-child chunking (also called hierarchical chunking or small-to-big retrieval) decouples the retrieval unit from the synthesis unit — just like sentence windows, but applied to larger document structures.</p>
+<p><strong>The problem with fixed-size chunks</strong>: Large chunks (1024 tokens) give LLMs good context but embed poorly — the embedding averages over too many concepts and matches imprecisely. Small chunks (128 tokens) embed precisely but leave the LLM with too little context to synthesise a good answer.</p>
+<p><strong>The solution</strong>: Create two chunk sizes. Small "child" chunks (128–256 tokens) are embedded and indexed for retrieval — they point sharply at specific facts. Large "parent" chunks (1024–2048 tokens) are stored separately. When a child chunk is retrieved, the system looks up its parent and returns the parent chunk to the LLM instead.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>LlamaIndex implementation</h2>
+<pre><code class="language-python">from llama_index.core import VectorStoreIndex, StorageContext
+from llama_index.core.node_parser import HierarchicalNodeParser, get_leaf_nodes
+from llama_index.core.retrievers import AutoMergingRetriever
+from llama_index.core.storage.docstore import SimpleDocumentStore
+
+# Create hierarchical nodes: 2048 -> 512 -> 128 token chunks
+node_parser = HierarchicalNodeParser.from_defaults(
+    chunk_sizes=[2048, 512, 128]  # parent -> intermediate -> leaf
+)
+
+documents = load_documents("./docs")
+nodes = node_parser.get_nodes_from_documents(documents)
+leaf_nodes = get_leaf_nodes(nodes)  # only the 128-token chunks
+
+# Index: embed only leaf nodes, but store all nodes
+docstore = SimpleDocumentStore()
+docstore.add_documents(nodes)
+
+storage_context = StorageContext.from_defaults(docstore=docstore)
+index = VectorStoreIndex(leaf_nodes, storage_context=storage_context)
+
+# AutoMergingRetriever: if most children of a parent are retrieved, return the parent
+retriever = AutoMergingRetriever(
+    index.as_retriever(similarity_top_k=10),
+    storage_context=storage_context,
+    simple_ratio_thresh=0.3,  # if 30% of children are retrieved, merge to parent
+)
+
+response = retriever.retrieve("What are the key components of attention?")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>LangChain parent document retriever</h2>
+<pre><code class="language-python">from langchain.retrievers import ParentDocumentRetriever
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.storage import InMemoryStore
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+
+# Parent splitter: larger chunks for synthesis
+parent_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
+# Child splitter: smaller chunks for retrieval
+child_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
+
+vectorstore = Chroma(embedding_function=OpenAIEmbeddings())
+docstore = InMemoryStore()  # stores parent chunks
+
+retriever = ParentDocumentRetriever(
+    vectorstore=vectorstore,
+    docstore=docstore,
+    child_splitter=child_splitter,
+    parent_splitter=parent_splitter,
+)
+
+# Add documents — splits into children for embedding, stores parents
+retriever.add_documents(documents)
+
+# At retrieval time: query hits child embeddings → returns parent chunks
+results = retriever.invoke("How does attention work in transformers?")
+for r in results:
+    print(f"Parent chunk: {len(r.page_content)} chars")
+    print(r.page_content[:300])
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Hierarchical chunk design</h2>
+<p>Three-level hierarchies give even more flexibility:</p>
+<ul>
+<li><strong>Level 1 (document)</strong>: The full document. Returned when many chunks from it are retrieved — indicates the whole document is relevant.</li>
+<li><strong>Level 2 (section)</strong>: 1024–2048 tokens. A section or topic within the document. The typical "parent" returned to the LLM.</li>
+<li><strong>Level 3 (sentence/passage)</strong>: 64–256 tokens. The actual retrieval unit. Precise semantic match to the query.</li>
+</ul>
+<p>LlamaIndex's <code>AutoMergingRetriever</code> handles this automatically: if a threshold of sibling chunks are retrieved, it replaces them with their parent. This is the "auto-merging" behaviour — the system automatically scales up the context when many related passages are retrieved.</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Storage architecture</h2>
+<pre><code class="language-python"># Two separate stores needed:
+# 1. Vector store: child chunk embeddings (Chroma, Pinecone, Weaviate)
+# 2. Document store: parent chunk text (InMemoryStore, Redis, MongoDB)
+
+# The child chunk stores a reference to its parent:
+{
+  "chunk_id": "doc1_chunk_023",
+  "parent_id": "doc1_section_003",   # pointer to parent
+  "embedding": [...],                 # the embedded vector
+  "text": "attention scores are computed by...",  # child text (may not be needed post-retrieval)
+}
+
+# Parent chunk in docstore:
+{
+  "section_id": "doc1_section_003",
+  "text": "Self-attention allows each position in the sequence to attend to all positions in the previous layer... [~1024 tokens]",
+  "children": ["doc1_chunk_021", "doc1_chunk_022", "doc1_chunk_023"],
+}
+
+# Retrieval: vector search on children → lookup parent → return parent text to LLM
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>When it outperforms alternatives</h2>
+<p>Parent-child retrieval consistently outperforms both fixed-size and sentence-window on benchmarks that test answer comprehensiveness — questions that require integrating information from multiple nearby sentences. It's particularly strong for: technical documentation where precise sub-section retrieval + full section context is needed, legal and compliance documents where narrowly-scoped facts must be returned with full surrounding context, and multi-hop reasoning chains where small child chunks enable precise retrieval of each reasoning step.</p>
+<p>It's roughly equivalent to sentence-window for simple factoid retrieval but significantly better for complex synthesis tasks.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Storage complexity</strong>: Requires two storage systems (vector store + document store). Simple deployments can use an in-memory docstore, but production needs persistent storage. This adds operational complexity vs single-store approaches.</p>
+<p><strong>Parent size calibration</strong>: Parents that are too large waste LLM context window; too small don't provide enough synthesis context. Profile your documents — count average tokens per section — and set parent chunk size to cover 2–3 typical sections.</p>
+<p><strong>Merging threshold</strong>: The auto-merging threshold in LlamaIndex (ratio of children retrieved before upgrading to parent) needs tuning per use case. Too aggressive = always returning full documents; too conservative = never merging, losing the hierarchy benefit. Start at 0.3 and adjust based on context waste metrics.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/chunking.html" style="color:var(--accent)">Chunking Strategies</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
