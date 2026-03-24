@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vector Databases — GenAI Mindmap</title>
-  <meta name="description" content="Pinecone, Qdrant, Weaviate, pgvector, and Chroma — choosing and operating a vector store for production RAG" />
+  <title>Fine-tuning LLMs — GenAI Mindmap</title>
+  <meta name="description" content="When and how to fine-tune — prompting vs fine-tuning decision, QLoRA pipeline, data requirements" />
   <meta property="og:type" content="article" />
-  <meta property="og:title" content="Vector Databases" />
-  <meta property="og:description" content="Pinecone, Qdrant, Weaviate, pgvector, and Chroma — choosing and operating a vector store for production RAG" />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/vector-dbs.html" />
+  <meta property="og:title" content="Fine-tuning LLMs" />
+  <meta property="og:description" content="When and how to fine-tune — prompting vs fine-tuning decision, QLoRA pipeline, data requirements" />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/finetuning.html" />
   <meta property="og:site_name" content="GenAI Mindmap" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Vector Databases" />
-  <meta name="twitter:description" content="Pinecone, Qdrant, Weaviate, pgvector, and Chroma — choosing and operating a vector store for production RAG" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/vector-dbs.html" />
+  <meta name="twitter:title" content="Fine-tuning LLMs" />
+  <meta name="twitter:description" content="When and how to fine-tune — prompting vs fine-tuning decision, QLoRA pipeline, data requirements" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/finetuning.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
@@ -267,8 +267,9 @@
     }
     .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
     .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
-    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
     .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
     .callout strong { font-weight: 700; }
 
     /* ── BEST PRACTICES ── */
@@ -394,10 +395,10 @@
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "Vector Databases",
-  "description": "Pinecone, Qdrant, Weaviate, pgvector, and Chroma \u2014 choosing and operating a vector store for production RAG",
-  "url": "https://genai4a11.github.io/concepts/vector-dbs.html",
-  "dateModified": "2026-03-24T12:28:13+00:00",
+  "headline": "Fine-tuning LLMs",
+  "description": "When and how to fine-tune \u2014 prompting vs fine-tuning decision, QLoRA pipeline, data requirements",
+  "url": "https://genai4a11.github.io/concepts/finetuning.html",
+  "dateModified": "2026-03-24T12:34:25.743541",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -431,8 +432,8 @@
       {
         "@type": "ListItem",
         "position": 3,
-        "name": "Vector Databases",
-        "item": "https://genai4a11.github.io/concepts/vector-dbs.html"
+        "name": "Fine-tuning LLMs",
+        "item": "https://genai4a11.github.io/concepts/finetuning.html"
       }
     ]
   }
@@ -458,21 +459,21 @@
 
 <!-- ── HERO ── -->
 <div class="hero">
-  <span class="hero-tag">Storage Layer</span>
-  <h1><em>Vector</em> Databases</h1>
-  <p class="hero-sub">Pinecone, Qdrant, Weaviate, pgvector, and Chroma — choosing and operating a vector store for production RAG</p>
+  <span class="hero-tag">FINE-TUNING</span>
+  <h1>Fine-tuning <em>LLMs</em></h1>
+  <p class="hero-sub">Teach a model new behaviour by updating its weights — when prompting alone isn't enough</p>
   <div class="hero-stats">
     <div class="stat">
-      <span class="stat-num">store → index → query</span>
-      <span class="stat-label">the three operations</span>
+      <span class="stat-num">prompting → fine-tuning</span>
+      <span class="stat-label">the decision</span>
     </div>
     <div class="stat">
-      <span class="stat-num">filtered ANN search</span>
-      <span class="stat-label">the production requirement</span>
+      <span class="stat-num">&lt;1% of weights updated</span>
+      <span class="stat-label">with LoRA/QLoRA</span>
     </div>
     <div class="stat">
-      <span class="stat-num">millions to billions</span>
-      <span class="stat-label">the scale range</span>
+      <span class="stat-num">500 curated > 50k noisy</span>
+      <span class="stat-label">data quality rule</span>
     </div>
   </div>
 </div>
@@ -484,327 +485,324 @@
   <div class="toc-card">
     <div class="toc-heading">Contents</div>
     <ol class="toc-list">
-      <li><a href="#what-vector-db" data-num="1">What is a vector DB</a></li>
-      <li><a href="#pgvector" data-num="2">pgvector: Postgres-native</a></li>
-      <li><a href="#qdrant" data-num="3">Qdrant: filterable ANN</a></li>
-      <li><a href="#weaviate" data-num="4">Weaviate: schema + search</a></li>
-      <li><a href="#pinecone" data-num="5">Pinecone: managed</a></li>
-      <li><a href="#chroma" data-num="6">Chroma: developer-first</a></li>
-      <li><a href="#choosing" data-num="7">Choosing and operating</a></li>
+      <li><a href="#prompting-vs-ft" data-num="1">Prompting vs fine-tuning</a></li>
+      <li><a href="#ft-pipeline" data-num="2">The fine-tuning pipeline</a></li>
+      <li><a href="#data-requirements" data-num="3">Data requirements</a></li>
+      <li><a href="#lora-qlora" data-num="4">LoRA and QLoRA</a></li>
+      <li><a href="#code-example" data-num="5">Working code example</a></li>
+      <li><a href="#next-steps" data-num="6">What to explore next</a></li>
+      <li><a href="#references" data-num="7">References</a></li>
     </ol>
   </div>
 
-  <!-- ── 1. WHAT IS A VECTOR DATABASE ── -->
-  <div class="section-block" id="what-vector-db">
-    <div class="section-marker">01 — Definition</div>
-    <h2>What Is a Vector Database?</h2>
-    <p>A vector database stores high-dimensional embedding vectors alongside metadata, and provides approximate nearest neighbor (ANN) search — find the top-k vectors most similar to a query vector.</p>
-
-    <p>Compared to traditional DBs: regular DBs filter/sort on exact values. Vector DBs find "semantically similar" items via geometric distance.</p>
-
-    <h3>Core Operations</h3>
-    <p><strong>Insert:</strong> store vector + metadata + optional text. <strong>Query:</strong> find top-k nearest by cosine/dot/L2. <strong>Filter:</strong> restrict search by metadata. <strong>Delete/Update:</strong> remove or modify stored vectors.</p>
-
+  <!-- ── 1. PROMPTING VS FINE-TUNING ── -->
+  <div class="section-block" id="prompting-vs-ft">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>Prompting vs fine-tuning: the decision</h2>
+    <p>Fine-tuning updates a model's weights on your data — teaching it behaviour that prompting cannot reliably produce. Use it when prompting has hit its ceiling.</p>
+    
     <div class="callout amber">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>A vector database is NOT just a vector search library.</strong> Production vector DBs add: persistence, horizontal scaling, real-time insert/delete, filtered search, multi-tenancy, backups, and access control.</span>
+      <span class="callout-icon">💡</span>
+      <div><strong>Golden Rule:</strong> Always establish a prompted baseline before fine-tuning. Fine-tuning that does not beat prompting is wasted compute.</div>
+    </div>
+
+    <h3>When to use each approach</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>Prompting is enough</th>
+            <th>Fine-tune</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Model understands task</strong></td>
+            <td>✓ Use few-shot examples in prompt</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>Consistent format/tone</strong></td>
+            <td>✓ Specify in instructions</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>Fewer than ~100 examples</strong></td>
+            <td>✓ In-context learning works</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>Prompt too long/expensive</strong></td>
+            <td></td>
+            <td>✓ Encode in weights</td>
+          </tr>
+          <tr>
+            <td><strong>Proprietary style/domain</strong></td>
+            <td></td>
+            <td>✓ Model must learn it</td>
+          </tr>
+          <tr>
+            <td><strong>Latency critical</strong></td>
+            <td></td>
+            <td>✓ Smaller FT model beats large prompted one</td>
+          </tr>
+          <tr>
+            <td><strong>500+ quality examples</strong></td>
+            <td></td>
+            <td>✓ Enough data to fine-tune</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- ── 2. PGVECTOR ── -->
-  <div class="section-block" id="pgvector">
-    <div class="section-marker">02 — Postgres-native</div>
-    <h2>pgvector: Postgres-Native</h2>
-    <p><strong>pgvector:</strong> open-source Postgres extension. Adds vector column type and HNSW/IVFFlat indices.</p>
+  <!-- ── 2. THE FINE-TUNING PIPELINE ── -->
+  <div class="section-block" id="ft-pipeline">
+    <div class="section-marker">02 — Process</div>
+    <h2>The fine-tuning pipeline</h2>
+    <p>A complete fine-tuning workflow from raw data to deployed model.</p>
 
-    <p><strong>Why use it:</strong> you already have Postgres, SQL joins across vector and relational data, ACID transactions, existing auth/backup infrastructure.</p>
+    <h3>The full pipeline</h3>
+    <div class="workflow">
+      <div class="workflow-step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Collect data:</strong> Examples of the behaviour you want to teach. Start with 100–500 curated examples; quality beats quantity.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Format JSONL:</strong> Convert to OpenAI chat format or raw text. Each row is one training example.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Train (QLoRA):</strong> Use parameter-efficient fine-tuning to update &lt;1% of model weights. Fit on consumer GPUs.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Eval (LLM judge/RAGAS):</strong> Compare fine-tuned model to prompted baseline. Measure on held-out test set.</div>
+      </div>
+      <div class="workflow-step">
+        <div class="step-num">5</div>
+        <div class="step-text"><strong>Deploy:</strong> Merge LoRA weights into base model (or keep separate). Use in production inference.</div>
+      </div>
+    </div>
 
-    <p><strong>Supports:</strong> cosine, L2, inner product similarity. HNSW index (v0.5+) for fast ANN. IVFFlat for memory efficiency.</p>
+    <h3>Key metrics</h3>
+    <ul>
+      <li><strong>Training loss:</strong> Should decrease smoothly. Stop if plateaus.</li>
+      <li><strong>Validation accuracy:</strong> Compare to prompted baseline on same test set.</li>
+      <li><strong>Inference latency:</strong> LoRA adds minimal overhead (~2–5%).</li>
+      <li><strong>Compute cost:</strong> QLoRA on 8B model ≈ 24 GB VRAM, trains in hours.</li>
+    </ul>
+  </div>
 
-    <h3>Example: pgvector Setup and Query</h3>
-    <div class="example-box">-- Enable extension
-CREATE EXTENSION IF NOT EXISTS vector;
-
--- Create table with vector column
-CREATE TABLE documents (
-    id BIGSERIAL PRIMARY KEY,
-    content TEXT,
-    embedding vector(1536),  -- OpenAI text-embedding-3-small
-    metadata JSONB,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Create HNSW index for fast ANN
-CREATE INDEX ON documents USING hnsw (embedding vector_cosine_ops)
-WITH (m = 32, ef_construction = 200);
-
--- Semantic search with metadata filter
-SELECT content, metadata,
-       1 - (embedding <=> $1::vector) AS similarity
-FROM documents
-WHERE metadata->>'category' = 'finance'  -- filter first
-  AND created_at > NOW() - INTERVAL '30 days'
-ORDER BY embedding <=> $1::vector
-LIMIT 10;</div>
+  <!-- ── 3. DATA REQUIREMENTS ── -->
+  <div class="section-block" id="data-requirements">
+    <div class="section-marker">03 — Foundation</div>
+    <h2>Data requirements</h2>
+    <p>The biggest mistake: training on too much noisy data instead of curating small, high-quality datasets.</p>
 
     <div class="callout green">
       <span class="callout-icon">✓</span>
-      <span><strong>For most teams already on Postgres, pgvector is the right default up to ~5M vectors.</strong> The query planner, connection pooling (PgBouncer), and monitoring you already have apply directly.</span>
+      <div><strong>Quality over quantity:</strong> 500 curated examples beats 50,000 noisy ones. Spend time on data, not scale.</div>
+    </div>
+
+    <h3>Principles</h3>
+    <div class="practice-grid">
+      <div class="practice-item">
+        <h3>Examples per class</h3>
+        <ul>
+          <li>200–300 per label/task variant</li>
+          <li>Binary classification: 300–500 pairs</li>
+          <li>Multi-class (5+ classes): 100 per class min</li>
+        </ul>
+      </div>
+      <div class="practice-item">
+        <h3>Data curation</h3>
+        <ul>
+          <li>Remove duplicates</li>
+          <li>Filter out edge cases first</li>
+          <li>Manually review random samples</li>
+          <li>Stratify by class/difficulty</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>JSONL format (OpenAI chat)</h3>
+    <div class="example-box">{"messages": [{"role": "user", "content": "Classify: The service was excellent."}, {"role": "assistant", "content": "Positive"}]}
+{"messages": [{"role": "user", "content": "Classify: I waited 2 hours."}, {"role": "assistant", "content": "Negative"}]}</div>
+
+    <h3>Raw text format</h3>
+    <div class="example-box">The service was excellent. ### Positive
+I waited 2 hours. ### Negative</div>
+  </div>
+
+  <!-- ── 4. LORA AND QLORA ── -->
+  <div class="section-block" id="lora-qlora">
+    <div class="section-marker">04 — Technique</div>
+    <h2>LoRA and QLoRA: efficient fine-tuning</h2>
+    <p>Parameter-efficient fine-tuning (PEFT) lets you fine-tune large models on small GPUs by updating only a tiny fraction of weights.</p>
+
+    <h3>How LoRA works</h3>
+    <p>Instead of updating all model weights (billions), LoRA adds small trainable "adapter" matrices to key layers. After training, merge them into the base model or keep separate.</p>
+    <ul>
+      <li><strong>Trainable params:</strong> Typically 0.1–1% of total model size</li>
+      <li><strong>Rank (r):</strong> Usually 8, 16, or 32. Higher = more capacity but slower</li>
+      <li><strong>Memory:</strong> ~20GB for 7B model on single GPU</li>
+    </ul>
+
+    <h3>QLoRA: LoRA + quantization</h3>
+    <p>Quantize the base model to 4-bit, then add LoRA on top. Fit 13B models on consumer GPUs.</p>
+    <ul>
+      <li><strong>Memory:</strong> ~8GB VRAM for 13B model</li>
+      <li><strong>Speed:</strong> Slower than LoRA alone (~30% overhead), but worth it for memory savings</li>
+      <li><strong>Accuracy:</strong> Minimal quality loss vs full fine-tuning</li>
+    </ul>
+
+    <div class="callout blue">
+      <span class="callout-icon">→</span>
+      <div><strong>In practice:</strong> Start with QLoRA. If you have GPU memory, try LoRA. Both typically outperform full fine-tuning on quality/compute tradeoff.</div>
     </div>
   </div>
 
-  <!-- ── 3. QDRANT ── -->
-  <div class="section-block" id="qdrant">
-    <div class="section-marker">03 — Filterable ANN</div>
-    <h2>Qdrant: Filterable ANN</h2>
-    <p><strong>Qdrant:</strong> Rust-based vector DB, designed from scratch for filtered ANN search. Open-source + managed cloud.</p>
+  <!-- ── 5. WORKING CODE EXAMPLE ── -->
+  <div class="section-block" id="code-example">
+    <div class="section-marker">05 — Implementation</div>
+    <h2>Working code example</h2>
+    <p>Complete QLoRA fine-tuning script using HuggingFace TRL. Prerequisites:</p>
+    <div class="example-box">pip install trl peft transformers bitsandbytes datasets</div>
 
-    <p><strong>Key differentiator:</strong> "payload filtering" is first-class — doesn't fall back to post-filtering (which kills recall). Maintains separate HNSW graphs per filter combination.</p>
+    <h3>Full script</h3>
+    <div class="example-box"># QLoRA fine-tuning with HuggingFace TRL
+from datasets import load_dataset
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model
+from trl import SFTTrainer, SFTConfig
+import torch
 
-    <p><strong>Supports:</strong> dense vectors, sparse vectors (BM25), multi-vectors (ColBERT). Named vectors for multi-embedding-per-document.</p>
+model_id = 'meta-llama/Meta-Llama-3-8B-Instruct'
 
-    <h3>Example: Qdrant Python Client</h3>
-    <div class="example-box">from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
-
-client = QdrantClient(url="http://localhost:6333")
-
-# Create collection
-client.create_collection("documents", vectors_config=VectorParams(
-    size=1536, distance=Distance.COSINE
-))
-
-# Insert with payload
-client.upsert("documents", points=[
-    PointStruct(id=1, vector=embedding,
-                payload={"category": "finance", "date": "2024-01-15"})
-])
-
-# Filtered ANN search
-results = client.search(
-    "documents",
-    query_vector=query_embedding,
-    query_filter=Filter(must=[
-        FieldCondition(key="category", match=MatchValue(value="finance"))
-    ]),
-    limit=10
-)</div>
-
-    <h3>Qdrant vs pgvector for Filtered Search</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Scenario</th><th>pgvector</th><th>Qdrant</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Low cardinality filter (2 categories)</td><td>Good</td><td>Excellent</td></tr>
-          <tr><td>High cardinality filter (1000 users)</td><td>Degrades</td><td>Maintains recall</td></tr>
-          <tr><td>Complex nested filters</td><td>SQL</td><td>Payload filter JSON</td></tr>
-          <tr><td>Pre-filter selectivity &lt;1%</td><td>ANN recall drops</td><td>Optimized</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ── 4. WEAVIATE ── -->
-  <div class="section-block" id="weaviate">
-    <div class="section-marker">04 — Schema + Search</div>
-    <h2>Weaviate: Schema + Search</h2>
-    <p><strong>Weaviate:</strong> open-source vector DB with GraphQL API, built-in text/image vectorizers, and multi-modal support.</p>
-
-    <p><strong>Schema-first:</strong> define classes with properties and vectorizer config. Weaviate handles embedding generation if you configure a module.</p>
-
-    <p><strong>Hybrid search:</strong> built-in BM25 + vector fusion with a single API call. Alpha parameter controls dense vs sparse weight.</p>
-
-    <p><strong>Multi-tenancy:</strong> built-in tenant isolation — each tenant gets its own HNSW index shard. Critical for SaaS applications.</p>
-
-    <h3>Example: Weaviate Python Client with Hybrid Search</h3>
-    <div class="example-box">import weaviate
-client = weaviate.connect_to_local()
-
-collection = client.collections.get("Document")
-
-# Hybrid search (BM25 + vector)
-results = collection.query.hybrid(
-    query="transformer attention mechanism",
-    alpha=0.7,      # 0 = pure BM25, 1 = pure vector
-    limit=10,
-    filters=weaviate.classes.query.Filter.by_property("category").equal("ml")
+# 4-bit quantization config
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type='nf4',
+    bnb_4bit_compute_dtype=torch.bfloat16,
 )
-for obj in results.objects:
-    print(obj.properties["content"][:100])</div>
+
+# Load quantized model
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, quantization_config=bnb_config, device_map='auto'
+)
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+# LoRA config
+lora_cfg = LoraConfig(
+    r=16, lora_alpha=32,
+    target_modules='all-linear',
+    lora_dropout=0.05,
+    task_type='CAUSAL_LM'
+)
+model = get_peft_model(model, lora_cfg)
+model.print_trainable_parameters()  # e.g. 0.53% of 8B params
+
+# Load training data (JSONL)
+dataset = load_dataset('json', data_files='train.jsonl', split='train')
+
+# Train
+trainer = SFTTrainer(
+    model=model, tokenizer=tokenizer, train_dataset=dataset,
+    args=SFTConfig(
+        output_dir='./ft-output',
+        num_train_epochs=3,
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=4,
+        learning_rate=2e-4,
+        bf16=True,
+        logging_steps=10
+    )
+)
+trainer.train()</div>
+
+    <h3>Next: merge & inference</h3>
+    <div class="example-box"># Merge LoRA weights
+model = model.merge_and_unload()
+model.save_pretrained('./ft-model')
+tokenizer.save_pretrained('./ft-model')
+
+# Or use as separate adapter
+from peft import PeftModel
+base_model = AutoModelForCausalLM.from_pretrained(model_id)
+model = PeftModel.from_pretrained(base_model, './ft-output')
+model = model.merge_and_unload()</div>
   </div>
 
-  <!-- ── 5. PINECONE ── -->
-  <div class="section-block" id="pinecone">
-    <div class="section-marker">05 — Managed, Serverless</div>
-    <h2>Pinecone: Managed, Serverless</h2>
-    <p><strong>Pinecone:</strong> fully managed, serverless vector DB. No infrastructure to operate. Scales automatically.</p>
+  <!-- ── 6. WHAT TO EXPLORE NEXT ── -->
+  <div class="section-block" id="next-steps">
+    <div class="section-marker">06 — Next Steps</div>
+    <h2>What to explore next</h2>
+    <p>These four concept pages go deeper on related topics.</p>
 
-    <p><strong>Pods vs Serverless:</strong> pods = dedicated compute (predictable latency), serverless = pay per query (scales to zero)</p>
-
-    <p><strong>Strong at:</strong> multi-tenancy via namespaces, metadata filtering, hybrid search (sparse + dense)</p>
-
-    <p><strong>Limitations:</strong> no SQL joins, no self-hosting, more expensive at high query volumes vs self-hosted</p>
-
-    <h3>Example: Pinecone Serverless</h3>
-    <div class="example-box">from pinecone import Pinecone, ServerlessSpec
-
-pc = Pinecone(api_key="YOUR_API_KEY")
-
-# Create serverless index
-pc.create_index("my-index", dimension=1536,
-                metric="cosine",
-                spec=ServerlessSpec(cloud="aws", region="us-east-1"))
-
-index = pc.Index("my-index")
-
-# Upsert vectors with metadata
-index.upsert(vectors=[
-    {"id": "doc_1", "values": embedding, "metadata": {"category": "tech", "date": "2024-01"}}
-], namespace="tenant_123")  # namespace for multi-tenancy
-
-# Query with filter
-results = index.query(vector=query_embedding, top_k=10,
-                      filter={"category": {"$eq": "tech"}},
-                      namespace="tenant_123")</div>
-  </div>
-
-  <!-- ── 6. CHROMA ── -->
-  <div class="section-block" id="chroma">
-    <div class="section-marker">06 — Developer-first</div>
-    <h2>Chroma: Developer-First</h2>
-    <p><strong>Chroma:</strong> Python-native, embeddable vector DB. Runs in-process (no server) or as a server. Built for rapid prototyping and small-to-medium scale.</p>
-
-    <p><strong>Built-in embedding:</strong> configure an embedding function once; Chroma calls it automatically on insert and query</p>
-
-    <p><strong>Persistent or in-memory:</strong> ephemeral for testing, persistent SQLite/DuckDB for development, server mode for production</p>
-
-    <h3>Example: Chroma Integration</h3>
-    <div class="example-box">import chromadb
-from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
-
-client = chromadb.PersistentClient(path="./chroma_db")
-
-ef = OpenAIEmbeddingFunction(model_name="text-embedding-3-small")
-collection = client.get_or_create_collection("docs", embedding_function=ef)
-
-# Add documents — Chroma handles embedding
-collection.add(documents=["RAG is retrieval-augmented generation...",
-                           "Transformers use attention mechanisms..."],
-               ids=["doc1", "doc2"],
-               metadatas=[{"topic": "rag"}, {"topic": "architecture"}])
-
-# Query — Chroma handles query embedding
-results = collection.query(query_texts=["how does RAG work?"], n_results=3,
-                           where={"topic": "rag"})</div>
-  </div>
-
-  <!-- ── 7. CHOOSING AND OPERATING ── -->
-  <div class="section-block" id="choosing">
-    <div class="section-marker">07 — Decision Guide</div>
-    <h2>Choosing and Operating a Vector DB</h2>
-
-    <h3>Vector DB Decision Guide</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Situation</th><th>Recommendation</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Already on Postgres, &lt;5M vectors</td><td>pgvector</td></tr>
-          <tr><td>Need complex filtering at scale</td><td>Qdrant</td></tr>
-          <tr><td>Multi-tenant SaaS product</td><td>Weaviate or Pinecone (namespaces)</td></tr>
-          <tr><td>No infra team, serverless preferred</td><td>Pinecone Serverless</td></tr>
-          <tr><td>Prototyping / development</td><td>Chroma</td></tr>
-          <tr><td>&gt;100M vectors, on-prem</td><td>Milvus or Qdrant distributed</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Operational Patterns</h3>
-    <p><strong>Index warm-up:</strong> HNSW requires a query to be fast after build. <strong>Hot/cold segmentation:</strong> recent vectors in hot index, old in cold. <strong>Embedding cache:</strong> avoid re-embedding identical texts.</p>
-
-    <h3>Monitoring</h3>
-    <p><strong>Track query latency</strong> (P50/P95/P99), <strong>recall</strong> (run ground-truth queries regularly), <strong>index size growth</strong>, <strong>failed queries</strong></p>
-
-    <h3>Tools Grid</h3>
-    <div class="tools-grid">
-      <div class="tool-card">
-        <div class="tool-category">Postgres Extension</div>
-        <div class="tool-name">pgvector</div>
-        <div class="tool-desc">HNSW + IVFFlat indices, SQL joins, ACID</div>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3><a href="peft-methods.html" style="color: var(--indigo); text-decoration: none;">PEFT Methods</a></h3>
+          <p>Deep dive into LoRA, QLoRA, IA³, and other parameter-efficient techniques. When to use each, limitations, and advanced configurations.</p>
+        </div>
       </div>
-      <div class="tool-card">
-        <div class="tool-category">Rust VectorDB</div>
-        <div class="tool-name">Qdrant</div>
-        <div class="tool-desc">Filtered ANN, sparse vectors, multi-vector</div>
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3><a href="alignment.html" style="color: var(--indigo); text-decoration: none;">Alignment & RLHF</a></h3>
+          <p>Fine-tune for safety and alignment. Covers RLHF, DPO, ORPO, and other post-training techniques for steering model behaviour.</p>
+        </div>
       </div>
-      <div class="tool-card">
-        <div class="tool-category">GraphQL VectorDB</div>
-        <div class="tool-name">Weaviate</div>
-        <div class="tool-desc">Schema-first, hybrid search, multi-tenancy</div>
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3><a href="ft-tools.html" style="color: var(--indigo); text-decoration: none;">Training Tools</a></h3>
+          <p>Ecosystem of fine-tuning frameworks: TRL, Unsloth, Axolotl, LLaMA-Factory. Benchmarks and when to use each.</p>
+        </div>
       </div>
-      <div class="tool-card">
-        <div class="tool-category">Managed Serverless</div>
-        <div class="tool-name">Pinecone</div>
-        <div class="tool-desc">No ops, auto-scaling, namespaces</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Python Embeddable</div>
-        <div class="tool-name">Chroma</div>
-        <div class="tool-desc">In-process or server, auto-embedding</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Distributed VectorDB</div>
-        <div class="tool-name">Milvus</div>
-        <div class="tool-desc">Kubernetes-native, petabyte scale</div>
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3><a href="data-prep.html" style="color: var(--indigo); text-decoration: none;">Data Preparation</a></h3>
+          <p>Collecting, cleaning, and formatting training data. Synthetic data, annotation strategies, and quality control.</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ── REFERENCES ── -->
+  <!-- ── 7. REFERENCES ── -->
   <div class="section-block" id="references">
-    <div class="section-marker">Further Reading</div>
+    <div class="section-marker">07 — Learn More</div>
     <h2>References</h2>
+
+    <div class="ref-group-title">Papers</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-paper">PAPER</span> <a href="https://arxiv.org/abs/2106.09685">LoRA: Low-Rank Adaptation of Large Language Models</a><br/>Hu et al. (2021). The foundational work on parameter-efficient fine-tuning via low-rank matrices. arXiv:2106.09685</li>
+      <li><span class="ref-badge badge-paper">PAPER</span> <a href="https://arxiv.org/abs/2305.14314">QLoRA: Efficient Finetuning of Quantized LLMs</a><br/>Dettmers et al. (2023). Combines quantization with LoRA for memory-efficient fine-tuning. arXiv:2305.14314</li>
+    </ul>
+
+    <div class="ref-group-title">Blogs & Tutorials</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">BLOG</span> <a href="https://huggingface.co/blog/trl-unified-training">Fine-tuning LLMs with TRL</a><br/>HuggingFace. Comprehensive guide to the Transformers Reinforcement Learning (TRL) library for supervised fine-tuning and alignment.</li>
+    </ul>
 
     <div class="ref-group-title">Documentation</div>
     <ul class="ref-list">
-      <li><span class="ref-badge badge-docs">Docs</span> pgvector GitHub — <a href="https://github.com/pgvector/pgvector" target="_blank">github.com/pgvector/pgvector ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> Qdrant Documentation — <a href="https://qdrant.tech/documentation" target="_blank">qdrant.tech/documentation ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> Weaviate Developers — <a href="https://weaviate.io/developers/weaviate" target="_blank">weaviate.io/developers ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> Pinecone Documentation — <a href="https://docs.pinecone.io" target="_blank">docs.pinecone.io ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> Chroma Documentation — <a href="https://docs.trychroma.com" target="_blank">docs.trychroma.com ↗</a></li>
-    </ul>
-
-    <div class="ref-group-title">Benchmarks &amp; Research</div>
-    <ul class="ref-list">
-      <li><span class="ref-badge badge-paper">Paper</span> ANN Benchmarks — <a href="https://ann-benchmarks.com" target="_blank">ann-benchmarks.com ↗</a></li>
+      <li><span class="ref-badge badge-docs">DOCS</span> <a href="https://huggingface.co/docs/trl/sft_trainer">TRL SFTTrainer</a><br/>Official documentation for supervised fine-tuning with the TRL library. Configuration, loss functions, and integration with PEFT.</li>
+      <li><span class="ref-badge badge-docs">DOCS</span> <a href="https://docs.anthropic.com/en/docs/fine-tuning">Anthropic Fine-tuning</a><br/>Claude fine-tuning API documentation. Model versioning, batch processing, and pricing.</li>
     </ul>
   </div>
 
-  <footer class="page-footer">
-    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
-    <a id="footer-back" href="../index.html">← Back to mindmap</a>
-  </footer>
-  <script>
-    (function(){
-      const from=new URLSearchParams(location.search).get('from');
-      if(from){
-        const url='../index.html#'+from;
-        const fb=document.getElementById('footer-back');
-        const fb2=document.getElementById('footer-brand');
-        if(fb)fb.href=url;
-        if(fb2)fb2.href=url;
-      }
-    })();
-  </script>
+  <div class="page-footer">
+    <span>Last updated: March 2026</span>
+    <a href="../index.html">← Back to concepts</a>
+  </div>
 
 </div>
-<nav class="concept-nav">
-  <a class="concept-nav-prev" href="unstructured.html">← Unstructured.io — Document Parsing for RAG</a>
-  <span class="concept-nav-cat">Retrieval & RAG</span>
-  <span></span>
-</nav>
+
 </body>
 </html>

@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompting LLMs — GenAI Mindmap</title>
+  <meta name="description" content="The anatomy of effective prompts — few-shot, chain-of-thought, system roles, output schemas, and prompt versioning" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Prompting LLMs" />
+  <meta property="og:description" content="The anatomy of effective prompts — few-shot, chain-of-thought, system roles, output schemas, and prompt versioning" />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/prompting.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Prompting LLMs" />
+  <meta name="twitter:description" content="The anatomy of effective prompts — few-shot, chain-of-thought, system roles, output schemas, and prompt versioning" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/prompting.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Prompting LLMs",
+  "description": "The anatomy of effective prompts \u2014 few-shot, chain-of-thought, system roles, output schemas, and prompt versioning",
+  "url": "https://genai4a11.github.io/concepts/prompting.html",
+  "dateModified": "2026-03-24T12:34:26.191524",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Prompting LLMs",
+        "item": "https://genai4a11.github.io/concepts/prompting.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+  <nav>
+    <a href="../index.html" class="nav-brand">
+      <span class="dot">◆</span>
+      GenAI Mindmap
+    </a>
+    <a href="../index.html" class="nav-back">← Back</a>
+  </nav>
+
+  <section class="hero">
+    <span class="hero-tag">Prompt Engineering</span>
+    <h1><em>Prompting</em> LLMs</h1>
+    <p class="hero-sub">The primary interface between you and any LLM — master this before anything else</p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">Few-shot > Instructions</span>
+        <span class="stat-label">The #1 Rule</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">System + Examples + Task</span>
+        <span class="stat-label">Prompt Anatomy</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">Test Before Deploy</span>
+        <span class="stat-label">The Discipline</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="page-wrap">
+    <!-- ── TABLE OF CONTENTS ── -->
+    <div class="toc-card">
+      <h3 class="toc-heading">In This Section</h3>
+      <ul class="toc-list">
+        <li><a href="#anatomy" data-num="1">The Anatomy of a Prompt</a></li>
+        <li><a href="#techniques" data-num="2">Techniques Ranked by Impact</a></li>
+        <li><a href="#failure-modes" data-num="3">Common Failure Modes</a></li>
+        <li><a href="#code-examples" data-num="4">Working Code Examples</a></li>
+        <li><a href="#versioning" data-num="5">Prompt Versioning & Testing</a></li>
+        <li><a href="#explore-next" data-num="6">What to Explore Next</a></li>
+        <li><a href="#references" data-num="7">References</a></li>
+      </ul>
+    </div>
+
+    <!-- ── 1. ANATOMY OF A PROMPT ── -->
+    <div class="section-block" id="anatomy">
+      <div class="section-marker">01 — Foundation</div>
+      <h2>The Anatomy of a Production-Grade Prompt</h2>
+      <p>Prompting is the primary interface between you and an LLM. A well-designed prompt can make a smaller model outperform a larger one. Poor prompts make even the best models inconsistent. A production-grade prompt has four core components:</p>
+
+      <h3>The Four Components</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Component</th><th>Purpose</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>System</strong></td><td>Role, constraints, output format</td><td>"You are a senior Python engineer. Always use type hints. Output JSON."</td></tr>
+            <tr><td><strong>Examples</strong></td><td>Show the exact format and tone you want</td><td>2–5 input/output pairs demonstrating the task</td></tr>
+            <tr><td><strong>Task</strong></td><td>Clear, specific, scoped instruction</td><td>"Refactor this function to use a dict instead of a loop"</td></tr>
+            <tr><td><strong>Output Format</strong></td><td>Explicit structure of the response</td><td>"Return JSON: {code, explanation, test_case}"</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Not every prompt needs all four, but production systems use all of them. Examples are so powerful that 2–3 worked examples often beat 500 words of instruction.</p>
+
+      <div class="callout green">
+        <span class="callout-icon">✓</span>
+        <span><strong>Pro tip:</strong> The fastest quality improvement: add 2–3 worked examples. Models learn format and tone from examples faster than from instructions.</span>
+      </div>
+
+      <h3>Prompt Structure in Practice</h3>
+      <div class="example-box">SYSTEM — role, constraints, format:
+"You are a senior Python engineer. Always use type hints.
+Always add docstrings. Output JSON with keys: code, reason, time_complexity."
+
+EXAMPLES — show the format you want:
+Input: "Optimize this loop: for i in range(n): sum += arr[i]"
+Output: {"code": "sum(arr)", "reason": "Built-in is faster", "time_complexity": "O(n) → O(n)"}
+
+Input: "Add type hints to this function: def add(a, b): return a + b"
+Output: {"code": "def add(a: int, b: int) -> int: return a + b", ...}
+
+TASK — clear, specific, scoped:
+"Refactor this function to use a dictionary for O(1) lookups instead of a list."
+
+OUTPUT FORMAT — what you want back:
+"Return JSON with keys: refactored_code, original_complexity, new_complexity, explanation"</div>
+
+      <p>This structure is discipline. It forces you to be explicit about what you want, which forces the model to be consistent in what it delivers.</p>
+    </div>
+
+    <!-- ── 2. TECHNIQUES RANKED BY IMPACT ── -->
+    <div class="section-block" id="techniques">
+      <div class="section-marker">02 — Techniques</div>
+      <h2>Techniques Ranked by Impact</h2>
+      <p>Not all prompting techniques are equal. Some give you 2–3x quality gains; others give 5–10% gains. Here's the ranking by impact:</p>
+
+      <div class="methods-list">
+        <div class="method-card">
+          <div class="method-num">1</div>
+          <div class="method-body">
+            <h3>Few-Shot Examples <em>(Highest Leverage)</em></h3>
+            <p>Give the model 2–5 worked examples of input→output. Models learn the format, tone, and implicit constraints from examples faster than from text instructions.</p>
+            <ul>
+              <li><strong>Quality gain:</strong> 2–5x on structured tasks</li>
+              <li><strong>Why:</strong> LLMs are pattern matchers. Examples are patterns.</li>
+              <li><strong>When to use:</strong> Always, for any production task</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-num">2</div>
+          <div class="method-body">
+            <h3>Chain-of-Thought <em>(For Reasoning)</em></h3>
+            <p>Ask the model to show its reasoning step-by-step before answering. "Think step by step" or "Reasoning:" forces the model to decompose the problem.</p>
+            <ul>
+              <li><strong>Quality gain:</strong> 10–30% on math, logic, multi-step reasoning</li>
+              <li><strong>Why:</strong> Latent reasoning emerges when you force verbalization</li>
+              <li><strong>When to use:</strong> Math, logic, causality, multi-hop problems</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-num">3</div>
+          <div class="method-body">
+            <h3>System Role <em>(For Consistency)</em></h3>
+            <p>Set the system prompt with a role: "You are a senior data scientist." The role shapes tone, vocabulary, and constraints without explicit instruction.</p>
+            <ul>
+              <li><strong>Quality gain:</strong> 5–15% on consistency and expertise</li>
+              <li><strong>Why:</strong> Role primes a particular behavioral distribution</li>
+              <li><strong>When to use:</strong> Any task where tone/expertise matters</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-num">4</div>
+          <div class="method-body">
+            <h3>Output Schema <em>(For Reliability)</em></h3>
+            <p>Explicitly define the output structure as JSON Schema or XML. "Return JSON with keys: {field1, field2}". Structured outputs are more parseable and predictable.</p>
+            <ul>
+              <li><strong>Quality gain:</strong> 5–10% on parsing reliability</li>
+              <li><strong>Why:</strong> Reduces ambiguity in output format</li>
+              <li><strong>When to use:</strong> Any task consuming downstream</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="method-card">
+          <div class="method-num">5</div>
+          <div class="method-body">
+            <h3>Self-Consistency <em>(For Accuracy)</em></h3>
+            <p>Generate multiple independent completions and take the majority vote. Samples the distribution to find high-likelihood answers.</p>
+            <ul>
+              <li><strong>Quality gain:</strong> 5–15% on hard tasks, costs 3–5x</li>
+              <li><strong>Why:</strong> Reduces variance of a single sample</li>
+              <li><strong>When to use:</strong> High-stakes, reasoning-heavy tasks where cost permits</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout blue">
+        <span class="callout-icon">ℹ️</span>
+        <span><strong>Combination matters:</strong> Few-shot + Chain-of-Thought on a math task often outperforms either alone. Test combinations for your specific task.</span>
+      </div>
+    </div>
+
+    <!-- ── 3. COMMON FAILURE MODES ── -->
+    <div class="section-block" id="failure-modes">
+      <div class="section-marker">03 — Debugging</div>
+      <h2>Common Failure Modes and Fixes</h2>
+
+      <h3>Inconsistent Outputs</h3>
+      <p><strong>Problem:</strong> Same prompt gives wildly different answers on the same input. <strong>Fix:</strong> Add 2–3 examples showing the exact format. Examples anchor the output distribution.</p>
+
+      <h3>Format Errors</h3>
+      <p><strong>Problem:</strong> Model returns free text when you asked for JSON. <strong>Fix:</strong> (1) Add an example in the target format. (2) Use structured output modes (Claude's JSON mode). (3) Repeat the format instruction in the task itself: "Return ONLY valid JSON, no markdown."</p>
+
+      <h3>Hallucination / Fabrication</h3>
+      <p><strong>Problem:</strong> Model invents facts or code that don't exist. <strong>Fix:</strong> (1) Add examples showing confident uncertainty. (2) Add "Say 'I don't know' if unsure." (3) Use retrieval-augmented generation (RAG). (4) Constrain the answer space: "Choose one of: A, B, C."</p>
+
+      <h3>Incomplete Responses</h3>
+      <p><strong>Problem:</strong> Model cuts off mid-response, especially for long outputs. <strong>Fix:</strong> (1) Increase max_tokens. (2) Break the task into smaller subtasks. (3) Use streaming to detect truncation early.</p>
+
+      <h3>Off-Topic Tangents</h3>
+      <p><strong>Problem:</strong> Model answers something related but not what you asked. <strong>Fix:</strong> (1) Be more specific in the task statement. (2) Add a "focus" example that shows depth on the right topic. (3) Add a negative example: "Do NOT explain the history of..."</p>
+
+      <h3>Tone Mismatch</h3>
+      <p><strong>Problem:</strong> Output is too formal, too casual, too verbose. <strong>Fix:</strong> Use the system role and examples. "You are a concise technical writer" + an example of concise output beats "Be concise."</p>
+
+      <div class="callout amber">
+        <span class="callout-icon">⚠️</span>
+        <span><strong>Debugging mindset:</strong> Treat prompt tuning like a science: change one thing at a time, test on 3–5 examples, measure the change. It's easy to make a prompt "better" on your favorite example while breaking others.</span>
+      </div>
+    </div>
+
+    <!-- ── 4. WORKING CODE EXAMPLES ── -->
+    <div class="section-block" id="code-examples">
+      <div class="section-marker">04 — Implementation</div>
+      <h2>Working Code Examples</h2>
+
+      <h3>1. Zero-Shot Baseline</h3>
+      <p>No examples. Just ask. Useful as a baseline to compare against. Usually the weakest approach on structured tasks.</p>
+      <div class="example-box">from anthropic import Anthropic
+
+client = Anthropic()
+
+# Zero-shot: no examples, no structure
+response = client.messages.create(
+    model='claude-haiku-4-5-20251001',
+    max_tokens=64,
+    messages=[{
+        'role': 'user',
+        'content': 'Classify sentiment: "The product broke on day 1."'
+    }]
+)
+print(response.content[0].text)</div>
+
+      <h3>2. Few-Shot Classification</h3>
+      <p>Add 2–3 examples showing the format and boundaries. Watch the quality jump.</p>
+      <div class="example-box">FEW_SHOT = """Classify sentiment (positive/negative/neutral):
+
+"Great value" -> positive
+"Average experience" -> neutral
+"Never buying again" -> negative
+
+"The product broke on day 1." ->"""
+
+response = client.messages.create(
+    model='claude-haiku-4-5-20251001',
+    max_tokens=8,
+    messages=[{'role': 'user', 'content': FEW_SHOT}]
+)
+print(response.content[0].text)</div>
+
+      <h3>3. Chain-of-Thought (Reasoning)</h3>
+      <p>For logic or math, ask the model to think step-by-step. This unlocks multi-step reasoning.</p>
+      <div class="example-box">response = client.messages.create(
+    model='claude-opus-4-5',
+    max_tokens=512,
+    messages=[{
+        'role': 'user',
+        'content': (
+            'A store sells 3 apples for $1. I buy 12. '
+            'Think step by step, then state the total cost.'
+        )
+    }]
+)
+print(response.content[0].text)</div>
+
+      <h3>4. System Prompt Persona</h3>
+      <p>Use the system parameter to set role and constraints. This shapes behavior more subtly than in-message instructions.</p>
+      <div class="example-box">response = client.messages.create(
+    model='claude-haiku-4-5-20251001',
+    max_tokens=256,
+    system=(
+        'You are a senior Python engineer. '
+        'Be concise. Always include code examples. '
+        'Use type hints.'
+    ),
+    messages=[{
+        'role': 'user',
+        'content': 'How do I reverse a list?'
+    }]
+)
+print(response.content[0].text)</div>
+
+      <h3>5. Structured JSON Output</h3>
+      <p>Combine few-shot + output schema for maximum reliability. State the schema twice: once in the system, once in the task.</p>
+      <div class="example-box">system = """You are a code reviewer. Be critical but fair.
+Always respond with valid JSON:
+{"verdict": "pass|needs_revision|fail", "issues": [...], "suggestion": "..."}"""
+
+user_task = """Code to review:
+def add(a, b):
+    return a + b
+
+Respond with JSON. No markdown."""
+
+response = client.messages.create(
+    model='claude-opus-4-5',
+    max_tokens=256,
+    system=system,
+    messages=[{'role': 'user', 'content': user_task}]
+)
+print(response.content[0].text)</div>
+    </div>
+
+    <!-- ── 5. PROMPT VERSIONING & TESTING ── -->
+    <div class="section-block" id="versioning">
+      <div class="section-marker">05 — Discipline</div>
+      <h2>Prompt Versioning and Testing</h2>
+      <p>Prompts are code. Version them. Test them. Track their performance. A single poorly tuned prompt in production can silently degrade your entire product.</p>
+
+      <h3>Three-Tier Testing</h3>
+      <div class="practice-grid">
+        <div class="practice-item">
+          <h3>🧪 Unit Tests (3–5 examples)</h3>
+          <ul>
+            <li>Test edge cases: empty input, long input, special chars</li>
+            <li>Test boundaries: happy path + one failure case</li>
+            <li>Automate: run on every prompt change</li>
+          </ul>
+        </div>
+        <div class="practice-item">
+          <h3>📊 Benchmark (20–50 examples)</h3>
+          <ul>
+            <li>Represents real traffic distribution</li>
+            <li>Measure: accuracy, latency, cost</li>
+            <li>Track over time as you iterate</li>
+          </ul>
+        </div>
+        <div class="practice-item">
+          <h3>🚀 Production Monitor (real traffic)</h3>
+          <ul>
+            <li>Sample outputs, grade by hand</li>
+            <li>Alert if quality dips >5%</li>
+            <li>Have a rollback plan (previous prompt version)</li>
+          </ul>
+        </div>
+        <div class="practice-item">
+          <h3>A/B Test</h3>
+          <ul>
+            <li>New prompt vs. old on 5–10% of traffic</li>
+            <li>Measure delta in quality metric</li>
+            <li>Deploy only if win is statistical & material</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Version Control Strategy</h3>
+      <p>Store prompts as code (not as YAML magic strings). Example structure:</p>
+      <div class="example-box">prompts/
+├── sentiment_classifier/
+│   ├── v1.0.txt  (baseline: zero-shot)
+│   ├── v1.1.txt  (added 2 examples → +15% accuracy)
+│   ├── v1.2.txt  (changed wording → +2% accuracy)
+│   └── v2.0.txt  (current: few-shot + structured output)
+├── code_reviewer/
+│   ├── v1.0.txt
+│   └── v1.1.txt
+└── test_cases.jsonl  (3-5 examples per task)</div>
+
+      <h3>A/B Testing Workflow</h3>
+      <div class="workflow">
+        <div class="workflow-step">
+          <div class="step-num">1</div>
+          <div class="step-text"><strong>Write candidate prompt.</strong> Based on failure analysis, add examples or examples or restructure.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-num">2</div>
+          <div class="step-text"><strong>Test on benchmark.</strong> Run on 20–50 test cases. Score. Compare to baseline.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-num">3</div>
+          <div class="step-text"><strong>If improvement >5%:</strong> Deploy to 5–10% of traffic for 1 week.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-num">4</div>
+          <div class="step-text"><strong>Monitor metrics.</strong> Manual spot-checks + automated scoring. Alert if quality dips.</div>
+        </div>
+        <div class="workflow-step">
+          <div class="step-num">5</div>
+          <div class="step-num">5</div>
+          <div class="step-text"><strong>If stable, roll out to 100%.</strong> Keep old prompt version as rollback. Commit to version control with date and A/B results.</div>
+        </div>
+      </div>
+
+      <div class="callout green">
+        <span class="callout-icon">✓</span>
+        <span><strong>Best practice:</strong> Keep 2–3 versions of each prompt in production. If the current version breaks, rollback immediately instead of debugging live.</span>
+      </div>
+    </div>
+
+    <!-- ── 6. EXPLORE NEXT ── -->
+    <div class="section-block" id="explore-next">
+      <div class="section-marker">06 — Progression</div>
+      <h2>What to Explore Next</h2>
+      <p>Prompting is foundational. Once you master basic techniques, explore these deeper concepts:</p>
+
+      <div class="tools-grid">
+        <div class="tool-card">
+          <div class="tool-category">Child Concept</div>
+          <div class="tool-name">Basic Techniques</div>
+          <div class="tool-desc">Zero-shot, few-shot, system prompts, role prompting foundations.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-category">Child Concept</div>
+          <div class="tool-name">Advanced Reasoning</div>
+          <div class="tool-desc">Chain-of-thought variants, Tree of Thoughts, ReAct, multi-step reasoning patterns.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-category">Child Concept</div>
+          <div class="tool-name">Programmatic Prompting</div>
+          <div class="tool-desc">DSPy, LMQL, Outlines — automatic prompt optimization and constraint satisfaction.</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-category">Child Concept</div>
+          <div class="tool-name">Output Control</div>
+          <div class="tool-desc">JSON mode, constrained decoding, structured outputs, grammar-guided generation.</div>
+        </div>
+      </div>
+
+      <p style="margin-top: 1.5rem;"><strong>Learning path:</strong> Start with basic techniques + code examples. Move to advanced reasoning for complex tasks. Explore programmatic prompting for large-scale optimization. Use output control for production reliability.</p>
+    </div>
+
+    <!-- ── REFERENCES ── -->
+    <div class="section-block" id="references">
+      <div class="section-marker">07 — Further Reading</div>
+      <h2>References</h2>
+
+      <div class="ref-group-title">Academic Papers</div>
+      <ul class="ref-list">
+        <li>
+          <span class="ref-badge badge-paper">Paper</span>
+          Brown, T. et al. (2020).
+          <em>Language Models are Few-Shot Learners.</em>
+          arXiv:2005.14165. —
+          <a href="https://arxiv.org/abs/2005.14165" target="_blank">arxiv:2005.14165 ↗</a>
+        </li>
+        <li>
+          <span class="ref-badge badge-paper">Paper</span>
+          Wei, J. et al. (2022).
+          <em>Chain-of-Thought Prompting Elicits Reasoning in Large Language Models.</em>
+          arXiv:2201.11903. —
+          <a href="https://arxiv.org/abs/2201.11903" target="_blank">arxiv:2201.11903 ↗</a>
+        </li>
+        <li>
+          <span class="ref-badge badge-paper">Paper</span>
+          Liu, P. et al. (2023).
+          <em>Pre-train, Prompt, and Predict: A Systematic Survey of Prompting Methods in Natural Language Processing.</em>
+          arXiv:2107.13586. —
+          <a href="https://arxiv.org/abs/2107.13586" target="_blank">arxiv:2107.13586 ↗</a>
+        </li>
+      </ul>
+
+      <div class="ref-group-title">Official Documentation</div>
+      <ul class="ref-list">
+        <li>
+          <span class="ref-badge badge-docs">Docs</span>
+          Anthropic. (2025).
+          <em>Prompt Engineering Guide.</em> —
+          <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview" target="_blank">docs.anthropic.com ↗</a>
+        </li>
+        <li>
+          <span class="ref-badge badge-guide">Guide</span>
+          OpenAI. (2024).
+          <em>Best Practices for Prompt Engineering.</em> —
+          <a href="https://platform.openai.com/docs/guides/prompt-engineering" target="_blank">platform.openai.com ↗</a>
+        </li>
+      </ul>
+
+      <div class="ref-group-title">Further Exploration</div>
+      <ul class="ref-list">
+        <li>
+          <span class="ref-badge badge-paper">Paper</span>
+          Wang, X. et al. (2022).
+          <em>Self-Consistency Improves Chain of Thought Reasoning in Language Models.</em>
+          arXiv:2203.11171. —
+          <a href="https://arxiv.org/abs/2203.11171" target="_blank">arxiv:2203.11171 ↗</a>
+        </li>
+      </ul>
+    </div>
+
+    <footer class="page-footer">
+      <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+      <a id="footer-back" href="../index.html">← Back to mindmap</a>
+    </footer>
+    <script>
+      (function(){
+        const from=new URLSearchParams(location.search).get('from');
+        if(from){
+          const url='../index.html#'+from;
+          const fb=document.getElementById('footer-back');
+          const fb2=document.getElementById('footer-brand');
+          if(fb)fb.href=url;
+          if(fb2)fb2.href=url;
+        }
+      })();
+    </script>
+
+  </div>
+  <nav class="concept-nav">
+    <span></span>
+    <span class="concept-nav-cat">Prompting & Techniques</span>
+    <a class="concept-nav-next" href="basic-prompting.html">→ Basic Techniques</a>
+  </nav>
+</body>
+</html>

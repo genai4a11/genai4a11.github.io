@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multimodal AI — GenAI Mindmap</title>
+  <meta name="description" content="AI that sees, hears, and reads — vision-language models, image generation, audio, and video models" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Multimodal AI" />
+  <meta property="og:description" content="AI that sees, hears, and reads — vision-language models, image generation, audio, and video models" />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/multimodal.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Multimodal AI" />
+  <meta name="twitter:description" content="AI that sees, hears, and reads — vision-language models, image generation, audio, and video models" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/multimodal.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Multimodal AI",
+  "description": "AI that sees, hears, and reads \u2014 vision-language models, image generation, audio, and video models",
+  "url": "https://genai4a11.github.io/concepts/multimodal.html",
+  "dateModified": "2026-03-24T12:34:26.041209",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Multimodal AI",
+        "item": "https://genai4a11.github.io/concepts/multimodal.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">MULTIMODAL AI</span>
+  <h1><em>Multimodal</em> AI</h1>
+  <p class="hero-sub">AI that sees, hears, and reads — beyond text-only models</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">vision + text + audio</span>
+      <span class="stat-label">the modalities</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">CLIP → alignment</span>
+      <span class="stat-label">the mechanism</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">generate or understand</span>
+      <span class="stat-label">two directions</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#what-multimodal" data-num="1">What multimodal means</a></li>
+      <li><a href="#vision-language" data-num="2">Vision-language models</a></li>
+      <li><a href="#image-generation" data-num="3">Image generation</a></li>
+      <li><a href="#audio-models" data-num="4">Audio models</a></li>
+      <li><a href="#code-examples" data-num="5">Working code examples</a></li>
+      <li><a href="#explore-next" data-num="6">What to explore next</a></li>
+      <li><a href="#references" data-num="7">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHAT MULTIMODAL MEANS ── -->
+  <div class="section-block" id="what-multimodal">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>What Multimodal Means</h2>
+    <p>Multimodal AI processes information from multiple data formats simultaneously: images, text, audio, video, and numerical data. Traditional LLMs understand only text. Multimodal models unify different modalities into a shared embedding space, allowing a single model to reason across vision, language, and sound.</p>
+
+    <p>The core innovation is <strong>cross-modal alignment:</strong> embedding different modalities (image and text, speech and text) into the same vector space so similar concepts have similar representations regardless of modality. This enables image-to-text retrieval, visual question answering, captioning, and more.</p>
+
+    <h3>Two Directions: Understanding vs. Generation</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Direction</th><th>Input</th><th>Output</th><th>Models</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Understanding</strong></td><td>Image / audio / video</td><td>Text / embedding</td><td>GPT-4V, LLaVA, CLIP, Whisper</td></tr>
+          <tr><td><strong>Generation</strong></td><td>Text (prompt)</td><td>Image / audio / video</td><td>DALL-E 3, Stable Diffusion, Flux, TTS</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key distinction:</strong> Multimodal means one model handles multiple inputs. Cross-modal means aligning different modalities into the same space. Unified foundation models can understand and generate across all modalities.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. VISION-LANGUAGE MODELS ── -->
+  <div class="section-block" id="vision-language">
+    <div class="section-marker">02 — Understanding</div>
+    <h2>Vision-Language Models</h2>
+    <p>Vision-language models (VLMs) analyze images and answer questions about them. They combine a vision encoder (e.g., ViT) with an LLM decoder to output natural language descriptions, answers, or reasoning. Modern VLMs achieve remarkable performance on image understanding, visual reasoning, document parsing, and diagram analysis.</p>
+
+    <h3>Key Models</h3>
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>GPT-4V <em>— Most capable</em></h3>
+          <p>OpenAI's multimodal model handles image input with strong visual reasoning, OCR, and chart interpretation.</p>
+          <ul>
+            <li>Integrates with ChatGPT API</li>
+            <li>Excellent at document analysis, scene understanding, visual math</li>
+            <li>Context window up to 128K tokens</li>
+            <li>Highest cost but strongest performance</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>LLaVA <em>— Open-source alternative</em></h3>
+          <p>Large Language and Vision Assistant; efficient, open-weight model for image understanding. Trained on 665K image-text pairs.</p>
+          <ul>
+            <li>Free, run locally or via Replicate/HuggingFace</li>
+            <li>Good for visual Q&A, captioning, scene understanding</li>
+            <li>Faster inference than GPT-4V</li>
+            <li>Smaller model, weaker on complex reasoning</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>PaliGemma <em>— Google's lightweight</em></h3>
+          <p>Efficient image understanding with dense captioning, object localization, and VQA. Fast inference on consumer hardware.</p>
+          <ul>
+            <li>Based on Gemma 2B architecture</li>
+            <li>Strong on dense tasks (OCR, region understanding)</li>
+            <li>Low latency, suitable for real-time applications</li>
+            <li>Open weights, customizable</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Qwen-VL <em>— High resolution</em></h3>
+          <p>Alibaba's vision-language model optimized for high-resolution images and dense text understanding.</p>
+          <ul>
+            <li>Handles 1280×1280 images natively</li>
+            <li>Strong on document understanding and OCR</li>
+            <li>Supports multiple languages</li>
+            <li>Competitive with GPT-4V on many benchmarks</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>When to use VLMs:</strong> Document extraction, visual Q&A, image captioning, accessibility (alt text generation), scene understanding, diagramming, architectural analysis.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. IMAGE GENERATION ── -->
+  <div class="section-block" id="image-generation">
+    <div class="section-marker">03 — Generation</div>
+    <h2>Image Generation</h2>
+    <p>Diffusion models have become the backbone of modern image generation. Instead of directly generating pixels, they iteratively refine noise into coherent images guided by text prompts. This approach is more stable and controllable than older GAN-based methods.</p>
+
+    <h3>Diffusion Model Pipeline</h3>
+    <p>Diffusion adds noise to an image step-by-step, then trains a neural network to reverse this process. At generation time, the model starts with pure noise and iteratively denoises guided by a text prompt (via CLIP embeddings or cross-attention). More denoising steps → higher quality but slower; fewer steps → faster but lower quality.</p>
+
+    <h3>Key Models</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Generation</div>
+        <div class="tool-name">DALL-E 3</div>
+        <div class="tool-desc">OpenAI's state-of-the-art generative model with strong prompt interpretation and photorealism.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Generation</div>
+        <div class="tool-name">Stable Diffusion 3</div>
+        <div class="tool-desc">Open-source flow-matching model for high-quality image generation, locally runnable.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Generation</div>
+        <div class="tool-name">Flux</div>
+        <div class="tool-desc">Black Forest Labs' transformer-based diffusion model for superior image quality and speed.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Generation</div>
+        <div class="tool-name">Midjourney</div>
+        <div class="tool-desc">Closed commercial service with Discord integration, known for artistic style control.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Generation</div>
+        <div class="tool-name">ControlNet</div>
+        <div class="tool-desc">Fine-grained control over diffusion models using edge maps, poses, depth, segmentation.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">Hugging Face Diffusers</div>
+        <div class="tool-desc">Open-source library for working with diffusion models locally.</div>
+      </div>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Image generation cost:</strong> DALL-E 3 and Midjourney are API-based and carry per-image costs. Stable Diffusion and Flux are free to run locally but require VRAM (24GB+ for quality). Choose based on budget and latency requirements.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. AUDIO MODELS ── -->
+  <div class="section-block" id="audio-models">
+    <div class="section-marker">04 — Speech & Sound</div>
+    <h2>Audio Models</h2>
+    <p>Multimodal AI extends to sound: speech-to-text (ASR), text-to-speech (TTS), and audio understanding. These enable voice interfaces, accessibility, content creation, and speech analysis at scale.</p>
+
+    <h3>Speech Recognition (ASR)</h3>
+    <p><strong>Whisper</strong> (OpenAI) is the gold standard: robust, multilingual, and open-source. Trained on 680K hours of multilingual audio from the web. Fast inference, handles accents and background noise well. Use for transcription, subtitles, voice command interfaces.</p>
+
+    <h3>Text-to-Speech (TTS)</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">TTS</div>
+        <div class="tool-name">OpenAI TTS</div>
+        <div class="tool-desc">Simple API for natural-sounding speech in 6 voices. Low latency, streaming support.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">TTS</div>
+        <div class="tool-name">ElevenLabs</div>
+        <div class="tool-desc">Custom voice cloning, emotional tone control, multilingual support with natural prosody.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">TTS</div>
+        <div class="tool-name">Google Cloud TTS</div>
+        <div class="tool-desc">Enterprise-grade, 250+ voices, supports markup for pronunciation control.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">AudioCraft</div>
+        <div class="tool-desc">Meta's model family for music generation and audio synthesis from text.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">ASR</div>
+        <div class="tool-name">Whisper</div>
+        <div class="tool-desc">OpenAI's robust multilingual speech recognition, open-source, handles accents and noise.</div>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Audio workflows:</strong> Transcribe user speech → send to LLM → generate response → convert back to speech. This creates natural voice interfaces without needing separate dialogue models.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. WORKING CODE EXAMPLES ── -->
+  <div class="section-block" id="code-examples">
+    <div class="section-marker">05 — Implementation</div>
+    <h2>Working Code Examples</h2>
+
+    <h3>1. Vision: Analyze Image with Claude</h3>
+    <div class="example-box">import anthropic
+import base64
+from pathlib import Path
+
+client = anthropic.Anthropic()
+
+def analyze_image(image_path: str, question: str) -> str:
+    """Analyze an image and answer a question about it."""
+    with open(image_path, "rb") as f:
+        image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+    
+    resp = client.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=1024,
+        messages=[{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/jpeg",
+                        "data": image_data,
+                    },
+                },
+                {"type": "text", "text": question}
+            ],
+        }]
+    )
+    return resp.content[0].text
+
+# Usage
+answer = analyze_image("photo.jpg", "What is in this image?")
+print(answer)</div>
+
+    <h3>2. Audio: Transcribe with Whisper</h3>
+    <div class="example-box">import whisper
+
+def transcribe_audio(audio_path: str) -> str:
+    """Transcribe audio file to text using Whisper."""
+    model = whisper.load_model("base")
+    result = model.transcribe(audio_path)
+    return result["text"]
+
+# Usage
+text = transcribe_audio("speech.mp3")
+print(f"Transcription: {text}")</div>
+
+    <h3>3. Image Generation with Stable Diffusion</h3>
+    <div class="example-box">from diffusers import StableDiffusionPipeline
+import torch
+
+def generate_image(prompt: str, output_path: str):
+    """Generate an image from a text prompt."""
+    pipe = StableDiffusionPipeline.from_pretrained(
+        "runwayml/stable-diffusion-v1-5",
+        torch_dtype=torch.float16
+    )
+    pipe = pipe.to("cuda")
+    
+    image = pipe(prompt).images[0]
+    image.save(output_path)
+    print(f"Image saved to {output_path}")
+
+# Usage
+generate_image("A futuristic city at sunset", "city.png")</div>
+
+    <h3>4. Complete Multimodal Pipeline</h3>
+    <div class="example-box"># Full workflow: speech → transcribe → analyze image → generate response → speak
+
+# Step 1: User speaks
+# audio_input = record_audio()
+
+# Step 2: Transcribe speech
+user_query = transcribe_audio("user_audio.wav")
+
+# Step 3: Analyze image with query
+answer = analyze_image("photo.jpg", user_query)
+
+# Step 4: Generate speech from answer
+from openai import OpenAI
+client = OpenAI()
+response = client.audio.speech.create(
+    model="tts-1",
+    voice="nova",
+    input=answer
+)
+response.stream_to_file("response.wav")
+
+print(f"User asked: {user_query}")
+print(f"Answer: {answer}")</div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Best practice:</strong> Start with a single modality (e.g., image analysis), test thoroughly, then layer in others. Multimodal pipelines compound latency — monitor end-to-end performance.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. WHAT TO EXPLORE NEXT ── -->
+  <div class="section-block" id="explore-next">
+    <div class="section-marker">06 — Child Concepts</div>
+    <h2>What to Explore Next</h2>
+    <p>Multimodal AI is vast. Dive deeper into specific modalities and tasks:</p>
+
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Vision-Language Models <em>→ concepts/vision-language.html</em></h3>
+          <p>Deep dive into how VLMs work, model architectures (ViT + LLM fusion), fine-tuning on custom tasks, and building image-understanding applications.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Image Generation <em>→ concepts/image-gen.html</em></h3>
+          <p>Diffusion model mechanics, latent-space generation, prompt engineering for image generation, fine-tuning on custom styles, and production deployment.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Audio Models <em>→ concepts/audio-models.html</em></h3>
+          <p>ASR systems (Whisper internals), TTS architectures, voice cloning, emotional prosody, and building conversational voice interfaces.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>Video Models <em>→ concepts/video-models.html</em></h3>
+          <p>Video generation (Sora, Runway), temporal reasoning, frame interpolation, and working with long-context video understanding.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 7. REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">07 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Academic Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Radford, A. et al. (2021).
+        <em>Learning Transferable Visual Models From Natural Language Supervision (CLIP).</em>
+        arXiv:2103.00020. —
+        <a href="https://arxiv.org/abs/2103.00020" target="_blank">arxiv:2103.00020 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Liu, H. et al. (2023).
+        <em>LLaVA: Large Language and Vision Assistant.</em>
+        arXiv:2304.08485. —
+        <a href="https://arxiv.org/abs/2304.08485" target="_blank">arxiv:2304.08485 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Rombach, R. et al. (2022).
+        <em>High-Resolution Image Synthesis with Latent Diffusion Models.</em>
+        arXiv:2112.10752. —
+        <a href="https://arxiv.org/abs/2112.10752" target="_blank">arxiv:2112.10752 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Radford, A. et al. (2022).
+        <em>Robust Speech Recognition via Large-Scale Weak Supervision (Whisper).</em>
+        arXiv:2212.04356. —
+        <a href="https://arxiv.org/abs/2212.04356" target="_blank">arxiv:2212.04356 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        (2023).
+        <em>Multimodal Foundation Models: From Specialists to General-Purpose Assistants.</em>
+        arXiv:2309.07915. —
+        <a href="https://arxiv.org/abs/2309.07915" target="_blank">arxiv:2309.07915 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Dosovitskiy, A. et al. (2020).
+        <em>An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale (Vision Transformers).</em>
+        arXiv:2010.11929. —
+        <a href="https://arxiv.org/abs/2010.11929" target="_blank">arxiv:2010.11929 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        OpenAI. (2023).
+        <em>GPT-4V System Card.</em> —
+        <a href="https://openai.com/research/gpt-4v-system-card" target="_blank">openai.com ↗</a>
+      </li>
+    </ul>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <span></span>
+  <span class="concept-nav-cat">Foundation Models</span>
+  <a class="concept-nav-next" href="vision-language.html">→ Vision-Language Models</a>
+</nav>
+</body>
+</html>

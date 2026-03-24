@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transformer Architecture — GenAI Mindmap</title>
+  <meta name="description" content="The attention-based architecture powering all modern LLMs — self-attention, positional encoding, architecture variants" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Transformer Architecture" />
+  <meta property="og:description" content="The attention-based architecture powering all modern LLMs — self-attention, positional encoding, architecture variants" />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/transformers.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Transformer Architecture" />
+  <meta name="twitter:description" content="The attention-based architecture powering all modern LLMs — self-attention, positional encoding, architecture variants" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/transformers.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+<style id="concept-nav-css">
+.concept-nav{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 2rem;background:#0f172a;border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;flex-wrap:wrap;gap:0.75rem;}
+.concept-nav a{color:#818cf8;text-decoration:none;font-weight:600;transition:color 0.15s;}
+.concept-nav a:hover{color:#a78bfa;}
+.concept-nav-cat{color:#64748b;font-size:0.78rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Transformer Architecture",
+  "description": "The attention-based architecture powering all modern LLMs \u2014 self-attention, positional encoding, architecture variants",
+  "url": "https://genai4a11.github.io/concepts/transformers.html",
+  "dateModified": "2026-03-24T12:34:26.602319",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Transformer Architecture",
+        "item": "https://genai4a11.github.io/concepts/transformers.html"
+      }
+    ]
+  }
+}
+</script>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">TRANSFORMER ARCHITECTURE</span>
+  <h1>The <em>Transformer</em> Architecture</h1>
+  <p class="hero-sub">Self-attention powers every modern LLM — the architecture that changed everything</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">Q·K·V = attention</span>
+      <span class="stat-label">the core operation</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">encoder / decoder / both</span>
+      <span class="stat-label">three variants</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">O(n²) → Flash Attn</span>
+      <span class="stat-label">the efficiency story</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#why-replaced-rnns" data-num="1">Why transformers replaced RNNs</a></li>
+      <li><a href="#self-attention" data-num="2">The self-attention mechanism</a></li>
+      <li><a href="#architecture-variants" data-num="3">Architecture variants</a></li>
+      <li><a href="#positional-encoding" data-num="4">Positional encoding</a></li>
+      <li><a href="#efficiency-innovations" data-num="5">Efficiency innovations</a></li>
+      <li><a href="#working-code" data-num="6">Working code example</a></li>
+      <li><a href="#what-next" data-num="7">What to explore next</a></li>
+      <li><a href="#references" data-num="8">References</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. WHY TRANSFORMERS REPLACED RNNs ── -->
+  <div class="section-block" id="why-replaced-rnns">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>Why Transformers Replaced RNNs</h2>
+    <p>Recurrent Neural Networks (RNNs, LSTMs) process sequences token-by-token, one step at a time. This sequential dependency made them slow to train (no parallelization) and poor at capturing long-range dependencies. Vanishing gradients meant information from early tokens faded by the time you reached token 512.</p>
+
+    <p>Transformers (Vaswani et al., 2017) solved this with a radical insight: <strong>replace sequential processing with parallel attention</strong>. Every token attends to every other token simultaneously, computing relationships in a single pass. This enables massive parallelization and removes the gradient flow bottleneck.</p>
+
+    <h3>Key Advantages Over RNNs</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Property</th><th>RNN/LSTM</th><th>Transformer</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Parallelization</td><td>Sequential only</td><td>Fully parallel</td></tr>
+          <tr><td>Long-range dependencies</td><td>Weak (vanishing gradients)</td><td>Strong (direct connections)</td></tr>
+          <tr><td>Training speed</td><td>Slow (O(n) steps)</td><td>Fast (O(1) steps)</td></tr>
+          <tr><td>Memory efficiency</td><td>O(d) hidden state</td><td>O(n²) attention</td></tr>
+          <tr><td>Inference latency</td><td>Low latency</td><td>Higher latency (until KV cache)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> Transformers are fundamentally parallelizable. They scale with compute; RNNs are fundamentally sequential. This explains why scaling laws favor transformers — you can train on more data in less wall-clock time.</span>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Use context:</strong> Transformers are the architecture underpinning all modern LLMs; attention mechanism, tokenization, and embeddings are universal across models.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. SELF-ATTENTION MECHANISM ── -->
+  <div class="section-block" id="self-attention">
+    <div class="section-marker">02 — Core Mechanism</div>
+    <h2>The Self-Attention Mechanism</h2>
+    <p>Self-attention computes a weighted sum of token representations, where the weights reflect relevance between pairs of tokens. The mechanism requires three transformations: Query (Q), Key (K), Value (V).</p>
+
+    <h3>The Q, K, V Framework</h3>
+    <p>For a sequence of tokens, we project each token into three spaces:</p>
+    <div class="example-box">x_i = embedding of token i (dim = 512)
+
+Q_i = linear(x_i)  # Query (what am I looking for?)
+K_i = linear(x_i)  # Key (what am I?)
+V_i = linear(x_i)  # Value (what information do I contain?)
+
+Attention scores: scores_ij = Q_i · K_j / sqrt(d_k)
+Attention weights: attn_ij = softmax(scores_ij) over all j
+Output_i = Σ_j attn_ij * V_j  # weighted sum of values</div>
+
+    <p>The division by sqrt(d_k) stabilizes gradients; the softmax ensures weights sum to 1. The result is that each token becomes a weighted blend of all tokens' values, guided by query-key similarity.</p>
+
+    <h3>Multi-Head Attention</h3>
+    <p>A single attention head captures one type of relationship. Multi-head attention uses 8–12 parallel heads, each learning different attention patterns (syntax, semantics, long-range, short-range). The outputs are concatenated and projected back to the model dimension.</p>
+
+    <div class="example-box"># 8 attention heads, each with dimension 64 (512 / 8)
+for h in range(8):
+    Q_h, K_h, V_h = project_to_head_dim(Q, K, V, h)
+    head_output_h = softmax(Q_h @ K_h.T / sqrt(64)) @ V_h
+
+output = linear(concat(head_output_0, ..., head_output_7))</div>
+
+    <h3>Causal vs. Non-Causal Attention</h3>
+    <p><strong>Causal (decoder-only, GPT-style):</strong> Token i can only attend to tokens 0..i (past and present), not future tokens. Enforced by setting scores to -∞ for j > i before softmax. <strong>Non-causal (BERT-style):</strong> All tokens attend to all tokens. Used in encoder-only models where future context is available.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Attention O(n²) complexity:</strong> Attention requires computing similarity between every pair of tokens — quadratic in sequence length. This limits context windows. For n=4096 tokens, you compute 16M similarity scores.</span>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Key takeaway:</strong> Attention = key innovation; multi-head, causal, sliding-window variants. Tokenization is non-trivial; byte-pair encoding (BPE) is standard. Attention O(n²) complexity limits context; newer variants trade latency.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. ARCHITECTURE VARIANTS ── -->
+  <div class="section-block" id="architecture-variants">
+    <div class="section-marker">03 — Design Patterns</div>
+    <h2>Architecture Variants: Encoder, Decoder, Encoder-Decoder</h2>
+    <p>Transformers come in three flavors, each suited to different tasks.</p>
+
+    <h3>Encoder-Only (BERT, RoBERTa)</h3>
+    <p>Bidirectional attention: tokens see all other tokens. Trained with masked language modeling (15% of tokens masked, model predicts them). Excels at understanding and classification tasks (sentiment, NER, token classification). No autoregressive generation.</p>
+    <div class="example-box">Input:  [CLS] The quick [MASK] jumps [SEP]
+Task:   Predict the masked token
+Output: "brown"  (from contextual representations)
+
+Good for: Text classification, named entity recognition, semantic similarity</div>
+
+    <h3>Decoder-Only (GPT-2, GPT-4, Llama)</h3>
+    <p>Causal attention: each token attends only to past tokens. Trained with next-token prediction (given tokens 0..i, predict i+1). Naturally generates sequences autoregressively, one token at a time. All modern LLMs are decoder-only.</p>
+    <div class="example-box">Input:  "The quick brown"
+Attend: [position 0] → [0], [position 1] → [0,1], [position 2] → [0,1,2]
+Output: Logits for next token (predicting "fox")</div>
+
+    <h3>Encoder-Decoder (T5, BART, Seq2Seq)</h3>
+    <p>Encoder processes input bidirectionally; decoder attends causally to its own tokens and cross-attends to encoder outputs. Designed for tasks with separate input and output (translation, summarization, question answering).</p>
+    <div class="example-box">Encoder input:  "translate to French: Hello world"
+Encoder:        [bidirectional attention]
+Decoder:        [causal attention] + [cross-attention to encoder outputs]
+Decoder output: "Bonjour le monde"</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Architecture</th><th>Attention type</th><th>Tasks</th><th>Examples</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Encoder-only</td><td>Bidirectional</td><td>Classification, tagging</td><td>BERT, RoBERTa</td></tr>
+          <tr><td>Decoder-only</td><td>Causal</td><td>Language generation</td><td>GPT-4, Llama, Falcon</td></tr>
+          <tr><td>Encoder-decoder</td><td>Causal + cross</td><td>Seq2seq, translation</td><td>T5, BART, Pegasus</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Best practice:</strong> All modern LLMs (ChatGPT, Claude, Llama) are decoder-only. This single architecture dominates because generation is the most versatile task.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. POSITIONAL ENCODING ── -->
+  <div class="section-block" id="positional-encoding">
+    <div class="section-marker">04 — Position</div>
+    <h2>Positional Encoding</h2>
+    <p>Transformers have no notion of sequence order — attention is permutation-invariant. To inject position information, we add positional encodings to token embeddings before feeding them to the first layer.</p>
+
+    <h3>Absolute Positional Encodings</h3>
+    <p><strong>Sinusoidal (Vaswani, 2017):</strong> Position p, dimension d_model. Compute sin and cos at different frequencies. Learnable across context length. Still used in many models.</p>
+    <div class="example-box">PE(pos, 2i) = sin(pos / 10000^(2i/d_model))
+PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))</div>
+
+    <h3>Relative Positional Encodings: RoPE</h3>
+    <p>RoPE (Rotary Position Embeddings, Su et al., 2021) applies rotation matrices in the query-key dot product. More sample-efficient than sinusoidal; naturally extrapolates to longer sequences. Used in Llama, PaLM, modern models.</p>
+    <div class="example-box"># Rotate Q, K by position-dependent angle
+theta_m = base^(-2m/d)
+rotation_angle = pos * theta_m
+
+Q_rot = R(pos) * Q
+K_rot = R(pos) * K</div>
+
+    <h3>Relative Positional Encodings: ALiBi</h3>
+    <p>Attention with Linear Biases (ALiBi, Press et al., 2022) adds a position-dependent bias directly to attention logits before softmax. Extremely simple; extrapolates well. Used in some smaller models.</p>
+    <div class="example-box">scores_ij = Q_i · K_j - |i - j| * alpha
+# Alpha is a small learned coefficient per head</div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Why positional encoding matters:</strong> Without it, the transformer sees "cat sat the on" as equivalent to "the cat sat on" — position is lost. With it, the model learns that subject → verb → object order matters.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. EFFICIENCY INNOVATIONS ── -->
+  <div class="section-block" id="efficiency-innovations">
+    <div class="section-marker">05 — Scaling</div>
+    <h2>Efficiency Innovations: KV Cache, Flash Attention, and Friends</h2>
+    <p>Transformers are powerful but expensive. Three key innovations dramatically reduce computation and memory.</p>
+
+    <h3>KV Cache (Key-Value Caching)</h3>
+    <p>During inference, we generate tokens one at a time. Without caching, we'd recompute K and V for all previous tokens on every generation step. KV cache stores K, V for all past tokens, reusing them. This cuts attention computation from O(n²) to O(n) during inference.</p>
+    <div class="example-box"># Without cache: recompute attention for all tokens at each step
+for step in range(max_tokens):
+    output = attention(Q_new, K_all, V_all)  # K_all, V_all recomputed
+    new_token = argmax(output)
+
+# With cache: store K, V and append
+kv_cache = {}
+for step in range(max_tokens):
+    K_new, V_new = compute_once(token_new)
+    kv_cache[step] = (K_new, V_new)
+    output = attention(Q_new, kv_cache[:step+1], kv_cache[:step+1])</div>
+
+    <h3>Flash Attention</h3>
+    <p>Dao et al. (2022) observed that standard attention implementations read/write to slow GPU memory repeatedly. Flash Attention reorders computation to exploit fast SRAM (on-chip memory). Same result, 4–10x speedup, 2–5x less memory. Now standard in modern libraries.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Impact:</strong> Flash Attention made long-context training practical. Reduced attention cost from main bottleneck to roughly equal with feed-forward layers.</span>
+    </div>
+
+    <h3>Grouped-Query Attention (GQA)</h3>
+    <p>Standard multi-head attention has 8–12 separate K, V projections (one per head), ballooning KV cache size. GQA uses a small number of shared K, V heads (e.g., 2) with multiple Q heads attending to them. Reduces KV cache by 8x; minimal quality loss.</p>
+
+    <h3>Sliding Window Attention</h3>
+    <p>Full attention is O(n²); for very long contexts, we can't afford it. Sliding window attention limits each token to attend to the last W tokens (e.g., W=4096). Reduces complexity to O(n*W). Used in Mistral, LLaMA 2 Long.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Technique</th><th>Impact</th><th>Trade-off</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>KV cache</td><td>4–100x speedup at inference</td><td>Memory for cache storage</td></tr>
+          <tr><td>Flash Attention</td><td>4–10x training speedup</td><td>Implementation complexity</td></tr>
+          <tr><td>Grouped-Query Attention</td><td>8x KV cache reduction</td><td>Minimal quality loss</td></tr>
+          <tr><td>Sliding window</td><td>Linear complexity for long context</td><td>Loses very long-range attention</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Production reality:</strong> Modern inference uses KV cache + Flash Attention + GQA together. Even so, a 70B model at 8K context takes significant time. Token generation is inherently sequential and memory-bound.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. WORKING CODE EXAMPLE ── -->
+  <div class="section-block" id="working-code">
+    <div class="section-marker">06 — Practice</div>
+    <h2>Working Code Example</h2>
+    <p>Let's load a pre-trained transformer and inspect its internal representations, attention weights, and how self-attention works in practice.</p>
+
+    <div class="example-box">from transformers import AutoTokenizer, AutoModel
+import torch
+
+# Load a decoder-only model (GPT-style)
+model_id = "gpt2"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModel.from_pretrained(model_id)
+
+text = "The transformer architecture revolutionized NLP"
+inputs = tokenizer(text, return_tensors="pt")
+
+with torch.no_grad():
+    outputs = model(**inputs, output_attentions=True)
+
+print(f"Hidden state shape: {outputs.last_hidden_state.shape}")
+# Shape: [batch, sequence_length, hidden_size]
+
+# Inspect attention weights (last layer, first head)
+attn = outputs.attentions[-1][0, 0]  # [seq_len, seq_len]
+print(f"Attention matrix shape: {attn.shape}")
+
+# Check token-level representations
+tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
+print("Tokens:", tokens)</div>
+
+    <h3>Output Breakdown</h3>
+    <p><strong>last_hidden_state:</strong> [1, 10, 768] — The final layer representations for each token. 768 is the hidden dimension of GPT-2. <strong>attentions:</strong> Tuple of 12 tensors (one per layer). Each is [batch, num_heads, seq_len, seq_len]. Shows which tokens the model attends to. <strong>tokens:</strong> ["The", "Ġtransformer", "Ġarchitecture", ...] — Note BPE tokenization breaks words; "Ġ" is space.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Takeaway:</strong> Modern transformers are implemented in HuggingFace Transformers with a simple, consistent API across models. The attention mechanism is the core; everything else is engineering (layer norm, residuals, feed-forward, positional encoding).</span>
+    </div>
+  </div>
+
+  <!-- ── 7. WHAT TO EXPLORE NEXT ── -->
+  <div class="section-block" id="what-next">
+    <div class="section-marker">07 — Deeper Dives</div>
+    <h2>What to Explore Next</h2>
+    <p>We've covered the architecture and efficiency. The ecosystem of transformer variants is vast. Here are four child concept pages that dive deeper:</p>
+
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Attention Mechanisms <em>— Multi-head, causal, sparse variants</em></h3>
+          <p>Dive into self-attention, cross-attention, different mask types, and modern variants like sparse attention and linear attention. Compare trade-offs.</p>
+          <a href="attention.html" style="color: var(--indigo); text-decoration: none; font-weight: 600;">→ Attention Mechanisms</a>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Positional Encoding <em>— RoPE, ALiBi, sinusoidal</em></h3>
+          <p>Understand how transformers encode position, why it matters, and which methods extrapolate best. Explore interpolation vs. extrapolation.</p>
+          <a href="pos-encoding.html" style="color: var(--indigo); text-decoration: none; font-weight: 600;">→ Positional Encoding</a>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Transformer Architectures <em>— Encoder, decoder, encoder-decoder</em></h3>
+          <p>Deep dive into encoder-only (BERT), decoder-only (GPT), and encoder-decoder (T5) designs. When to use each. Training objectives and fine-tuning.</p>
+          <a href="transformer-arch.html" style="color: var(--indigo); text-decoration: none; font-weight: 600;">→ Transformer Architectures</a>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>KV Cache & Efficiency <em>— Inference optimization, sparse attention</em></h3>
+          <p>Master key-value caching, grouped-query attention, Flash Attention, speculative decoding. How production systems generate tokens at scale.</p>
+          <a href="kv-cache.html" style="color: var(--indigo); text-decoration: none; font-weight: 600;">→ KV Cache & Efficiency</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Learning path:</strong> Master self-attention first (this page). Then pick one child concept based on your focus: attention variants, positional methods, architecture design, or inference optimization. Each feeds into the others.</span>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">08 — Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Foundational Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Vaswani, A. et al. (2017).
+        <em>Attention Is All You Need.</em>
+        arXiv:1706.03762. —
+        <a href="https://arxiv.org/abs/1706.03762" target="_blank">arxiv:1706.03762 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Dao, T. et al. (2022).
+        <em>FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness.</em>
+        arXiv:2205.14135. —
+        <a href="https://arxiv.org/abs/2205.14135" target="_blank">arxiv:2205.14135 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Su, J. et al. (2021).
+        <em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em>
+        arXiv:2104.09864. —
+        <a href="https://arxiv.org/abs/2104.09864" target="_blank">arxiv:2104.09864 ↗</a>
+      </li>
+    </div>
+
+    <div class="ref-group-title">Resources & Implementations</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-docs">Docs</span>
+        HuggingFace Transformers. <em>Official Python library and documentation.</em> —
+        <a href="https://huggingface.co/docs/transformers/index" target="_blank">huggingface.co/docs/transformers ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-blog">Blog</span>
+        Jay Alammar. (2018).
+        <em>The Illustrated Transformer.</em>
+        Visual guide to transformer internals. —
+        <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank">jalammar.github.io ↗</a>
+      </li>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+<nav class="concept-nav">
+  <span></span>
+  <span class="concept-nav-cat">Fundamentals & Architecture</span>
+  <a class="concept-nav-next" href="attention.html">→ Attention Mechanisms</a>
+</nav>
+</body>
+</html>
