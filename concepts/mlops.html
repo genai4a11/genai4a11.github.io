@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MLOps for LLMs — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #be123c; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Production Engineering</span>
+  <h1><em>MLOps</em> for LLMs</h1>
+  <p class="hero-sub">Model registries, deployment pipelines, drift detection, and the operational practices that keep LLM products reliable</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">train → evaluate → deploy</span>
+      <span class="stat-label">the ML lifecycle</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">drift + regression</span>
+      <span class="stat-label">the twin risks</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">CI/CD for prompts</span>
+      <span class="stat-label">the new discipline</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONTENT ── -->
+<div class="page-wrap">
+
+<!-- TOC -->
+<div class="toc-card">
+  <div class="toc-heading">Sections</div>
+  <ul class="toc-list">
+    <li><a href="#section1" data-num="1">LLM MLOps vs ML</a></li>
+    <li><a href="#section2" data-num="2">Prompt Versioning</a></li>
+    <li><a href="#section3" data-num="3">Model Registry</a></li>
+    <li><a href="#section4" data-num="4">Monitoring & Drift</a></li>
+    <li><a href="#section5" data-num="5">Canary Deploys</a></li>
+    <li><a href="#section6" data-num="6">Cost Management</a></li>
+    <li><a href="#section7" data-num="7">Incident Response</a></li>
+  </ul>
+</div>
+
+<!-- Section 1 -->
+<div class="section-block" id="section1">
+  <div class="section-marker">Section 1</div>
+  <h2>LLM MLOps vs Traditional MLOps</h2>
+  <p><strong>Traditional MLOps:</strong> retrain model, run offline evals, deploy new weights, monitor prediction distribution</p>
+  <p><strong>LLM MLOps adds:</strong> prompt versioning (prompts change more often than weights), LLM-as-judge (evaluating open-ended text output), vendor model deprecations (you didn't train the model), context window management (inputs are variable-length documents)</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>Traditional ML</th>
+          <th>LLM MLOps</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Deployable artifact</td>
+          <td>Model weights</td>
+          <td>Weights + prompts + config</td>
+        </tr>
+        <tr>
+          <td>Main regression signal</td>
+          <td>Metric on holdout set</td>
+          <td>LLM judge + golden set</td>
+        </tr>
+        <tr>
+          <td>Retraining trigger</td>
+          <td>Drift in input distribution</td>
+          <td>Model deprecation or quality drop</td>
+        </tr>
+        <tr>
+          <td>Latency source</td>
+          <td>Single inference</td>
+          <td>Multiple LLM calls, tool chains</td>
+        </tr>
+        <tr>
+          <td>Vendor dependency</td>
+          <td>Low (own model)</td>
+          <td>High (API providers)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout amber">
+    <span class="callout-icon">⚠</span>
+    <div><strong>Your model might be GPT-4o today. When OpenAI deprecates it, your pipelines break unless you test migrating to each new model before the deprecation date.</strong></div>
+  </div>
+</div>
+
+<!-- Section 2 -->
+<div class="section-block" id="section2">
+  <div class="section-marker">Section 2</div>
+  <h2>Prompt Versioning and CI/CD</h2>
+  <p><strong>Prompts are code:</strong> version them in git, review them in PRs, test them before merging</p>
+  <p><strong>Prompt CI/CD pipeline:</strong> commit prompt change → run eval suite → compare to baseline → block merge if score drops → deploy if passing</p>
+  <p><strong>Prompt registry:</strong> store prompts with versions, tags (production/staging/experiment), eval scores, and deployment history</p>
+
+  <p style="margin-top: 1.5rem;"><strong>Example: prompt versioning workflow</strong></p>
+  <div class="example-box"># prompts/system_v2.3.txt committed to git
+# .github/workflows/eval.yml:
+
+on: pull_request
+jobs:
+  eval:
+    steps:
+      - run: python evals/run_suite.py --prompt prompts/system_v2.3.txt
+      - run: python evals/compare_to_baseline.py --threshold 0.02
+      # Blocks PR if score drops >2% on any category</div>
+
+  <p style="margin-top: 1rem;"><strong>Tools:</strong> LangSmith (prompt hub), Braintrust (prompt management), PromptFoo (YAML-based testing), W&B Prompts</p>
+</div>
+
+<!-- Section 3 -->
+<div class="section-block" id="section3">
+  <div class="section-marker">Section 3</div>
+  <h2>Model Registry and Lifecycle</h2>
+  <p><strong>Model registry:</strong> catalog of all models in use with: model ID, version, provider, deployment date, eval scores, deprecation date</p>
+  <p><strong>For fine-tuned models:</strong> include training data version, training config, validation metrics, and lineage (base model → fine-tuned model)</p>
+  <p><strong>Deprecation management:</strong> subscribe to provider changelogs, test new model versions on your golden set before forced migration, maintain fallback model config</p>
+
+  <p style="margin-top: 1.5rem;"><strong>Example: model registry entry schema</strong></p>
+  <div class="example-box">{
+  "model_id": "gpt-4o-2024-08-06",
+  "provider": "openai",
+  "deployed_to": ["search_pipeline", "summarization_service"],
+  "eval_scores": {"mmlu": 85.7, "task_accuracy": 0.91},
+  "deployed_at": "2024-08-15",
+  "deprecation_date": "2025-06-01",
+  "fallback": "gpt-4o-mini"
+}</div>
+</div>
+
+<!-- Section 4 -->
+<div class="section-block" id="section4">
+  <div class="section-marker">Section 4</div>
+  <h2>Monitoring and Drift Detection</h2>
+  <p><strong>What to monitor:</strong> (1) latency (TTFT, total latency, P99), (2) cost (tokens in/out, per-request cost), (3) error rates (API errors, timeouts, retries), (4) output quality (LLM judge scores, user feedback), (5) input distribution (prompt length, query type shifts)</p>
+  <p><strong>Drift signals:</strong> quality score drops, latency spikes, unexpected token count changes, new error codes from provider</p>
+  <p><strong>Alerting thresholds:</strong> quality drops >5% → page on-call; latency P99 >2× baseline → alert; error rate >1% → alert</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Metric</th>
+          <th>Tool</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Infrastructure</td>
+          <td>GPU utilization, memory</td>
+          <td>Prometheus, Grafana</td>
+        </tr>
+        <tr>
+          <td>API provider</td>
+          <td>Latency, error rate, cost</td>
+          <td>Helicone, LangSmith</td>
+        </tr>
+        <tr>
+          <td>Application</td>
+          <td>Tokens/request, quality score</td>
+          <td>Custom + Langfuse</td>
+        </tr>
+        <tr>
+          <td>User</td>
+          <td>Thumbs up/down, session length</td>
+          <td>Custom analytics</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Section 5 -->
+<div class="section-block" id="section5">
+  <div class="section-marker">Section 5</div>
+  <h2>Canary Deploys and Shadow Testing</h2>
+  <p><strong>Canary deploy:</strong> send 5% of traffic to new model version. Monitor quality and latency for 24 hours. Roll back if metrics degrade.</p>
+  <p><strong>Shadow testing:</strong> new model handles all requests but outputs are discarded. Compare to current model side-by-side.</p>
+  <p><strong>A/B test:</strong> split traffic 50/50, measure business metrics (conversion, satisfaction, engagement)</p>
+
+  <p style="margin-top: 1.5rem;"><strong>Example: routing logic for canary deploy</strong></p>
+  <div class="example-box">import random
+
+def select_model(request_id: str) -> str:
+    # Deterministic routing by request hash (consistent user experience)
+    bucket = hash(request_id) % 100
+    if bucket < 5:    # 5% canary
+        return "gpt-4o-2024-11-20"  # new version
+    return "gpt-4o-2024-08-06"      # stable version</div>
+
+  <div class="callout green">
+    <span class="callout-icon">✓</span>
+    <div><strong>Use deterministic routing (hash on user ID) so individual users have consistent experiences.</strong> Random routing can confuse users who see different behaviors in the same session.</div>
+  </div>
+</div>
+
+<!-- Section 6 -->
+<div class="section-block" id="section6">
+  <div class="section-marker">Section 6</div>
+  <h2>Cost Management</h2>
+  <p><strong>Token cost optimization:</strong> cache common prefixes (system prompt + few-shot examples), compress retrieved context, use cheaper models for simple subtasks</p>
+  <p><strong>Prompt caching:</strong> Anthropic and OpenAI both offer cache_control / automatic prefix caching — system prompts processed once</p>
+  <p><strong>Tiered routing:</strong> classify query complexity, route simple queries to mini/flash tier, complex to flagship tier</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Technique</th>
+          <th>Savings</th>
+          <th>Complexity</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Prefix caching</td>
+          <td>50–90% on cached tokens</td>
+          <td>Low</td>
+          <td>None</td>
+        </tr>
+        <tr>
+          <td>Tiered routing</td>
+          <td>40–80%</td>
+          <td>Medium</td>
+          <td>Quality regression on edge cases</td>
+        </tr>
+        <tr>
+          <td>Output compression</td>
+          <td>10–30%</td>
+          <td>Low</td>
+          <td>Information loss</td>
+        </tr>
+        <tr>
+          <td>Shorter system prompts</td>
+          <td>5–20%</td>
+          <td>Low</td>
+          <td>Quality regression</td>
+        </tr>
+        <tr>
+          <td>Smaller model for subsets</td>
+          <td>30–70%</td>
+          <td>Medium</td>
+          <td>Quality regression</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout amber">
+    <span class="callout-icon">⚠</span>
+    <div><strong>Measure cost per outcome (cost per successful task completion), not just cost per token.</strong> A cheaper model that requires 3 retries is more expensive than a reliable expensive model.</div>
+  </div>
+</div>
+
+<!-- Section 7 -->
+<div class="section-block" id="section7">
+  <div class="section-marker">Section 7</div>
+  <h2>Incident Response and Runbooks</h2>
+  <p><strong>LLM-specific incidents:</strong> provider outage (API returns 500/503), model behavior change after silent update, prompt injection attack triggering unexpected behavior, cost spike from abnormally long inputs</p>
+  <p><strong>Runbook entries:</strong> for each incident type — detection signal, first responder action, escalation path, rollback procedure</p>
+  <p><strong>Circuit breaker:</strong> if error rate >5% for 60 seconds → switch to fallback model automatically</p>
+  <p><strong>Post-mortems:</strong> document what changed, what signal detected it, how long until detection, remediation taken</p>
+
+  <div class="tools-grid">
+    <div class="tool-card">
+      <div class="tool-category">LLM Ops</div>
+      <div class="tool-name">LangSmith</div>
+      <div class="tool-desc">Monitoring and debugging</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">LLM Ops</div>
+      <div class="tool-name">Langfuse</div>
+      <div class="tool-desc">Tracing and cost tracking</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">LLM Ops</div>
+      <div class="tool-name">Helicone</div>
+      <div class="tool-desc">API observability</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">LLM Ops</div>
+      <div class="tool-name">W&B</div>
+      <div class="tool-desc">Model tracking and experiments</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">Observability</div>
+      <div class="tool-name">Arize Phoenix</div>
+      <div class="tool-desc">LLM tracing platform</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">Infrastructure</div>
+      <div class="tool-name">Prometheus + Grafana</div>
+      <div class="tool-desc">Metrics and dashboards</div>
+    </div>
+  </div>
+</div>
+
+<!-- REFERENCES -->
+<div style="margin-top: 2.5rem;">
+  <h2>References</h2>
+  <div class="ref-group-title">Tools & Platforms</div>
+  <ul class="ref-list">
+    <li><a href="https://docs.smith.langchain.com" target="_blank">LangSmith docs</a></li>
+    <li><a href="https://langfuse.com/docs" target="_blank">Langfuse docs</a></li>
+    <li><a href="https://helicone.ai" target="_blank">Helicone</a></li>
+    <li><a href="https://phoenix.arize.com" target="_blank">Arize Phoenix</a></li>
+  </ul>
+  <div class="ref-group-title">Books & Guides</div>
+  <ul class="ref-list">
+    <li><a href="https://www.oreilly.com/library/view/designing-machine-learning/9781098107956/" target="_blank">Chip Huyen — Designing ML Systems (O'Reilly)</a></li>
+  </ul>
+</div>
+
+<div class="page-footer">
+  <span>GenAI Mindmap</span>
+  <span>Updated March 2026</span>
+</div>
+
+</div>
+
+</body>
+</html>

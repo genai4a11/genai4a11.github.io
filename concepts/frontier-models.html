@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frontier LLM Models — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #be123c; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Model Landscape</span>
+  <h1>Frontier <em>LLM Models</em></h1>
+  <p class="hero-sub">GPT-4o, Claude 3.5, Gemini 1.5, Llama 3, and Mistral — capabilities, context, pricing, and when to use each</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">GPT vs Claude vs Gemini</span>
+      <span class="stat-label">the main competitors</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">128K–1M context</span>
+      <span class="stat-label">current context range</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">open vs closed</span>
+      <span class="stat-label">the key architectural divide</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONTENT ── -->
+<div class="page-wrap">
+
+<!-- TOC -->
+<div class="toc-card">
+  <div class="toc-heading">Sections</div>
+  <ul class="toc-list">
+    <li><a href="#section1" data-num="1">The Landscape</a></li>
+    <li><a href="#section2" data-num="2">GPT-4o</a></li>
+    <li><a href="#section3" data-num="3">Claude 3.5</a></li>
+    <li><a href="#section4" data-num="4">Gemini 1.5</a></li>
+    <li><a href="#section5" data-num="5">Open Models</a></li>
+    <li><a href="#section6" data-num="6">Selection Guide</a></li>
+    <li><a href="#section7" data-num="7">Multi-Provider</a></li>
+  </ul>
+</div>
+
+<!-- Section 1 -->
+<div class="section-block" id="section1">
+  <div class="section-marker">Section 1</div>
+  <h2>The Landscape (early 2025)</h2>
+  <p>Three tiers dominate the frontier model market:</p>
+  <ul style="padding-left: 1.2rem; margin-bottom: 1rem;">
+    <li><strong>Frontier closed</strong>: GPT-4o, Claude 3.5 Sonnet, Gemini 1.5 Pro</li>
+    <li><strong>Frontier open</strong>: Llama 3.1 405B, Mixtral 8x22B</li>
+    <li><strong>Fast/cheap</strong>: GPT-4o-mini, Claude Haiku, Gemini Flash, Llama 3.1 8B</li>
+  </ul>
+  <p>No single model wins all tasks. Benchmark leadership rotates monthly. Build model-agnostic layers.</p>
+
+  <div class="callout amber">
+    <span class="callout-icon">⚠</span>
+    <div><strong>By the time you read this, a new model has likely been released.</strong> Check Chatbot Arena ELO for current rankings.</div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Context</th>
+          <th>Input $/1M</th>
+          <th>Output $/1M</th>
+          <th>Strengths</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>GPT-4o</td>
+          <td>128K</td>
+          <td>$2.50</td>
+          <td>$10.00</td>
+          <td>Multimodal, coding, reasoning</td>
+        </tr>
+        <tr>
+          <td>GPT-4o-mini</td>
+          <td>128K</td>
+          <td>$0.15</td>
+          <td>$0.60</td>
+          <td>Speed, cost, general tasks</td>
+        </tr>
+        <tr>
+          <td>Claude 3.5 Sonnet</td>
+          <td>200K</td>
+          <td>$3.00</td>
+          <td>$15.00</td>
+          <td>Long context, coding, instruction-following</td>
+        </tr>
+        <tr>
+          <td>Claude 3 Haiku</td>
+          <td>200K</td>
+          <td>$0.25</td>
+          <td>$1.25</td>
+          <td>Speed, cost</td>
+        </tr>
+        <tr>
+          <td>Gemini 1.5 Pro</td>
+          <td>1M</td>
+          <td>$3.50</td>
+          <td>$10.50</td>
+          <td>Ultra-long context, multilingual</td>
+        </tr>
+        <tr>
+          <td>Gemini 1.5 Flash</td>
+          <td>1M</td>
+          <td>$0.075</td>
+          <td>$0.30</td>
+          <td>Fastest, cheapest at long context</td>
+        </tr>
+        <tr>
+          <td>Llama 3.1 405B</td>
+          <td>128K</td>
+          <td>Self-hosted</td>
+          <td>Self-hosted</td>
+          <td>Open weights, data stays on-prem</td>
+        </tr>
+        <tr>
+          <td>Llama 3.1 8B</td>
+          <td>128K</td>
+          <td>Very cheap</td>
+          <td>Very cheap</td>
+          <td>Edge, fine-tuning, experimentation</td>
+        </tr>
+        <tr>
+          <td>Mistral Large 2</td>
+          <td>128K</td>
+          <td>$2.00</td>
+          <td>$6.00</td>
+          <td>European data residency, multilingual</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Section 2 -->
+<div class="section-block" id="section2">
+  <div class="section-marker">Section 2</div>
+  <h2>GPT-4o: OpenAI's Flagship</h2>
+  <p><strong>Native multimodal:</strong> single model handles text, images, audio, video in one unified architecture</p>
+  <p><strong>Best for:</strong> complex reasoning, code generation (with Copilot/Cursor integration), tool use with complex schemas, vision tasks</p>
+  <p><strong>o1 / o3 series:</strong> extended thinking models. Use when reasoning quality matters more than speed. o3 is the current reasoning frontier.</p>
+  <p><strong>Structured outputs:</strong> native JSON mode, function calling with strict schema enforcement</p>
+
+  <div class="callout green">
+    <span class="callout-icon">✓</span>
+    <div><strong>For code generation and complex multi-step tool use, GPT-4o + function calling is still the most reliable combination in production.</strong></div>
+  </div>
+</div>
+
+<!-- Section 3 -->
+<div class="section-block" id="section3">
+  <div class="section-marker">Section 3</div>
+  <h2>Claude 3.5: Anthropic's Flagship</h2>
+  <p><strong>Constitutional AI training + RLHF:</strong> strong instruction following, low hallucination rate on verifiable facts</p>
+  <p><strong>200K context window:</strong> with strong recall; less "lost in the middle" degradation than competitors at long context</p>
+  <p><strong>Best for:</strong> document analysis (legal, medical, financial), long-form writing, coding (often tied with GPT-4o), following complex multi-step instructions precisely</p>
+  <p><strong>Extended Thinking:</strong> Claude's chain-of-thought reasoning mode (budget_tokens parameter)</p>
+
+  <div class="callout amber">
+    <span class="callout-icon">⚠</span>
+    <div><strong>Claude is notably better than GPT-4o at following negative constraints ("do NOT include X").</strong> Critical for safety-constrained applications.</div>
+  </div>
+</div>
+
+<!-- Section 4 -->
+<div class="section-block" id="section4">
+  <div class="section-marker">Section 4</div>
+  <h2>Gemini 1.5: Google's Flagship</h2>
+  <p><strong>1M token context window:</strong> can ingest entire codebases, hour-long videos, full books in one request</p>
+  <p><strong>Native multimodal from day one:</strong> text, images, video, audio, code — not retrofitted</p>
+  <p><strong>Best for:</strong> document-heavy tasks requiring very long context, multilingual applications, video understanding</p>
+  <p><strong>Gemini Flash:</strong> optimized for speed and cost at long contexts — often the cheapest way to handle 100K+ token requests</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Tokens needed</th>
+          <th>Best model</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Single document QA</td>
+          <td>4K–8K</td>
+          <td>Any frontier model</td>
+        </tr>
+        <tr>
+          <td>Full codebase review</td>
+          <td>50K–200K</td>
+          <td>Claude 3.5 or Gemini 1.5 Pro</td>
+        </tr>
+        <tr>
+          <td>Entire book analysis</td>
+          <td>200K–500K</td>
+          <td>Gemini 1.5 Pro (1M)</td>
+        </tr>
+        <tr>
+          <td>Hour-long video</td>
+          <td>500K+</td>
+          <td>Gemini 1.5 Pro only</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Section 5 -->
+<div class="section-block" id="section5">
+  <div class="section-marker">Section 5</div>
+  <h2>Open Models: Llama 3, Mistral</h2>
+  <p><strong>Llama 3.1 (Meta):</strong> 8B, 70B, 405B variants. 128K context. Apache 2.0 license. 405B competes with GPT-4 class on many tasks.</p>
+  <p><strong>Why open matters:</strong> data sovereignty (nothing leaves your infra), fine-tuning on proprietary data, no per-token API costs at scale, regulatory compliance (healthcare, finance, EU)</p>
+  <p><strong>Mistral:</strong> French company. Strong multilingual. Commercial license. Used for EU data residency requirements.</p>
+  <p><strong>Mixtral 8x22B:</strong> Mixture of Experts — 141B total params, 39B active per forward pass. Efficient at large model performance.</p>
+
+  <div class="callout green">
+    <span class="callout-icon">✓</span>
+    <div><strong>If you're processing >10M tokens/day, run cost math.</strong> Self-hosted Llama 3.1 70B on 2×A100 costs ~$2/hour = $0.000014/1K tokens at 24/7 utilization vs $1/1K tokens from API. Break-even is ~71M tokens/month.</div>
+  </div>
+</div>
+
+<!-- Section 6 -->
+<div class="section-block" id="section6">
+  <div class="section-marker">Section 6</div>
+  <h2>Model Selection Guide</h2>
+  <div class="methods-list">
+    <div class="method-card">
+      <div class="method-num">1</div>
+      <div class="method-body">
+        <h3>Complex reasoning + coding</h3>
+        <p>GPT-4o or Claude 3.5 Sonnet. Run on your own benchmark. Both are excellent; test on your task.</p>
+      </div>
+    </div>
+    <div class="method-card">
+      <div class="method-num">2</div>
+      <div class="method-body">
+        <h3>Long document analysis (50K+ tokens)</h3>
+        <p>Claude 3.5 (200K) or Gemini 1.5 Pro (1M). Gemini Flash for cost-sensitive.</p>
+      </div>
+    </div>
+    <div class="method-card">
+      <div class="method-num">3</div>
+      <div class="method-body">
+        <h3>Speed and cost sensitive</h3>
+        <p>GPT-4o-mini, Gemini Flash, or Claude Haiku. All are competitive; pick based on your existing API contracts.</p>
+      </div>
+    </div>
+    <div class="method-card">
+      <div class="method-num">4</div>
+      <div class="method-body">
+        <h3>Data sovereignty / on-prem</h3>
+        <p>Llama 3.1 70B or 405B via vLLM or TGI. Quantize to INT4 with AWQ for cost efficiency.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout rose">
+    <span class="callout-icon">⚠</span>
+    <div><strong>Never commit production infrastructure to a single model provider.</strong> Abstract behind a unified interface (LiteLLM, OpenRouter, or your own SDK wrapper). Model availability and pricing change without notice.</div>
+  </div>
+</div>
+
+<!-- Section 7 -->
+<div class="section-block" id="section7">
+  <div class="section-marker">Section 7</div>
+  <h2>Multi-Provider Architecture</h2>
+  <p><strong>Routing:</strong> send coding tasks to GPT-4o, long documents to Gemini Flash, EU traffic to Mistral</p>
+  <p><strong>Fallback:</strong> if primary model returns 429 or 500, retry with secondary model</p>
+  <p><strong>Cost optimization:</strong> route <10K token requests to mini/flash tiers, >100K to cost-per-token optimized models</p>
+
+  <div class="tools-grid">
+    <div class="tool-card">
+      <div class="tool-category">Multi-Model</div>
+      <div class="tool-name">LiteLLM</div>
+      <div class="tool-desc">Router and fallback for any LLM API</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">Multi-Model</div>
+      <div class="tool-name">OpenRouter</div>
+      <div class="tool-desc">API aggregator with single endpoint</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">Multi-Model</div>
+      <div class="tool-name">PortKey</div>
+      <div class="tool-desc">Failover, caching, analytics</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">Observability</div>
+      <div class="tool-name">Helicone</div>
+      <div class="tool-desc">LLM observability and cost tracking</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">Observability</div>
+      <div class="tool-name">Langfuse</div>
+      <div class="tool-desc">LLM tracing and evaluation</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-category">Observability</div>
+      <div class="tool-name">W&B</div>
+      <div class="tool-desc">Model monitoring and experiments</div>
+    </div>
+  </div>
+
+  <p style="margin-top: 1.5rem;"><strong>Example: LiteLLM router config for multi-model routing and fallback</strong></p>
+  <div class="example-box">from litellm import Router
+model_list = [
+    {"model_name": "gpt-4o", "litellm_params": {"model": "openai/gpt-4o"}},
+    {"model_name": "claude", "litellm_params": {"model": "anthropic/claude-3-5-sonnet-20241022"}},
+    {"model_name": "gemini-flash", "litellm_params": {"model": "gemini/gemini-1.5-flash"}},
+]
+router = Router(model_list=model_list, fallbacks=[{"gpt-4o": ["claude"]}])
+response = router.completion(model="gpt-4o", messages=[{"role":"user","content":"Hello"}])</div>
+</div>
+
+<!-- REFERENCES -->
+<div style="margin-top: 2.5rem;">
+  <h2>References</h2>
+  <div class="ref-group-title">Leaderboards & Comparisons</div>
+  <ul class="ref-list">
+    <li><a href="https://lmsys.org/blog/2023-05-03-arena/" target="_blank">Chatbot Arena leaderboard</a></li>
+  </ul>
+  <div class="ref-group-title">Tools & Frameworks</div>
+  <ul class="ref-list">
+    <li><a href="https://docs.litellm.ai" target="_blank">LiteLLM docs</a></li>
+    <li><a href="https://openrouter.ai" target="_blank">OpenRouter</a></li>
+  </ul>
+  <div class="ref-group-title">Research & Papers</div>
+  <ul class="ref-list">
+    <li><a href="https://arxiv.org/abs/2407.21783" target="_blank">Llama 3.1 paper (arxiv 2407.21783)</a></li>
+  </ul>
+</div>
+
+<div class="page-footer">
+  <span>GenAI Mindmap</span>
+  <span>Updated March 2026</span>
+</div>
+
+</div>
+
+</body>
+</html>

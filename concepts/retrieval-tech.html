@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retrieval Technology — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9f1239; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">RETRIEVAL SYSTEMS</span>
+  <h1><em>Retrieval</em> Technology</h1>
+  <p class="hero-sub">Dense vs sparse vs hybrid — FAISS, pgvector, HNSW, BM25, and how to choose</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">dense + sparse = hybrid</span>
+      <span class="stat-label">the production default</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">HNSW index</span>
+      <span class="stat-label">dominant ANN algorithm</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">ANN vs exact</span>
+      <span class="stat-label">speed vs recall tradeoff</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#foundation" data-num="1">The retrieval problem</a></li>
+      <li><a href="#sparse" data-num="2">Sparse: BM25</a></li>
+      <li><a href="#dense" data-num="3">Dense: vector search</a></li>
+      <li><a href="#hnsw" data-num="4">HNSW algorithm</a></li>
+      <li><a href="#hybrid" data-num="5">Hybrid search</a></li>
+      <li><a href="#databases" data-num="6">Vector databases</a></li>
+      <li><a href="#scaling" data-num="7">Scaling & production</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. FOUNDATION ── -->
+  <div class="section-block" id="foundation">
+    <div class="section-marker">01 — Problem Definition</div>
+    <h2>The Retrieval Problem</h2>
+    <p>You have a corpus of N documents (N = 10K to 100M). A user submits a query. You need to return the top-k most relevant documents in milliseconds.</p>
+
+    <p><strong>The naive approach:</strong> scan all N documents, score each one, sort, return top-k. This is O(N×d) — too slow for any corpus larger than a few thousand documents.</p>
+
+    <p><strong>Two fundamental approaches exist:</strong> Sparse retrieval (keyword/BM25) and dense retrieval (vector/semantic). Each has strengths and blindspots. Modern production systems use both.</p>
+
+    <p><strong>The ANN problem:</strong> Exact nearest neighbor search in high-dimensional spaces is prohibitively expensive. Approximate Nearest Neighbor (ANN) indices trade a small recall loss for 100–1000× speedup. Most production systems accept 95–99% recall in exchange for real-time latency.</p>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Key insight:</strong> Retrieval is a two-axis problem: recall (did we find the right documents?) and latency (how fast?). ANN indices sacrifice a tiny bit of recall for dramatic latency gains.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. SPARSE RETRIEVAL ── -->
+  <div class="section-block" id="sparse">
+    <div class="section-marker">02 — Keyword Search</div>
+    <h2>Sparse Retrieval: BM25</h2>
+    <p><strong>BM25 (Best Match 25)</strong> is a probabilistic term-frequency model that scores documents by how well query terms match. It's been the standard for keyword search since the late 1990s.</p>
+
+    <p><strong>How it works:</strong> Each query term is scored based on (1) how often it appears in the document (TF), (2) how rare the term is across the corpus (IDF), (3) saturation so common terms don't dominate, and (4) document-length normalization so longer documents don't win automatically.</p>
+
+    <p><strong>Strengths:</strong> Exact keyword match, handles rare/technical terms, no embedding required, fast on CPU, results are interpretable (you can explain why document A ranked above B).</p>
+
+    <p><strong>Weaknesses:</strong> Vocabulary mismatch (synonym problem — "fast" and "quick" are different tokens), no semantic understanding, requires tokenization, fails on out-of-vocabulary terms.</p>
+
+    <h3>Example: BM25 with rank_bm25</h3>
+    <div class="example-box"># pip install rank-bm25
+from rank_bm25 import BM25Okapi
+
+corpus = [
+    "The quick brown fox jumps over the lazy dog",
+    "A fast auburn fox leaps above the idle hound",
+    "Python is a popular programming language",
+]
+tokenized = [doc.split() for doc in corpus]
+bm25 = BM25Okapi(tokenized)
+
+query = "quick fox jumps"
+scores = bm25.get_scores(query.split())
+# scores: [2.87, 1.23, 0.0]
+# Doc 0 wins (exact terms); Doc 1 misses "quick"/"jumps"</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>When to use BM25:</strong> Queries with specific product names, error codes, medical terminology, or any case where exact string matching matters. Dense retrieval will fail to find these.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. DENSE RETRIEVAL ── -->
+  <div class="section-block" id="dense">
+    <div class="section-marker">03 — Vector Search</div>
+    <h2>Dense Retrieval: Vector Search</h2>
+    <p>Embed the query and all documents with a bi-encoder (embedding model). Find the documents whose embeddings are closest to the query embedding. This captures semantic similarity.</p>
+
+    <p><strong>Example:</strong> Query "fast brown dog" matches "quick auburn fox" semantically. BM25 fails here (no exact term overlap). Dense retrieval succeeds because "fast" and "quick" live near each other in the vector space, as do "brown" and "auburn", and "dog" and "fox".</p>
+
+    <p><strong>The challenge:</strong> Vector spaces have high dimensionality (768, 1024, or more). Finding the nearest neighbor exactly requires scanning all vectors — O(N×d). ANN indices solve this by organizing vectors into hierarchical structures.</p>
+
+    <p><strong>FAISS (Facebook AI Similarity Search):</strong> The standard open-source library for ANN search. It supports multiple index types (Flat, IVF, HNSW, PQ) and combinations thereof.</p>
+
+    <h3>Example: FAISS IndexHNSWFlat</h3>
+    <div class="example-box">import faiss
+import numpy as np
+
+d = 1024  # embedding dimension
+M = 32    # HNSW connections per node
+
+index = faiss.IndexHNSWFlat(d, M)
+index.hnsw.efConstruction = 200  # build-time quality
+
+# Add 1M vectors
+vectors = np.random.randn(1_000_000, d).astype('float32')
+faiss.normalize_L2(vectors)
+index.add(vectors)
+
+# Query (top-10)
+index.hnsw.efSearch = 64  # query-time quality
+query = np.random.randn(1, d).astype('float32')
+faiss.normalize_L2(query)
+distances, indices = index.search(query, k=10)</div>
+
+    <p><strong>FAISS index types:</strong></p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Index</th>
+            <th>Speed</th>
+            <th>Recall</th>
+            <th>Memory</th>
+            <th>When to use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Flat (exact)</td>
+            <td>Slow</td>
+            <td>100%</td>
+            <td>Full</td>
+            <td>&lt;100K vectors or ground truth</td>
+          </tr>
+          <tr>
+            <td>IVF + Flat</td>
+            <td>Medium</td>
+            <td>95–99%</td>
+            <td>Full</td>
+            <td>100K–10M, needs recall</td>
+          </tr>
+          <tr>
+            <td>HNSW</td>
+            <td>Fast</td>
+            <td>95–99%</td>
+            <td>Full + graph</td>
+            <td>Latency-sensitive, fits in RAM</td>
+          </tr>
+          <tr>
+            <td>IVF + PQ</td>
+            <td>Fast</td>
+            <td>85–95%</td>
+            <td>Compressed</td>
+            <td>&gt;10M vectors, memory constrained</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 4. HNSW ── -->
+  <div class="section-block" id="hnsw">
+    <div class="section-marker">04 — Best Algorithm</div>
+    <h2>HNSW: The Dominant ANN Algorithm</h2>
+    <p><strong>HNSW (Hierarchical Navigable Small World)</strong> is a graph-based ANN algorithm that's become the industry standard. It builds a multi-layer graph where each node connects to its M nearest neighbors.</p>
+
+    <p><strong>How it works:</strong> Start at the top layer (which has very few nodes). Greedily navigate downward, always moving toward the query. When you reach the bottom layer, you have a list of nearby candidates. The ef parameter controls the search quality: higher ef = more candidates considered = better recall but slower.</p>
+
+    <p><strong>Parameters:</strong>
+    <ul style="margin-left: 1.2rem; margin-bottom: 1rem; color: #334155;">
+      <li><strong>M:</strong> Number of connections per node. Higher M = denser graph = better recall, slower build/search. Typical: 16–64.</li>
+      <li><strong>efConstruction:</strong> How many candidates to consider during index build. Higher = better recall, slower build. Typical: 100–400.</li>
+      <li><strong>efSearch:</strong> How many candidates to consider during query. Higher = better recall, slower query. Typical: 32–256. You can tune this per-query!</li>
+    </ul>
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Use case</th>
+            <th>M</th>
+            <th>efConstruction</th>
+            <th>efSearch</th>
+            <th>Recall</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>High speed, moderate recall</td>
+            <td>16</td>
+            <td>100</td>
+            <td>32</td>
+            <td>~95%</td>
+          </tr>
+          <tr>
+            <td>Balanced</td>
+            <td>32</td>
+            <td>200</td>
+            <td>64</td>
+            <td>~98%</td>
+          </tr>
+          <tr>
+            <td>High recall, moderate speed</td>
+            <td>64</td>
+            <td>400</td>
+            <td>128</td>
+            <td>~99.5%</td>
+          </tr>
+          <tr>
+            <td>Maximum recall</td>
+            <td>128</td>
+            <td>800</td>
+            <td>256</td>
+            <td>~99.9%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Industry default:</strong> HNSW is supported natively in pgvector (v0.5+), Qdrant, Weaviate, Chroma, and most vector databases. Use M=32, efConstruction=200, efSearch=64 as your starting point.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. HYBRID SEARCH ── -->
+  <div class="section-block" id="hybrid">
+    <div class="section-marker">05 — Combined</div>
+    <h2>Hybrid Search: Dense + Sparse</h2>
+    <p>Run BM25 and dense retrieval separately, then merge the ranked lists. This covers both vocabulary mismatch (BM25 handles exact terms) and semantic drift (dense handles paraphrases).</p>
+
+    <p><strong>Why hybrid works:</strong> BM25 is a specialist — it excels at finding exact keywords. Dense retrieval is a generalist — it understands meaning but can miss specific terms. By combining both, you get the best of both worlds.</p>
+
+    <p><strong>Merging the lists:</strong> You can't just average scores — BM25 scores (0 to ~20) and cosine similarity (0 to 1) are on different scales. The standard solution is <strong>Reciprocal Rank Fusion (RRF)</strong>.</p>
+
+    <h3>Reciprocal Rank Fusion (RRF)</h3>
+    <p>For each document, compute: RRF_score = sum(1/(k + rank_i)) across all retrieval systems, where k=60 is a constant. No score normalization needed — the formula handles different scales automatically.</p>
+
+    <div class="example-box">def reciprocal_rank_fusion(rankings: list[list], k: int = 60) -> list:
+    scores = {}
+    for ranking in rankings:
+        for rank, doc_id in enumerate(ranking, start=1):
+            scores[doc_id] = scores.get(doc_id, 0) + 1.0 / (k + rank)
+    return sorted(scores, key=scores.get, reverse=True)
+
+dense_results = ["doc_A", "doc_B", "doc_C", "doc_D"]  # from vector search
+sparse_results = ["doc_C", "doc_E", "doc_A", "doc_F"]  # from BM25
+fused = reciprocal_rank_fusion([dense_results, sparse_results])
+# Result: doc_A (both), doc_C (both), ...</div>
+
+    <p><strong>When hybrid outperforms single methods:</strong></p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Query type</th>
+            <th>Dense</th>
+            <th>BM25</th>
+            <th>Hybrid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Semantic paraphrase ("fast runner" vs "quick athlete")</td>
+            <td>✓</td>
+            <td>✗</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td>Exact product code ("SKU-12345")</td>
+            <td>✗</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td>Domain acronym ("RLHF", "RAG")</td>
+            <td>✗</td>
+            <td>✓</td>
+            <td>✓</td>
+          </tr>
+          <tr>
+            <td>Multi-concept question</td>
+            <td>✓</td>
+            <td>Partial</td>
+            <td>✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Safe default for production:</strong> Hybrid search with RRF is the production default. BM25 is cheap to run in parallel with dense search, and the fusion step is trivial. You get coverage for both semantic drift and vocabulary mismatch.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. VECTOR DATABASES ── -->
+  <div class="section-block" id="databases">
+    <div class="section-marker">06 — Storage</div>
+    <h2>Vector Databases</h2>
+    <p>You can use FAISS directly in Python, but production systems need durability, concurrent access, and filtering. Enter vector databases.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>DB</th>
+            <th>Index support</th>
+            <th>Filtering</th>
+            <th>Cloud</th>
+            <th>Open-source</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>pgvector</td>
+            <td>HNSW, IVFFlat</td>
+            <td>Full SQL</td>
+            <td>Via Postgres</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Qdrant</td>
+            <td>HNSW</td>
+            <td>Rich payload filters</td>
+            <td>Yes</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Weaviate</td>
+            <td>HNSW</td>
+            <td>GraphQL + property</td>
+            <td>Yes</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Chroma</td>
+            <td>HNSW</td>
+            <td>Metadata filter</td>
+            <td>Self-host</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Pinecone</td>
+            <td>Proprietary</td>
+            <td>Metadata</td>
+            <td>Yes (managed)</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>Milvus</td>
+            <td>HNSW, IVF, DiskANN</td>
+            <td>Rich</td>
+            <td>Yes</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Redis</td>
+            <td>HNSW, Flat</td>
+            <td>RediSearch filter</td>
+            <td>Yes</td>
+            <td>Yes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>pgvector is the pragmatic choice:</strong> If you're already on Postgres, start here. You get SQL transactions, query planner, backups, and all the tooling you already know. HNSW and IVF indices handle most workloads. Move to a dedicated vector DB only when you need &gt;10M vectors or &lt;5ms P99 latency.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Startup advice:</strong> Don't pick a vector database based on features — they all do similar things. Pick based on what you already use. If you're on Postgres, use pgvector. If you need cloud-native, use Qdrant or Pinecone. The switching cost is low early.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. SCALING & PRODUCTION ── -->
+  <div class="section-block" id="scaling">
+    <div class="section-marker">07 — Operations</div>
+    <h2>Scaling and Production Patterns</h2>
+    <p>Moving beyond a single machine to production introduces new challenges:</p>
+
+    <p><strong>Sharding:</strong> Partition vectors across nodes by ID range or hash. Each shard handles its own ANN search. A scatter-gather layer combines results from all shards. This scales linearly with the number of machines.</p>
+
+    <p><strong>Disk-based indices:</strong> DiskANN (Microsoft) keeps the HNSW graph on SSD and loads neighbors on demand. This enables 1B+ vectors without proportional RAM. Latency is slightly higher (~10–20ms instead of 1–5ms), but you get massive scale.</p>
+
+    <p><strong>Incremental indexing:</strong> Most ANN structures require full rebuild for correctness. Workaround: maintain two indices. The main index has production vectors; a hot buffer has new vectors. Every night, merge them into a new main index. Users query both and see combined results.</p>
+
+    <p><strong>Filtering:</strong> "Find semantically similar documents WHERE category='finance' AND date>2024-01-01". Three approaches: (1) pre-filter then search (fast but recall drops), (2) post-filter (exact but slow — you might need to search top-1000 to get top-10 after filtering), (3) filtered HNSW (best — only Qdrant/Weaviate support this natively).</p>
+
+    <p><strong>Tools and libraries:</strong></p>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Vector Search</div>
+        <div class="tool-name">FAISS</div>
+        <div class="tool-desc">Open-source library from Meta for ANN search; supports IndexFlat, IVF, HNSW, PQ</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">pgvector</div>
+        <div class="tool-desc">PostgreSQL extension with HNSW and IVF, full SQL support</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">Qdrant</div>
+        <div class="tool-desc">Cloud-native vector database with HNSW, rich filtering, managed service</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">Weaviate</div>
+        <div class="tool-desc">GraphQL API, HNSW index, strong ecosystem for ML pipelines</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">Chroma</div>
+        <div class="tool-desc">Lightweight, HNSW-backed, good for small-to-medium RAG systems</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">Pinecone</div>
+        <div class="tool-desc">Fully managed, serverless, best for teams that want zero ops</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DB</div>
+        <div class="tool-name">Milvus</div>
+        <div class="tool-desc">Enterprise-grade, supports DiskANN, handles 1B+ vectors</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Sparse Search</div>
+        <div class="tool-name">rank_bm25</div>
+        <div class="tool-desc">Python library for BM25 ranking; lightweight, no server needed</div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <span class="callout-icon">💡</span>
+      <span><strong>Architecture pattern:</strong> (1) Dense retrieval via ANN (fast), (2) BM25 in parallel (cheap), (3) RRF fusion, (4) optional cross-encoder reranking. This gives you semantic + keyword coverage, sub-100ms latency, and 98%+ recall.</span>
+    </div>
+  </div>
+
+  <!-- REFERENCES -->
+  <div class="section-block" id="references">
+    <div class="section-marker">References</div>
+    <h2>Further Reading</h2>
+
+    <div class="ref-group-title">Libraries & Official Docs</div>
+    <ul class="ref-list">
+      <li><a href="https://faiss.ai">FAISS Documentation</a> — Comprehensive guide to vector search indices and usage</li>
+      <li><a href="https://github.com/pgvector/pgvector">pgvector GitHub</a> — PostgreSQL vector extension with HNSW and IVF</li>
+    </ul>
+
+    <div class="ref-group-title">Leaderboards & Benchmarks</div>
+    <ul class="ref-list">
+      <li><a href="https://huggingface.co/spaces/mteb/leaderboard">MTEB Leaderboard</a> — Standard benchmark for evaluating retrieval models</li>
+    </ul>
+
+    <div class="ref-group-title">Papers & Algorithms</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-paper">Paper</span> <a href="https://arxiv.org/abs/1603.09320">HNSW: Hierarchical Navigable Small World</a> — The foundational paper on the HNSW algorithm</li>
+      <li><span class="ref-badge badge-paper">Paper</span> <a href="https://arxiv.org/abs/1907.09105">DiskANN: Fast Accurate Search on a Single Machine with Disk</a> — Disk-based indices for 1B+ scale</li>
+    </ul>
+
+    <div class="ref-group-title">Implementation & Techniques</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-blog">Blog</span> Hybrid Search with RRF — Elasticsearch and Weaviate blogs cover reciprocal rank fusion in detail</li>
+    </ul>
+  </div>
+
+  <div class="page-footer">
+    <span>GenAI Mindmap · <a href="../index.html">back to map</a></span>
+    <span style="font-size: 0.75rem; color: #cbd5e1;">node: retrieval_tech</span>
+  </div>
+
+</div>
+
+</body>
+</html>

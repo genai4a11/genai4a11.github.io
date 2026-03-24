@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text Embeddings — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9f1239; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">REPRESENTATIONS</span>
+  <h1>Text <em>Embeddings</em></h1>
+  <p class="hero-sub">How sentences become vectors — models, dimensions, similarity metrics, and fine-tuning strategies</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">768–4096 dims</span>
+      <span class="stat-label">typical range</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">cosine similarity</span>
+      <span class="stat-label">standard metric</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">MTEB leaderboard</span>
+      <span class="stat-label">where to check rankings</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#foundation" data-num="1">What are embeddings</a></li>
+      <li><a href="#models" data-num="2">Model landscape</a></li>
+      <li><a href="#similarity" data-num="3">Similarity metrics</a></li>
+      <li><a href="#dimensions" data-num="4">Dimensions & Matryoshka</a></li>
+      <li><a href="#finetuning" data-num="5">Fine-tuning</a></li>
+      <li><a href="#reranking" data-num="6">Cross-encoder reranking</a></li>
+      <li><a href="#production" data-num="7">Production considerations</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. FOUNDATION ── -->
+  <div class="section-block" id="foundation">
+    <div class="section-marker">01 — Definition</div>
+    <h2>What Are Embeddings?</h2>
+    <p>Embeddings map text to dense vectors in a continuous space where semantic similarity equals geometric proximity. A sentence becomes a point in 768 or 1024 dimensional space. Sentences that mean the same thing end up close together; unrelated sentences are far apart.</p>
+
+    <p><strong>Use cases:</strong> semantic search (find similar documents), clustering (group documents by meaning), classification (label documents based on vector nearness), RAG (retrieval-augmented generation), cross-lingual matching (find equivalent meanings across languages).</p>
+
+    <p><strong>Not a language model:</strong> Embeddings come from encoder-only architecture (BERT-style) or late-interaction models. They don't generate text — they compress it into a fixed vector. No autoregressive generation happens here.</p>
+
+    <p><strong>The core insight:</strong> word relationships are algebraic. "king" - "man" + "woman" ≈ "queen". The vector space preserves semantic relationships, making arithmetic on embeddings meaningful.</p>
+
+    <h3>Example: Computing Cosine Similarity</h3>
+    <div class="example-box">from sentence_transformers import SentenceTransformer
+import numpy as np
+
+model = SentenceTransformer('BAAI/bge-large-en-v1.5')
+
+sentences = [
+    "The transformer architecture revolutionized NLP",
+    "Attention mechanisms changed how we process sequences",
+    "I like pizza"
+]
+
+embeddings = model.encode(sentences, normalize_embeddings=True)
+
+# Cosine similarity (dot product of normalized vectors)
+sim_01 = np.dot(embeddings[0], embeddings[1])  # 0.87 — very similar
+sim_02 = np.dot(embeddings[0], embeddings[2])  # 0.12 — unrelated
+print(f"Sentences 0-1: {sim_01:.3f}")
+print(f"Sentences 0-2: {sim_02:.3f}")</div>
+  </div>
+
+  <!-- ── 2. MODEL LANDSCAPE ── -->
+  <div class="section-block" id="models">
+    <div class="section-marker">02 — Comparison</div>
+    <h2>Model Landscape: Which Embedding Model?</h2>
+    <p>The embedding model landscape has matured rapidly. Here's the state of major models as of early 2025:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Dims</th>
+            <th>Context</th>
+            <th>MTEB avg</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>text-embedding-3-small (OpenAI)</td>
+            <td>1536</td>
+            <td>8191</td>
+            <td>62.3</td>
+            <td>Cheap, fast, good for most tasks</td>
+          </tr>
+          <tr>
+            <td>text-embedding-3-large (OpenAI)</td>
+            <td>3072</td>
+            <td>8191</td>
+            <td>64.6</td>
+            <td>Best OpenAI option</td>
+          </tr>
+          <tr>
+            <td>BAAI/bge-large-en-v1.5</td>
+            <td>1024</td>
+            <td>512</td>
+            <td>64.2</td>
+            <td>Best open-source for English</td>
+          </tr>
+          <tr>
+            <td>BAAI/bge-m3</td>
+            <td>1024</td>
+            <td>8192</td>
+            <td>64.3</td>
+            <td>Multilingual, long context</td>
+          </tr>
+          <tr>
+            <td>Cohere embed-v3</td>
+            <td>1024</td>
+            <td>512</td>
+            <td>64.5</td>
+            <td>Strong retrieval with input_type</td>
+          </tr>
+          <tr>
+            <td>E5-large-v2</td>
+            <td>1024</td>
+            <td>512</td>
+            <td>62.3</td>
+            <td>Solid open-source option</td>
+          </tr>
+          <tr>
+            <td>GTE-Qwen2-7B</td>
+            <td>3584</td>
+            <td>32768</td>
+            <td>72.1</td>
+            <td>LLM-based, expensive</td>
+          </tr>
+          <tr>
+            <td>NV-Embed-v2 (NVIDIA)</td>
+            <td>4096</td>
+            <td>32768</td>
+            <td>72.3</td>
+            <td>SOTA but large</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>MTEB (Massive Text Embedding Benchmark):</strong> A standard leaderboard with 56 datasets across 8 tasks. Check the <a href="https://huggingface.co/spaces/mteb/leaderboard">MTEB leaderboard</a> before choosing a model — it's the gold standard for ranking embeddings.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Important for RAG:</strong> Retrieval performance (MTEB Retrieval subset) often matters more than overall MTEB score. A model can rank 10th overall but be #1 for retrieval. Test on your specific task.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. SIMILARITY METRICS ── -->
+  <div class="section-block" id="similarity">
+    <div class="section-marker">03 — Metrics</div>
+    <h2>Similarity Metrics</h2>
+    <p>Multiple ways to measure how close two embeddings are. Each has tradeoffs:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Formula</th>
+            <th>Range</th>
+            <th>When to use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Cosine</td>
+            <td>dot(a,b) / (|a| |b|)</td>
+            <td>-1 to 1</td>
+            <td>Default for text; measures direction only</td>
+          </tr>
+          <tr>
+            <td>Dot product</td>
+            <td>sum(a_i * b_i)</td>
+            <td>Unbounded</td>
+            <td>When vectors are L2-normalized (= cosine)</td>
+          </tr>
+          <tr>
+            <td>L2 distance</td>
+            <td>sqrt(sum((a-b)^2))</td>
+            <td>0 to ∞</td>
+            <td>Image similarity, low-dimensional spaces</td>
+          </tr>
+          <tr>
+            <td>Manhattan</td>
+            <td>sum(|a_i - b_i|)</td>
+            <td>0 to ∞</td>
+            <td>Rarely used in practice</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Cosine similarity</strong> is the most common. It measures the angle between vectors, not their magnitude. Two vectors pointing in the same direction have cosine similarity of 1, opposite directions give -1, perpendicular gives 0.</p>
+
+    <p><strong>Dot product</strong> is equivalent to cosine when vectors are L2-normalized (unit length). Most production embedding models normalize automatically. Dot product is faster to compute and FAISS/pgvector HNSW support it natively for fast ANN search.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Best practice:</strong> Always normalize embeddings at index time and query time. Dot product on normalized vectors equals cosine similarity and enables the fastest ANN algorithms.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. DIMENSIONS AND MATRYOSHKA ── -->
+  <div class="section-block" id="dimensions">
+    <div class="section-marker">04 — Optimization</div>
+    <h2>Dimensions and Matryoshka Embeddings</h2>
+    <p>Higher dimensions capture more nuance but cost more to store and search. Matryoshka Representation Learning (MRL) is a training technique that lets you keep only the useful dimensions.</p>
+
+    <p><strong>The idea:</strong> Train embeddings so the first N dimensions are already a useful representation. You can truncate to 256, 512, or 1024 dimensions and retain most quality. OpenAI's text-embedding-3 supports this natively.</p>
+
+    <h3>Example: Truncating OpenAI Embeddings</h3>
+    <div class="example-box"># Truncate OpenAI embeddings
+from openai import OpenAI
+client = OpenAI()
+
+# Full 3072 dims
+full = client.embeddings.create(
+    model="text-embedding-3-large", input="hello world")
+
+# Truncated to 256 dims (Matryoshka)
+small = client.embeddings.create(
+    model="text-embedding-3-large", input="hello world",
+    dimensions=256)  # 12x smaller, ~5% quality drop</div>
+
+    <p>Storage and latency drop dramatically with smaller dimensions. The tradeoff is a small quality loss:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Dims</th>
+            <th>Storage (1M docs)</th>
+            <th>ANN latency</th>
+            <th>MTEB retrieval (bge-large)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>256</td>
+            <td>1 GB</td>
+            <td>~1ms</td>
+            <td>56.2</td>
+          </tr>
+          <tr>
+            <td>512</td>
+            <td>2 GB</td>
+            <td>~2ms</td>
+            <td>60.1</td>
+          </tr>
+          <tr>
+            <td>1024</td>
+            <td>4 GB</td>
+            <td>~3ms</td>
+            <td>64.2</td>
+          </tr>
+          <tr>
+            <td>3072</td>
+            <td>12 GB</td>
+            <td>~8ms</td>
+            <td>66.3</td>
+          </tr>
+          <tr>
+            <td>4096</td>
+            <td>16 GB</td>
+            <td>~12ms</td>
+            <td>67.1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>For most RAG systems, 512–1024 dimensions is the sweet spot. You get 95–98% of the quality with a 4–16× storage savings.</p>
+  </div>
+
+  <!-- ── 5. FINE-TUNING ── -->
+  <div class="section-block" id="finetuning">
+    <div class="section-marker">05 — Customization</div>
+    <h2>Fine-Tuning Embeddings</h2>
+    <p>Sometimes the best open-source or commercial embeddings aren't domain-specific enough. Fine-tuning customizes them to your data.</p>
+
+    <p><strong>When to fine-tune:</strong> Your domain has specialized terminology (medical, legal, code), queries are out-of-distribution, or you have labeled query-document pairs to train on.</p>
+
+    <p><strong>Training signals:</strong> (1) Human relevance labels — annotators mark (query, document) pairs as relevant or not. (2) Synthetic pairs via LLM — GPT-4 generates questions from documents. (3) Hard negatives from BM25 — take the top 10 BM25 results and use them as negative examples to distinguish exact match from semantic match.</p>
+
+    <p><strong>Loss functions:</strong> InfoNCE / contrastive loss (push positive, pull negative), triplet loss (anchor, positive, negative), multiple negatives ranking loss (most common with Sentence Transformers). The last one is simple and effective: for each query, you have one positive document and N-1 random negatives; the loss pulls the positive closer and pushes negatives away.</p>
+
+    <p><strong>Frameworks:</strong> Sentence Transformers (Python), Unstructured.io, LlamaIndex fine-tuning, FlagEmbedding (BAAI).</p>
+
+    <h3>Example: Fine-tuning with Sentence Transformers</h3>
+    <div class="example-box">from sentence_transformers import SentenceTransformer, InputExample, losses
+from torch.utils.data import DataLoader
+
+model = SentenceTransformer('BAAI/bge-base-en-v1.5')
+
+train_examples = [
+    InputExample(texts=["What is RAG?", "Retrieval-Augmented Generation combines..."], label=1.0),
+    InputExample(texts=["What is RAG?", "The capital of France is Paris"], label=0.0),
+]
+train_dl = DataLoader(train_examples, shuffle=True, batch_size=16)
+train_loss = losses.CosineSimilarityLoss(model)
+
+model.fit(train_objectives=[(train_dl, train_loss)], epochs=3)
+model.save('my-domain-embeddings')</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Key lever:</strong> Synthetic negative mining is the highest-leverage step. Easy negatives (random docs) are too easy; the model learns nothing. Use BM25 top-10 as hard negatives — they're semantically related but not the answer.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. CROSS-ENCODER RERANKING ── -->
+  <div class="section-block" id="reranking">
+    <div class="section-marker">06 — Two-Stage Retrieval</div>
+    <h2>Cross-Encoder Reranking</h2>
+    <p>A bi-encoder retrieves fast by embedding query and documents separately. But it can't capture fine-grained matching — no cross-attention between query and document. Cross-encoders fix this.</p>
+
+    <p><strong>Bi-encoder:</strong> Embed query and doc separately, compute similarity. Fast (dot product on pre-computed vectors), but no query-document interaction. Typical recall: 95–99% of top documents.</p>
+
+    <p><strong>Cross-encoder:</strong> Concatenate query + document, score them jointly in a single forward pass. Much higher quality because it sees the full context, but O(N) forward passes for N candidates. Typical improvement: +5–15% MRR (Mean Reciprocal Rank).</p>
+
+    <p><strong>The two-stage pipeline:</strong> Retrieve top-100 with bi-encoder (fast ANN search) → rerank top-100 with cross-encoder (slower but higher quality) → return top-5 to user.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Bi-encoder</th>
+            <th>Cross-encoder</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Speed</td>
+            <td>Fast (dot product)</td>
+            <td>Slow (full forward pass)</td>
+          </tr>
+          <tr>
+            <td>Quality</td>
+            <td>Good</td>
+            <td>Better (+5–15% MRR)</td>
+          </tr>
+          <tr>
+            <td>Scalable to millions</td>
+            <td>Yes (ANN index)</td>
+            <td>No (linear scan)</td>
+          </tr>
+          <tr>
+            <td>Use case</td>
+            <td>Retrieval (stage 1)</td>
+            <td>Reranking (stage 2)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Popular cross-encoder models:</strong> BAAI/bge-reranker-v2-m3, Cohere rerank-v3, Jina reranker. Most score on a 0–1 scale or raw logits.</p>
+
+    <h3>Example: Using Cohere Rerank API</h3>
+    <div class="example-box"># Pseudo-code for two-stage retrieval
+dense_results = faiss_index.search(query_embedding, k=100)
+documents = [corpus[i] for i, _ in dense_results]
+
+# Rerank with cross-encoder
+reranked = cohere_client.rerank(
+    query=query,
+    documents=documents,
+    model="rerank-v3-compact",
+    top_n=5
+)
+
+final_results = [documents[i] for i, _ in reranked]</div>
+  </div>
+
+  <!-- ── 7. PRODUCTION CONSIDERATIONS ── -->
+  <div class="section-block" id="production">
+    <div class="section-marker">07 — Deployment</div>
+    <h2>Production Considerations</h2>
+    <p>Moving embeddings from notebook to production introduces practical challenges:</p>
+
+    <p><strong>Embedding index updates:</strong> Add-only is easy (append new vectors to the index). Deletion requires a soft-delete flag + periodic reindex. Many vector databases support incremental updates, but graph-based ANN indices (HNSW) are expensive to rebuild.</p>
+
+    <p><strong>Chunking affects quality:</strong> Very long chunks (2000+ tokens) dilute the signal — the vector blurs across many concepts. Very short chunks (50 tokens) lose context. The sweet spot is 256–512 tokens per chunk with 50-token overlap. This is a strong baseline; test on your data.</p>
+
+    <p><strong>Multilingual:</strong> bge-m3, multilingual-e5-large, Cohere embed-multilingual-v3. These handle 100+ languages, but retrieval quality varies. Test on your target languages using MTEB multilingual tasks before committing.</p>
+
+    <p><strong>Modality mismatch:</strong> Don't use the same embedding model for code, multilingual text, and general English without testing. Code embeddings, legal documents, and user queries have very different optimal models. Cross-lingual or code-to-natural-language retrieval is especially risky.</p>
+
+    <p><strong>Tools & infrastructure:</strong></p>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Libraries</div>
+        <div class="tool-name">sentence-transformers</div>
+        <div class="tool-desc">Python library for embedding inference, fine-tuning, and utilities</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">APIs</div>
+        <div class="tool-name">OpenAI Embeddings</div>
+        <div class="tool-desc">text-embedding-3-small/large, managed, best-in-class</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">APIs</div>
+        <div class="tool-name">Cohere embed</div>
+        <div class="tool-desc">Flexible, multilingual, supports input_type for task-specific tuning</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">APIs</div>
+        <div class="tool-name">Voyage AI</div>
+        <div class="tool-desc">High-performance, supports dimensions parameter</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector Search</div>
+        <div class="tool-name">FAISS</div>
+        <div class="tool-desc">Facebook's library; IndexHNSW, IVF, PQ — the standard</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DBs</div>
+        <div class="tool-name">pgvector</div>
+        <div class="tool-desc">Postgres extension; HNSW + IVF, full SQL, integrated</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DBs</div>
+        <div class="tool-name">Qdrant</div>
+        <div class="tool-desc">HNSW native, rich filtering, cloud managed</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Vector DBs</div>
+        <div class="tool-name">Weaviate</div>
+        <div class="tool-desc">HNSW, GraphQL API, good ecosystem</div>
+      </div>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Multimodal risk:</strong> Don't mix embedding models for different modalities. Code-to-code retrieval needs CodeBERT or Unixcoder. Cross-lingual needs XM-ROBERTA or mBERT. General English needs bge or text-embedding-3. Test separately.</span>
+    </div>
+  </div>
+
+  <!-- REFERENCES -->
+  <div class="section-block" id="references">
+    <div class="section-marker">References</div>
+    <h2>Further Reading</h2>
+
+    <div class="ref-group-title">Leaderboards & Benchmarks</div>
+    <ul class="ref-list">
+      <li><a href="https://huggingface.co/spaces/mteb/leaderboard">MTEB Leaderboard</a> — The gold standard for ranking text embeddings across 56 datasets</li>
+    </ul>
+
+    <div class="ref-group-title">Official Resources</div>
+    <ul class="ref-list">
+      <li><a href="https://huggingface.co/BAAI/bge-large-en-v1.5">BAAI/bge-large-en-v1.5</a> — Best open-source embedding model for English</li>
+      <li><a href="https://sbert.net">Sentence Transformers</a> — Comprehensive docs for embedding training and inference</li>
+      <li><a href="https://platform.openai.com/docs/guides/embeddings">OpenAI Embeddings Guide</a> — Official guide to text-embedding-3 models</li>
+    </ul>
+
+    <div class="ref-group-title">Papers & Deep Dives</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-paper">Paper</span> <a href="https://arxiv.org/abs/2205.13147">Matryoshka Representation Learning</a> — How to train embeddings that are useful at multiple dimensions</li>
+      <li><span class="ref-badge badge-docs">Docs</span> <a href="https://faiss.ai">FAISS Documentation</a> — Comprehensive guide to vector search indices</li>
+    </ul>
+  </div>
+
+  <div class="page-footer">
+    <span>GenAI Mindmap · <a href="../index.html">back to map</a></span>
+    <span style="font-size: 0.75rem; color: #cbd5e1;">node: embeddings_topic</span>
+  </div>
+
+</div>
+
+</body>
+</html>

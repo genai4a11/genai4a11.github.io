@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transformer Architecture — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #831843; }
+    .callout strong { font-weight: 700; }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">ARCHITECTURE DEEP DIVE</span>
+  <h1>Transformer <em>Architecture</em></h1>
+  <p class="hero-sub">Attention, feed-forward layers, positional encoding, and how the pieces create a language model</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">Q, K, V, O</span>
+      <span class="stat-label">the four weight matrices</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">12–96 layers</span>
+      <span class="stat-label">depth of modern LLMs</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Attention is O(n²)</span>
+      <span class="stat-label">the scaling bottleneck</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#big-picture" data-num="1">The big picture</a></li>
+      <li><a href="#self-attention" data-num="2">Self-attention</a></li>
+      <li><a href="#multi-head" data-num="3">Multi-head attention</a></li>
+      <li><a href="#feed-forward" data-num="4">Feed-forward networks</a></li>
+      <li><a href="#positional" data-num="5">Positional encoding</a></li>
+      <li><a href="#training-stability" data-num="6">Training stability</a></li>
+      <li><a href="#architecture-variants" data-num="7">Architecture variants</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. BIG PICTURE ── -->
+  <div class="section-block" id="big-picture">
+    <div class="section-marker">01 — THE STACK</div>
+    <h2>The Big Picture</h2>
+    <p>A Transformer is a stack of identical layers. Each layer contains two main sublayers: Multi-Head Attention and Feed-Forward Network. The input is token embeddings (vocabulary → d_model dimensional vector), and the output is a probability distribution over the vocabulary for the next token.</p>
+
+    <h3>Model Hyperparameters</h3>
+    <p>The following hyperparameters define model size and capacity:</p>
+    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;"><strong>d_model:</strong> embedding dimension (width of hidden states)</li>
+      <li style="margin: 0.5rem 0;"><strong>n_layers:</strong> number of stacked blocks (depth)</li>
+      <li style="margin: 0.5rem 0;"><strong>n_heads:</strong> number of attention heads per layer</li>
+      <li style="margin: 0.5rem 0;"><strong>d_ff:</strong> intermediate dimension of feed-forward network, usually 4× d_model</li>
+    </ul>
+
+    <h3>Example Model Configurations</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Model</th><th>d_model</th><th>Layers</th><th>Heads</th><th>d_ff</th><th>Params</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GPT-2 Small</td><td>768</td><td>12</td><td>12</td><td>3072</td><td>117M</td></tr>
+          <tr><td>Llama 2-7B</td><td>4096</td><td>32</td><td>32</td><td>11008</td><td>7B</td></tr>
+          <tr><td>Llama 3-70B</td><td>8192</td><td>80</td><td>64</td><td>28672</td><td>70B</td></tr>
+          <tr><td>GPT-4 (est)</td><td>12288</td><td>96</td><td>96</td><td>49152</td><td>~1.8T (MoE)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 2. SELF-ATTENTION ── -->
+  <div class="section-block" id="self-attention">
+    <div class="section-marker">02 — THE CORE MECHANISM</div>
+    <h2>Self-Attention: The Core Mechanism</h2>
+    <p>Each token attends to all other tokens in the sequence, asking "which other tokens are relevant to me?" This is the fundamental operation that gives Transformers their power and expressiveness.</p>
+
+    <h3>The Computation</h3>
+    <p>For input X, three learned weight matrices project the input into Query (Q), Key (K), and Value (V) spaces:</p>
+    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;">Q = XW_Q</li>
+      <li style="margin: 0.5rem 0;">K = XW_K</li>
+      <li style="margin: 0.5rem 0;">V = XW_V</li>
+    </ul>
+    <p>Attention score is then: softmax(QK^T / sqrt(d_k)) → weighted sum of V</p>
+
+    <h3>Causal Masking</h3>
+    <p>In decoder-only models (for generation), each token can only attend to previous tokens (causal masking). The upper triangle of the attention matrix is masked to -inf before softmax, preventing the model from looking into the future.</p>
+
+    <h3>Scaled Dot-Product Attention in NumPy</h3>
+    <div class="example-box">import numpy as np
+
+def attention(Q, K, V, mask=None):
+    d_k = Q.shape[-1]
+    scores = Q @ K.T / np.sqrt(d_k)  # [seq, seq]
+    if mask is not None:
+        scores = scores + mask * -1e9  # causal mask
+    weights = np.exp(scores) / np.exp(scores).sum(-1, keepdims=True)  # softmax
+    return weights @ V  # [seq, d_v]
+
+# For a 4-token sequence, d_k=64
+seq_len, d_k = 4, 64
+Q = np.random.randn(seq_len, d_k)
+K = np.random.randn(seq_len, d_k)
+V = np.random.randn(seq_len, d_k)
+
+# Causal mask: token i cannot see token j > i
+mask = np.triu(np.ones((seq_len, seq_len)), k=1)
+out = attention(Q, K, V, mask)</div>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>The sqrt(d_k) scaling prevents dot products from becoming too large,</strong> which would push softmax into saturated regions with near-zero gradients during backprop. This is crucial for training stability.</span>
+    </div>
+  </div>
+
+  <!-- ── 3. MULTI-HEAD ATTENTION ── -->
+  <div class="section-block" id="multi-head">
+    <div class="section-marker">03 — MULTIPLE RELATIONSHIP TYPES</div>
+    <h2>Multi-Head Attention</h2>
+    <p>Run attention H times in parallel, each with different learned W_Q, W_K, W_V projections. Different heads learn different relationship types: one head might focus on syntax, another on coreference, another on positional relationships. This diversity improves representation quality.</p>
+
+    <h3>Head Output Combination</h3>
+    <p>Concatenate all head outputs and project back to d_model with W_O (output projection). This allows the model to combine diverse attention perspectives.</p>
+
+    <h3>GQA: Grouped Query Attention</h3>
+    <p>Modern models use Grouped Query Attention (GQA) instead of full Multi-Head Attention. GQA shares K/V heads across groups of Q heads, reducing KV cache memory by 4-8× with minimal quality loss. This is critical for long-context inference.</p>
+
+    <h3>Attention Head Variants Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Variant</th><th>K/V heads per Q head</th><th>KV cache size</th><th>Used by</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>MHA (Multi-Head Attention)</td><td>1:1 ratio</td><td>100%</td><td>GPT-2, early BERT</td></tr>
+          <tr><td>GQA (Grouped Query Attention, g=4)</td><td>1:4 ratio</td><td>25%</td><td>Llama 3, Mistral, Gemma</td></tr>
+          <tr><td>MQA (Multi-Query Attention)</td><td>1:all ratio</td><td>1/H</td><td>Falcon, early PaLM</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>Modern frontier models use GQA as standard.</strong> If benchmarking memory for a model, check whether it uses MHA or GQA — it changes KV cache requirements significantly. This is why newer models have better memory efficiency at scale.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. FEED-FORWARD NETWORK ── -->
+  <div class="section-block" id="feed-forward">
+    <div class="section-marker">04 — KNOWLEDGE STORAGE</div>
+    <h2>Feed-Forward Network (FFN)</h2>
+    <p>After attention, each token representation passes through a 2-layer FFN independently (no cross-token interaction). The FFN acts as a "knowledge store": research shows factual knowledge is stored in FFN weights, while attention routes information.</p>
+
+    <h3>FFN Structure</h3>
+    <p>FFN = Linear(d_model → d_ff) → Activation → Linear(d_ff → d_model). The d_ff is typically 4× d_model, creating a bottleneck-then-expand pattern.</p>
+
+    <h3>SwiGLU Activation</h3>
+    <p>Modern models (Llama, PaLM, Gemini) use SwiGLU activation instead of ReLU or GELU. SwiGLU splits the intermediate into two paths — one through SiLU activation, multiply together. Empirically superior to older activations.</p>
+
+    <h3>SwiGLU FFN in PyTorch</h3>
+    <div class="example-box">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class SwiGLUFFN(nn.Module):
+    def __init__(self, d_model, d_ff):
+        super().__init__()
+        self.w1 = nn.Linear(d_model, d_ff, bias=False)
+        self.w3 = nn.Linear(d_model, d_ff, bias=False)
+        self.w2 = nn.Linear(d_ff, d_model, bias=False)
+    
+    def forward(self, x):
+        return self.w2(F.silu(self.w1(x)) * self.w3(x))</div>
+
+    <h3>Parameter Distribution</h3>
+    <p>The FFN accounts for roughly 2/3 of a model's parameters. This is where most factual knowledge lives. When fine-tuning, research shows that LoRA targeting FFN layers often outperforms targeting only attention layers for knowledge-intensive tasks.</p>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>FFN is where factual knowledge lives.</strong> When implementing low-rank adaptation (LoRA) for fine-tuning, targeting FFN layers often gives better results than attention-only approaches for knowledge-heavy domains.</span>
+    </div>
+  </div>
+
+  <!-- ── 5. POSITIONAL ENCODING ── -->
+  <div class="section-block" id="positional">
+    <div class="section-marker">05 — WORD ORDER</div>
+    <h2>Positional Encoding</h2>
+    <p>Attention is permutation-invariant — without position information, the model has no sense of word order. Positional encoding adds position information to embeddings so the model understands sequence structure.</p>
+
+    <h3>Positional Encoding Methods</h3>
+    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;"><strong>Sinusoidal (original Transformer):</strong> fixed, non-learned position embeddings. Limited extrapolation.</li>
+      <li style="margin: 0.5rem 0;"><strong>Learned absolute:</strong> trainable embeddings. Hard cap at training length.</li>
+      <li style="margin: 0.5rem 0;"><strong>RoPE (Rotary Position Embedding):</strong> encode position as rotation of Q/K vectors. Allows relative positions to emerge naturally. Good extrapolation.</li>
+      <li style="margin: 0.5rem 0;"><strong>ALiBi (Attention with Linear Biases):</strong> add linear bias to attention scores based on distance. Generalizes to longer sequences than trained on.</li>
+    </ul>
+
+    <h3>Positional Encoding Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Extrapolation</th><th>Relative positions</th><th>Used by</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Sinusoidal</td><td>Poor</td><td>No</td><td>Original Transformer</td></tr>
+          <tr><td>Learned absolute</td><td>None (hard cap)</td><td>No</td><td>GPT-2, BERT</td></tr>
+          <tr><td>RoPE</td><td>Good (with extension)</td><td>Yes</td><td>Llama, Mistral, Gemini</td></tr>
+          <tr><td>ALiBi</td><td>Good</td><td>Yes</td><td>BLOOM, MPT</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>RoPE Extension for Long Context</h3>
+    <p>RoPE can be extended beyond training context length using "RoPE scaling" techniques like YaRN or dynamic NTK scaling. This is how Llama 3's 8K training context was extended to 128K without major quality loss.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>RoPE scaling is critical for long-context LLMs.</strong> When extending context beyond training length, proper positional encoding scaling prevents the model from "losing" position information in the middle of long sequences.</span>
+    </div>
+  </div>
+
+  <!-- ── 6. TRAINING STABILITY ── -->
+  <div class="section-block" id="training-stability">
+    <div class="section-marker">06 — NORMALIZATION AND RESIDUALS</div>
+    <h2>LayerNorm, Residual Connections, and Training Stability</h2>
+    <p>Deep networks require techniques to prevent gradient vanishing and activation explosion. Modern Transformers use residual connections and LayerNorm to maintain stable gradient flow and activation magnitudes throughout training.</p>
+
+    <h3>Residual Connections</h3>
+    <p>Output = x + sublayer(x). Allows gradients to flow directly back to earlier layers without being multiplied by small values, preventing vanishing gradients in deep networks.</p>
+
+    <h3>LayerNorm</h3>
+    <p>Normalize activations across features (not batch) at each sublayer. Prevents activation explosion and keeps training stable.</p>
+
+    <h3>Pre-norm vs Post-norm</h3>
+    <p>Modern models use Pre-LayerNorm: normalize input BEFORE sublayer. This improves training stability compared to the original post-norm design (normalize AFTER).</p>
+
+    <h3>Transformer Block in PyTorch (Pre-norm Architecture)</h3>
+    <div class="example-box">class TransformerBlock(nn.Module):
+    def __init__(self, d_model, n_heads, d_ff):
+        super().__init__()
+        self.attn = MultiHeadAttention(d_model, n_heads)
+        self.ffn = SwiGLUFFN(d_model, d_ff)
+        self.norm1 = nn.RMSNorm(d_model)  # pre-norm
+        self.norm2 = nn.RMSNorm(d_model)
+    
+    def forward(self, x, mask=None):
+        # Pre-norm: normalize BEFORE sublayer
+        x = x + self.attn(self.norm1(x), mask)  # residual + attn
+        x = x + self.ffn(self.norm2(x))          # residual + ffn
+        return x</div>
+
+    <h3>RMSNorm</h3>
+    <p>Root Mean Square Norm: simpler than LayerNorm (no mean centering). Used by Llama, Mistral — slightly faster and empirically equivalent.</p>
+  </div>
+
+  <!-- ── 7. ARCHITECTURE VARIANTS ── -->
+  <div class="section-block" id="architecture-variants">
+    <div class="section-marker">07 — ENCODER, DECODER, OR BOTH</div>
+    <h2>Encoder-Only, Decoder-Only, Encoder-Decoder</h2>
+    <p>Different task requirements call for different architectural patterns. Understanding when to use each is essential for model selection and fine-tuning design.</p>
+
+    <h3>Architecture Variants Comparison</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Architecture</th><th>Masking</th><th>KV cache</th><th>Use cases</th><th>Examples</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Encoder-only</td><td>Bidirectional</td><td>No</td><td>Embeddings, classification, NER</td><td>BERT, RoBERTa, DeBERTa</td></tr>
+          <tr><td>Decoder-only</td><td>Causal (left-to-right)</td><td>Yes</td><td>Text generation, chat, coding</td><td>GPT, Llama, Mistral, Claude</td></tr>
+          <tr><td>Encoder-decoder</td><td>Enc: bidir, Dec: causal</td><td>Yes</td><td>Translation, summarization, T2T</td><td>T5, FLAN-T5, mT5, Whisper</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Modern LLM Landscape</h3>
+    <p>Modern LLMs are almost exclusively decoder-only: simpler to scale, KV cache enables fast autoregressive generation, in-context learning works naturally. Encoder-only models (BERT-family) remain dominant for: embedding generation, token classification, and sentence similarity tasks.</p>
+
+    <h3>When to Use Each</h3>
+    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
+      <li style="margin: 0.5rem 0;"><strong>Decoder-only:</strong> For any generation task, chat, coding, question-answering. Default choice for modern LLMs.</li>
+      <li style="margin: 0.5rem 0;"><strong>Encoder-only:</strong> For dense embeddings, classification, token-level tasks without generation.</li>
+      <li style="margin: 0.5rem 0;"><strong>Encoder-decoder:</strong> When you need bidirectional context for understanding AND generation capability (translation, summarization).</li>
+    </ul>
+
+    <h3>Tools for Architecture Implementation</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-name">transformers (HF)</div>
+        <div class="tool-category">Framework</div>
+        <div class="tool-desc">Standard library for all model architectures. Essential reference for training and inference.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">PyTorch</div>
+        <div class="tool-category">Framework</div>
+        <div class="tool-desc">Build custom layers and architectures. Used by all major implementations.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">FlashAttention-2</div>
+        <div class="tool-category">Optimization</div>
+        <div class="tool-desc">Fast attention implementation. Reduces memory and compute for long sequences.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">xformers</div>
+        <div class="tool-category">Optimization</div>
+        <div class="tool-desc">Memory-efficient transformer implementations. Experimental but powerful.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">DeepSpeed</div>
+        <div class="tool-category">Scaling</div>
+        <div class="tool-desc">Distributed training for huge models. ZeRO stages enable billion-parameter training.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-name">FSDP</div>
+        <div class="tool-category">Scaling</div>
+        <div class="tool-desc">PyTorch's native fully sharded data parallel. Standard for distributed training.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block" id="references">
+    <div class="section-marker">Further Reading</div>
+    <h2>References</h2>
+
+    <div class="ref-group-title">Foundational Papers</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Vaswani, A. et al. (2017).
+        <em>Attention Is All You Need.</em>
+        The original Transformer paper. arXiv:1706.03762. —
+        <a href="https://arxiv.org/abs/1706.03762" target="_blank">arxiv:1706.03762 ↗</a>
+      </li>
+    </ul>
+
+    <div class="ref-group-title">Position Encoding & Improvements</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Su, J. et al. (2021).
+        <em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em>
+        arXiv:2104.09864. —
+        <a href="https://arxiv.org/abs/2104.09864" target="_blank">arxiv:2104.09864 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Press, O. et al. (2022).
+        <em>ALiBi: Train Short, Test Long.</em>
+        Attention with Linear Biases for long-context extrapolation. arXiv:2108.12409. —
+        <a href="https://arxiv.org/abs/2108.12409" target="_blank">arxiv:2108.12409 ↗</a>
+      </li>
+    </div>
+
+    <div class="ref-group-title">Optimization & Efficiency</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Ainslie, J. et al. (2023).
+        <em>GQA: Training Generalized Multi-Query Transformers.</em>
+        Grouped Query Attention. arXiv:2305.13245. —
+        <a href="https://arxiv.org/abs/2305.13245" target="_blank">arxiv:2305.13245 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Shazeer, N. (2019).
+        <em>Fast Transformer Decoding: One Write-Head is All You Need.</em>
+        Multi-Query Attention. arXiv:1911.02727. —
+        <a href="https://arxiv.org/abs/1911.02727" target="_blank">arxiv:1911.02727 ↗</a>
+      </li>
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Dao, T. et al. (2023).
+        <em>FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning.</em>
+        arXiv:2307.08691. —
+        <a href="https://arxiv.org/abs/2307.08691" target="_blank">arxiv:2307.08691 ↗</a>
+      </li>
+    </div>
+
+    <div class="ref-group-title">Activation Functions & Components</div>
+    <ul class="ref-list">
+      <li>
+        <span class="ref-badge badge-paper">Paper</span>
+        Shazeer, N. (2020).
+        <em>GLU Variants Improve Transformer.</em>
+        SwiGLU and gating mechanisms. arXiv:2002.05202. —
+        <a href="https://arxiv.org/abs/2002.05202" target="_blank">arxiv:2002.05202 ↗</a>
+      </li>
+    </div>
+
+    <div class="ref-group-title">Documentation & Guides</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Transformers — Architecture documentation. <a href="https://huggingface.co/docs/transformers" target="_blank">huggingface.co/docs ↗</a></li>
+      <li><span class="ref-badge badge-docs">Docs</span> PyTorch — Transformer implementation reference. <a href="https://pytorch.org/docs/stable/nn.html" target="_blank">pytorch.org ↗</a></li>
+      <li><span class="ref-badge badge-guide">Guide</span> The Illustrated Transformer — Visual explanations of all components. <a href="http://jalammar.github.io/illustrated-transformer/" target="_blank">jalammar.github.io ↗</a></li>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
+    <a id="footer-back" href="../index.html">← Back to mindmap</a>
+  </footer>
+  <script>
+    (function(){
+      const from=new URLSearchParams(location.search).get('from');
+      if(from){
+        const url='../index.html#'+from;
+        const fb=document.getElementById('footer-back');
+        const fb2=document.getElementById('footer-brand');
+        if(fb)fb.href=url;
+        if(fb2)fb2.href=url;
+      }
+    })();
+  </script>
+
+</div>
+</body>
+</html>

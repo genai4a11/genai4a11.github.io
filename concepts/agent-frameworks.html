@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Agent Frameworks — GenAI Mindmap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --indigo:    #4f46e5;
+      --indigo-dk: #3730a3;
+      --indigo-lt: #eef2ff;
+      --blue:      #2563eb;
+      --sky:       #38bdf8;
+      --green:     #22c55e;
+      --rose:      #f43f5e;
+      --amber:     #f59e0b;
+      --text:      #0f172a;
+      --muted:     #64748b;
+      --border:    #e2e8f0;
+      --bg:        #f8fafc;
+      --bg-white:  #ffffff;
+      --code-bg:   #1e293b;
+      --hero-from: #0f172a;
+      --hero-to:   #1e1b4b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(15,23,42,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 0 2rem; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 0.88rem; font-weight: 700;
+      color: #e2e8f0; text-decoration: none;
+      display: flex; align-items: center; gap: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand .dot {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--indigo), var(--sky));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 12px;
+    }
+    .nav-back {
+      font-size: 0.82rem; font-weight: 500;
+      color: #94a3b8; text-decoration: none;
+      display: flex; align-items: center; gap: 0.35rem;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: #e2e8f0; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.25) 0%, transparent 65%),
+                  radial-gradient(ellipse at 20% 100%, rgba(56,189,248,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: #818cf8; background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800;
+      color: #f1f5f9; line-height: 1.2;
+      letter-spacing: -0.02em; margin-bottom: 0.9rem;
+    }
+    .hero h1 em { font-style: normal; color: #818cf8; }
+    .hero-sub {
+      font-size: 1.05rem; color: #94a3b8;
+      max-width: 560px; margin: 0 auto 2rem;
+    }
+    .hero-stats {
+      display: inline-flex; gap: 2rem;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      display: block; font-size: 1.5rem; font-weight: 800;
+      color: #e2e8f0; letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.75rem; color: #64748b; text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      max-width: 1040px; margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── TOC CARD ── */
+    .toc-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .toc-heading {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .toc-list {
+      list-style: none; padding: 0;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem;
+    }
+    .toc-list li a {
+      font-size: 0.88rem; color: var(--indigo);
+      text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
+      transition: color 0.15s;
+    }
+    .toc-list li a:hover { color: var(--blue); }
+    .toc-list li a::before {
+      content: attr(data-num);
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--bg-white); background: var(--indigo);
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── SECTION HEADINGS ── */
+    .section-marker {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--text); margin: 1.6rem 0 0.5rem;
+    }
+    p { margin-bottom: 1rem; color: #334155; }
+
+    /* ── SECTION DIVIDER ── */
+    .section-block {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .table-wrap { overflow-x: auto; margin: 1.2rem 0 1.5rem; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th {
+      background: var(--text); color: #f1f5f9;
+      padding: 0.7rem 1rem; text-align: left;
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    thead th:first-child { border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody tr:nth-child(even) td { background: var(--bg); }
+    tbody td {
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+      vertical-align: top; color: #334155;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ── EXAMPLE BOX ── */
+    .example-box {
+      background: var(--code-bg);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0 1.5rem;
+      font-family: 'Fira Code', 'SF Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+    .verdict-pass { color: #4ade80; font-weight: 600; }
+    .verdict-fail { color: #f87171; font-weight: 600; }
+    .verdict-dim  { color: #64748b; }
+
+    /* ── METHOD CARDS ── */
+    .methods-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .method-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 1rem;
+      transition: box-shadow 0.15s;
+    }
+    .method-card:hover { box-shadow: 0 4px 16px rgba(79,70,229,0.08); }
+    .method-num {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--indigo), var(--blue));
+      color: white; font-size: 1.2rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; align-self: start;
+    }
+    .method-body h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .method-body h3 em { font-style: normal; color: var(--indigo); font-size: 0.82rem; font-weight: 500; }
+    .method-body p { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    .method-body ul { padding-left: 1.2rem; margin-bottom: 0.6rem; }
+    .method-body li { font-size: 0.88rem; margin: 0.25rem 0; color: #334155; }
+    .source-tag {
+      display: inline-block; font-size: 0.75rem; color: var(--muted);
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.5rem;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .callout-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout.blue { background: #eff6ff; border-left: 3px solid var(--blue); color: #1e40af; }
+    .callout.amber { background: #fffbeb; border-left: 3px solid var(--amber); color: #92400e; }
+    .callout.green { background: #f0fdf4; border-left: 3px solid var(--green); color: #166534; }
+    .callout.rose { background: #ffe4e6; border-left: 3px solid var(--rose); color: #9d174d; }
+    .callout strong { font-weight: 700; }
+
+    /* ── BEST PRACTICES ── */
+    .practice-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;
+    }
+    @media (max-width: 600px) { .practice-grid { grid-template-columns: 1fr; } }
+    .practice-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+    }
+    .practice-item h3 {
+      font-size: 0.88rem; margin: 0 0 0.5rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .practice-item h3 .badge {
+      font-size: 0.9rem;
+    }
+    .practice-item ul { padding-left: 1.1rem; }
+    .practice-item li { font-size: 0.83rem; margin: 0.2rem 0; color: #475569; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      counter-reset: step;
+      margin: 1rem 0;
+    }
+    .workflow-step {
+      counter-increment: step;
+      display: flex; gap: 1rem; align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .workflow-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--indigo-lt); color: var(--indigo);
+      font-size: 0.78rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { font-size: 0.9rem; color: #334155; padding-top: 0.3rem; }
+    .step-text strong { color: var(--text); }
+
+    /* ── TOOLS GRID ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.8rem; margin-top: 1rem;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.1rem;
+      background: var(--bg-white);
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .tool-card:hover { border-color: var(--indigo); box-shadow: 0 2px 10px rgba(79,70,229,0.1); }
+    .tool-name { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .tool-category {
+      font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--indigo);
+      margin-bottom: 0.4rem;
+    }
+    .tool-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── REFERENCES ── */
+    .ref-group-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--muted);
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      margin: 1.5rem 0 0.8rem;
+    }
+    .ref-group-title:first-child { margin-top: 0; }
+    .ref-list { list-style: none; padding: 0; }
+    .ref-list li {
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.87rem; line-height: 1.55; color: #334155;
+    }
+    .ref-list li:last-child { border-bottom: none; }
+    .ref-list a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+    .ref-list a:hover { text-decoration: underline; }
+    .ref-badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 0.1rem 0.45rem; border-radius: 4px; margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .badge-paper { background: #dbeafe; color: #1d4ed8; }
+    .badge-blog  { background: #dcfce7; color: #15803d; }
+    .badge-docs  { background: #fef9c3; color: #a16207; }
+    .badge-guide { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── FOOTER ── */
+    .page-footer {
+      margin-top: 3.5rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; color: var(--muted);
+      flex-wrap: wrap; gap: 0.5rem;
+    }
+    .page-footer a { color: var(--indigo); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .hero { padding: 3rem 1.5rem 2.5rem; }
+      .page-wrap { padding: 2rem 1.25rem 4rem; }
+      .hero-stats { gap: 1.2rem; }
+      .method-card { grid-template-columns: 1fr; }
+      .method-num { width: 38px; height: 38px; font-size: 1rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
+  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+</nav>
+<script>
+  (function(){
+    const from=new URLSearchParams(location.search).get('from');
+    if(from){
+      const url='../index.html#'+from;
+      document.getElementById('back-link').href=url;
+      document.getElementById('back-brand').href=url;
+    }
+  })();
+</script>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <span class="hero-tag">Agent Infrastructure</span>
+  <h1>LLM Agent <em>Frameworks</em></h1>
+  <p class="hero-sub">LangChain, LangGraph, CrewAI, AutoGen, and when to build your own — compared</p>
+  <div class="hero-stats">
+    <div class="stat">
+      <span class="stat-num">tool → memory → plan → act</span>
+      <span class="stat-label">the agent loop</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">orchestrate vs code</span>
+      <span class="stat-label">the key choice</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">5 major frameworks</span>
+      <span class="stat-label">in active use</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── BODY ── -->
+<div class="page-wrap">
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-heading">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#what-framework" data-num="1">What makes a framework</a></li>
+      <li><a href="#landscape" data-num="2">Landscape & comparison</a></li>
+      <li><a href="#langgraph" data-num="3">LangGraph deep dive</a></li>
+      <li><a href="#crewai" data-num="4">CrewAI multi-role</a></li>
+      <li><a href="#autogen" data-num="5">AutoGen conversational</a></li>
+      <li><a href="#decision-guide" data-num="6">Decision guide</a></li>
+      <li><a href="#observability" data-num="7">Observability & tracing</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. FOUNDATION ── -->
+  <div class="section-block" id="what-framework">
+    <div class="section-marker">01 — Foundation</div>
+    <h2>What Makes a <em>Framework?</em></h2>
+    <p>An agent framework gives you tool dispatch, memory management, multi-step planning, and observability — instead of writing it yourself. Rather than stringing together 500 lines of glue code with OpenAI SDK calls, a framework provides the scaffolding.</p>
+
+    <h3>Four Layers Every Agent Needs</h3>
+    <p><strong>(1) LLM interface layer:</strong> abstract the specific model (Claude, GPT-4, Llama). Send structured prompts, parse tool calls, handle errors. <strong>(2) Tool registry:</strong> define what tools the agent has access to, their schemas, and how to execute them. <strong>(3) Memory/state store:</strong> persist conversation history, internal state, past decisions. <strong>(4) Orchestration loop:</strong> handle the agentic loop itself — reason, act, observe, update state, repeat.</p>
+
+    <p>Build vs buy question: frameworks accelerate prototyping but add abstraction overhead. Many teams start with a framework, then rewrite the hot path in plain Python when they hit production constraints.</p>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Every framework has an "easy path" and a "production path". They are not the same.</strong> Read production case studies before committing. The tutorial examples often hide the complexity of scaling, latency debugging, and cost optimization.</span>
+    </div>
+  </div>
+
+  <!-- ── 2. LANDSCAPE ── -->
+  <div class="section-block" id="landscape">
+    <div class="section-marker">02 — Landscape</div>
+    <h2>Framework Comparison</h2>
+    <p>Here's a full comparison of the major frameworks used in production:</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Framework</th>
+            <th>Paradigm</th>
+            <th>State handling</th>
+            <th>Multi-agent</th>
+            <th>Best for</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>LangChain</strong></td>
+            <td>DAG / chain</td>
+            <td>Stateless by default</td>
+            <td>Via agents</td>
+            <td>Quick prototypes, chains</td>
+          </tr>
+          <tr>
+            <td><strong>LangGraph</strong></td>
+            <td>Stateful graph</td>
+            <td>First-class state</td>
+            <td>Yes (native)</td>
+            <td>Complex workflows, human-in-loop</td>
+          </tr>
+          <tr>
+            <td><strong>CrewAI</strong></td>
+            <td>Role-based agents</td>
+            <td>Per-agent memory</td>
+            <td>Yes (crews)</td>
+            <td>Collaborative agent teams</td>
+          </tr>
+          <tr>
+            <td><strong>AutoGen</strong></td>
+            <td>Conversational</td>
+            <td>Conversation history</td>
+            <td>Yes (group chat)</td>
+            <td>Research, multi-agent chat</td>
+          </tr>
+          <tr>
+            <td><strong>Pydantic AI</strong></td>
+            <td>Type-safe agents</td>
+            <td>Structured I/O</td>
+            <td>Limited</td>
+            <td>Production, typed pipelines</td>
+          </tr>
+          <tr>
+            <td><strong>LlamaIndex</strong></td>
+            <td>Data-centric</td>
+            <td>Index + query</td>
+            <td>Via workflows</td>
+            <td>RAG-heavy, document QA</td>
+          </tr>
+          <tr>
+            <td><strong>Plain Python + SDK</strong></td>
+            <td>Manual</td>
+            <td>Whatever you build</td>
+            <td>Whatever you build</td>
+            <td>Full control, high scale</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 3. LANGGRAPH ── -->
+  <div class="section-block" id="langgraph">
+    <div class="section-marker">03 — Deep Dive</div>
+    <h2>LangGraph</h2>
+    <p>LangGraph models agents as stateful graphs: nodes are actions or decisions, edges are transitions, state is a typed dict persisted across steps. This makes it powerful for workflows that need to pause, inspect, and resume.</p>
+
+    <h3>Key Concepts</h3>
+    <p><strong>StateGraph:</strong> Define your state schema as a TypedDict. <strong>Nodes:</strong> Python functions that take state and return modified state. <strong>Edges:</strong> Deterministic or conditional transitions between nodes. <strong>Checkpointers:</strong> Persist state to Postgres, Redis, memory, or custom backend. <strong>Human-in-the-loop:</strong> Use interrupt_before and interrupt_after to pause execution for human review.</p>
+
+    <h3>Minimal LangGraph Agent</h3>
+    <div class="example-box">from langgraph.graph import StateGraph, END
+from typing import TypedDict, Annotated
+import operator
+
+class AgentState(TypedDict):
+    messages: Annotated[list, operator.add]
+    tool_results: list
+
+def call_llm(state: AgentState) -> AgentState:
+    # call LLM with state['messages']
+    response = llm.invoke(state['messages'])
+    return {"messages": [response]}
+
+def should_continue(state: AgentState) -> str:
+    if has_tool_calls(state['messages'][-1]):
+        return "tools"
+    return END
+
+graph = StateGraph(AgentState)
+graph.add_node("llm", call_llm)
+graph.add_node("tools", call_tools)
+graph.add_conditional_edges("llm", should_continue)
+graph.set_entry_point("llm")
+app = graph.compile()</div>
+
+    <div class="callout green">
+      <span class="callout-icon">✓</span>
+      <span><strong>LangGraph's persistence layer is critical for production agents.</strong> You can pause mid-execution, route to a human reviewer, and resume from exactly where you left off — essential for systems that touch real data or high-stakes decisions.</span>
+    </div>
+  </div>
+
+  <!-- ── 4. CREWAI ── -->
+  <div class="section-block" id="crewai">
+    <div class="section-marker">04 — Deep Dive</div>
+    <h2>CrewAI and Multi-Role Agents</h2>
+    <p>CrewAI models each agent as a role with a goal, backstory, tools, and memory. A Crew orchestrates agents sequentially or hierarchically; a manager agent can delegate to specialized agents. Best for content pipelines, research tasks, and multi-perspective synthesis.</p>
+
+    <h3>Role-Based Mental Model</h3>
+    <p>Each agent has a clear persona and responsibility. This works exceptionally well when different "experts" are conceptually clean — a researcher agent, an analyst agent, a writer agent. The abstraction maps cleanly to product workflows and makes prompting more intuitive.</p>
+
+    <h3>3-Agent Research Crew Example</h3>
+    <div class="example-box">from crewai import Agent, Task, Crew
+
+researcher = Agent(role='Senior Researcher', goal='Find latest AI papers',
+    backstory='Expert at finding academic sources', tools=[search_tool])
+analyst = Agent(role='Data Analyst', goal='Synthesize findings',
+    backstory='Turns raw research into actionable insights')
+writer = Agent(role='Technical Writer', goal='Write clear summary',
+    backstory='Makes complex topics accessible')
+
+tasks = [Task(description='Research LLM benchmarks', agent=researcher),
+         Task(description='Analyze trends', agent=analyst),
+         Task(description='Write 500-word brief', agent=writer)]
+
+crew = Crew(agents=[researcher, analyst, writer], tasks=tasks)
+result = crew.kickoff()</div>
+
+    <p>CrewAI is particularly strong when you need sequential task dependencies and role-based decomposition. The trade-off is less fine-grained control over state compared to LangGraph.</p>
+  </div>
+
+  <!-- ── 5. AUTOGEN ── -->
+  <div class="section-block" id="autogen">
+    <div class="section-marker">05 — Deep Dive</div>
+    <h2>AutoGen Conversational Agents</h2>
+    <p>AutoGen treats agents as conversational participants: each agent has a system prompt, can send and receive messages, and can be a human-proxy or an LLM-backed assistant. GroupChat enables round-robin or managed multi-agent conversations with code execution loops.</p>
+
+    <h3>Code Execution Loop</h3>
+    <p>AssistantAgent can generate code; UserProxyAgent executes it locally and returns feedback. This creates a tight loop: LLM generates, execute, report results, LLM refines. Exceptionally effective for code-generation and problem-solving tasks where you can test ideas immediately.</p>
+
+    <h3>AutoGen Code-Writing Loop</h3>
+    <div class="example-box">import autogen
+assistant = autogen.AssistantAgent("assistant",
+    llm_config={"model": "gpt-4o", "api_key": "..."})
+user_proxy = autogen.UserProxyAgent("user_proxy",
+    code_execution_config={"work_dir": "coding", "use_docker": False})
+user_proxy.initiate_chat(assistant,
+    message="Write and test a Python function to compute Fibonacci numbers")</div>
+
+    <h3>Comparison: LangGraph vs CrewAI vs AutoGen</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Aspect</th>
+            <th>LangGraph</th>
+            <th>CrewAI</th>
+            <th>AutoGen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Mental model</strong></td>
+            <td>State machine</td>
+            <td>Role-based crew</td>
+            <td>Chat participants</td>
+          </tr>
+          <tr>
+            <td><strong>State</strong></td>
+            <td>Typed dict, persistent</td>
+            <td>Per-agent memory</td>
+            <td>Conversation history</td>
+          </tr>
+          <tr>
+            <td><strong>Control flow</strong></td>
+            <td>Graph edges</td>
+            <td>Sequential/hierarchical</td>
+            <td>Conversation-driven</td>
+          </tr>
+          <tr>
+            <td><strong>Human in loop</strong></td>
+            <td>Yes (interrupt)</td>
+            <td>Limited</td>
+            <td>Yes (UserProxyAgent)</td>
+          </tr>
+          <tr>
+            <td><strong>Best fit</strong></td>
+            <td>Production workflows</td>
+            <td>Content/research tasks</td>
+            <td>Code generation, research</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 6. DECISION GUIDE ── -->
+  <div class="section-block" id="decision-guide">
+    <div class="section-marker">06 — Decision Guide</div>
+    <h2>Which Framework?</h2>
+    <p>The right choice depends on your task shape, team maturity, and scale constraints:</p>
+
+    <div class="methods-list">
+      <div class="method-card">
+        <div class="method-num">1</div>
+        <div class="method-body">
+          <h3>Starting a prototype <em>— fastest path</em></h3>
+          <p>Use LangChain for simple chains; LangGraph the moment you need state or branching. LangChain is easiest to onboard with; LangGraph becomes necessary as soon as your workflow requires conditional logic or pause/resume.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">2</div>
+        <div class="method-body">
+          <h3>Collaboration between specialized agents <em>— role-based</em></h3>
+          <p>CrewAI. The role-based mental model maps cleanly to product workflows. Researcher, analyst, writer — each with their own backstory and tools — is a natural decomposition for many tasks.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">3</div>
+        <div class="method-body">
+          <h3>Code-writing or research agents <em>— execution feedback</em></h3>
+          <p>AutoGen. Conversational loop + code execution is uniquely good here. The agent proposes, you test, it refines — tight feedback loop beats iterative planning for these domains.</p>
+        </div>
+      </div>
+
+      <div class="method-card">
+        <div class="method-num">4</div>
+        <div class="method-body">
+          <h3>High-scale production <em>— full control</em></h3>
+          <p>Plain Python + async + OpenAI SDK. Frameworks add latency and debugging friction. Write the abstraction you need, not a general one. Most successful production agents eventually do this.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout rose">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Framework churn is real.</strong> AutoGen 0.4 broke AutoGen 0.2 API completely. LangChain rewrote its expression language twice. Pin versions, test upgrades in staging, and maintain a fallback plan to rewrite in plain Python if the framework becomes a constraint.</span>
+    </div>
+  </div>
+
+  <!-- ── 7. OBSERVABILITY ── -->
+  <div class="section-block" id="observability">
+    <div class="section-marker">07 — Observability</div>
+    <h2>Tracing and Debugging Agents</h2>
+    <p>Multi-step agents are hard to debug. Which step failed? Which LLM call was slow? What context caused the wrong decision? Tracing becomes critical in production.</p>
+
+    <h3>What to Trace</h3>
+    <p><strong>Every LLM call:</strong> input tokens, output tokens, latency, model used. <strong>Every tool call:</strong> tool name, arguments, result, execution duration. <strong>Every state transition:</strong> node entry, node exit, state delta. <strong>Errors:</strong> exception type, stack, recovery action.</p>
+
+    <h3>Recommended Tools</h3>
+    <ul style="margin-left: 1.2rem; margin-bottom: 1rem;">
+      <li><strong>LangSmith:</strong> Native integration with LangGraph and LangChain. Built-in trace persistence, evaluation framework, dataset management.</li>
+      <li><strong>Langfuse:</strong> Open-source, provider-agnostic. Trace any framework. Good for multi-framework shops.</li>
+      <li><strong>Arize Phoenix:</strong> Open-source observability. Fast for large trace volumes.</li>
+      <li><strong>W&B Traces:</strong> Lightweight integration with Weights & Biases platform.</li>
+    </ul>
+
+    <div class="callout amber">
+      <span class="callout-icon">⚠️</span>
+      <span><strong>Always log the full state at each node, not just the final output.</strong> You cannot debug an agent from its last message alone. State transitions and intermediate results are where bugs live.</span>
+    </div>
+
+    <h3>Observability Tools Grid</h3>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangGraph</div>
+        <div class="tool-desc">Native checkpointing and state persistence for debugging</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">LangChain</div>
+        <div class="tool-desc">Chain-level tracing and run management</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">CrewAI</div>
+        <div class="tool-desc">Task-level logging and agent output tracking</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Framework</div>
+        <div class="tool-name">AutoGen</div>
+        <div class="tool-desc">Conversation history and code execution logs</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Tracing</div>
+        <div class="tool-name">LangSmith</div>
+        <div class="tool-desc">Native LangGraph integration, evaluation, datasets</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Tracing</div>
+        <div class="tool-name">Langfuse</div>
+        <div class="tool-desc">Open-source, provider-agnostic, SDKs for all frameworks</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Tracing</div>
+        <div class="tool-name">Arize Phoenix</div>
+        <div class="tool-desc">Open-source, optimized for large trace volumes</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-category">Tracing</div>
+        <div class="tool-name">W&B Traces</div>
+        <div class="tool-desc">Lightweight integration with Weights & Biases</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REFERENCES ── -->
+  <div class="section-block">
+    <div class="ref-group-title">References</div>
+    <ul class="ref-list">
+      <li><span class="ref-badge badge-docs">DOCS</span> <a href="https://langchain-ai.github.io/langgraph" target="_blank">LangGraph documentation</a> — official guide and API reference</li>
+      <li><span class="ref-badge badge-paper">PAPER</span> <a href="https://arxiv.org/abs/2404.11584" target="_blank">LangGraph: Agentic Workflows as Code</a> — arxiv 2404.11584</li>
+      <li><span class="ref-badge badge-docs">DOCS</span> <a href="https://docs.crewai.com" target="_blank">CrewAI documentation</a> — role-based agent framework</li>
+      <li><span class="ref-badge badge-paper">PAPER</span> <a href="https://arxiv.org/abs/2308.08155" target="_blank">AutoGen: Enabling Next-Gen LLM Applications</a> — arxiv 2308.08155</li>
+      <li><span class="ref-badge badge-docs">DOCS</span> <a href="https://ai.pydantic.dev" target="_blank">Pydantic AI documentation</a> — type-safe agents</li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  <span>GenAI Mindmap — agent frameworks concept guide</span>
+</div>
+
+</body>
+</html>
