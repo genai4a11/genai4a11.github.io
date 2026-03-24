@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parallel Execution | GenAI Mindmap</title>
+  <meta name="description" content="Fan-out pattern: run independent agent subtasks concurrently and merge the results — dramatically reducing total latency when subtasks don't depend on each other." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Parallel Execution" />
+  <meta property="og:description" content="Fan-out pattern: run independent agent subtasks concurrently and merge the results — dramatically reducing total latency when subtasks don't depend on each other." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/parallel-execution.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/parallel-execution.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Parallel Execution | GenAI Mindmap",
+  "description": "Fan-out pattern: run independent agent subtasks concurrently and merge the results \u2014 dramatically reducing total latency when subtasks don't depend on each other.",
+  "url": "https://genai4a11.github.io/concepts/parallel-execution.html",
+  "dateModified": "2026-03-24T19:51:30.944530",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Parallel Execution | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/parallel-execution.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #059669;
+      --accent-dark: #047857;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/multi-agent.html" class="nav-back">← Multi-Agent</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Multi-Agent</span>
+    <h1><em>Parallel Execution</em></h1>
+    <p class="hero-sub">Fan-out pattern: run independent agent subtasks concurrently and merge the results — dramatically reducing total latency when subtasks don't depend on each other.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Fan-out</div><div class="stat-label">Fan-in pattern</div></div>
+      <div><div class="stat-num">Latency</div><div class="stat-label">Reduced N×</div></div>
+      <div><div class="stat-num">asyncio</div><div class="stat-label">Native Python</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why parallelism matters for agents</a></li>
+        <li><a href="#s2" data-num="02">Identifying parallelisable subtasks</a></li>
+        <li><a href="#s3" data-num="03">asyncio fan-out pattern</a></li>
+        <li><a href="#s4" data-num="04">Thread-based parallelism</a></li>
+        <li><a href="#s5" data-num="05">Parallel agents with LangGraph</a></li>
+        <li><a href="#s6" data-num="06">Error handling in parallel flows</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why parallelism matters for agents</h2>
+<p>A sequential agent that calls three tools one-by-one, each taking 2 seconds, takes 6 seconds total. If those tool calls are independent (the result of tool A doesn't affect what you pass to tool B), running them in parallel takes 2 seconds — a 3× latency improvement. As workflows grow, this difference compounds dramatically.</p>
+<p>Modern LLMs are expensive to call but fast in parallel: you can fan out 10 simultaneous API calls and pay the same wall-clock time as a single call. This is one of the biggest practical optimisations in production agent systems.</p>
+<p>The rule is simple: <strong>serialise tasks that depend on each other; parallelise everything else.</strong></p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Identifying parallelisable subtasks</h2>
+<p>A subtask can run in parallel if it doesn't consume output from any other subtask in the same fan-out group. Common patterns:</p>
+<p><strong>Data gathering</strong>: search five different sources simultaneously instead of one-by-one. Each search is independent.</p>
+<p><strong>Multi-perspective analysis</strong>: ask three different specialist agents to evaluate the same document from different angles (legal, technical, financial). None needs the others' output to start.</p>
+<p><strong>Batch processing</strong>: summarise 20 documents in parallel rather than sequentially.</p>
+<p><strong>Validation</strong>: run multiple quality checks on a generated output simultaneously — grammar, factual accuracy, tone — and merge feedback.</p>
+<p>Anything with a DAG dependency (A feeds B feeds C) cannot be parallelised within that chain, but independent chains within the DAG can run concurrently.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>asyncio fan-out pattern</h2>
+<pre><code class="language-python">import asyncio
+import anthropic
+
+client = anthropic.Anthropic()
+
+async def analyse_from_perspective(text: str, perspective: str) -> dict:
+    '''Analyse text from a specific expert perspective.'''
+    loop = asyncio.get_event_loop()
+    # Run blocking Anthropic call in thread pool
+    response = await loop.run_in_executor(None, lambda: client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=512,
+        system=f"You are a {perspective} expert. Analyse the following text from your perspective.",
+        messages=[{"role": "user", "content": text}]
+    ))
+    return {"perspective": perspective, "analysis": response.content[0].text}
+
+async def parallel_analysis(text: str) -> dict:
+    perspectives = ["legal", "technical", "financial", "security"]
+
+    # Fan-out: launch all tasks simultaneously
+    tasks = [analyse_from_perspective(text, p) for p in perspectives]
+    results = await asyncio.gather(*tasks)  # wait for all to complete
+
+    # Fan-in: merge results
+    return {r["perspective"]: r["analysis"] for r in results}
+
+# Run
+async def main():
+    text = "Our new API will process 1M requests/day, storing all user queries in plain text logs."
+    analyses = await parallel_analysis(text)
+    for perspective, analysis in analyses.items():
+        print(f"
+=== {perspective.upper()} ===")
+        print(analysis[:200])
+
+asyncio.run(main())
+</code></pre>
+<p><code>asyncio.gather()</code> is the core primitive: it schedules all coroutines concurrently and returns when all complete (or when the first fails, if you don't use <code>return_exceptions=True</code>).</p>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Thread-based parallelism</h2>
+<p>For simpler scripts without asyncio, <code>concurrent.futures.ThreadPoolExecutor</code> gives you parallel execution with a familiar interface:</p>
+<pre><code class="language-python">from concurrent.futures import ThreadPoolExecutor, as_completed
+import anthropic
+
+client = anthropic.Anthropic()
+
+def summarise(doc: str, doc_id: int) -> dict:
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=256,
+        messages=[{"role": "user", "content": f"Summarise in 2 sentences:
+
+{doc}"}]
+    )
+    return {"id": doc_id, "summary": response.content[0].text}
+
+documents = [
+    "Long document 1...",
+    "Long document 2...",
+    "Long document 3...",
+    # ... up to 20 documents
+]
+
+# Process all documents in parallel (up to 10 concurrent)
+summaries = {}
+with ThreadPoolExecutor(max_workers=10) as executor:
+    futures = {executor.submit(summarise, doc, i): i for i, doc in enumerate(documents)}
+    for future in as_completed(futures):
+        result = future.result()
+        summaries[result["id"]] = result["summary"]
+        print(f"Doc {result['id']} summarised.")
+
+# Results in original order
+ordered = [summaries[i] for i in range(len(documents))]
+</code></pre>
+<p>Use threads for I/O-bound work (API calls, DB queries). Use <code>ProcessPoolExecutor</code> only for CPU-bound work (rare in agent systems).</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Parallel agents with LangGraph</h2>
+<p>LangGraph supports parallel node execution natively via fan-out edges — when multiple nodes connect from the same source, LangGraph runs them in parallel:</p>
+<pre><code class="language-python">from langgraph.graph import StateGraph, END
+from typing import TypedDict, Annotated
+import operator
+
+class AnalysisState(TypedDict):
+    document: str
+    legal: str
+    technical: str
+    financial: str
+    final_report: str
+
+def legal_agent(state: AnalysisState) -> AnalysisState:
+    # Analyse from legal perspective
+    return {"legal": f"Legal analysis of: {state['document'][:50]}..."}
+
+def technical_agent(state: AnalysisState) -> AnalysisState:
+    return {"technical": f"Technical analysis of: {state['document'][:50]}..."}
+
+def financial_agent(state: AnalysisState) -> AnalysisState:
+    return {"financial": f"Financial analysis of: {state['document'][:50]}..."}
+
+def synthesiser(state: AnalysisState) -> AnalysisState:
+    report = f"REPORT
+Legal: {state['legal']}
+Tech: {state['technical']}
+Financial: {state['financial']}"
+    return {"final_report": report}
+
+builder = StateGraph(AnalysisState)
+builder.add_node("legal", legal_agent)
+builder.add_node("technical", technical_agent)
+builder.add_node("financial", financial_agent)
+builder.add_node("synthesiser", synthesiser)
+
+# Fan-out from START to three parallel agents
+builder.set_entry_point("legal")
+builder.set_entry_point("technical")
+builder.set_entry_point("financial")
+
+# Fan-in: all three feed into synthesiser
+builder.add_edge("legal", "synthesiser")
+builder.add_edge("technical", "synthesiser")
+builder.add_edge("financial", "synthesiser")
+builder.add_edge("synthesiser", END)
+
+graph = builder.compile()
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Error handling in parallel flows</h2>
+<p>When one of N parallel tasks fails, you have three strategies:</p>
+<p><strong>Fail-fast</strong> (default with asyncio.gather): if any task raises an exception, gather raises immediately and cancels the rest. Use this when all results are required — a missing perspective makes the final output invalid.</p>
+<pre><code class="language-python"># Fail-fast: raises on first exception
+results = await asyncio.gather(*tasks)
+</code></pre>
+<p><strong>Collect all results</strong>: use <code>return_exceptions=True</code> to get a mix of results and exceptions, then handle each:</p>
+<pre><code class="language-python">results = await asyncio.gather(*tasks, return_exceptions=True)
+successful = [r for r in results if not isinstance(r, Exception)]
+failed = [r for r in results if isinstance(r, Exception)]
+print(f"{len(failed)} tasks failed: {failed}")
+</code></pre>
+<p><strong>Timeout individual tasks</strong>: wrap each task with <code>asyncio.wait_for(task, timeout=30.0)</code> so a slow API call doesn't block the entire fan-in.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Rate limits multiply with parallelism.</strong> If your API allows 60 requests/minute and you fan out 100 tasks simultaneously, you'll hit rate limits immediately. Add a semaphore to cap concurrent requests:</p>
+<pre><code class="language-python">sem = asyncio.Semaphore(10)  # max 10 concurrent
+
+async def limited_call(text: str):
+    async with sem:
+        return await analyse_from_perspective(text, "legal")
+</code></pre>
+<p><strong>Cost scales linearly with parallelism.</strong> Running 20 agents in parallel costs 20× as much as running one. The latency improves but the total token cost stays the same. Monitor costs and only parallelise where latency genuinely matters to the user.</p>
+<p><strong>Order is not guaranteed.</strong> <code>asyncio.gather()</code> returns results in the same order as the input coroutines, but <code>as_completed()</code> returns in completion order. Be explicit about which you need — using <code>as_completed</code> when you need ordering will produce subtle bugs.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/multi-agent.html" style="color:var(--accent)">Multi-Agent</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

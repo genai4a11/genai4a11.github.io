@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tool Selection | GenAI Mindmap</title>
+  <meta name="description" content="How agents pick the right tool from many options — from LLM-native selection via descriptions, to RAG-over-tools for large catalogues, to hierarchical routing that avoids overloading the context window." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Tool Selection" />
+  <meta property="og:description" content="How agents pick the right tool from many options — from LLM-native selection via descriptions, to RAG-over-tools for large catalogues, to hierarchical routing that avoids overloading the context window." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/tool-selection.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/tool-selection.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Tool Selection | GenAI Mindmap",
+  "description": "How agents pick the right tool from many options \u2014 from LLM-native selection via descriptions, to RAG-over-tools for large catalogues, to hierarchical routing that avoids overloading the context window.",
+  "url": "https://genai4a11.github.io/concepts/tool-selection.html",
+  "dateModified": "2026-03-24T19:51:31.432740",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Tool Selection | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/tool-selection.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #059669;
+      --accent-dark: #047857;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/tool-use.html" class="nav-back">← Tool Use</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Tool Use</span>
+    <h1><em>Tool Selection</em></h1>
+    <p class="hero-sub">How agents pick the right tool from many options — from LLM-native selection via descriptions, to RAG-over-tools for large catalogues, to hierarchical routing that avoids overloading the context window.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Description-based</div><div class="stat-label">LLM selection</div></div>
+      <div><div class="stat-num">RAG-over-tools</div><div class="stat-label">Large catalogues</div></div>
+      <div><div class="stat-num">Hierarchical</div><div class="stat-label">Routing</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">How LLMs select tools</a></li>
+        <li><a href="#s2" data-num="02">Writing tool descriptions that work</a></li>
+        <li><a href="#s3" data-num="03">Scaling to many tools with RAG</a></li>
+        <li><a href="#s4" data-num="04">Hierarchical tool routing</a></li>
+        <li><a href="#s5" data-num="05">Tool selection metrics</a></li>
+        <li><a href="#s6" data-num="06">Dynamic tool loading</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>How LLMs select tools</h2>
+<p>When you pass tools to an LLM, it selects which to call (and with what arguments) based entirely on the tool descriptions and the current conversation. There's no explicit "tool selection algorithm" in the model — it's all inference from text.</p>
+<p>This means tool selection quality is a prompt engineering problem: write clearer, more specific descriptions and the model selects tools more reliably. The model asks itself (implicitly): "Given the user's request and these tool descriptions, which tool, if any, should I call right now?"</p>
+<p>For small sets of tools (under ~20), this works excellently. The challenge comes with scale: a production agent system might have hundreds of tools, and including all of them in every prompt is expensive and confusing.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Writing tool descriptions that work</h2>
+<p>Tool descriptions are the primary lever for improving selection accuracy. Effective descriptions answer four questions:</p>
+<p><strong>What does this tool do?</strong> ("Searches the product catalogue for items matching a query")</p>
+<p><strong>When should it be used?</strong> ("Use when the user asks about product availability, pricing, or specifications")</p>
+<p><strong>When should it NOT be used?</strong> ("Do not use for order status — use get_order_status instead")</p>
+<p><strong>What does it return?</strong> ("Returns a list of up to 10 matching products with name, price, and stock level")</p>
+<pre><code class="language-python"># Bad description — too vague
+{
+    "name": "search",
+    "description": "Search for information.",
+    ...
+}
+
+# Good description — specific, actionable, with negative examples
+{
+    "name": "search_products",
+    "description": (
+        "Search the product catalogue by keyword. "
+        "Use when the user asks about product availability, pricing, features, or specifications. "
+        "Returns up to 10 matching products. "
+        "Do NOT use for order status, returns, or account issues — use the appropriate tools for those."
+    ),
+    ...
+}
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Scaling to many tools with RAG</h2>
+<p>For large tool catalogues (50+ tools), include all descriptions in every prompt is wasteful and degrades selection quality. Instead, treat tool selection as a retrieval problem: embed all tool descriptions, then retrieve only the most relevant ones for each user query.</p>
+<pre><code class="language-python">import numpy as np
+from sentence_transformers import SentenceTransformer
+import anthropic
+
+# Tool catalogue
+ALL_TOOLS = [
+    {"name": "search_products", "description": "Search product catalogue...", "schema": {...}},
+    {"name": "get_order_status", "description": "Check order delivery status...", "schema": {...}},
+    {"name": "process_return", "description": "Initiate a product return...", "schema": {...}},
+    # ... 100+ more tools
+]
+
+# Embed all tool descriptions at startup
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+tool_descriptions = [t["description"] for t in ALL_TOOLS]
+tool_embeddings = embedder.encode(tool_descriptions)  # shape: (N, 384)
+
+def retrieve_relevant_tools(query: str, k: int = 8) -> list[dict]:
+    '''Retrieve top-K most relevant tools for the user query.'''
+    query_embedding = embedder.encode([query])
+    # Cosine similarity
+    norms = np.linalg.norm(tool_embeddings, axis=1) * np.linalg.norm(query_embedding)
+    similarities = (tool_embeddings @ query_embedding.T).flatten() / (norms + 1e-8)
+    top_k_indices = np.argsort(similarities)[-k:][::-1]
+    return [ALL_TOOLS[i] for i in top_k_indices]
+
+client = anthropic.Anthropic()
+
+def agent_with_tool_retrieval(user_query: str) -> str:
+    # Retrieve only relevant tools
+    relevant_tools = retrieve_relevant_tools(user_query, k=8)
+    api_tools = [{"name": t["name"], "description": t["description"],
+                  "input_schema": t["schema"]} for t in relevant_tools]
+
+    response = client.messages.create(
+        model="claude-sonnet-4-5", max_tokens=1024,
+        tools=api_tools,
+        messages=[{"role": "user", "content": user_query}]
+    )
+    return response.content[0].text
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Hierarchical tool routing</h2>
+<p>For very large catalogues (hundreds to thousands of tools), even RAG retrieval can be slow. Hierarchical routing adds a fast first-stage classifier that narrows down the category before retrieving specific tools:</p>
+<pre><code class="language-python">TOOL_CATEGORIES = {
+    "orders": ["get_order_status", "cancel_order", "update_shipping"],
+    "products": ["search_products", "get_product_details", "check_stock"],
+    "returns": ["process_return", "get_return_status", "refund_timeline"],
+    "account": ["update_account", "reset_password", "billing_history"],
+}
+
+def classify_query_category(query: str) -> str:
+    categories = list(TOOL_CATEGORIES.keys())
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001", max_tokens=32,
+        messages=[{"role": "user", "content": f"Classify into one category: {categories}
+Query: {query}
+Category:"}]
+    )
+    return response.content[0].text.strip().lower()
+
+def route_to_tools(query: str) -> list[str]:
+    category = classify_query_category(query)
+    return TOOL_CATEGORIES.get(category, TOOL_CATEGORIES["products"])
+
+# Now load only the 3-5 tools in the matched category
+tool_names = route_to_tools("Where is my order #12345?")
+# → ["get_order_status", "cancel_order", "update_shipping"]
+</code></pre>
+<p>The classification call uses a cheap, fast model (Haiku). The second call uses the right tool subset with a more capable model. Total latency is lower than loading all tools, and accuracy improves because the model has fewer tools to confuse.</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Tool selection metrics</h2>
+<p>Measure tool selection quality before optimising it. Key metrics:</p>
+<p><strong>Selection accuracy</strong>: what % of time does the model call the correct tool for a given query? Build a test set of (query, expected_tool) pairs and measure.</p>
+<p><strong>False positive rate</strong>: how often does the model call a tool when no tool is needed (the query could be answered from knowledge)?</p>
+<p><strong>Wrong-tool rate</strong>: how often does the model call a plausible-but-wrong tool (e.g., calling <code>search_products</code> instead of <code>get_order_status</code> for an order query)?</p>
+<pre><code class="language-python">test_cases = [
+    {"query": "Where is my order 123?", "expected_tool": "get_order_status"},
+    {"query": "Do you have red sneakers in size 10?", "expected_tool": "search_products"},
+    {"query": "What is your return policy?", "expected_tool": None},  # No tool needed
+]
+
+correct = sum(1 for case in test_cases
+              if get_selected_tool(case["query"]) == case["expected_tool"])
+accuracy = correct / len(test_cases)
+print(f"Tool selection accuracy: {accuracy:.1%}")
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Dynamic tool loading</h2>
+<p>Instead of defining tools statically, load them from a registry at runtime. This enables tool versioning, A/B testing tool descriptions, and feature flags for tool availability:</p>
+<pre><code class="language-python">import json
+
+class ToolRegistry:
+    def __init__(self, registry_path: str):
+        with open(registry_path) as f:
+            self._tools = json.load(f)  # loaded from DB or config file
+
+    def get_tools_for_user(self, user_id: str, tier: str) -> list[dict]:
+        '''Return tools available for this user tier.'''
+        return [t for t in self._tools
+                if tier in t.get("available_tiers", ["free", "pro", "enterprise"])]
+
+    def get_tools_for_context(self, context: str) -> list[dict]:
+        '''Return tools tagged for a specific context.'''
+        return [t for t in self._tools if context in t.get("contexts", [])]
+
+registry = ToolRegistry("tools_registry.json")
+tools = registry.get_tools_for_user(user_id="user_123", tier="pro")
+</code></pre>
+<p>Store tool descriptions in a database with versioning. When descriptions are improved, update the registry and all agents automatically benefit — no code deploy required.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<p><strong>Similar tools confuse the model.</strong> If you have <code>search_products</code> and <code>search_catalogue</code> that do the same thing, the model will pick randomly between them. Audit your tool set for redundancy — merge or rename overlapping tools.</p>
+<p><strong>Tool count degrades selection.</strong> Empirically, model tool selection accuracy drops meaningfully above ~20 tools in a single prompt. If you have more tools, use RAG retrieval or hierarchical routing — don't just stuff all tools into the prompt and hope the model handles it.</p>
+<p><strong>The model can call no tool when it should.</strong> If the model can't find a good tool match, it will sometimes answer from its parametric knowledge instead of calling a tool. Add explicit instructions: "Always use the available tools to answer user questions. Do not use general knowledge for questions about orders, products, or account information."</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/tool-use.html" style="color:var(--accent)">Tool Use</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
