@@ -4,5 +4,5 @@ const SITE_STATS = {
   nodes:        337,
   snippets:     190,
   clusters:     5,
-  conceptPages: 50,
+  conceptPages: 53,
 };
