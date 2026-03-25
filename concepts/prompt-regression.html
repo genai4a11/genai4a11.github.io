@@ -327,6 +327,30 @@ jobs:
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Prompt Regression Testing Framework</h2>
+<p>Prompt regression testing prevents quality degradation when prompts, models, or pipeline configurations change. By maintaining a curated dataset of representative inputs with expected outputs or quality criteria, teams can automatically detect regressions before they reach production — the same principle as unit and integration testing in software engineering, applied to LLM behavior.</p>
+<table>
+<thead><tr><th>Test Type</th><th>Assertion Method</th><th>Coverage</th><th>Maintenance</th></tr></thead>
+<tbody>
+<tr><td>Exact match</td><td>String equality</td><td>Narrow (brittle)</td><td>Low</td></tr>
+<tr><td>Substring check</td><td>Contains expected text</td><td>Moderate</td><td>Low</td></tr>
+<tr><td>Schema validation</td><td>JSON/structure check</td><td>Good for structured output</td><td>Low</td></tr>
+<tr><td>LLM-as-judge</td><td>LLM scores output</td><td>Broad</td><td:>Medium</td></tr>
+<tr><td>Human eval baseline</td><td>Human approval rate</td><td>Broadest</td><td>High</td></tr>
+</tbody>
+</table>
+<p>Regression test datasets should evolve alongside the application. When a production failure occurs — the model mishandles a user input in an unexpected way — the triggering example should be added to the regression suite immediately after the fix is deployed. This "fail once, test always" discipline builds a regression dataset that is directly grounded in real failure modes rather than hypothetical test scenarios. Over 6–12 months, this practice produces a highly representative test suite that catches the majority of practically relevant regressions.</p>
+<p>CI/CD integration for prompt regression testing runs the full test suite on every pull request that modifies prompts, model configurations, or retrieval pipeline parameters. Failing tests block the merge until the regression is investigated and either fixed or explicitly acknowledged with a test expectation update. Tracking pass rate trends over time surfaces slow degradation patterns — where no single change causes a test failure but a series of small changes gradually shifts behavior — which are otherwise invisible until they accumulate into a user-visible quality problem.</p>
+
+<p>Test case diversity is more important than test case volume for prompt regression suites. One hundred tests that all exercise the same input pattern provide little protection against regressions on different query types. A smaller but diverse set of 30–50 tests spanning different query lengths, complexity levels, domain topics, edge cases, and known past failure modes provides better regression coverage. A coverage analysis that maps each test to the behavioral dimension it exercises helps identify gaps in the test suite before those gaps become production failures.</p>
+
+<p>Non-determinism in LLM outputs complicates regression test assertions. A test that checks for exact string equality will fail on correct outputs that are phrased differently from the expected answer. Using multiple acceptable answer variants, semantic similarity thresholds, or LLM-as-judge evaluation with lenient scoring addresses non-determinism without making tests so loose that they fail to catch real regressions. Temperature 0 (deterministic greedy decoding) can be used in test environments to reduce variance, though this may miss regressions that only manifest at production temperature settings.</p>
+
+<p>Prompt regression suites accumulate over time and require periodic maintenance to remain relevant. Tests written for a previous model version may not meaningfully test the current system if the underlying behavior has changed fundamentally. Quarterly reviews that identify and retire tests with 100% pass rates over 6+ months (stable, well-covered behaviors) and add tests for newly discovered edge cases ensure the suite remains challenging and representative rather than becoming a historical artifact that confirms old capabilities without testing current risks.</p>
+
+<p>Flaky tests in prompt regression suites — tests that pass or fail non-deterministically — erode confidence in the test suite and create alert fatigue when teams learn to ignore intermittent failures. Common causes of flakiness include high-temperature sampling that produces different outputs on each run, date-sensitive prompts that produce different answers as the current date changes, and LLM-as-judge evaluators with high variance on borderline outputs. Fixing flaky tests by using deterministic sampling, date-stable prompts, and calibrated judge thresholds is worth the investment to maintain the suite's reliability as a quality signal.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

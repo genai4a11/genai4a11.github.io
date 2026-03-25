@@ -343,6 +343,47 @@ g.set_entry_point("expand")
 graph = g.compile()</div>
 </div>
 </div>
+<div class="section-block">
+<h2>Tree of Thoughts Search Strategies</h2>
+<p>Tree of Thoughts (ToT) extends chain-of-thought reasoning by generating multiple candidate reasoning steps at each decision point, evaluating their promise, and searching through the resulting tree of possibilities using standard search algorithms. This explicit deliberative search process enables solving problems that require exploration and backtracking — game playing, creative writing with constraints, multi-step planning — where a single linear reasoning chain inevitably gets stuck in dead ends.</p>
+<table>
+<thead><tr><th>Search Strategy</th><th>Algorithm</th><th>Completeness</th><th>Token Cost</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Breadth-first search</td><td>BFS across thought tree</td><td>Complete (bounded)</td><td>High</td><td>Short horizon problems</td></tr>
+<tr><td>Depth-first search</td><td>DFS with backtracking</td><td>Complete (bounded)</td><td>Medium</td><td>Long reasoning chains</td></tr>
+<tr><td>Beam search</td><td>Keep top-K at each level</td><td>Approximate</td><td>Moderate</td><td>Quality/cost balance</td></tr>
+<tr><td>Monte Carlo Tree Search</td><td>UCB + simulation</td><td>Approximate</td><td>Very high</td><td>Complex multi-step games</td></tr>
+</tbody>
+</table>
+<p>The thought evaluation step is the most critical and expensive component of Tree of Thoughts. After generating candidate next thoughts, the evaluator — typically another LLM call with a scoring prompt — assigns a promise score to each candidate, guiding the search toward more productive branches. Evaluation quality directly bounds solution quality: a poor evaluator that assigns high scores to wrong directions will cause the search to waste compute exploring dead-end branches. Using the same model as both generator and evaluator creates a self-consistent scoring system that tends to work better than using different models for the two roles.</p>
+<p>ToT is most beneficial for tasks where intermediate states can be objectively evaluated — crossword puzzle completion (can check remaining valid words), code generation with test cases (can run intermediate code snippets), mathematical proof construction (can verify individual proof steps). For tasks with purely subjective quality — creative writing without hard constraints, open-ended question answering — the evaluation step becomes the bottleneck and standard CoT or self-consistency approaches often provide better quality-cost trade-offs than full tree search.</p>
+<div class="example-box">
+<pre><code># Simplified ToT beam search
+def tree_of_thoughts(problem, branching=3, depth=3, beam_width=2):
+    thoughts = [{"state": problem, "path": []}]
+    for _ in range(depth):
+        candidates = []
+        for t in thoughts:
+            # Generate branching_factor next thoughts
+            next_steps = generate_thoughts(t["state"], n=branching)
+            for step in next_steps:
+                score = evaluate_thought(t["state"], step)
+                candidates.append({
+                    "state": step, "path": t["path"] + [step],
+                    "score": score
+                })
+        # Keep top beam_width candidates
+        thoughts = sorted(candidates, key=lambda x: -x["score"])[:beam_width]
+    return thoughts[0]["path"]  # Best path</code></pre>
+</div>
+</div>
+<div class="section-block">
+<h2>ToT Implementation Considerations</h2>
+<p>Implementing Tree of Thoughts efficiently requires careful attention to the LLM API costs, which scale multiplicatively with branching factor and search depth. A branching factor of 3 with depth 4 and an evaluation call per node requires up to 3^4 = 81 generation calls plus 81 evaluation calls — significantly more than standard CoT. Caching identical intermediate states, pruning obviously dead branches early, and using a cheaper model for evaluation while reserving the full model for generation can reduce costs by 50–70% without significant quality loss.</p>
+<p>State representation design is the key architectural decision in ToT implementations. The state must capture enough information for the LLM to continue reasoning from that point, but should be compact enough to fit in the context window alongside the task description and evaluation criteria. For complex multi-step tasks, states often include: the original problem, the reasoning steps taken so far, the current intermediate result, and a brief summary of attempted approaches that did not work — the last element being critical for avoiding repetitive exploration of dead-end branches.</p>
+
+<p>Failure analysis of ToT search reveals that most failures stem from evaluator calibration rather than the search strategy itself. When the evaluator consistently underrates branches that lead to correct solutions, the search converges on wrong answers regardless of the search algorithm used. Improving evaluation quality — through better evaluation prompts, few-shot evaluation examples, or using a stronger model as the evaluator — typically produces larger gains than switching between BFS, DFS, and beam search strategies, since the search strategy is only as good as the evaluation function it optimizes.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

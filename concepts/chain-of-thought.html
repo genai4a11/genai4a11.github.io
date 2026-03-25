@@ -310,6 +310,30 @@ print("Answer:", result["answer"])
 # print("Reasoning:", result["reasoning"])  # for debugging</answer></thinking></div>
 </div>
 </div>
+<div class="section-block">
+<h2>Chain-of-Thought Prompting Variants</h2>
+<p>Chain-of-thought (CoT) prompting improves LLM performance on multi-step reasoning tasks by encouraging the model to generate intermediate reasoning steps before producing a final answer. The explicit reasoning trace allows the model to decompose complex problems into manageable sub-steps, dramatically improving accuracy on arithmetic, logical inference, and commonsense reasoning tasks.</p>
+<table>
+<thead><tr><th>Variant</th><th>How Triggered</th><th>Control</th><th>Token Cost</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Zero-shot CoT</td><td>"Think step by step"</td><td>Minimal</td><td>Moderate</td><td>Quick deployment</td></tr>
+<tr><td>Few-shot CoT</td><td>Example reasoning traces</td><td>High</td><td>Moderate + examples</td><td>Domain-specific tasks</td></tr>
+<tr><td>Auto-CoT</td><td>Auto-generated examples</td><td>Medium</td><td>High (generation)</td><td>Large task diversity</td></tr>
+<tr><td>Self-consistency</td><td>Multiple CoT paths sampled</td><td>High</td><td>Very high (N× samples)</td><td>High-stakes answers</td></tr>
+<tr><td>Program-aided</td><td>Code generation + execution</td><td>High</td><td>Moderate + execution</td><td>Math, structured tasks</td></tr>
+</tbody>
+</table>
+<p>Self-consistency CoT generates multiple independent reasoning chains for the same problem (typically 10–40 samples) and selects the answer by majority vote across the chains. This approach leverages the insight that while any single reasoning path may contain errors, the correct answer tends to appear more frequently than any specific incorrect answer when sampling multiple paths. Self-consistency reliably improves accuracy on tasks with verifiable correct answers at the cost of a linear increase in inference cost proportional to the number of sampled paths.</p>
+<p>Program-aided language models (PAL) combine chain-of-thought reasoning with code execution. Instead of performing arithmetic or logical operations in the token stream — where LLMs are error-prone — the model is prompted to write executable code that computes the answer. The code is executed by a Python interpreter and the result is returned as the final answer. This approach sidesteps the fundamental limitation of LLMs performing multi-step arithmetic in their forward pass, achieving near-perfect accuracy on math word problems that confound standard CoT approaches.</p>
+</div>
+<div class="section-block">
+<h2>CoT Prompting Best Practices</h2>
+<p>Effective chain-of-thought prompts share several design principles that maximize the quality of the reasoning trace. Reasoning steps should be concrete and verifiable rather than abstract — "multiply 347 by 6 to get 2082" is better than "perform the multiplication." The final answer should be clearly delineated from the reasoning using explicit markers like "Therefore, the answer is..." or "Final Answer:" so that answer extraction from the reasoning trace is unambiguous.</p>
+<p>Few-shot CoT example selection matters significantly for downstream quality. Examples that share structural similarity with the target task — same number of reasoning steps, same type of logical operations — produce better reasoning chains than generic examples chosen for variety. For domain-specific tasks, examples drawn from the target domain outperform general reasoning examples even when the general examples are of higher quality, suggesting that the model uses the examples to calibrate its reasoning style and domain vocabulary as much as to learn the reasoning format itself.</p>
+<p>Negative examples — demonstrations of incorrect reasoning that the model should avoid — can be incorporated into few-shot CoT prompts to explicitly teach the model what constitutes a reasoning error. This is particularly useful for tasks where models have a known systematic failure mode, such as ignoring units in physics problems or confusing necessary and sufficient conditions in logical reasoning tasks.</p>
+
+<p>Verification steps improve chain-of-thought reliability by prompting the model to explicitly check its work after producing an initial answer. A two-step prompt structure — first generate a solution with reasoning, then prompt the model to verify whether the solution is correct and identify any errors — catches a significant fraction of errors that slipped through the initial reasoning chain. The verification step works because generating a critique of an answer activates different reasoning patterns than generating the answer itself, making the model sensitive to errors it would overlook when reading its own reasoning as context for the next token.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

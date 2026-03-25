@@ -315,6 +315,30 @@ model, tokenizer = FastLanguageModel.from_pretrained(
 <p><strong>lora_dropout=0 is intentional in Unsloth <a class="concept-link" href="benchmarks.html">benchmarks</a>.</strong> Unsloth benchmarks are run with <a class="concept-link" href="dropout.html">dropout</a>=0 for maximum speed. For production <a class="concept-link" href="finetuning.html">fine-tuning</a> where you risk overfitting (small dataset, many epochs), add dropout=0.05. The speed difference is modest.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Unsloth Speed and Memory Optimizations</h2>
+<p>Unsloth dramatically accelerates fine-tuning of open-weight models through hand-written CUDA kernels for the attention and MLP operations that dominate training time. By replacing HuggingFace Transformers' standard PyTorch implementations with optimized kernels, Unsloth achieves 2–5× faster training with 60–80% less VRAM usage, making fine-tuning of large models accessible on consumer-grade hardware.</p>
+<table>
+<thead><tr><th>Optimization</th><th>Technique</th><th>Speedup</th><th>Memory Saving</th></tr></thead>
+<tbody>
+<tr><td>Custom attention kernels</td><td>Fused CUDA kernels</td><td>2–3×</td><td>30–40%</td></tr>
+<tr><td>Gradient checkpointing</td><td>Recompute activations</td><td>Slight slowdown</td><td>60%+</td></tr>
+<tr><td>4-bit model loading</td><td>NF4 + double quant</td><td>Neutral</td><td>75%</td></tr>
+<tr><td>LoRA rank optimization</td><td>Smart rank selection</td><td>Neutral</td><td>5–15%</td></tr>
+<tr><td>Batch packing</td><td>No padding waste</td><td>Up to 2×</td><td>Neutral</td></tr>
+</tbody>
+</table>
+<p>Unsloth's batch packing feature eliminates the token padding waste that occurs when training examples have variable lengths. Standard batching pads short sequences to the length of the longest sequence in the batch, wasting compute and memory on padding tokens that contribute nothing to learning. Batch packing instead concatenates multiple short sequences into a single packed sequence that fills the context window, separated by end-of-sequence tokens. This can double effective throughput for datasets with high length variance.</p>
+<p>Unsloth supports direct export to GGUF format after fine-tuning, enabling a seamless pipeline from training to local deployment with llama.cpp or Ollama. The export process applies quantization during conversion, eliminating a separate quantization step. Models exported in Q4_K_M format from Unsloth are immediately runnable with Ollama, making the path from custom fine-tuned model to local deployment significantly shorter than the standard HuggingFace → GPTQ/GGUF conversion pipeline.</p>
+
+<p>Unsloth's native support for the Llama, Mistral, and Qwen model families covers the architectures most commonly fine-tuned for production applications. The custom CUDA kernels are model-family-specific, meaning that adding support for a new architecture requires writing new kernels. For models not natively supported, Unsloth falls back to standard HuggingFace Transformers training, still benefiting from 4-bit quantization and memory optimizations but without the CUDA kernel speedups. Checking the Unsloth compatibility matrix before selecting a base model for fine-tuning avoids discovering unsupported architectures mid-project.</p>
+
+<p>Unsloth's chat template support handles the specific conversation format requirements of different model families during supervised fine-tuning. Applying the wrong chat template — using Llama 3's format for a Mistral model, or vice versa — is a silent error that produces a correctly-formed loss but trains the model to generate responses prefixed with wrong role tokens, causing inference failures that manifest as malformed outputs rather than obvious errors. Unsloth's get_chat_template utility selects the correct template from the model name and applies it consistently during dataset preparation.</p>
+
+<p>Evaluation during Unsloth fine-tuning uses the standard HuggingFace Trainer evaluation loop, supporting evaluation datasets, metric computation callbacks, and checkpoint saving based on evaluation loss. For generation tasks where token-level loss is a poor proxy for output quality — instruction following, creative writing, code generation — supplementing the default evaluation with a generation quality callback that samples model outputs and scores them against a reference set provides a more meaningful early stopping signal and checkpoint selection criterion.</p>
+
+<p>Unsloth's memory efficiency improvements compound with LoRA to enable fine-tuning configurations that would be impossible with standard tooling. Training a LoRA adapter for a 70B model with Unsloth on a single 80GB A100 is feasible; the same configuration with standard HuggingFace Trainer requires at least 160GB of GPU memory. This 2× memory reduction is not from a single optimization but from the combination of 4-bit base model loading, custom attention kernels that reduce activation memory, gradient checkpointing, and 8-bit optimizer states all working together.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

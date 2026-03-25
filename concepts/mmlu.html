@@ -290,6 +290,34 @@ def parse_mmlu_results(results_dir):
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>MMLU Benchmark Interpretation Guide</h2>
+<p>MMLU (Massive Multitask Language Understanding) evaluates language models across 57 academic subjects spanning STEM, humanities, social sciences, and professional domains. Each subject contains multiple-choice questions derived from practice exams, textbooks, and standardized tests, making MMLU a broad measure of the factual knowledge and reasoning capability encoded in a model's parameters.</p>
+<table>
+<thead><tr><th>Score Range</th><th>Interpretation</th><th>Comparable Human Level</th></tr></thead>
+<tbody>
+<tr><td>25–40%</td><td>Near-random (chance = 25%)</td><td>Below layperson</td></tr>
+<tr><td>40–60%</td><td>Basic comprehension</td><td>General public</td></tr>
+<tr><td>60–75%</td><td>Solid knowledge</td><td>College graduate</td></tr>
+<tr><td>75–85%</td><td>Expert-level in many subjects</td><td>Domain expert average</td></tr>
+<tr><td>85%+</td><td>Near-expert across domains</td><td>Top domain experts</td></tr>
+</tbody>
+</table>
+<p>MMLU score inflation from data contamination is a significant concern when comparing models. If a model's pre-training corpus includes MMLU questions or their answer keys — even indirectly through web crawls of exam prep sites — the benchmark scores may reflect memorization rather than generalization. Newer contamination-controlled benchmarks like MMLU-Pro (harder questions) and MMLU-Redux (manually verified questions) are increasingly used alongside standard MMLU to provide more reliable capability estimates.</p>
+<p>Subject-level MMLU scores reveal capability profiles that aggregate scores obscure. A model might score 85% on Clinical Knowledge and 60% on Formal Logic, or 90% on High School Mathematics and 55% on Moral Scenarios. For applications targeting a specific domain, subject-level analysis identifies whether the model has sufficient knowledge depth for the task. Models with high aggregate MMLU scores can have significant gaps in specific subfields that matter for particular deployment contexts.</p>
+<div class="example-box">
+<pre><code># Evaluate model on MMLU using lm-evaluation-harness
+# pip install lm-eval
+
+lm_eval --model hf   --model_args pretrained=meta-llama/Meta-Llama-3-8B   --tasks mmlu   --num_fewshot 5   --output_path ./results/llama3-8b-mmlu.json</code></pre>
+</div>
+
+<p>Few-shot prompting for MMLU evaluation uses 5 in-context examples per subject to guide the model's response format. These examples are drawn from a separate development set (not the test set) and are prepended to each evaluation question. The 5-shot format is the standard configuration reported in most papers, but performance at 0-shot (no examples) has become increasingly relevant as instruction-tuned models improve at following the multiple-choice format without explicit examples. Reporting both 0-shot and 5-shot scores provides a more complete picture of model capability and instruction-following quality.</p>
+
+<p>MMLU subject groupings reveal which knowledge domains are most and least represented. The professional categories (Professional Medicine, Professional Law, Professional Accounting, Professional Psychology) have more questions than general STEM or humanities subjects, giving them disproportionate weight in subject-averaged scores. A model that excels at professional knowledge may appear stronger on MMLU than a model that excels at fundamental STEM reasoning, even if the latter is more useful for most production applications. Weighted scoring that adjusts for subject representation provides a more calibrated capability estimate for specific deployment contexts.</p>
+
+<p>MMLU macro-average versus micro-average scoring produces different rankings for models with uneven subject performance. Macro-average weights each subject equally; micro-average weights each question equally, which gives more weight to subjects with more questions. Since professional categories have more questions than some academic subjects, micro-average scores tend to favor models strong on professional knowledge. Reporting both averages alongside the standard subject-grouped breakdown provides the most complete picture of a model's academic knowledge distribution.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

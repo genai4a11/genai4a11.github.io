@@ -247,6 +247,30 @@ print(f"Token count: {token_count}")
 <p><strong>Billing</strong>: You pay for the full context on every API call. With a 50K-token system prompt and 128K context models, sending one message costs you 50K input tokens even if the user typed two words.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Context Window Utilization Strategies</h2>
+<p>Effective context window utilization balances the need to include relevant information with the practical limits of attention quality degradation at long contexts and the linear cost scaling of most LLM APIs. Strategic placement and selective inclusion of content maximizes useful reasoning output per token spent.</p>
+<table>
+<thead><tr><th>Strategy</th><th>Mechanism</th><th>Token Efficiency</th><th>Quality Impact</th></tr></thead>
+<tbody>
+<tr><td>Front-loading key info</td><td>Put critical content first</td><td>Neutral</td><td>High (attention primacy)</td></tr>
+<tr><td>RAG retrieval</td><td>Include only relevant chunks</td><td>High</td><td>High if precision good</td></tr>
+<tr><td>Summarization</td><td>Compress long inputs</td><td>High</td><td>Medium (info loss)</td></tr>
+<tr><td>Prompt caching</td><td>Reuse static prefix</td><td>High (cost)</td><td>None</td></tr>
+<tr><td>Full context</td><td>Include everything</td><td>Low</td><td>Depends on model</td></tr>
+</tbody>
+</table>
+<p>The "lost in the middle" phenomenon, documented in research on long-context models, describes how LLMs tend to give less weight to information positioned in the middle of a long context compared to information at the beginning or end. For RAG systems that retrieve multiple documents, ordering retrieved chunks so that the most relevant content appears at the beginning or end of the context — rather than buried in the middle — can improve answer quality on the same retrieved content without any retrieval or model changes.</p>
+<p>Prompt caching exploits the fact that many production applications use the same system prompt, instructions, or background document for many different user queries. Providers like Anthropic and Google cache the KV computation for repeated prompt prefixes, charging reduced rates for cache hits. Structuring prompts to place the stable content (system prompt, background documents) before the dynamic content (user query) maximizes cache hit rates and reduces both latency and cost proportionally to the length of the reused prefix.</p>
+
+<p>Needle-in-a-haystack tests evaluate whether a model can retrieve specific facts from various positions within a long context. These tests insert a short target fact (the "needle") at different depths in a large filler document (the "haystack") and ask the model to retrieve the fact, generating a heat map of retrieval accuracy versus position and context length. Models that appear strong on standard benchmarks can show significant accuracy degradation at specific context positions, providing a practical calibration tool for deciding what context lengths to trust for production use cases that require reliable information retrieval from long contexts.</p>
+
+<p>Multi-turn conversation context management requires deciding how much history to include in each turn's context window. Including all history preserves perfect conversation coherence but grows the context linearly with conversation length, eventually hitting the window limit and incurring increasing costs. Sliding window approaches include only the most recent N turns; summary-augmented approaches condense old turns into a summary that is prepended to the recent turns. For most conversational applications, 8–16 turns of verbatim history plus a brief summary of earlier conversation provides adequate coherence without unbounded context growth.</p>
+
+<p>Context window utilization metrics help quantify whether a RAG pipeline is providing sufficient or excessive context. Tracking the token count distribution of the context passed to the LLM — and correlating it with answer quality scores — identifies whether quality improvements come from adding more context or whether the current context is already sufficient and quality improvements require better retrieval precision instead. Applications consistently using less than 20% of the available context window may benefit from increasing retrieved chunk count; applications consistently near the context limit should focus on retrieval quality rather than quantity.</p>
+
+<p>Effective context window management in agentic pipelines requires pruning tool call results that are no longer relevant to the current task. As an agent executes multiple tool calls over a long task, the accumulated results of early calls may occupy significant context space while providing little value for the remaining steps. Summarizing or dropping stale tool results once their information has been incorporated into the agent's plan frees context capacity for fresh tool outputs and maintains the signal-to-noise ratio of the context window throughout a long execution.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

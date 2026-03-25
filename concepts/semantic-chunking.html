@@ -280,6 +280,27 @@ print(f"Created {len(nodes)} semantic nodes")
 <p><strong>Domain specificity</strong>: Standard embedding models may not detect topic shifts in highly specialised technical text. The embeddings for "quantum error correction" and "quantum gate fidelity" may be similar enough to prevent splitting, even though these are different topics. Fine-tuned domain embeddings help here.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Semantic Chunking vs. Fixed-Size Strategies</h2>
+<p>Semantic chunking groups text into chunks based on topical coherence rather than fixed character or token counts. By detecting semantic boundaries — points where the topic or subject shifts — semantic chunking produces chunks that each represent a unified idea, improving both retrieval precision and the quality of context provided to the LLM.</p>
+<table>
+<thead><tr><th>Strategy</th><th>Boundary Detection</th><th>Chunk Size</th><th>Precision</th><th>Compute Cost</th></tr></thead>
+<tbody>
+<tr><td>Fixed-size</td><td>Token/character count</td><td>Uniform</td><td>Moderate</td><td>Minimal</td></tr>
+<tr><td>Sentence splitting</td><td>Punctuation/NLP</td><td>Variable (1–5 sentences)</td><td>Good</td><td>Low</td></tr>
+<tr><td>Semantic chunking</td><td>Embedding similarity drop</td><td>Variable (topic-based)</td><td>High</td><td>Medium (embeddings)</td></tr>
+<tr><td>Agentic chunking</td><td>LLM-based segmentation</td><td>Variable</td><td>Highest</td><td>High (LLM calls)</td></tr>
+</tbody>
+</table>
+<p>The embedding similarity threshold that triggers a new chunk boundary is the primary hyperparameter in semantic chunking. A high threshold (0.95+) only splits when content changes dramatically, producing large, coherent chunks that risk exceeding the embedding model's effective representation range. A low threshold (0.80) splits more aggressively, producing many small focused chunks at the cost of fragmenting related content that flows naturally across topical micro-transitions. Threshold calibration on a representative document sample is more reliable than applying domain-agnostic defaults.</p>
+<p>Semantic chunking's main limitation is that it requires embedding every sentence in the document during ingestion, multiplying the embedding API calls compared to fixed-size approaches. For a 100-page technical manual, fixed-size chunking into 512-token chunks produces about 400 chunks; semantic chunking of the same document embeds each sentence (2,000–4,000 sentences) to detect boundaries, then stores 300–500 semantically coherent chunks. The ingestion cost is 5–10× higher, but retrieval quality improvements justify this investment for knowledge bases queried frequently.</p>
+
+<p>Adaptive semantic chunking adjusts the similarity threshold based on document section characteristics. Introduction sections, which often contain broad topic overviews, may naturally have lower sentence-to-sentence similarity and benefit from a higher threshold to avoid excessive fragmentation. Technical detail sections, where adjacent sentences discuss closely related implementation specifics, benefit from a lower threshold that creates more fine-grained chunks. Section-aware threshold adaptation can be implemented by detecting section headers and applying different thresholds to different document regions.</p>
+
+<p>Combining semantic chunking with chunk size constraints prevents degenerate cases where the semantic segmentation creates extremely long or extremely short chunks. A maximum chunk size limit (e.g., 1500 tokens) forces a split even when semantic similarity remains high, preventing single chunks from spanning multiple pages. A minimum chunk size threshold merges tiny chunks that result from back-to-back semantic boundary detections, ensuring every chunk contains sufficient content to produce a meaningful embedding. These guard rails make semantic chunking production-ready without sacrificing its core quality advantages.</p>
+
+<p>Evaluating semantic chunking quality requires measuring both retrieval precision and chunk coherence. Retrieval precision can be measured with standard information retrieval metrics on a held-out evaluation set. Chunk coherence — whether each chunk discusses a single unified topic — can be approximated by computing the pairwise cosine similarity of sentences within each chunk; high intra-chunk similarity indicates semantic coherence while low similarity suggests the boundary detection missed a topic transition. Combining these two metrics provides a complete quality assessment of the chunking configuration.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

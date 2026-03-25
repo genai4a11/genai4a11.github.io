@@ -311,6 +311,30 @@ print(tool_call.function.arguments)  # {"city": "Tokyo", "unit": "celsius"}
 <p><strong>Context length vs quality</strong>: The 128K context window works, but quality degrades for very long inputs (the "lost in the middle" problem). For <a class="concept-link" href="rag.html">RAG</a>, still prefer chunking + retrieval over stuffing 100K tokens into context.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Llama 3 Model Family Comparison</h2>
+<p>Llama 3 represents Meta's most capable open-weight model release, featuring significantly improved instruction following, reasoning, and multilingual capabilities compared to Llama 2. The model family spans sizes from 8B to 405B parameters, with versions fine-tuned for instruction following (Instruct) and base models for further fine-tuning.</p>
+<table>
+<thead><tr><th>Model</th><th>Parameters</th><th>Context</th><th>MMLU</th><th>Best Use Case</th></tr></thead>
+<tbody>
+<tr><td>Llama 3.1 8B Instruct</td><td>8B</td><td>128K</td><td>~73%</td><td>Edge / high-volume</td></tr>
+<tr><td>Llama 3.1 70B Instruct</td><td>70B</td><td>128K</td><td>~86%</td><td>Production workhorse</td></tr>
+<tr><td>Llama 3.1 405B Instruct</td><td>405B</td><td>128K</td><td>~88%</td><td>Frontier tasks</td></tr>
+<tr><td>Llama 3.2 1B/3B</td><td>1–3B</td><td>128K</td><td>~50–60%</td><td>On-device, mobile</td></tr>
+<tr><td>Llama 3.2 11B/90B Vision</td><td>11–90B</td><td>128K</td><td>~73–86%</td><td>Multimodal tasks</td></tr>
+</tbody>
+</table>
+<p>Llama 3's tokenizer uses a 128K vocabulary size, compared to Llama 2's 32K vocabulary. The larger vocabulary improves tokenization efficiency for code, mathematical notation, and non-English languages, encoding the same content in fewer tokens. This directly reduces inference costs and context window consumption for applications processing multilingual or technical content. The vocabulary expansion also improves the model's ability to handle rare proper nouns and technical terms without fragmenting them into multiple subword tokens.</p>
+<p>The Llama 3 instruction format uses a specific special token structure for conversation turns that must be followed exactly when deploying base models with custom system prompts or when constructing multi-turn conversation contexts manually. The format uses BOS, system, user, and assistant role markers as special tokens rather than human-readable strings, ensuring they are never confused with user-provided content. Incorrect conversation format — especially missing end-of-turn tokens — is the most common cause of Llama 3 generation quality degradation when moving from API to self-hosted deployments.</p>
+
+<p>Llama 3's training data of 15 trillion tokens represents a 7× scale-up from Llama 2's 2 trillion tokens, with careful curation to improve data quality rather than simply scaling volume. The training mixture includes more code, reasoning-heavy content, and multilingual data than previous iterations. Post-training alignment uses a combination of supervised fine-tuning, rejection sampling fine-tuning, proximal policy optimization, and direct preference optimization, with each stage targeting different quality dimensions including instruction following, safety, and reasoning quality.</p>
+
+<p>Function calling in Llama 3 Instruct models follows a JSON-based tool definition format compatible with the OpenAI tool calling interface, enabling direct substitution in applications built against that standard. The model generates tool calls as structured JSON objects within its response, which application code parses and executes. Multi-turn tool use — where the model makes a tool call, receives the result, and continues reasoning — is supported through the conversation format, enabling agent loops with Llama 3 that require minimal custom code beyond standard chat completion API calls.</p>
+
+<p>Llama 3's safety training uses adversarial red-teaming datasets that include jailbreak attempts, harmful instruction following, and sensitive topic handling. Despite strong safety performance on standard benchmarks, Llama 3 Instruct models are more permissive than Claude or GPT-4 on certain edge cases by design — Meta explicitly calibrated the safety-utility trade-off toward helpfulness for developers who need to build applications with custom safety layers rather than relying entirely on model-level refusals. Organizations deploying Llama 3 should plan to implement domain-specific safety evaluation and guardrail layers appropriate for their use case.</p>
+
+<p>Quantized Llama 3 variants maintain strong quality relative to full-precision at 4-bit and 8-bit precision levels, making them practical choices for memory-constrained deployments. The 70B model in Q4_K_M quantization requires approximately 40GB of VRAM — fitting on 2× A100 40GB GPUs or a single A100 80GB — while retaining performance comparable to the full FP16 model on most tasks. This accessibility has made quantized Llama 3 70B one of the most widely deployed open-weight models for production use cases requiring near-frontier quality at reduced infrastructure cost.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -239,6 +239,47 @@ print(f"Created {len(embeddings)} contextualised chunk embeddings")
 <p><strong>Batching for production</strong>: For bulk ingestion, batch documents that fit within the context window together. Jina's model can process ~32 documents of 256 tokens in a single forward pass on a 24GB GPU.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Late Chunking vs. Standard Chunking</h2>
+<p>Late chunking is a retrieval technique that generates embeddings from full-document context before splitting into retrievable chunks, rather than embedding chunks in isolation. This preserves cross-chunk semantic context in each chunk's embedding, addressing a fundamental weakness of standard chunking where a chunk's embedding only reflects the information visible within that chunk's token window.</p>
+<table>
+<thead><tr><th>Approach</th><th>When Context Applied</th><th>Chunk Embedding Quality</th><th>Index Size</th><th>Compute</th></tr></thead>
+<tbody>
+<tr><td>Standard chunking</td><td>At chunk level only</td><td>Context-blind</td><td>Normal</td><td>Low</td></tr>
+<tr><td>Late chunking</td><td>Full document first</td><td>Context-aware</td><td>Normal</td><td>Higher (full doc pass)</td></tr>
+<tr><td>Hypothetical doc embedding</td><td>Query side</td><td>Context-blind</td><td>Normal</td><td>LLM per query</td></tr>
+<tr><td>ColBERT multi-vector</td><td>Token level</td><td>Per-token</td><td>Large</td><td>High</td></tr>
+</tbody>
+</table>
+<p>The mechanism of late chunking processes the entire document through a long-context embedding model (such as jina-embeddings-v2 with 8K context), obtaining contextualized token embeddings for every token in the document. These contextualized embeddings are then mean-pooled within each chunk's token span to produce the chunk embedding. Because each token embedding already incorporates information from the surrounding document context, the resulting chunk embeddings carry implicit cross-chunk information that standard mean-pooling over isolated chunks cannot achieve.</p>
+<p>Late chunking works best for documents where adjacent chunks are semantically linked by reference, pronoun coreference, or continuing argument. Technical documents that use abbreviations defined earlier in the text, research papers that reference methodology described in previous sections, and legal documents where terms are defined once and used throughout benefit significantly from late chunking. For documents with independent, self-contained sections — FAQs, product catalogs, recipe collections — the quality difference between late and standard chunking is smaller since cross-chunk context adds less value.</p>
+<div class="example-box">
+<pre><code># Late chunking: embed full doc, then pool over chunk spans
+from transformers import AutoModel, AutoTokenizer
+import torch
+
+model = AutoModel.from_pretrained("jinaai/jina-embeddings-v2-base-en")
+tokenizer = AutoTokenizer.from_pretrained("jinaai/jina-embeddings-v2-base-en")
+
+def late_chunk_embed(document: str, chunk_spans: list[tuple[int,int]]):
+    # Tokenize full document
+    tokens = tokenizer(document, return_tensors="pt", truncation=True, max_length=8192)
+    with torch.no_grad():
+        output = model(**tokens)  # shape: (1, seq_len, hidden)
+    token_embeddings = output.last_hidden_state[0]  # (seq_len, hidden)
+
+    chunk_embeddings = []
+    for start, end in chunk_spans:
+        # Map char spans to token spans, then mean-pool
+        chunk_emb = token_embeddings[start:end].mean(dim=0)
+        chunk_embeddings.append(chunk_emb)
+    return chunk_embeddings</code></pre>
+</div>
+
+<p>Late chunking is not universally superior to standard chunking and incurs a meaningful compute cost premium. For short documents where every chunk can be embedded with full local context visible within the chunk window, standard chunking performs comparably to late chunking at lower cost. Late chunking provides the clearest benefits for long documents with many intra-document references, documents that use defined abbreviations extensively, and technical content where the meaning of a sentence depends heavily on earlier sections establishing the conceptual framework.</p>
+
+<p>The choice of long-context embedding model for late chunking significantly affects result quality. Embedding models pretrained on short sequences (512 tokens) and used beyond their training context produce degraded representations for tokens far from the sequence start. Models specifically trained for long-context embedding — jina-embeddings-v2, e5-mistral-7b, and similar — maintain representation quality across their full supported context length and should be selected specifically for late chunking pipelines rather than repurposing a standard sentence embedding model.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
