@@ -21,7 +21,7 @@
   "headline": "RAG vs Fine-tuning | GenAI Mindmap",
   "description": "The most important architectural decision in GenAI: when to use retrieval-augmented generation vs fine-tuning vs prompting alone. A decision framework covering knowledge freshness, data availability, latency, cost, and task type.",
   "url": "https://genai4a11.github.io/concepts/rag-vs-finetuning.html",
-  "dateModified": "2026-03-25T01:02:16+00:00",
+  "dateModified": "2026-03-25T09:54:31+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -247,7 +247,52 @@ messages = [
     </div>
 
     <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
+<pre><code class="language-python"># Hybrid: fine-tune for style/format, RAG for current facts
+# Best of both worlds — use when style matters AND knowledge changes frequently
+
+from openai import OpenAI
+import chromadb
+
+client = OpenAI()
+db = chromadb.Client()
+collection = db.get_or_create_collection("knowledge_base")
+
+def hybrid_query(user_question: str, model: str = "ft:gpt-4o-mini:acme::abc123") -> str:
+    """
+    model: your fine-tuned model (knows your format/tone/domain vocabulary)
+    RAG:   retrieves fresh facts the fine-tune was never trained on
+    """
+    # Step 1: retrieve relevant context
+    results = collection.query(query_texts=[user_question], n_results=3)
+    context_chunks = results["documents"][0]
+    context = "
+---
+".join(context_chunks)
+
+    # Step 2: call fine-tuned model with retrieved context
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": (
+                "You are Acme Support. Use the provided context. "
+                "If context doesn't answer, say so concisely."
+            )},
+            {"role": "user", "content": f"Context:
+{context}
+
+Question: {user_question}"}
+        ],
+        temperature=0.2,
+    )
+    return response.choices[0].message.content
+
+# Cost comparison rough guide (per 1000 queries, 500 tokens avg):
+# Pure prompting (GPT-4o):    ~$2.50   fast to iterate, no infra
+# RAG + GPT-4o:               ~$2.60   adds retrieval latency + vector DB cost
+# Fine-tuned GPT-4o-mini:     ~$0.15   10-20x cheaper, needs 500+ examples
+# Hybrid (FT-mini + RAG):     ~$0.18   best quality/cost for production
+</code></pre>
+<div class="section-marker">SECTION 06</div>
 <h2>Cost comparison</h2>
 <p>Rough cost estimates for building a company knowledge base assistant (10,000 documents):</p>
 <p><strong>RAG (medium scale)</strong>: Document ingestion: ~$50 (OpenAI embeddings for 50M tokens). Infrastructure: $200–500/month (vector DB + API calls). Time to deploy: 1–2 weeks. No training data needed.</p>

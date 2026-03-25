@@ -21,7 +21,7 @@
   "headline": "IA\u00b3 | GenAI Mindmap",
   "description": "Infused Adapter by Inhibiting and Amplifying Inner Activations: learn three tiny scaling vectors per layer that multiply keys, values, and FFN activations. Fewer parameters than LoRA, strong few-shot performance.",
   "url": "https://genai4a11.github.io/concepts/ia3.html",
-  "dateModified": "2026-03-25T01:02:16+00:00",
+  "dateModified": "2026-03-25T09:54:31+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -213,7 +213,39 @@ training_args = Seq2SeqTrainingArguments(
     </div>
 
     <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
+<pre><code class="language-python"># T-Few: zero-shot / few-shot with IA³ (HuggingFace t-few style)
+# pip install peft transformers datasets
+
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from peft import IA3Config, get_peft_model, TaskType
+
+model_name = "google/flan-t5-base"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+config = IA3Config(
+    task_type=TaskType.SEQ_2_SEQ_LM,
+    target_modules=["k", "v", "wo"],      # keys, values, FF output
+    feedforward_modules=["wo"],
+)
+model = get_peft_model(model, config)
+model.print_trainable_parameters()
+# trainable params: 53,248 || all params: 247,577,856 || trainable%: 0.02
+
+# Few-shot inference: prepend examples directly in prompt
+few_shot_prompt = """Classify sentiment:
+Input: The flight was delayed by 4 hours. Label: negative
+Input: Great legroom and friendly crew. Label: positive
+Input: {test_input} Label:"""
+
+inputs = tokenizer(
+    few_shot_prompt.format(test_input="The meal was surprisingly good."),
+    return_tensors="pt"
+)
+out = model.generate(**inputs, max_new_tokens=5)
+print(tokenizer.decode(out[0], skip_special_tokens=True))  # → positive
+</code></pre>
+<div class="section-marker">SECTION 05</div>
 <h2>IA³ vs LoRA vs prefix tuning</h2>
 <ul>
 <li><strong>Parameter count</strong>: IA³ &lt; prefix tuning &lt; LoRA. IA³ has ~0.003% of base model params; LoRA r=8 has ~0.1%.</li>

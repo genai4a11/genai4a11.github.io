@@ -21,7 +21,7 @@
   "headline": "Prefix Tuning | GenAI Mindmap",
   "description": "Prepend trainable soft token vectors to each transformer layer's key-value inputs. Only the prefix parameters are updated; the base model is frozen. More expressive than prompt tuning but adds no inference tokens.",
   "url": "https://genai4a11.github.io/concepts/prefix-tuning.html",
-  "dateModified": "2026-03-25T01:02:16+00:00",
+  "dateModified": "2026-03-25T09:54:31+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -225,7 +225,39 @@ training_args = TrainingArguments(
     </div>
 
     <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
+<pre><code class="language-python"># Fine-tune with prefix tuning vs LoRA — side-by-side setup
+from peft import PrefixTuningConfig, LoraConfig, get_peft_model, TaskType
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer
+from datasets import load_dataset
+
+model_name = "facebook/opt-350m"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+# ── Prefix tuning config ──────────────────────────────────────────────────────
+prefix_cfg = PrefixTuningConfig(
+    task_type=TaskType.CAUSAL_LM,
+    num_virtual_tokens=20,      # 20 soft tokens prepended to each layer
+    encoder_hidden_size=512,    # MLP hidden size for reparametrisation
+)
+prefix_model = get_peft_model(
+    AutoModelForCausalLM.from_pretrained(model_name), prefix_cfg
+)
+prefix_model.print_trainable_parameters()
+# trainable params: ~200K (only the prefix MLP)
+
+# ── LoRA config for comparison ────────────────────────────────────────────────
+lora_cfg = LoraConfig(task_type=TaskType.CAUSAL_LM, r=8, lora_alpha=16)
+lora_model = get_peft_model(
+    AutoModelForCausalLM.from_pretrained(model_name), lora_cfg
+)
+lora_model.print_trainable_parameters()
+# trainable params: ~1.3M — larger but typically more expressive
+
+# ── Both models train with standard Trainer ───────────────────────────────────
+args = TrainingArguments(output_dir="./out", num_train_epochs=3,
+                         per_device_train_batch_size=8, learning_rate=3e-4)
+</code></pre>
+<div class="section-marker">SECTION 06</div>
 <h2>When to use prefix tuning</h2>
 <p>Prefix tuning is worth considering when: (1) you have a frozen API model where you can inject prefix tokens but not modify weights; (2) you need to serve many tasks from one frozen base model and want the cheapest per-task overhead; (3) you're adapting a model where LoRA is not supported (some architectures). For most practitioners with access to the model weights, LoRA is the better default choice.</p>
     </div>

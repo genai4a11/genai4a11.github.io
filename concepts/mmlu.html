@@ -21,7 +21,7 @@
   "headline": "MMLU Benchmark | GenAI Mindmap",
   "description": "Massive Multitask Language Understanding: 57-subject multiple-choice benchmark covering STEM, humanities, and social sciences. The de facto standard for measuring LLM knowledge breadth.",
   "url": "https://genai4a11.github.io/concepts/mmlu.html",
-  "dateModified": "2026-03-25T01:02:16+00:00",
+  "dateModified": "2026-03-25T09:54:31+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -252,7 +252,44 @@ print(f"Abstract algebra: {score:.1%}")
     </div>
 
     <div class="section-block" id="s7">
-      <div class="section-marker">SECTION 07</div>
+<pre><code class="language-python"># Compare model scores across MMLU variants using lm-evaluation-harness
+# pip install lm-eval
+
+# CLI: evaluate a model on MMLU and MMLU-Pro
+# lm_eval --model hf --model_args pretrained=mistralai/Mistral-7B-v0.1 #         --tasks mmlu,mmlu_pro --num_fewshot 5 --output_path results/
+
+import json, subprocess
+
+def run_eval(model_name, tasks=("mmlu", "mmlu_pro"), shots=5):
+    cmd = [
+        "lm_eval", "--model", "hf",
+        "--model_args", f"pretrained={model_name}",
+        "--tasks", ",".join(tasks),
+        "--num_fewshot", str(shots),
+        "--output_path", "results/",
+        "--log_samples",
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return result
+
+# Parse results
+def parse_mmlu_results(results_dir):
+    import glob, os
+    results = {}
+    for f in glob.glob(f"{results_dir}/**/*.json", recursive=True):
+        data = json.load(open(f))
+        for task, metrics in data.get("results", {}).items():
+            if "mmlu" in task:
+                results[task] = metrics.get("acc,none", metrics.get("acc", "?"))
+    return results
+
+# Typical score ranges (5-shot, 2024 models):
+# GPT-4o:        MMLU=88.7%  MMLU-Pro=72.6%
+# Claude 3.5:    MMLU=88.3%  MMLU-Pro=~70%
+# Mistral-7B:    MMLU=64.2%  MMLU-Pro=~36%
+# Llama-3-8B:    MMLU=66.6%  MMLU-Pro=~41%
+</code></pre>
+<div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
 <li><strong>Aggregate vs per-subject</strong>: Always report per-subject scores. Aggregate MMLU can mislead — a model strong in humanities but weak in STEM will show a similar aggregate to one with the opposite profile.</li>
