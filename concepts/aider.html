@@ -275,6 +275,32 @@ dark-mode: true
 <p><strong>Merge conflicts</strong>: If you edit a file manually while it's also in the Aider chat, you may get merge conflicts when Aider tries to apply its diff. Pause manual editing of chat-tracked files while Aider is working.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Model selection for Aider tasks</h2>
+<p>Aider supports multiple LLM backends and model configurations, with performance varying significantly across model families and task types. The architect-editor pattern — using a reasoning model for planning and a faster model for edits — provides a good quality-cost tradeoff for complex refactoring tasks. For simpler tasks like adding docstrings or fixing type errors, using a single capable model in code mode is more efficient than the two-call architect-editor flow.</p>
+<table>
+<thead><tr><th>Model</th><th>Mode</th><th>Best for</th><th>Tradeoff</th></tr></thead>
+<tbody>
+<tr><td>claude-3-5-sonnet</td><td>code / architect</td><td>Complex refactoring, new features</td><td>Higher cost per edit</td></tr>
+<tr><td>gpt-4o</td><td>code / architect</td><td>Multi-file changes, debugging</td><td>Good balance of speed/quality</td></tr>
+<tr><td>claude-3-haiku</td><td>editor</td><td>Fast edits in architect mode</td><td>Lower quality on complex diffs</td></tr>
+<tr><td>deepseek-coder</td><td>code</td><td>Cost-sensitive code tasks</td><td>Weaker on reasoning-heavy tasks</td></tr>
+</tbody>
+</table>
+<p>Aider's benchmark suite (aider-bench) provides edit correctness scores across model-mode combinations on a standard set of coding tasks. The benchmark scores are the most reliable guide for model selection decisions, as informal impressions from interactive use can be misleading — models that feel fast and responsive in short sessions may perform worse on complex multi-file tasks that the benchmark captures.</p>
+
+<p>Aider's repository map feature automatically constructs a compressed representation of the codebase by extracting function signatures, class definitions, and key structural elements from all files using tree-sitter parsing. This repo map is included in the context for every request, enabling the AI to make changes that correctly reference or modify code in files not explicitly added to the chat. The repo map size scales with codebase size and is automatically truncated when approaching context limits, with the most recently referenced files receiving higher weight in the truncation heuristic.</p>
+
+<p>Aider's /lint command runs the project's configured linter and feeds any errors back to the AI for automatic correction. This tight integration between linting and AI-driven repair enables workflows where the AI generates a first-pass implementation, the linter identifies type errors and style violations, and the AI fixes them in a second pass — all within a single aider session. For typed Python projects using mypy or pyright, this lint-fix loop catches interface mismatches and type annotation errors that the AI's initial generation missed, significantly reducing the manual review burden for AI-generated code.</p>
+
+<p>Watch mode in Aider monitors specified files for changes and automatically incorporates them as context updates during a session. This is particularly useful for test-driven development workflows where the developer writes failing tests and Aider watches the test file, receives the new test as context, and implements the code to pass it. The combination of watch mode with Aider's automatic lint and test running creates a tight feedback loop — the AI sees the failing tests, implements a fix, runs the tests, and iterates until all tests pass, reducing the manual coordination overhead between writing tests and implementing features.</p>
+
+<p>Aider's voice coding feature enables hands-free coding by transcribing spoken instructions using the local whisper model and feeding the transcription as a chat message. This is particularly useful for dictating high-level intent instructions while simultaneously reviewing code on a second monitor, or for developers who find keyboard-intensive coding sessions fatiguing. The voice input workflow works best for architectural instructions and refactoring requests where the spoken description maps naturally to the AI's code modification capabilities, rather than for precise syntax-sensitive instructions where dictation transcription errors would corrupt the intent.</p>
+
+<p>Aider's /undo command reverts the last AI-generated change by running git reset HEAD~1, making it easy to discard a poor suggestion and try a different approach. This tight git integration means that every Aider session produces a clean, reviewable commit history where each AI-generated change is a discrete commit with a message summarizing what was changed. Teams that adopt Aider for production codebases typically configure branch-based workflows where all Aider changes happen on feature branches, preserving the option to review and selectively merge individual commits from an Aider session.</p>
+
+<p>Aider's in-context learning from project conventions happens through the .aider.conf.yml configuration file and the .cursorrules or CONVENTIONS.md files it reads automatically. Including a conventions file that specifies the project's preferred patterns — error handling style, type annotation requirements, logging format, test structure — significantly improves the consistency of Aider-generated code with the existing codebase. Teams that invest 30 minutes in writing a thorough conventions file report substantially higher acceptance rates for Aider's first-attempt code suggestions, reducing the revision cycles needed to align generated code with project standards.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

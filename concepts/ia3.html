@@ -263,6 +263,45 @@ print(tokenizer.decode(out[0], skip_special_tokens=True))  # → positive
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>IA³ vs other PEFT methods</h2>
+<p>Parameter-efficient fine-tuning methods differ in where they inject trainable parameters, how many parameters they add, and which adaptation types they support best. IA³ uses the fewest additional parameters of any PEFT method, making it attractive for multi-task serving scenarios where many task-specific adapters must be loaded simultaneously. The table below summarizes key tradeoffs across the most commonly used PEFT approaches.</p>
+<table>
+<thead><tr><th>Method</th><th>Trainable params</th><th>Inference overhead</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>IA³</td><td>~0.01% of base</td><td>Element-wise multiply</td><td>Few-shot, multi-task serving</td></tr>
+<tr><td>LoRA (r=8)</td><td>~0.1–0.5% of base</td><td>Low-rank matmul addition</td><td>Instruction following, style</td></tr>
+<tr><td>Prefix tuning</td><td>~0.1% of base</td><td>Extended KV cache</td><td>Conditional generation</td></tr>
+<tr><td>Full fine-tune</td><td>100% of base</td><td>None</td><td>Large datasets, major task shift</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code>from peft import IA3Config, get_peft_model, TaskType
+from transformers import AutoModelForSeq2SeqLM
+
+model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
+
+config = IA3Config(
+    task_type=TaskType.SEQ_2_SEQ_LM,
+    target_modules=["k", "v", "wo"],   # keys, values, FFN output
+    feedforward_modules=["wo"],         # also scale FFN output
+)
+model = get_peft_model(model, config)
+model.print_trainable_parameters()
+# trainable params: 147,456 || all params: 247,577,856 || trainable%: 0.0596</code></pre>
+</div>
+<p>IA³ is particularly well-suited for the T-Few setup, where a single pre-trained IA³ adapter generalizes across many unseen tasks with only a handful of demonstrations at inference time. This makes IA³ a strong choice for applications requiring rapid task switching without maintaining separate adapter weights for each task variant.</p>
+
+<p>IA³ inference serving with multiple task adapters exploits the element-wise structure of the learned rescaling vectors. Because IA³ adapts the model by multiplying activations by learned vectors rather than adding low-rank matrices, adapter switching requires only replacing small vectors in memory rather than loading new weight matrices. A serving system can maintain adapters for dozens of tasks in CPU memory and copy the small IA³ vectors to GPU before each forward pass with negligible overhead, enabling efficient multi-task serving from a single model replica. This architecture is particularly valuable in settings where many specialized tasks must be served with low per-task memory cost.</p>
+
+<p>IA³ gradient flow during fine-tuning is concentrated in the rescaling vectors applied to keys, values, and feedforward outputs, with the base model weights remaining frozen. This concentration means that IA³ training requires very few gradient update steps to converge, and learning rate schedules designed for full fine-tuning must be adjusted. Higher learning rates (1e-3 to 1e-2) and fewer training steps (typically 1,000–5,000 for instruction-following tasks) are appropriate for IA³ compared to LoRA or full fine-tuning. The rapid convergence makes IA³ well-suited for interactive adaptation scenarios where adapters must be trained quickly from small amounts of feedback data.</p>
+
+<p>Combining IA³ with quantized base models provides the most parameter-efficient deployment configuration. Running a 4-bit quantized base model with IA³ adapters achieves a memory footprint roughly 4x smaller than a full-precision LoRA-adapted model, with competitive task performance on many NLP benchmarks. The QIA³ combination is particularly attractive for edge deployment scenarios where both model size and adaptation quality matter — the quantized base handles the bulk of the parameter cost, while IA³ provides the task-specific behavioral adjustment with minimal additional memory overhead.</p>
+
+<p>IA³ weight merging into the base model for deployment eliminates the runtime overhead of applying the rescaling vectors at inference time. Because IA³ modifications are element-wise multiplications of existing weight rows, the adapted weights can be computed by multiplying the base weight rows by the IA³ scaling vectors and storing the result as a new set of base weights. This merged deployment requires no adapter loading infrastructure and adds zero inference latency, making it the preferred deployment approach when the adapter will not need to be swapped at runtime.</p>
+
+<p>IA³'s few-shot generalization capability stems from the T-Few training methodology, which trains the IA³ adapter on a diverse mixture of tasks using in-context learning demonstrations. This cross-task training teaches the adapter to leverage the patterns in few-shot examples efficiently, rather than simply memorizing task-specific surface patterns. The result is a model that adapts more effectively to new tasks from small numbers of demonstrations than a model fine-tuned on individual tasks in isolation, making IA³ with T-Few training a strong baseline for low-resource task adaptation scenarios.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

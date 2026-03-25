@@ -251,6 +251,49 @@
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Evaluation metric selection guide</h2>
+<p>Selecting evaluation metrics requires matching the metric's measurement assumptions to the actual quality dimensions that matter for the application. Many teams default to reference-based metrics (BLEU, ROUGE) because they are simple to compute, then discover that these metrics poorly correlate with human quality judgments for the tasks they are evaluating. The table below maps task types to appropriate primary and secondary metrics.</p>
+<table>
+<thead><tr><th>Task type</th><th>Primary metric</th><th>Secondary metric</th><th>Avoid</th></tr></thead>
+<tbody>
+<tr><td>RAG question answering</td><td>Faithfulness (LLM judge)</td><td>Answer relevance</td><td>BLEU (no reference match)</td></tr>
+<tr><td>Summarization</td><td>Coverage (LLM judge)</td><td>ROUGE-L (recall)</td><td>ROUGE-1 precision alone</td></tr>
+<tr><td>Classification</td><td>Accuracy / F1</td><td>Calibration (ECE)</td><td>Accuracy on imbalanced data</td></tr>
+<tr><td>Code generation</td><td>Pass@k (unit tests)</td><td>Edit distance to reference</td><td>BLEU on code</td></tr>
+<tr><td>Dialogue</td><td>Human preference rate</td><td>Task completion rate</td><td>Perplexity</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code>import json
+from deepeval.metrics import FaithfulnessMetric, AnswerRelevancyMetric
+from deepeval.test_case import LLMTestCase
+
+# Define test case from RAG pipeline output
+test_case = LLMTestCase(
+    input="What is the capital of France?",
+    actual_output="Paris is the capital of France.",
+    retrieval_context=["France is a country in Western Europe. Its capital is Paris."]
+)
+
+faithfulness = FaithfulnessMetric(threshold=0.7)
+relevancy = AnswerRelevancyMetric(threshold=0.7)
+
+faithfulness.measure(test_case)
+relevancy.measure(test_case)
+print(f"Faithfulness: {faithfulness.score:.2f}, Relevancy: {relevancy.score:.2f}")</code></pre>
+</div>
+
+<p>Evaluation frequency decisions involve balancing the cost of running evaluations against the risk of shipping quality regressions. Running a full eval suite on every pull request is ideal for catching regressions early but is cost-prohibitive when the suite takes hours to run or uses expensive LLM-as-judge metrics. A tiered evaluation approach — a fast smoke-test suite on every commit, a full suite on main branch merges, and a comprehensive dataset including adversarial examples on release candidates — provides regression coverage at each criticality level without creating cost barriers to frequent iteration during development.</p>
+
+<p>Statistical significance testing on evaluation metric changes prevents teams from acting on noise. When comparing two model versions on a 200-example test set, a difference of 3 percentage points on a binary metric corresponds to a p-value of approximately 0.15 — not statistically significant at the conventional 0.05 threshold. McNemar's test for paired binary metrics and paired t-tests for continuous metrics are the appropriate statistical tools for determining whether an observed improvement is reliable. Establishing minimum detectable effect sizes before designing evaluation experiments ensures that test sets are sized to provide sufficient power for the quality differences that the team cares about detecting.</p>
+
+<p>Calibration of LLM-as-judge metrics against human annotations is essential before using automated metrics to drive decisions. An LLM judge that systematically overscores verbose responses or underscores technically correct but tersely written answers will push prompt optimization in the wrong direction. Computing the Pearson or Spearman correlation between judge scores and human preference scores on a held-out calibration set of 100–200 examples identifies systematic biases before they propagate into evaluation-driven development decisions. If correlation is below 0.6, the judge prompt or judge model requires adjustment before the metric provides reliable signal.</p>
+
+<p>Evaluation pipeline automation reduces the overhead of running evaluations on every model change to near zero. A CI/CD pipeline that triggers the evaluation suite on main branch merges, logs results to MLflow or Weights & Biases, and posts a summary comment to the pull request with metric comparisons against the previous baseline creates a culture of continuous quality measurement. Teams that establish this infrastructure early in development find that quality regressions are caught within hours of the causative change rather than discovered during manual review cycles days or weeks later, dramatically reducing the debugging cost of quality issues.</p>
+
+<p>Eval dataset contamination — where documents from the evaluation set appear in the model's training data — produces artificially inflated benchmark scores that do not reflect real-world quality. For custom fine-tuned models, verifying that evaluation examples were not present in the fine-tuning data requires deduplication checks between the eval and training datasets. For proprietary models where training data is not disclosed, using evaluation examples that were created after the model's knowledge cutoff date, or constructing evaluation queries from internal data that could not have been in public training corpora, provides contamination-resistant quality measurements.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

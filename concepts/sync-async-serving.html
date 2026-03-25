@@ -268,6 +268,30 @@ async def async_infer(prompt: str) -&gt; str:
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Serving pattern tradeoffs</h2>
+<p>Selecting the right serving pattern requires matching the concurrency model to the inference workload characteristics. Synchronous serving with thread pools is simple to implement and debug but becomes a bottleneck when request counts exceed thread pool capacity. Async serving enables high concurrency without proportionally increasing memory use but requires the inference library to release the GIL during computation. For GPU-bound LLM inference, the GPU itself serializes requests regardless of the Python concurrency model, making the choice primarily about CPU-side request management and I/O handling.</p>
+<table>
+<thead><tr><th>Pattern</th><th>Concurrency model</th><th>Best for</th><th>Pitfall</th></tr></thead>
+<tbody>
+<tr><td>Sync + thread pool</td><td>OS threads</td><td>Simple CPU inference</td><td>Thread overhead at high QPS</td></tr>
+<tr><td>Async (asyncio)</td><td>Event loop</td><td>I/O-bound, streaming</td><td>Blocking calls stall loop</td></tr>
+<tr><td>Async + process pool</td><td>Processes + event loop</td><td>Multi-GPU, CPU-bound</td><td>IPC serialization cost</td></tr>
+<tr><td>Batching server (vLLM)</td><td>Continuous batching</td><td>High-throughput GPU serving</td><td>Added infrastructure complexity</td></tr>
+</tbody>
+</table>
+<p>Streaming responses with server-sent events (SSE) change the serving pattern requirements significantly. A streaming endpoint must hold a connection open for the full generation duration, which for long outputs can be 10–30 seconds. Synchronous thread-pool implementations quickly exhaust threads under moderate streaming concurrency, making async SSE endpoints the strongly preferred pattern for streaming LLM responses in production.</p>
+
+<p>Connection pool management is a critical consideration for async LLM serving deployments that call external APIs. Each async request to an OpenAI or Anthropic endpoint consumes a TCP connection from the aiohttp or httpx connection pool. Without explicit pool size configuration, the default pool may be too small for high-concurrency scenarios, causing requests to queue waiting for a connection rather than queuing on the upstream API rate limit. Configuring the connector pool size to match the expected concurrency level — typically 50–200 connections for production services — ensures that connection availability does not become the binding constraint on throughput.</p>
+
+<p>Graceful shutdown handling in async LLM services prevents request truncation during deployment updates. When a Kubernetes pod receives a SIGTERM signal, in-flight LLM requests may be mid-generation with tokens actively streaming to clients. A well-implemented shutdown handler stops accepting new requests immediately but allows in-flight requests to complete up to a configurable drain timeout (typically 30–60 seconds). Without this graceful drain, rolling deployments consistently produce a burst of truncated streaming responses for users whose requests were in-flight during the pod shutdown, degrading user experience during routine deploys.</p>
+
+<p>Backpressure implementation prevents async LLM services from accepting more requests than the inference backend can handle, which leads to unbounded queue growth and eventual out-of-memory crashes. A semaphore limiting the number of concurrent inference calls (typically set to the batch size capacity of the GPU) causes excess requests to receive 503 responses immediately rather than queuing indefinitely. Clients implementing exponential backoff retry logic handle 503 responses gracefully, distributing load more evenly over time. This backpressure approach degrades gracefully under traffic spikes rather than accumulating a backlog that degrades latency for all users until the backlog drains.</p>
+
+<p>Request timeout configuration requires separate tuning for the connection timeout, the read timeout, and the total request timeout. LLM API connections typically establish quickly (100–500ms) but the first token may take 500ms–3s depending on server load and prompt length, and the full streaming response for a long generation may take 30–60 seconds. Setting a tight total timeout without distinguishing time-to-first-token from streaming duration causes legitimate long-generation requests to time out unnecessarily. Provider-specific timeout guidance and empirical P99 latency measurements on the target workload should inform timeout configuration rather than generic defaults.</p>
+
+<p>Testing async LLM service endpoints requires async test clients and careful handling of streaming response assertions. The httpx.AsyncClient in combination with pytest-asyncio enables writing async test cases that send requests and validate streaming responses without blocking the event loop. Load testing async LLM endpoints with tools like locust or k6 reveals whether the async serving implementation actually achieves the expected concurrency benefits, as subtle blocking calls — synchronous file I/O, blocking third-party libraries, or CPU-bound processing in the event loop — can serialize requests despite async syntax.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

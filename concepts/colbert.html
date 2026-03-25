@@ -249,6 +249,30 @@ docs = retriever.invoke("Python 3.11 performance")
 <p><strong>ColBERTv2 vs v1.</strong> Always use ColBERTv2 (<code>colbert-ir/colbertv2.0</code>). It uses residual compression to reduce storage from ~GB per 1M docs to much smaller, with no quality loss over v1.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>ColBERT vs alternative retrieval methods</h2>
+<p>ColBERT occupies a distinctive position in the retrieval architecture space — achieving cross-encoder-level precision through late interaction while maintaining sublinear retrieval time through pre-computed token embeddings and approximate nearest neighbor search. This makes it well-suited for applications where retrieval quality is paramount but full cross-encoder latency is unacceptable. The table below summarizes the key tradeoffs across the main retrieval approaches.</p>
+<table>
+<thead><tr><th>Method</th><th>Index time</th><th>Query latency</th><th>Quality</th><th>Storage cost</th></tr></thead>
+<tbody>
+<tr><td>BM25</td><td>Low</td><td>Very low (&lt;10ms)</td><td>Medium</td><td>Low</td></tr>
+<tr><td>Bi-encoder (dense)</td><td>Medium</td><td>Low (ANN, ~20ms)</td><td>Medium-high</td><td>Medium</td></tr>
+<tr><td>ColBERT (late interaction)</td><td>High</td><td>Medium (~100ms)</td><td>High</td><td>High (token-level)</td></tr>
+<tr><td>Cross-encoder (reranker)</td><td>N/A</td><td>High (&gt;200ms for top-50)</td><td>Highest</td><td>N/A</td></tr>
+</tbody>
+</table>
+<p>ColBERT's storage cost is its primary practical limitation. Storing per-token embeddings for every document token at 128 dimensions requires approximately 512 bytes per token, meaning a 1M document corpus with average 200 tokens per document requires ~100GB of index storage — roughly 10x the storage of a single-vector bi-encoder index. RAGatouille's PLAID compression reduces this cost significantly while preserving most retrieval quality, making ColBERT practical for mid-scale deployments without the storage overhead of naive token-level indexes.</p>
+
+<p>ColBERT's PLAID (Performant Late-Interaction Approximate Document search) algorithm reduces retrieval latency by an order of magnitude compared to exhaustive MaxSim computation. PLAID uses centroid-based compression to first identify candidate passages using a coarse approximate search, then computes exact MaxSim scores only for the top candidates. This two-stage approach achieves recall within 1–2 percentage points of full MaxSim computation while reducing query time from hundreds of milliseconds to tens of milliseconds, making ColBERT practical for real-time retrieval in production systems with strict latency budgets.</p>
+
+<p>ColBERT fine-tuning using in-domain relevance data consistently improves retrieval quality beyond the out-of-the-box colbert-v2 model. The training process uses hard negatives mined from BM25 or a weaker dense retriever to construct contrastive training triplets, where the model learns to assign higher MaxSim scores to the positive document than to hard negative documents for each query. Even modest fine-tuning datasets of 10,000–50,000 triplets from the target domain produce meaningful improvements on domain-specific nDCG@10 metrics. RAGatouille provides fine-tuning utilities that handle the triplet construction and training loop with minimal configuration.</p>
+
+<p>ColBERT index building is computationally intensive and requires pre-planning for large document collections. Embedding every token in a corpus of 1M documents at 200 tokens per document requires 200M forward passes through the BERT-base encoder, which takes approximately 30–60 hours on a single A100 GPU. RAGatouille's indexing pipeline parallelizes this process across GPUs and uses vector quantization to compress the per-token embeddings, storing compressed 4-bit centroids rather than full-precision 128-dimensional vectors. Incremental indexing support allows adding new documents to an existing index without full reindexing, though index quality degrades gradually as the proportion of incrementally added documents grows.</p>
+
+<p>ColBERT's performance advantage is most pronounced on multi-hop reasoning queries that require evidence from multiple passages. Standard bi-encoder retrieval optimizes for single-document relevance, often missing passages that are individually only partially relevant but collectively provide the complete answer. ColBERT's token-level scoring naturally captures partial relevance signals from multiple query terms simultaneously, making it more effective at ranking passages that contain complementary information. This makes ColBERT particularly valuable for complex question answering applications where queries require synthesizing information across multiple retrieved passages.</p>
+
+<p>ColBERT v2's residual compression reduces storage requirements by encoding token embeddings as quantized residuals relative to cluster centroids. After clustering the full token embedding space into K centroids (typically 65,536), each token embedding is stored as its centroid assignment plus a quantized residual. This two-level encoding reduces storage from ~512 bytes per token (128 dimensions × 4 bytes) to ~26 bytes per token, a 20x reduction that makes large-scale ColBERT indexes practical. The compression is nearly lossless in practice, with retrieval quality degradation of less than 1 nDCG point compared to uncompressed indexes.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

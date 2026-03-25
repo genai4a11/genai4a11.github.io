@@ -304,6 +304,30 @@ for r in results:
 <p><strong>Tune alpha on held-out data.</strong> The optimal alpha varies by domain. Evaluate on a labelled set: keyword-heavy domains (legal, medical) often want higher BM25 weight; general semantic queries benefit from more dense weight.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Retrieval strategy comparison</h2>
+<p>Choosing between retrieval strategies depends on query characteristics, data distribution, and latency requirements. Sparse methods excel at exact keyword matching and work well for queries containing rare or domain-specific terms. Dense methods capture semantic similarity and handle synonym resolution, paraphrase, and concept-level queries. Hybrid search combines both, generally dominating on heterogeneous query distributions at the cost of running two retrieval paths and a fusion step.</p>
+<table>
+<thead><tr><th>Strategy</th><th>Strengths</th><th>Weaknesses</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>BM25 (sparse)</td><td>Fast, no GPU required, exact term match</td><td>No semantic understanding</td><td>Keyword-heavy, precise queries</td></tr>
+<tr><td>Dense (bi-encoder)</td><td>Semantic similarity, handles paraphrase</td><td>GPU required, misses rare terms</td><td>Conversational, conceptual queries</td></tr>
+<tr><td>Hybrid (RRF)</td><td>Best of both, robust across query types</td><td>Higher latency, two indexes</td><td>Mixed production workloads</td></tr>
+<tr><td>Reranking + hybrid</td><td>Highest relevance quality</td><td>Latency overhead of cross-encoder</td><td>High-stakes retrieval</td></tr>
+</tbody>
+</table>
+<p>Benchmarks on BEIR consistently show hybrid search outperforming either BM25 or dense retrieval alone across the majority of datasets. The RRF fusion approach requires no score calibration and is robust to the score distribution differences between sparse and dense systems, making it the default choice for new hybrid deployments.</p>
+
+<p>Weight tuning for hybrid search fusion is an important calibration step that is often skipped in initial deployments. The default equal weighting of BM25 and dense scores after RRF normalization is a reasonable starting point but rarely optimal for a specific domain. Offline evaluation using a labeled query-document relevance dataset — computing nDCG@10 across a sweep of alpha values from 0.0 (pure dense) to 1.0 (pure sparse) — identifies the weight that maximizes retrieval quality for the target distribution. Many teams find that domain-specific corpora with precise terminology benefit from alpha values in the 0.3–0.4 range (more BM25 weight), while conversational or semantically diverse corpora benefit from lower alpha values.</p>
+
+<p>Index synchronization between the sparse and dense indexes is a common operational challenge in production hybrid search systems. When documents are added or deleted, both the inverted index (for BM25) and the vector index (for dense retrieval) must be updated consistently. Partial updates — where a document appears in one index but not the other — produce retrieval results where documents can receive scores from only one component, distorting the fusion output. Atomic update pipelines that write to both indexes within the same transaction boundary, or eventual-consistency monitoring that detects and repairs index divergence, are necessary for maintaining reliable hybrid search in systems with continuous document ingestion.</p>
+
+<p>Hybrid search query preprocessing should handle the different requirements of sparse and dense components separately. BM25 benefits from stemming, stop-word removal, and query expansion for rare terms. Dense retrieval benefits from query reformulation that expands abbreviations and adds semantic context. Running separate preprocessing pipelines for each component — rather than feeding the same cleaned query to both — typically improves retrieval quality compared to a unified preprocessing approach that must balance the conflicting requirements of sparse and dense matching.</p>
+
+<p>Hybrid search latency profiling commonly reveals that the BM25 component is faster than the dense retrieval component by a factor of 5–10x, making parallel execution the standard deployment pattern. Issuing both retrieval requests concurrently and fusing the results when both complete reduces end-to-end retrieval latency to approximately the latency of the slower (dense) component rather than their sum. Asynchronous implementations using asyncio or thread pools for the parallel retrievals add minimal coordination overhead and should be the default approach for any production hybrid search service where retrieval latency is a user-facing concern.</p>
+
+<p>Sparse index maintenance for hybrid search systems requires keeping BM25 term statistics (document frequency, inverse document frequency) up to date as the corpus grows. Most production BM25 implementations recompute IDF statistics periodically — daily or weekly — rather than updating them on every document insertion, accepting slight staleness in favor of operational simplicity. The impact of stale IDF statistics on retrieval quality is typically minor unless the corpus composition changes dramatically, such as adding a large new document category that introduces many new high-frequency terms.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

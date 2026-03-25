@@ -328,6 +328,33 @@ print(response.json())
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>MLflow components for LLM workflows</h2>
+<p>MLflow provides a suite of components that address different stages of the LLM development lifecycle. Not all components are equally relevant for every workflow: teams building RAG pipelines use tracking and evaluation heavily but may have minimal use for the model registry; teams deploying fine-tuned models benefit from the full registry and serving stack. Understanding which components address which pain points guides adoption decisions.</p>
+<table>
+<thead><tr><th>Component</th><th>Purpose</th><th>LLM-specific use case</th></tr></thead>
+<tbody>
+<tr><td>Tracking</td><td>Log metrics, params, artifacts per run</td><td>Prompt versions, eval scores, token costs</td></tr>
+<tr><td>Evaluation</td><td>Compute judge metrics against datasets</td><td>RAG Triad, toxicity, faithfulness</td></tr>
+<tr><td>Model Registry</td><td>Version and stage-manage models</td><td>Promote fine-tuned checkpoints to production</td></tr>
+<tr><td>Tracing</td><td>Distributed traces for LLM pipelines</td><td>Latency attribution, chain debugging</td></tr>
+<tr><td>Serving</td><td>REST endpoint from registered model</td><td>Serve fine-tuned models via MLserver</td></tr>
+</tbody>
+</table>
+<p>MLflow Evaluation is the component with the highest return on investment for LLM teams. The mlflow.evaluate() function runs a suite of LLM-as-judge metrics against a dataset of model outputs and logs all results as a named run, enabling side-by-side comparison of metric scores across model versions in the MLflow UI. The tight integration between evaluation runs and the experiment tracking system means quality regressions are immediately visible alongside the parameter changes that caused them.</p>
+
+<p>MLflow experiment organization for LLM projects benefits from a clear naming convention that distinguishes prompt engineering experiments from model training experiments. Separate experiment namespaces for "prompt-dev", "eval-regression", and "fine-tuning" prevent conflicting parameter names and metric definitions from appearing in the same experiment view. Within each experiment, tagging runs with the model version, dataset version, and feature branch enables rapid filtering in the comparison UI. The MLflow search API supports SQL-like queries on tags and parameters, enabling programmatic identification of the best-performing run within a parameter subspace.</p>
+
+<p>MLflow's LLM evaluation integration with judge models runs evaluation asynchronously and logs all judge scores, judge reasoning, and pass/fail verdicts as artifacts associated with the evaluation run. For RAG pipelines, the standard evaluation workflow calls mlflow.evaluate() with the "question-answering" model type, automatically computing answer correctness, relevance, and faithfulness using a configurable judge model. The evaluated results are written to a Pandas DataFrame that is logged as an artifact, enabling downstream analysis of which query types or difficulty categories drive score variance across model versions.</p>
+
+<p>MLflow Projects provides reproducible experiment packaging that bundles code, dependencies, and entry points into a portable format. An MLproject file specifies the conda environment or Docker image, the entry points, and their parameter signatures, enabling any team member to reproduce an experiment with a single mlflow run command. For LLM fine-tuning workflows, packaging the training script as an MLflow Project enables one-click reproduction of any registered model's training run from the model registry's source run link, closing the audit trail from deployed model artifact back to reproducible training code.</p>
+
+<p>MLflow's integration with popular training frameworks enables automatic metric logging without custom instrumentation. The mlflow.autolog() call before starting a training run activates framework-specific autologgers for PyTorch Lightning, Hugging Face Transformers, XGBoost, and others, capturing training loss, validation metrics, and hyperparameters automatically. For LLM fine-tuning with the Hugging Face Trainer, autologging captures train/eval loss curves, learning rate schedules, and training duration, providing a complete run record with a single additional line of code and no custom logging logic.</p>
+
+<p>MLflow's comparison view enables side-by-side evaluation of multiple runs with parallel coordinate plots that reveal correlations between hyperparameters and metrics. For LLM prompt optimization experiments, comparing prompt versions by their eval scores across multiple metrics in the parallel coordinates view quickly identifies which prompt changes improve one metric while degrading another — a common pattern when optimizing for precision versus recall tradeoffs in retrieval quality or verbosity versus accuracy tradeoffs in generation quality.</p>
+
+<p>MLflow's artifact logging API supports arbitrary file formats, making it possible to attach rendered evaluation reports, confusion matrices, and annotated output samples to experiment runs. For LLM evaluation pipelines, logging the full evaluation dataframe as a CSV artifact alongside aggregate metric scores enables post-hoc analysis of which query categories or difficulty levels drove overall metric changes. When a model regression is detected, drilling into the logged artifact for the regressed run versus the previous run reveals the specific examples where quality dropped, accelerating root cause analysis of the regression.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -295,6 +295,31 @@ def rag_with_reranking(query: str) -&gt; str:
 <p><strong>Don't rerank in a tight <a class="concept-link" href="latency-budget.html">latency budget</a>.</strong> A cross-encoder adds 100–500ms per query depending on <a class="concept-link" href="hardware.html">hardware</a>. For sub-100ms response requirements, use a smaller cross-encoder model or skip reranking for high-confidence queries.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Reranking method comparison</h2>
+<p>The choice of reranking method involves tradeoffs between latency, quality, cost, and operational complexity. Cross-encoder models provide the highest relevance quality but add 50–300ms of latency depending on the candidate set size and model size. LLM-based reranking using listwise or pairwise prompts achieves comparable quality to cross-encoders on many tasks but at higher cost and latency. Lightweight cross-encoders like ms-marco-MiniLM provide most of the quality improvement at a fraction of the latency.</p>
+<table>
+<thead><tr><th>Method</th><th>Latency (top-50)</th><th>Quality</th><th>Cost</th><th>Deployment</th></tr></thead>
+<tbody>
+<tr><td>BM25 only (baseline)</td><td>N/A</td><td>Medium</td><td>Free</td><td>Simple</td></tr>
+<tr><td>MiniLM cross-encoder</td><td>~50ms</td><td>High</td><td>Low (local)</td><td>Simple</td></tr>
+<tr><td>Cohere Rerank API</td><td>~200ms</td><td>High</td><td>Per-call API</td><td>Zero infra</td></tr>
+<tr><td>LLM listwise rerank</td><td>1–3s</td><td>Very high</td><td>High (tokens)</td><td>Simple</td></tr>
+<tr><td>ColBERT late interaction</td><td>~100ms</td><td>Very high</td><td>Low (local)</td><td>Complex index</td></tr>
+</tbody>
+</table>
+<p>The typical production reranking stack combines dense bi-encoder retrieval (top-100 candidates) with a lightweight cross-encoder reranker (top-10 output). This two-stage approach provides a good quality-latency balance: the bi-encoder handles scale efficiently, and the cross-encoder's 50ms overhead is acceptable for most interactive applications. For very latency-sensitive applications, disabling reranking and improving the initial retrieval quality through better embedding models or hybrid search is often more effective than accepting the reranking latency.</p>
+
+<p>Reranking quality evaluation requires a dedicated labeled dataset distinct from the retrieval evaluation dataset, because reranking operates on the already-retrieved candidate set rather than the full document corpus. The key metric for reranker quality is nDCG@k on the reranked output compared to nDCG@k on the pre-reranked candidate set, measuring how much the reranker improves over the initial retrieval ordering. A well-calibrated reranker should improve nDCG@10 by 5–20 percentage points over the initial bi-encoder ranking on held-out queries. If improvement is below 5 points, the initial retrieval quality is likely the binding constraint and resources are better spent improving the retrieval stage.</p>
+
+<p>Candidate set size for reranking involves a tradeoff between coverage and latency. Reranking a larger candidate set reduces the probability that the true relevant document was not retrieved in the first place (first-stage recall determines the ceiling on reranking recall), but increases reranking latency linearly with candidate count. The optimal candidate set size depends on first-stage recall at different cutoffs — if the bi-encoder achieves 80% recall at top-20 and 85% at top-50, reranking 50 candidates provides marginal recall improvement at 2.5x the latency cost of reranking 20. Measuring first-stage recall at multiple cutoffs empirically identifies the point of diminishing returns for candidate set expansion.</p>
+
+<p>Reranking can be applied selectively to only high-uncertainty queries, reducing average latency while maintaining quality on queries where the initial ranking is unreliable. Confidence scoring on the initial retrieval — using the score gap between the top-1 and top-2 retrieved documents as a proxy for ranking certainty — identifies queries where the initial ordering is ambiguous and reranking is most likely to change the result. Routing only low-confidence queries to the reranker reduces the fraction of requests that incur reranking latency from 100% to 20–40%, with minimal overall quality impact because the reranker provides little benefit for queries where the initial ranking is already confident.</p>
+
+<p>Reranker model fine-tuning on domain-specific relevance data consistently outperforms general-purpose rerankers for specialized applications. A general ms-marco-trained cross-encoder reranker performs well on web-style queries but may underperform on technical documentation, legal text, or scientific literature where query-document relevance patterns differ significantly from web search. Collecting 1,000–5,000 domain-specific query-document relevance labels — using existing user interaction logs, domain expert annotation, or LLM-generated labels — and fine-tuning a cross-encoder on this data typically produces 5–15 percentage point nDCG@10 improvements over the general-purpose reranker on the target domain.</p>
+
+<p>Reranking with listwise LLM prompts — where the full ranked list is presented to the LLM and it returns a reordered list — generally outperforms pointwise scoring (scoring each document independently) because the model can compare documents directly rather than scoring in isolation. The RankGPT approach presents the top-20 retrieved passages in a single prompt and asks the model to rank them by relevance, achieving cross-encoder-level quality at the cost of processing 20 passages worth of input tokens per query. The latency of listwise reranking depends on the total tokens in the 20 passages, typically 3,000–8,000 tokens, making it suitable for applications that prioritize quality over strict latency constraints.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
