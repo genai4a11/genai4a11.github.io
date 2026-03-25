@@ -233,6 +233,99 @@ bias = build_alibi_bias(n_heads=8, seq_len=512)
 </ul>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>ALiBi Implementation Details</h2>
+<div class="example-box"><pre><code>import torch
+
+def alibi_bias(seq_len, num_heads, device):
+    """
+    ALiBi: Attention with Linear Biases.
+    Compute m values (slopes) and position biases.
+    """
+    # Each head gets a different slope m_i
+    slopes = torch.Tensor([1 / (2 ** (i + 1)) for i in range(num_heads)])
+    slopes = slopes.to(device)
+    
+    # Create position indices [0, 1, 2, ..., seq_len-1]
+    positions = torch.arange(seq_len, device=device).unsqueeze(0)
+    
+    # Compute relative distance matrix
+    distance = positions - positions.T
+    
+    # Apply slope to each head's bias
+    alibi = slopes.unsqueeze(-1).unsqueeze(-1) * distance.unsqueeze(0)
+    return alibi  # Shape: (num_heads, seq_len, seq_len)</code></pre></div>
+</div>
+
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>ALiBi vs RoPE Comparison</h2>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>ALiBi</th>
+<th>RoPE</th>
+<th>Sinusoidal PE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Extrapolation</td>
+<td>Excellent</td>
+<td>Good (with adjustments)</td>
+<td>Poor</td>
+</tr>
+<tr>
+<td>Compute overhead</td>
+<td>Minimal</td>
+<td>Minimal</td>
+<td>Minimal</td>
+</tr>
+<tr>
+<td>No. of parameters</td>
+<td>0 (hardcoded)</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Length generalization</td>
+<td>Strong</td>
+<td>Moderate</td>
+<td>Weak</td>
+</tr>
+<tr>
+<td>Adoption</td>
+<td>MPT, BLOOM</td>
+<td>LLaMA, Mistral</td>
+<td>Original Transformer</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Why ALiBi slopes decrease geometrically:</strong> The slope values 1/2, 1/4, 1/8, ... form a geometric series. This design ensures that the attention bias magnitude is calibrated per head in a learnable-free way. Head 0 (with slope 1/2) attends to nearby tokens more strongly, while later heads (with smaller slopes) develop longer-range dependencies. This geometric progression mirrors frequency decomposition in sinusoidal positional encodings.</p>
+<p>ALiBi's strength lies in its explicit extrapolation guarantees. When a model trained on sequences of length 2048 encounters a 4096-token prompt at inference, ALiBi's linear bias naturally extends beyond the training horizon. RoPE requires careful interpolation or extrapolation methods (like YaRN) to achieve similar performance on longer sequences, making ALiBi simpler for length generalization in some cases.</p>
+<p>Production deployment of ALiBi-based models requires no special handling—the bias is added before softmax, making it compatible with all standard attention implementations including flash-attention variants. However, the geometric slope selection is a hyperparameter that can be tuned; research on optimal slope schedules continues.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>ALiBi Research and Variants</h2>
+<p>ALiBi emerged from research questioning whether explicit position encodings were necessary. By studying attention patterns in transformers, researchers found that self-attention naturally learns relative positional biases if given implicit linear biases. This insight led to ALiBi, which requires no learnable position embeddings at all.</p>
+<p>Variants and improvements continue to emerge: grouped ALiBi applies different slope schedules to different attention heads (like multi-head attention itself), frequency-combined ALiBi mixes geometric and arithmetic progressions of slopes, and dynamic ALiBi adjusts slopes during training. Each variant targets specific extrapolation scenarios or sequence length distributions.</p>
+<p>Empirical comparisons across ALiBi, RoPE, and sinusoidal encodings depend heavily on the task and training setup. Some models show ALiBi superior for length extrapolation, while others find RoPE more robust with fewer hyperparameters. The field continues evolving, with no clear universal winner—practitioners should benchmark on their specific task.</p>
+</div>
+
+<p>Implementing ALiBi efficiently in modern hardware-accelerated attention kernels requires careful design. The bias must be added before softmax to affect attention distributions. Flash-attention variants maintain kernel efficiency while incorporating ALiBi biases. CUDA kernel development for ALiBi taught practitioners valuable lessons about attention computation optimization that influenced subsequent efficient attention research.</p>
+<p>ALiBi's design is theoretically motivated: linear relative position biases are the simplest form that preserves relative position information while remaining parameter-free. This simplicity carries computational benefits—no position embedding matrices to store or compute. The lack of trainable position encodings also means ALiBi models can be more easily adapted to different sequence lengths without fine-tuning position embeddings.</p>
+<p>Training ALiBi models requires no special considerations—gradients flow normally through the bias addition. The fixed slopes mean no position-related hyperparameters to tune, simplifying architecture choices. Research has explored learned slopes but found that geometric progressions provide good default behavior. This simplicity vs. flexibility trade-off favored simplicity in practice.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>ALiBi in Production LLM Inference</h2>
+<p>Deploying ALiBi models requires no special attention kernels or position embedding lookups, making integration with existing inference systems straightforward. vLLM, text-generation-webui, and other inference frameworks support ALiBi without code changes. The overhead is minimal—just adding a static bias before softmax. This simplicity is one reason ALiBi adoption is growing in production systems where engineering simplicity correlates with reliability.</p>
+<p>Fine-tuning ALiBi models on task-specific data is identical to fine-tuning other transformers. No position-related hyperparameters change. The learned weights adapt to the new task while positional biases remain fixed. This stability makes ALiBi attractive for practitioners who want fewer hyperparameters to tune during transfer learning, enabling faster experimentation cycles.</p>
+<p>Longer-context fine-tuning (training on sequences longer than pretraining) works well with ALiBi because linear biases naturally extrapolate. Fine-tuning a 4K-pretrained ALiBi model on 32K sequences requires no interpolation tricks—just train longer and the model quickly adapts. This extrapolation advantage translates to significant engineering wins in production where context length must flex.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

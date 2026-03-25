@@ -301,6 +301,95 @@ loader = DataLoader(TensorDataset(X, y), batch_size=32, shuffle=True)</div>
       </div>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>NumPy Gotchas & Performance</h2>
+<div class="example-box"><pre><code">import numpy as np
+
+# Gotcha 1: View vs Copy
+a = np.arange(10)
+b = a[::2]  # View, not a copy
+b[0] = 999
+print(a[0])  # 999 — a was modified!
+
+# Gotcha 2: Type coercion
+x = np.array([1, 2, 3], dtype=np.int32)
+y = x / 2  # Returns float64, not int32!
+
+# Gotcha 3: Broadcasting surprises
+a = np.ones((3, 4))
+b = np.ones((4,))
+c = a + b  # Broadcasting works (3,4) + (4,) = (3,4)
+
+d = np.ones((5,))
+e = a + d  # ValueError! (3,4) + (5,) incompatible
+
+# Gotcha 4: Axis confusion
+x = np.random.randn(32, 768)  # Batch size 32, features 768
+mean = x.mean(axis=0)  # Shape (768,) — average over batch
+mean = x.mean(axis=1)  # Shape (32,) — average over features</code></pre></div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>NumPy vs PyTorch Performance</h2>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>NumPy (CPU)</th>
+<th>PyTorch (CPU)</th>
+<th>PyTorch (GPU)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Matrix multiply (1K×1K)</td>
+<td>0.8 ms</td>
+<td>0.9 ms</td>
+<td>0.05 ms</td>
+<td>GPU ~16x faster</td>
+</tr>
+<tr>
+<td>Element-wise ops</td>
+<td>0.2 ms</td>
+<td>0.2 ms</td>
+<td>0.01 ms</td>
+<td>GPU overhead dominates for small ops</td>
+</tr>
+<tr>
+<td>Batch norm (BS=32)</td>
+<td>N/A</td>
+<td>1.5 ms</td>
+<td>0.1 ms</td>
+<td>PyTorch has native support</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>NumPy for ML preprocessing:</strong> NumPy excels at vectorized operations on large arrays, essential for preprocessing pipelines. Batch normalization, standardization, and other preprocessing steps are implemented efficiently in NumPy. Loading datasets, computing statistics, and transforming features can all be done in pure NumPy before converting to PyTorch tensors. For CPU-only preprocessing on terabyte-scale datasets, NumPy provides the best balance of simplicity and performance.</p>
+<p>Broadcasting rules can be confusing but become second nature with practice. The rule: shapes are compatible if dimensions match from right to left, treating missing dimensions as size-1. Common patterns: adding a scalar to an array (broadcasts scalar), adding a row vector to all rows of a matrix (broadcasts row), adding a column vector to all columns (requires reshaping). Mastering broadcasting eliminates explicit loops and makes code both faster and clearer.</p>
+<p>NumPy memory layout (C-contiguous vs Fortran-contiguous) affects performance on large operations. C-contiguous (row-major) is default and usually optimal for NumPy operations. However, transposing arrays or reshaping requires care to avoid expensive copies. Using numpy.ascontiguousarray() or checking array flags (arr.flags) helps debug unexpected slowdowns. For extreme performance requirements, libraries like numpy.linalg delegate to BLAS/LAPACK, so understanding when operations are backend-delegated helps optimize pipelines.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>NumPy Ecosystem and Extensions</h2>
+<p>While NumPy is powerful, its pure-Python backend limits performance for some tasks. NumPy's C API allows libraries to integrate with NumPy arrays without copying. Packages like Numba enable JIT compilation of NumPy code to near-C speeds. CuPy provides a CUDA-accelerated NumPy-like interface for GPU computation, with nearly identical APIs making CPU→GPU code migration straightforward.</p>
+<p>The NumPy ecosystem includes specialized libraries: SciPy for scientific computing, scikit-learn for machine learning preprocessing, pandas for tabular data, and xarray for labeled multidimensional arrays. Understanding when to use each tool prevents reinventing wheels. NumPy's central role in the Python data science stack makes it invaluable for understanding the broader ecosystem.</p>
+<p>Modern data loading pipelines often use NumPy's memory mapping for large files, enabling out-of-core computation where only subsets of data fit in memory. Structured arrays (NumPy arrays with named fields) efficiently represent heterogeneous data like image metadata. Advanced indexing with boolean masks and fancy indexing make data filtering concise and performant compared to explicit loops.</p>
+</div>
+
+<p>NumPy's relationship with compiled extensions is important for performance. Operations like matrix multiplication delegate to BLAS libraries (OpenBLAS, Intel MKL) which are highly optimized. NumPy's linalg module wraps LAPACK for linear algebra. Using these optimized routines instead of pure Python loops provides 100-1000x speedups. Knowing which operations are backend-delegated helps optimize preprocessing pipelines.</p>
+<p>For truly large-scale datasets (terabytes on disk), Dask extends NumPy with distributed arrays, enabling out-of-core computation across multiple machines. Dask arrays follow NumPy's API, making the transition from single-machine NumPy to distributed Dask straightforward. Understanding NumPy is prerequisite knowledge for scaling to distributed data processing.</p>
+<p>NumPy's einsum (Einstein summation) notation provides a powerful abstraction for complex tensor operations. Instead of thinking about axis orders and reshapes, you write the index pattern directly. This notation clarifies intent and often enables NumPy to optimize the computation graph. Learning einsum well unlocks elegant solutions to operations that would otherwise require multiple reshape and transpose calls.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>NumPy for Numerical Computing and Scientific Applications</h2>
+<p>Beyond machine learning, NumPy is the foundation for scientific computing in Python. Physics simulations, climate modeling, molecular dynamics, and computational chemistry all rely on NumPy's efficient array operations. The mathematical rigor and performance of NumPy-based code attracts scientists from diverse fields. Understanding NumPy deeply opens doors to interdisciplinary scientific computing projects that leverage machine learning techniques.</p>
+<p>Numerical stability is critical in scientific computing. Operations like solving linear systems (matrix inversion) can be ill-conditioned, producing wildly different results with tiny perturbations in input. NumPy delegates to stable LAPACK implementations, but practitioners must understand condition numbers and numerical issues. Combined with matplotlib for visualization, NumPy enables reproducible scientific research.</p>
+<p>Performance optimization of NumPy code often involves avoiding Python loops, using broadcasting instead, leveraging BLAS through linalg operations, and memory-alignment aware indexing. Profiling NumPy code (using line_profiler or cProfile) identifies bottlenecks. Common patterns like sum reductions, matrix multiplications, and convolutions should delegate to optimized backends, not pure NumPy loops. Mastering these patterns unlocks high-performance numeric computing.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

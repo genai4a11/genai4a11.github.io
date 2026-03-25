@@ -200,6 +200,128 @@ async def pipeline(query: str, ctx: RequestContext) -&gt; str:
 <p>Track: timeout_rate by stage (retrieval/generation/total), p50/p95/p99 latency per stage, and partial_fallback_rate. Alert if timeout_rate exceeds 1% — it usually indicates a provider issue or a prompt change that inflated output length. Correlate timeout spikes with deployment events and model version changes.</p>
 </div>
 </div>
+<h2>Timeout Implementation Patterns</h2>
+<p>Practical timeout implementation requires careful consideration of layered deadlines. System-level timeouts prevent resource exhaustion, middleware timeouts manage service latency SLAs, and application timeouts enable graceful degradation. Empirical studies show well-tuned timeout hierarchies reduce p99 latency by 40-60% while improving error rates.</p>
+
+<div class="example-box">
+<pre><code># Hierarchical timeout implementation
+from contextlib import asynccontextmanager
+import asyncio
+from functools import wraps
+
+class TimeoutBudget:
+    def __init__(self, total_ms):
+        self.total_ms = total_ms
+        self.start_time = None
+        self.allocations = {}
+    
+    @asynccontextmanager
+    async def allocate(self, component_name, allocation_percent):
+        """Allocate timeout budget to component"""
+        if self.start_time is None:
+            self.start_time = asyncio.get_event_loop().time()
+        
+        allocation_ms = self.total_ms * (allocation_percent / 100)
+        elapsed = (asyncio.get_event_loop().time() - self.start_time) * 1000
+        remaining = allocation_ms - elapsed
+        
+        self.allocations[component_name] = remaining
+        
+        try:
+            async with asyncio.timeout(remaining / 1000):
+                yield
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"{component_name} exceeded budget: {remaining}ms")
+
+# Usage in LLM pipeline
+async def llm_pipeline(user_query):
+    budget = TimeoutBudget(total_ms=5000)  # 5 second total
+    
+    async with budget.allocate("retrieval", 30):  # 30% = 1500ms
+        docs = await retrieve_documents(user_query)
+    
+    async with budget.allocate("generation", 60):  # 60% = 3000ms
+        response = await generate_response(user_query, docs)
+    
+    async with budget.allocate("ranking", 10):  # 10% = 500ms
+        ranked = await rank_candidates(response)
+    
+    return ranked
+</code></pre>
+</div>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Component</th>
+    <th>Budget Allocation</th>
+    <th>Typical Duration</th>
+    <th>Fallback Strategy</th>
+  </tr>
+  <tr>
+    <td>Retrieval</td>
+    <td>30-40%</td>
+    <td>200-400ms</td>
+    <td>Return cached results</td>
+  </tr>
+  <tr>
+    <td>LLM Generation</td>
+    <td>50-60%</td>
+    <td>1000-2000ms</td>
+    <td>Interrupt early, return partial</td>
+  </tr>
+  <tr>
+    <td>Post-processing</td>
+    <td>5-10%</td>
+    <td>50-100ms</td>
+    <td>Skip optional formatting</td>
+  </tr>
+  <tr>
+    <td>Safety Check</td>
+    <td>5-10%</td>
+    <td>50-100ms</td>
+    <td>Use lightweight filter</td>
+  </tr>
+</table>
+
+<div class="example-box">
+<pre><code># Timeout observability and alerting
+class TimeoutObserver:
+    def __init__(self):
+        self.metrics = {}
+    
+    def record_timeout(self, component, budget_ms, actual_ms, success):
+        key = f"{component}_utilization"
+        utilization = actual_ms / budget_ms if budget_ms > 0 else 0
+        
+        if key not in self.metrics:
+            self.metrics[key] = []
+        
+        self.metrics[key].append(utilization)
+        
+        # Alert if consistently near limit
+        recent = self.metrics[key][-100:]
+        avg_util = sum(recent) / len(recent)
+        
+        if avg_util > 0.8:
+            self.send_alert(f"{component} using {avg_util:.0%} of timeout budget")
+    
+    def get_utilization_report(self):
+        """Generate dashboard data"""
+        report = {}
+        for key, values in self.metrics.items():
+            report[key] = {
+                'mean': sum(values) / len(values),
+                'p95': sorted(values)[int(len(values) * 0.95)],
+                'max': max(values)
+            }
+        return report
+</code></pre>
+</div>
+
+<h2>Graceful Degradation Under Load</h2>
+<p>When timeouts trigger, systems must gracefully degrade functionality. Common strategies include returning cached responses, using faster approximate models, reducing output quality (shorter summaries), or queuing requests. Empirical results show well-designed fallbacks maintain user satisfaction to 80%+ even with 10x traffic spikes.</p>
+<p>Implementing timeout budgets requires principled allocation strategies across system components. The basic principle: total timeout should be aggressive enough (1-2x median latency) to provide SLA guarantees, while individual component budgets ensure one slow component doesn't block others. Allocation percentages depend on component criticality and variability: retrieval systems with under 100ms p50 latency might receive 30% of budget if they spike to 1s occasionally, while LLM generation with high p95 variance might receive 60% despite similar median latency. Streaming responses enable partial-result fallbacks: return top-3 results if ranking times out, stream response incrementally if generation exceeds soft timeout. Caching strategies reduce timeout necessity: cache retrieval results for 24 hours, cache common query responses indefinitely. Load shedding during traffic spikes prevents cascading timeouts: queue excess requests when system utilization exceeds 80%, serve queued requests from cache if primary servers unavailable. Observability is critical: instrument each component with latency histograms, measure timeout frequency, alert when components consistently approach budget limits. Production analysis shows well-tuned timeouts reduce 99th percentile latency by 30-40% while improving user experience through faster failure feedback (timeout messaging) instead of hanging requests.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

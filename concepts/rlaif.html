@@ -209,6 +209,114 @@ j = json.loads(judgment)
 <p>AI feedback amplifies existing model biases: if the judge model prefers verbose answers, so will your fine-tuned model. Constitutional diversity helps but doesn't eliminate this. AI judges have blind spots: they can't evaluate factual accuracy for obscure domains or assess creative quality as well as humans. Use RLAIF for style and helpfulness; use human feedback for domain-specific factual correctness.</p>
 </div>
 </div>
+<h2>AI Feedback Generation at Scale</h2>
+<p>RLAIF replaces human annotators with AI judges, scaling preference data collection 100-1000x. The process involves generating candidate responses, scoring with critique models, and creating preference pairs. Modern approaches use ensemble judges and self-consistency filtering to match human-level quality while reducing cost from $50/1K samples to $0.50.</p>
+
+<div class="example-box">
+<pre><code># RLAIF preference pair generation
+from anthropic import Anthropic
+
+def generate_rlaif_preferences(prompt, num_candidates=4):
+    client = Anthropic()
+    
+    # Generate diverse responses
+    responses = []
+    for temp in [0.3, 0.6, 0.9, 1.2]:
+        resp = client.messages.create(
+            model="claude-opus",
+            max_tokens=500,
+            temperature=temp,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        responses.append(resp.content[0].text)
+    
+    # Score with critique model
+    preferences = []
+    for i in range(len(responses)):
+        for j in range(i+1, len(responses)):
+            critique = client.messages.create(
+                model="claude-opus",
+                max_tokens=100,
+                messages=[{
+                    "role": "user", 
+                    "content": f"Compare responses:
+A: {responses[i]}
+B: {responses[j]}
+Which is better? (A/B)"
+                }]
+            )
+            winner = 'A' if 'A' in critique.content[0].text else 'B'
+            preferences.append((responses[i if winner=='A' else j], responses[j if winner=='A' else i]))
+    
+    return preferences
+</code></pre>
+</div>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Method</th>
+    <th>Preference Pairs/day</th>
+    <th>Quality Match</th>
+    <th>Cost Reduction</th>
+  </tr>
+  <tr>
+    <td>Human Annotators</td>
+    <td>500</td>
+    <td>100%</td>
+    <td>baseline</td>
+  </tr>
+  <tr>
+    <td>Simple AI Judge</td>
+    <td>50K</td>
+    <td>75-85%</td>
+    <td>50x</td>
+  </tr>
+  <tr>
+    <td>Ensemble AI Judge</td>
+    <td>30K</td>
+    <td>90-95%</td>
+    <td>100x</td>
+  </tr>
+  <tr>
+    <td>Human + AI Hybrid</td>
+    <td>5K</td>
+    <td>98%+</td>
+    <td>20-30x</td>
+  </tr>
+</table>
+
+<div class="example-box">
+<pre><code># Self-consistency filtering for critique reliability
+def filter_critiques_by_consistency(critiques, min_agreement=0.8):
+    """Keep only critiques where multiple judges agree"""
+    agreement_scores = {}
+    
+    for crit in critiques:
+        response_pair = (crit['response_a'], crit['response_b'])
+        if response_pair not in agreement_scores:
+            agreement_scores[response_pair] = [0, 0]  # [votes_for_a, votes_for_b]
+        
+        if crit['winner'] == 'A':
+            agreement_scores[response_pair][0] += 1
+        else:
+            agreement_scores[response_pair][1] += 1
+    
+    # Filter pairs where consensus is clear
+    confident_pairs = []
+    for pair, votes in agreement_scores.items():
+        total = votes[0] + votes[1]
+        max_agreement = max(votes[0], votes[1]) / total
+        if max_agreement >= min_agreement:
+            confident_pairs.append(pair)
+    
+    return confident_pairs
+</code></pre>
+</div>
+
+<h2>Constitutional AI Critique Framework</h2>
+<p>Constitutional AI (CAI) uses explicit criteria to guide AI feedback. Judges evaluate responses against principles like "be helpful," "be harmless," and "be honest." Empirical studies show CAI reduces jailbreak success rates from 50% to <5% while maintaining helpfulness, making it foundational for RLAIF pipelines.</p>
+<p>RLAIF systems at scale require infrastructure for distributed critique generation and ensemble aggregation. Critique servers process hundreds of comparison requests in parallel across GPU clusters, maintaining under 100ms latency per judgement through batching and model caching. Ensemble diversity is critical—using 3-5 different judge models or prompts and requiring 2+ vote agreement reduces spurious judgements from 10-15% to under 2%. Critique consistency improves with constitutional principles: judges explicitly instructed to consider "Is this helpful and harmless?" show 15% higher agreement than generic instructions. Cost optimization through tiered judging: lightweight models (3B parameter) filter obvious cases (2-3x cheaper), while expensive models (70B+) handle ambiguous cases. Production RLAIF pipelines process 100K+ preference pairs daily on modest hardware: A100 GPU at under $0.10 per 1K pairs versus $30-50 for human annotators. Iterative refinement of judge models using agreement metrics as training signal improves quality over time—models fine-tuned on preference histories show 5-10% improvement in downstream RL training. Integration with human feedback hybrid approaches: RLAIF generates initial signals, experts review disagreements, updates are fed back to next generation judges. This approach combines RLAIF's scalability with human oversight, catching systematic failures.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

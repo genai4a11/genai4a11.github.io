@@ -332,6 +332,91 @@ def hook(module, input, output):
 
 
 
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Common Gotchas & Debugging</h2>
+<p>Understanding autograd pitfalls helps avoid silent bugs in training loops. Gradient leaks, in-place operations, and incorrect graph retention can all derail models silently.</p>
+<div class="example-box"><pre><code># Gotcha 1: In-place operations break the graph
+x = torch.tensor([1.0, 2.0], requires_grad=True)
+y = x * 2
+y += 1  # WRONG: in-place operation corrupts autograd
+y.backward(torch.ones_like(y))  # RuntimeError!
+
+# Correct: use out-of-place operations
+y = y + 1  # OK: creates new tensor
+
+# Gotcha 2: Leaf tensors and grad retention
+x = torch.tensor([1.0, 2.0], requires_grad=True)
+y = x ** 2
+loss = y.sum()
+loss.backward()
+print(x.grad)  # tensor([2., 4.])
+loss.backward()  # RuntimeError: leaf variable has been modified by an inplace operation
+x.grad.zero_()  # Must manually zero before second backward pass</code></pre></div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Autograd Performance Comparison</h2>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Memory (MB)</th>
+<th>Time (ms)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Forward only (requires_grad=False)</td>
+<td>12</td>
+<td>2.1</td>
+<td>Baseline, no graph</td>
+</tr>
+<tr>
+<td>Forward + backward (graph on)</td>
+<td>45</td>
+<td>8.3</td>
+<td>Activations cached</td>
+</tr>
+<tr>
+<td>Backward with checkpointing</td>
+<td>18</td>
+<td>12.1</td>
+<td>Recompute vs memory</td>
+</tr>
+<tr>
+<td>Gradient accumulation (8 steps)</td>
+<td>16</td>
+<td>9.2</td>
+<td>Effective batch = 128</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Gradient computation order:</strong> PyTorch builds a dynamic computation graph as operations are executed. Each operation (add, multiply, apply function) becomes a node in this graph. When backward() is called, the graph is traversed in reverse topological order, using the chain rule to compute gradients at each node. This is why operations must be differentiable and why in-place modifications can break the graph structure.</p>
+<p>Understanding the computational graph is essential for debugging gradient issues. Use torch.autograd.profiler to visualize graph construction overhead, especially in production inference pipelines. For models with complex control flow or conditional branches, the dynamic graph nature of PyTorch allows these to be naturally represented, unlike static-graph frameworks where conditionals require special handling.</p>
+<p>Advanced autograd techniques include gradient checkpointing (recomputing activations during backward to save memory), custom backward rules for performance optimization, and gradient hooks for inspecting or modifying gradients before parameter updates. These techniques are indispensable for training very large models where memory constraints dominate.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>Autograd Memory Profiling</h2>
+<p>Understanding memory consumption during backward pass is critical for scaling to large models. The backward pass uses memory for storing intermediate activations (needed for gradient computation), gradient tensors for each parameter, and temporary buffers for gradient accumulation. Tools like torch.profiler and memory_profiler help identify which layers consume the most memory.</p>
+<p>Gradient checkpointing (rematerialization) trades computation for memory: instead of storing all activations forward-pass through a layer, you compute them again during backward. For a 12-layer transformer, this can reduce activation memory by 12x at the cost of ~33% increased backward computation. Modern frameworks make this transparent through context managers or decorators.</p>
+<p>Distributed training amplifies memory concerns. Each device holds replicas of gradients during allreduce operations, and with gradient accumulation across multiple steps, peak memory can exceed single-GPU training by 2-3x. Understanding these trade-offs enables better hardware utilization and larger effective batch sizes within memory constraints.</p>
+</div>
+
+<p>Autograd's dynamic computation graph enables powerful patterns like hierarchical learning and meta-learning. Techniques like MAML (Model-Agnostic Meta-Learning) leverage autograd to compute gradients of gradients (second-order derivatives), enabling the optimizer to adapt its own learning process. Higher-order derivatives are computationally expensive but essential for these advanced optimization algorithms that learn to learn.</p>
+<p>When debugging autograd issues, understanding the graph construction is paramount. Using torch.autograd.profiler.profile() or torch.autograd.gradcheck() helps validate that gradients are computed correctly. The gradcheck function numerically estimates gradients (finite differences) and compares them to autograd's computed gradients, catching subtle bugs in custom backward implementations that would otherwise cause silent failures.</p>
+<p>Production systems must handle edge cases carefully: NaN/Inf propagation through the graph, handling of sparse gradients, gradient buffering for distributed training, and numerical stability in mixed precision. Libraries like torch.distributed handle many of these issues transparently, but understanding the underlying mechanisms prevents subtle bugs when extending systems or deploying to custom hardware.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>Autograd in Distributed and Federated Learning</h2>
+<p>Distributed training across multiple devices requires careful gradient synchronization. All-reduce operations average gradients from all devices before parameters update. Understanding autograd is essential because gradient computation must complete before all-reduce happens. Some frameworks optimize by overlapping gradient computation and communication—gradients from early layers communicate while later layers still compute, minimizing communication bottleneck impact on total training time.</p>
+<p>Federated learning takes distribution to extreme: gradients are computed on edge devices (phones, IoT sensors) and averaged at a central server. Communication constraints make federated learning hostile to large models. Gradient compression, sparsification, and quantization are essential techniques—autograd must be aware of these transformations to correctly compute parameter updates. Understanding this end-to-end is critical for federated learning systems.</p>
+<p>Gradient accumulation in distributed settings requires synchronization points. Typically, gradients accumulate locally for N steps, then synchronized globally. This reduces communication frequency at the cost of stale gradients (gradients computed on older parameters). The staleness-gradient consistency trade-off is fundamental to distributed optimization theory and practice.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

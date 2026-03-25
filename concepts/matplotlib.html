@@ -308,6 +308,95 @@ plt.rcParams.update({"figure.dpi": 120, "font.size": 12})  # Nicer defaults</div
       </div>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Common Plotting Mistakes</h2>
+<div class="example-box"><pre><code>import matplotlib.pyplot as plt
+import numpy as np
+
+# WRONG: Plotting raw loss values (too noisy)
+plt.plot(raw_losses)  # Bouncy, hard to see trend
+
+# RIGHT: Use moving average or smoothing
+window = 50
+smoothed = np.convolve(raw_losses, np.ones(window)/window, mode='valid')
+plt.plot(smoothed, label='Loss (smoothed)')
+
+# WRONG: Linear scale for diverging losses
+# (one bad spike ruins the entire plot)
+plt.yscale('log')  # Better: log scale shows all dynamics
+
+# WRONG: Plotting without clearing
+plt.plot(epoch1_data)
+plt.plot(epoch2_data)  # Overlaps previous, confusing
+# RIGHT:
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+ax1.plot(epoch1_data, label='Epoch 1')
+ax2.plot(epoch2_data, label='Epoch 2')</code></pre></div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Matplotlib vs Interactive Tools</h2>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Use Case</th>
+<th>Real-time</th>
+<th>Static Export</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Matplotlib</td>
+<td>Publication-quality plots, full control</td>
+<td>Limited</td>
+<td>Excellent</td>
+</tr>
+<tr>
+<td>Plotly</td>
+<td>Interactive dashboards, web deployment</td>
+<td>Yes</td>
+<td>Good</td>
+</tr>
+<tr>
+<td>Wandb/TensorBoard</td>
+<td>Real-time training monitoring</td>
+<td>Yes</td>
+<td>Built-in</td>
+</tr>
+<tr>
+<td>Seaborn</td>
+<td>Statistical plots, aesthetics</td>
+<td>No</td>
+<td>Good</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Choosing the right plot type:</strong> For continuous metrics like training loss, line plots with smoothing are standard. For per-batch statistics with high variance, scatter plots with a smoothed trend line provide both detail and overview. For classification metrics at different thresholds, precision-recall curves or ROC curves are essential. For attention patterns, heatmaps with proper color normalization reveal what the model attends to. The plot type should match the story you want to tell.</p>
+<p>Color and style choices matter for accessibility and clarity. Colorblind-friendly palettes (like viridis, cividis) should be default. Line styles (solid, dashed, dotted) help distinguish curves when color alone is insufficient. Legends should be positioned to minimize occlusion of data. Axes should be labeled with units and ranges suitable for the data range. Many models fail silently because training curves weren't monitored—investing in good visualization practices catches problems early.</p>
+<p>Saving plots for papers or presentations requires explicit dpi and format choices. PNG at 300 dpi is standard for web; PDF is better for printing to avoid rasterization artifacts. Using matplotlib's constrained layout (constrained_layout=True) prevents label cutoff in saved figures. Integrating matplotlib with wandb or tensorboard enables both static exports and interactive exploration during training.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>Advanced Visualization for Model Analysis</h2>
+<p>Beyond loss curves, visualizing model internals provides insights into learning dynamics. Activation distributions (histograms of hidden unit values) show whether neurons are becoming dead (always outputting zero) or if gradients vanish (distributions converging to zero variance). Weight distributions reveal whether initialization is appropriate or if gradients have exploded. These visualizations are indispensable for debugging training instabilities.</p>
+<p>Attention visualization in transformers has become a standard tool for interpretability research. Heatmaps showing which tokens each head attends to reveal linguistic structure learned by the model. Some attention patterns match linguistic intuitions (attending to related words), while others reveal that attention heads specialize in other tasks (position tracking, punctuation handling). Visualizing attention has democratized transformer interpretability.</p>
+<p>Embedding visualization through t-SNE or UMAP projects high-dimensional learned representations to 2D for human inspection. Clusters in embedding space can indicate that the model has learned meaningful semantic or syntactic structure. Monitoring embedding visualization across training epochs can diagnose when the model transitions from memorization to generalization.</p>
+</div>
+
+<p>Integration with modern ML platforms like Weights and Biases (W&B) or MLflow enables automated plot generation and versioning. These platforms embed matplotlib plots in dashboards, compare runs visually, and export publication-ready figures. Learning matplotlib deeply pays dividends because W&B and MLflow are built on matplotlib's foundation. Understanding the underlying matplotlib enables sophisticated custom visualizations.</p>
+<p>Creating reproducible plots requires controlling randomness: matplotlib's seeding, data shuffling, and color map choices should be deterministic. Saving figure metadata (DPI, figsize, font sizes) in code comments ensures plots can be regenerated if raw data changes. In team environments, matplotlib style files (matplotlib.rcParams or style sheets) enforce consistency across plots generated by different team members.</p>
+<p>For paper submissions, plot quality matters for acceptance and impact. Publication-quality plots use appropriate color schemes, font sizes readable at print size (not screen size), proper axis labels with units, and legends positioned to avoid occlusion. Matplotlib's constrained_layout feature handles spacing automatically. Investing time in visualization quality during development saves days of scrambling before paper deadlines.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>Matplotlib for Scientific Publications</h2>
+<p>Publishing research requires publication-quality visualizations. Matplotlib enables precise control over every pixel—font families, sizes, colors, line styles, marker shapes, annotations, and layouts. This control is both powerful and tedious, but necessary for figures that will be printed, projected, and scrutinized by reviewers. Developing a personal matplotlib style template (saved settings and utility functions) pays dividends across papers and projects.</p>
+<p>Color choice carries subtle implications: red/green combinations are problematic for colorblind readers; warm colors (red, orange) typically indicate errors or problems, while cool colors (blue, green) suggest success or improvement. Using colorblind-friendly palettes like viridis or cividis is standard practice now. Publication guides often specify color space requirements (RGB for screens, CMYK for print), and matplotlib supports these considerations.</p>
+<p>Reproducibility of figures requires version control of both data and plotting code. Matplotlib scripts that generate figures should be committed to version control alongside paper manuscripts. When figures are regenerated with updated data, the plotting code remains stable. This enables future regeneration if paper revisions require updated plots, a scenario that happens frequently before publication.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

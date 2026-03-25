@@ -219,6 +219,69 @@ async def eval_async(query: str, response: str, response_id: str):
 <p>Decouple eval from serving: write to a queue (Kafka, SQS), consume asynchronously. Store raw responses for retrospective eval with newer judges. Use shadow mode: run a new judge in parallel without acting on results, validate it matches human labels before trusting it for alerting. Periodically send 1% of production traffic to human reviewers for ground-truth calibration.</p>
 </div>
 </div>
+<h2>Real-Time Feedback Integration</h2>
+<p>Online evaluation systems continuously collect implicit and explicit signals from users. Implicit signals (latency, retry rate, click-through) provide volume at scale, while explicit ratings (thumbs up/down, detailed surveys) offer high-quality labels on smaller subsets. Combining both through multi-armed bandit frameworks optimizes exploration-exploitation tradeoffs.</p>
+
+<div class="example-box">
+<pre><code># Thompson sampling for online evaluation
+import numpy as np
+from scipy import stats
+
+class OnlineEvaluator:
+    def __init__(self, n_variants=3):
+        self.successes = [0] * n_variants
+        self.trials = [0] * n_variants
+    
+    def select_variant(self):
+        # Thompson sampling: sample from Beta distribution
+        samples = [np.random.beta(1 + s, 1 + t - s) 
+                   for s, t in zip(self.successes, self.trials)]
+        return np.argmax(samples)
+    
+    def record_feedback(self, variant_idx, success):
+        self.trials[variant_idx] += 1
+        if success:
+            self.successes[variant_idx] += 1
+</code></pre>
+</div>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Signal Type</th>
+    <th>Volume/day</th>
+    <th>Latency</th>
+    <th>Noise Level</th>
+  </tr>
+  <tr>
+    <td>Page Load Time</td>
+    <td>1M+</td>
+    <td>Immediate</td>
+    <td>Low</td>
+  </tr>
+  <tr>
+    <td>User Thumbs Up/Down</td>
+    <td>10K</td>
+    <td>Immediate</td>
+    <td>Medium</td>
+  </tr>
+  <tr>
+    <td>Task Completion Rate</td>
+    <td>100K</td>
+    <td>Hours</td>
+    <td>Medium</td>
+  </tr>
+  <tr>
+    <td>Expert Rating (Batch)</td>
+    <td>100-1K</td>
+    <td>Days</td>
+    <td>Low</td>
+  </tr>
+</table>
+
+<h2>Statistical Significance Testing</h2>
+<p>Online experiments require proper statistical rigor. Sample size calculation for detecting 1-2% improvements typically requires 100K-1M samples per variant. Sequential probability ratio testing (SPRT) allows early stopping while maintaining false positive rates below 5%, accelerating iteration cycles.</p>
+<p>Implementing online evaluation systems requires careful architectural decisions balancing real-time feedback with statistical rigor. Feedback ingestion systems handle high-volume signals (millions per day) through asynchronous processing pipelines using message queues (Kafka, RabbitMQ). Real-time aggregation using time-series databases (ClickHouse, TimescaleDB) enables dashboard computation at seconds-level latency. Multi-armed bandit algorithms (Thompson sampling, upper confidence bound) optimize exploration-exploitation: allocate 95% of traffic to top-performing variants while continuously testing 5% against challengers. Sample size calculations for detecting 1% improvements require 500K-1M impressions per variant, achievable in 1-3 days for high-traffic systems. Statistical significance testing must account for multiple comparisons (false discovery rate control) when testing many variants simultaneously. Canary deployments allocate 1-5% of traffic to new models initially, monitoring metrics for 24 hours before full rollout. Rollback mechanisms enable instant reversion if metrics degrade. For low-traffic products with less than 10K daily users, batch evaluation and weekly experiments provide better statistical power than continuous online testing.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

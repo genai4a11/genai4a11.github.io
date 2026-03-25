@@ -308,6 +308,33 @@ model = FSDP(
 
 
 
+<h2>Distributed Training with DeepSpeed</h2>
+<p>DeepSpeed enables large-scale distributed training through advanced memory optimization and gradient offloading techniques. The framework reduces per-GPU memory consumption by storing activations on CPU during backward pass, allowing larger effective batch sizes without out-of-memory errors.</p>
+
+<div class="example-box">
+<pre><code># DeepSpeed distributed training setup
+from deepspeed import initialize_engine
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b")
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b")
+
+# Initialize with ZeRO-3 for full sharding
+engine, optimizer, _, _ = initialize_engine(
+    model=model,
+    config={
+        "train_batch_size": 256,
+        "zero_optimization": {"stage": 3},
+        "optimizer": {"type": "AdamW"}
+    }
+)
+</code></pre>
+</div>
+
+<h2>Multi-GPU Communication Patterns</h2>
+<p>Efficient distributed training requires understanding ring-based all-reduce collectives and gradient accumulation. DeepSpeed's communication library optimizes these patterns across NVIDIA's NCCL and AMD's RCCL, reducing network bottlenecks in large clusters.</p>
+<p>Advanced distributed training with DeepSpeed requires understanding the trade-offs between ZeRO stages. ZeRO-1 shards optimizer states across devices with minimal communication overhead, suitable for dense GPU clusters. ZeRO-2 additionally shards gradients, reducing per-GPU memory by 50-70% at the cost of increased communication. ZeRO-3 full parameter sharding divides all parameters across devices, enabling training of models larger than single GPU memory (e.g., 70B+ parameter models on consumer hardware) but introducing 2-3x communication overhead that requires high-bandwidth interconnects. The choice depends on your network topology: 100Gbps+ requires ZeRO-3, while 10Gbps connections are better suited for ZeRO-1 with smaller models. Empirical benchmarks show ZeRO-3 effective batch size can reach 1024+ tokens/GPU on A100 clusters, versus 256-512 for traditional data parallelism. DeepSpeed's activation checkpointing reduces peak memory by 50% by recomputing activations during backward pass instead of storing them, trading CPU cycles for GPU memory. For production systems with SLA requirements, ZeRO-2 provides the best balance of training speed, memory efficiency, and communication overhead, achieving 2-3x speedup on 8-GPU setups compared to baseline PyTorch DDP.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -222,6 +222,84 @@ for out in outputs:
 </ul>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>PagedAttention Block Management</h2>
+<div class="example-box"><pre><code>import torch
+from vllm import LLM
+
+# Paged attention internally manages KV cache blocks
+# Think of it like OS virtual memory: logical→physical mapping
+
+llm = LLM(model="meta-llama/Llama-2-7b", 
+          gpu_memory_utilization=0.9,
+          kv_cache_dtype="auto")
+
+# Behind the scenes:
+# - Sequences don't need contiguous memory
+# - Shared tokens can reuse physical blocks (tree attention, batched generation)
+# - Reduces fragmentation waste from ~80% to ~10%
+
+outputs = llm.generate(["The future of AI is"])
+# vLLM's PagedAttention handles all this transparently</code></pre></div>
+</div>
+
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Serving Speed: KV Cache vs PagedAttention</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Max Batch</th>
+<th>Tokens/sec</th>
+<th>Memory Util</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Standard KV cache</td>
+<td>8</td>
+<td>140</td>
+<td>65%</td>
+</tr>
+<tr>
+<td>PagedAttention (vLLM)</td>
+<td>64</td>
+<td>460</td>
+<td>92%</td>
+</tr>
+<tr>
+<td>PagedAttention + prefix sharing</td>
+<td>80</td>
+<td>520</td>
+<td>94%</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>The fragmentation problem explained:</strong> In standard transformers, the KV cache for each sequence token is allocated contiguously in GPU memory. When sequences end at different times (common in batching), unused memory blocks are wasted. With a batch of 64 sequences where the shortest has 512 tokens and longest has 2048, the system allocates 2048 tokens worth of memory for all 64 sequences, leaving ~1.5MB of wasted memory per sequence. Across a batch, this adds up to severe inefficiency.</p>
+<p>PagedAttention divides the KV cache into fixed-size blocks (typically 16 tokens per block) and allocates them on-demand. Sequences maintain a block table mapping logical block IDs to physical GPU memory blocks, similar to virtual memory in operating systems. When a token completes generation, its physical block can be returned to the free pool and reused for another sequence. This simple idea reduces memory waste from ~80% to ~10%, enabling 8-10x larger effective batch sizes.</p>
+<p>Implementing PagedAttention correctly requires careful management of block allocation, deallocation, and synchronization with CUDA kernels. vLLM abstracts these details, but understanding the underlying mechanism helps debug performance bottlenecks. For example, block size choice (16 vs 32 tokens) affects CUDA warp efficiency and should be tuned per hardware and sequence length distribution.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>Future of Efficient Attention</h2>
+<p>PagedAttention is a major breakthrough in serving efficiency, but research continues on further optimizations. Speculative decoding uses smaller models to generate hypothetical tokens, reducing the number of large model forward passes needed. Flash-attention variants continue reducing I/O costs. Sparse attention patterns (attending only to nearby tokens or learned important tokens) further reduce computation for very long sequences.</p>
+<p>Quantization of KV caches (storing keys/values in lower precision) combined with paging creates compounded efficiency gains. Prototyping shows that int8 quantization of KV caches with proper calibration loses negligible quality while saving 75% cache memory. Combining PagedAttention with KV quantization is the future of efficient long-context inference at scale.</p>
+<p>Hardware-software codesign drives future progress. Custom attention kernels for specific hardware (like NVIDIA H100 or TPU v5) can further optimize PagedAttention. vLLM actively collaborates with hardware vendors to ensure attention implementations saturate memory bandwidth and compute utilization, pushing toward the hardware's theoretical throughput ceiling.</p>
+</div>
+
+<p>Operating system concepts apply directly to PagedAttention: block tables are like page tables in virtual memory, physical blocks are like frames in memory, and the block allocator behaves like a memory manager. This analogy helps practitioners understand PagedAttention and debug issues. Virtual memory's decades of research on page replacement policies (LRU, FIFO, ARC) could inspire future PagedAttention optimizations.</p>
+<p>vLLM's implementation of PagedAttention on different hardware (NVIDIA, AMD, TPU) required adapting the block size and kernel implementation per platform. Block size choice affects CUDA warp efficiency and memory access patterns. Practitioners running vLLM on custom hardware should profile block sizes to find the Pareto frontier of throughput vs. latency for their workloads.</p>
+<p>Preemption and scheduling in PagedAttention systems enable prioritizing requests by priority or deadline. A long-context request can be preempted (saving its state) if a shorter, higher-priority request arrives. Sophisticated schedulers optimize for total throughput, latency, or fairness. Understanding the scheduling policy helps predict inference behavior and optimize for specific deployment requirements.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>PagedAttention Hardware and Software Codesign</h2>
+<p>PagedAttention is an example of hardware-software codesign: the algorithm was designed with GPU memory hierarchy and capabilities in mind. Understanding GPU memory architecture (global memory, shared memory, registers) helps appreciate PagedAttention's cleverness in accessing blocks efficiently. Future hardware-software collaboration will likely follow similar principles—designing algorithms and hardware together for mutual benefit.</p>
+<p>Different GPU generations (H100, L100, A100, V100) have different memory bandwidths, cache hierarchies, and compute capabilities. PagedAttention implementations are tuned per-hardware. vLLM maintains separate kernels for NVIDIA, AMD, and other vendors. This specialization extracts maximum efficiency from each platform. Practitioners deploying to new hardware should benchmark and potentially retune block sizes and kernel parameters.</p>
+<p>Emerging hardware like specialized AI accelerators (TPU, Cerebras, Transkimoto) may enable further PagedAttention optimizations. Some accelerators have custom memory controllers or programmable hardware that could simplify block management or enable new paging strategies. Following PagedAttention's example, optimal inference will involve algorithms and hardware designed together, not bolted on afterward.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

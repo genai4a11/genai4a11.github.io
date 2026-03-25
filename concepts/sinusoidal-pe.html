@@ -234,6 +234,92 @@ plt.colorbar(); plt.title("Sinusoidal Positional Encoding"); plt.show()
 </ul>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Sinusoidal Positional Encoding Code</h2>
+<div class="example-box"><pre><code>import torch
+import math
+
+def sinusoidal_positional_encoding(seq_len, d_model):
+    """
+    Generate sinusoidal positional encodings.
+    PE[pos, 2i] = sin(pos / 10000^(2i/d_model))
+    PE[pos, 2i+1] = cos(pos / 10000^(2i/d_model))
+    """
+    pe = torch.zeros(seq_len, d_model)
+    position = torch.arange(seq_len, dtype=torch.float).unsqueeze(1)
+    
+    # 1 / 10000^(2i/d_model)
+    div_term = torch.exp(torch.arange(0, d_model, 2).float() * 
+                         -(math.log(10000.0) / d_model))
+    
+    pe[:, 0::2] = torch.sin(position * div_term)  # Even indices: sin
+    pe[:, 1::2] = torch.cos(position * div_term)  # Odd indices: cos
+    return pe</code></pre></div>
+</div>
+
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Positional Encoding Properties</h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Sinusoidal</th>
+<th>RoPE</th>
+<th>ALiBi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Relative distance awareness</td>
+<td>Implicit (via frequencies)</td>
+<td>Explicit (rotation)</td>
+<td>Explicit (bias)</td>
+</tr>
+<tr>
+<td>Extrapolates to longer seqs</td>
+<td>No</td>
+<td>Yes (with scaling)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Learnable</td>
+<td>Can be</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Memory efficient</td>
+<td>Very</td>
+<td>Very</td>
+<td>Very</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Why sinusoids for position encoding:</strong> Sinusoidal functions have the property that PE[pos + k] can be represented as a linear combination of PE[pos] for any offset k. This means relative position information is naturally encoded—the attention mechanism can learn relative distances without explicit biasing. Different frequency components (high-frequency for nearby tokens, low-frequency for distant ones) capture multi-scale positional structure, enabling the model to interpolate position information for sequences longer than seen during training (to some extent).</p>
+<p>The base frequency 10000 was chosen somewhat arbitrarily in the original Transformer paper. The log-spaced frequencies (10000^(2i/d_model)) ensure that frequency differences double every two dimensions, creating a balanced representation across timescales. Modern research has explored alternative bases (like 2^(2i/d_model)) and found that the exact base matters less than the log-spacing property and the frequency range covered.</p>
+<p>Learned positional embeddings (concatenated with token embeddings) offer more flexibility than sinusoidal encodings but don't extrapolate. Rotary embeddings (RoPE) apply sinusoidal-inspired rotations directly to the query and key vectors, combining the relative position awareness of sinusoids with the simplicity of rotations. ALiBi takes a different approach with linear biases. Understanding the tradeoffs guides architecture choices for different problem domains and sequence length requirements.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>Positional Encoding Research Directions</h2>
+<p>Recent work questions whether any position encoding is necessary. Some architectures achieve competitive performance using only token-relative positions derived implicitly from attention patterns. Others use explicit continuous position functions instead of discrete encodings. The field hasn't converged on a single best approach, indicating that position encoding design remains an open research problem.</p>
+<p>T5 bias terms (similar in spirit to ALiBi) and other bias-based approaches show that explicit relative position encoding isn't necessary if the attention mechanism learns to infer relative positions. This suggests position information is somewhat redundant if the model has sufficient capacity and appropriate inductive biases. Simplifying architectures by removing position encodings could be viable if the model learns position implicitly.</p>
+<p>Extrapolation beyond training sequence lengths remains imperfect for most position encodings. Linear interpolation (scaling position indices for longer sequences) degrades performance. Interpolation strategies like YaRN (designed for RoPE) and ALiBi's inherent extrapolation properties are active research areas. Understanding fundamentally why and how models can interpolate position knowledge could improve generalization to out-of-distribution lengths.</p>
+</div>
+
+<p>Analyzing positional encodings in the Fourier domain provides theoretical insights. Sinusoidal encodings decompose positions into frequency components, where high frequencies represent local details and low frequencies represent large-scale structure. This multi-scale decomposition is why sinusoids work: the model naturally separates position information across frequency bands. Other encodings (learned, RoPE, ALiBi) use different mechanisms to achieve similar multi-scale information.</p>
+<p>The attention mechanism's ability to extract relative positions from mixed sinusoidal encodings is remarkable. Even without explicit teaching, attention heads learn to compute relative distances by comparing position encoding patterns. This implicit relative position learning explains sinusoidal encodings' effectiveness despite their mathematical simplicity. Understanding this mechanism deepens appreciation for transformer architecture design.</p>
+<p>Future work on position encodings might explore other mathematical structures: wavelets for better localization, sparse encodings for ultra-long sequences, or continuous position functions for fine-grained position control. The fundamental requirement—enabling the model to distinguish positions and learn relative distances—can be satisfied by many mechanisms. The field continues exploring trade-offs between simplicity, parameter efficiency, and generalization.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>Positional Encoding in Vision and Multimodal Models</h2>
+<p>While positional encodings originated in NLP with transformers, they're now essential in vision transformers (ViTs) and multimodal models. 2D positional encodings for image patches, 3D for video, and hierarchical encodings for graph structures extend the concept. The fundamental requirement—enabling the model to understand spatial or structural relationships—applies across domains. Extending sinusoidal or RoPE encodings to multiple dimensions and non-Euclidean spaces remains an active research area.</p>
+<p>In multimodal models (text + image + audio), aligning positional encodings across modalities is non-trivial. Audio has continuous time, images have 2D space, text has sequence order. Some models learn joint positional encodings; others use modality-specific encodings with learned fusion layers. Understanding positional encodings' role in multimodal fusion helps debug models that fail to integrate information across modalities effectively.</p>
+<p>Absolute vs. relative positional encodings remain debated in certain domains. Relative encodings (like RoPE or ALiBi) theoretically enable better length generalization, but empirical results are mixed. Some practitioners prefer simplicity and robustness of learned absolute embeddings. Domain-specific empirical evaluation remains necessary—no universal winner exists yet.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

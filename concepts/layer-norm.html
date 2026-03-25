@@ -300,6 +300,88 @@ ln_fused = nn.LayerNorm(768, elementwise_affine=True)
 # Or use Flash Attention's built-in fused layer norm</div>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Normalization Comparison</h2>
+<table>
+<thead>
+<tr>
+<th>Norm Type</th>
+<th>Applies over</th>
+<th>Params (γ, β)</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BatchNorm</td>
+<td>Batch dimension</td>
+<td>Per feature</td>
+<td>CNNs, older architectures</td>
+</tr>
+<tr>
+<td>LayerNorm</td>
+<td>Feature dimension</td>
+<td>Per feature</td>
+<td>Transformers, RNNs</td>
+</tr>
+<tr>
+<td>GroupNorm</td>
+<td>Groups of features</td>
+<td>Per group</td>
+<td>Small batch sizes</td>
+</tr>
+<tr>
+<td>RMSNorm</td>
+<td>Feature dimension (simplified)</td>
+<td>Per feature (no β)</td>
+<td>Modern LLMs (efficient)</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Normalization Numerical Stability</h2>
+<div class="example-box"><pre><code>import torch
+import torch.nn as nn
+
+# LayerNorm numerical stability
+x = torch.randn(32, 512)
+ln = nn.LayerNorm(512, eps=1e-6)
+
+# Internally, LayerNorm does:
+# y = (x - mean) / sqrt(var + eps) * weight + bias
+mean = x.mean(dim=-1, keepdim=True)
+var = x.var(dim=-1, keepdim=True, unbiased=False)
+normalized = (x - mean) / torch.sqrt(var + 1e-6)
+
+# Why eps? Prevents division by zero when var is tiny
+# Typical eps: 1e-5 (default) to 1e-6 (safer for mixed precision)</code></pre></div>
+
+<p><strong>Layer normalization in transformers:</strong> The original "Attention is All You Need" paper used post-norm (normalization after the residual connection), but subsequent research found pre-norm (normalization before the sublayer) more stable for training. Pre-norm applies layer norm to the input before the self-attention or feed-forward, then adds the output directly to the original input. This simple change dramatically improves training stability without performance loss.</p>
+<p>RMSNorm, used in LLaMA and Gemma models, simplifies LayerNorm by removing the bias term and centering step. It only scales by the RMS (root mean square) of activations. This subtle change reduces computation, improves numerical stability in bfloat16 precision, and often achieves comparable or better results than LayerNorm in transformer contexts. The equivalence between RMSNorm and LayerNorm under certain conditions is an active area of research.</p>
+<p>Initialization and learning rates interact with normalization layers in subtle ways. Models with pre-norm or RMSNorm can often use higher learning rates safely because the normalization prevents activation collapse. Debugging training instability often involves checking whether layer norm is applied in the right location, using the right epsilon value for the precision level, and whether weight initialization is compatible with the norm variant in use.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>Advanced Normalization Techniques</h2>
+<p>Beyond standard normalization, techniques like InstanceNorm (per-instance instead of per-batch) help in domains where the batch distribution matters less than individual sample statistics. GroupNorm divides channels into groups and normalizes within each group, providing stability with small batches. LayerNorm's equivalence to GroupNorm with a single group of all channels explains why it works so well across domains.</p>
+<p>Normalization placement in neural networks matters profoundly. Pre-norm architectures (norm before the sublayer) are more stable than post-norm (norm after) for deep networks. This seemingly small detail enabled training of 100+ layer transformers without careful initialization. Discovering these architectural insights required extensive empirical research and spawned a whole subfield of neural architecture design.</p>
+<p>Numerical precision interacts with normalization: in bfloat16 training, standard LayerNorm can sometimes lose precision during the variance computation. Implementations like PyTorch's LayerNorm handle this internally by computing variance in float32 even when inputs are bfloat16. Understanding these implementation details prevents silent numerical degradation in mixed-precision training.</p>
+</div>
+
+<p>Layer norm's behavior in very deep networks (100+ layers) differs from shallow networks due to accumulating layer interactions. Pre-norm placement helps stabilize very deep networks by normalizing inputs before transformation, preventing activation explosion or vanishing. Post-norm (normalization after residual) becomes increasingly unstable with depth. This architectural discovery enabled successful training of models like BERT and GPT without special initialization tricks.</p>
+<p>In mixed-precision training (float32 loss, bfloat16 activations), layer norm's stability is crucial. The centering and scaling ensure activations remain in reasonable ranges despite precision loss. Some implementations compute statistics in float32 internally to prevent precision-related issues. Understanding when automatic mixed precision frameworks make these precision adjustments prevents silent numerical degradation.</p>
+<p>Distributed training introduces additional layer norm considerations. Batch norm in distributed settings requires synchronizing statistics across devices, adding communication overhead. Layer norm's independence across samples makes it naturally distributed-friendly, computing statistics per sample, not across devices. This is one reason transformers (which use layer norm) have become favored for distributed training over older CNN architectures using batch norm.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>Normalization and Quantization Interactions</h2>
+<p>Quantizing neural networks (converting float32 to int8 or lower) requires careful handling of normalization layers. Layer norm and batch norm statistics ensure activations remain in reasonable ranges. Before quantizing, practitioners analyze activation ranges (min, max, percentiles) to set appropriate quantization thresholds. Normalization layers' statistical properties directly impact quantization accuracy. Models with no normalization suffer severe accuracy loss from quantization because activations have unbounded range.</p>
+<p>Post-training quantization (quantizing a pretrained model without retraining) relies on normalization to keep activations well-behaved. Quantization-aware training involves training with simulated quantization to prepare for deployment. Normalization's role in both post-training and quantization-aware settings is essential. The combination of normalization and quantization enables efficient on-device AI.</p>
+<p>Knowledge distillation from large models to small quantized models requires balancing multiple objectives: matching teacher outputs, maintaining quantization feasibility, and minimizing task loss. Normalization layers help bridge float32 teacher models and quantized student models by keeping activation ranges compatible. The interplay is complex but essential for modern efficient AI systems.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

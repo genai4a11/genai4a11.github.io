@@ -197,6 +197,110 @@ def to_json(self) -&gt; str:
 <p>Top: business metric (user CSAT, task completion). Middle: system metric (end-to-end accuracy, hallucination rate). Bottom: component metrics (retrieval recall, generator fluency). Optimise bottom metrics only when they correlate with top — otherwise you're measuring the wrong thing.</p>
 </div>
 </div>
+<h2>End-to-End Test Automation</h2>
+<p>System evaluation requires comprehensive test case design covering happy paths, edge cases, and failure modes. Test coverage for LLM systems typically includes input variants (language, length, toxicity), system state variations (cold start, cache hit), and multi-turn interactions. Automation frameworks execute thousands of test cases daily, tracking regression through version control.</p>
+
+<div class="example-box">
+<pre><code># System evaluation test harness
+class SystemEvaluation:
+    def __init__(self, model_endpoint):
+        self.endpoint = model_endpoint
+    
+    def run_test_suite(self, test_cases):
+        results = []
+        for test in test_cases:
+            try:
+                response = self.endpoint.query(
+                    test['prompt'],
+                    temperature=test.get('temperature', 0.7),
+                    max_tokens=test.get('max_tokens', 1000)
+                )
+                
+                # Multi-criteria evaluation
+                passed = all([
+                    self._check_response_length(response, test),
+                    self._check_safety(response, test),
+                    self._check_factuality(response, test),
+                    self._check_output_format(response, test)
+                ])
+                
+                results.append({
+                    'test_id': test['id'],
+                    'passed': passed,
+                    'latency_ms': response.latency,
+                    'tokens_used': response.token_count
+                })
+            except Exception as e:
+                results.append({'test_id': test['id'], 'error': str(e)})
+        
+        return results
+</code></pre>
+</div>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Test Category</th>
+    <th>Test Cases</th>
+    <th>Frequency</th>
+    <th>Typical Pass Rate</th>
+  </tr>
+  <tr>
+    <td>Functionality</td>
+    <td>50-200</td>
+    <td>Every commit</td>
+    <td>>99%</td>
+  </tr>
+  <tr>
+    <td>Regression</td>
+    <td>100-500</td>
+    <td>Nightly</td>
+    <td>>95%</td>
+  </tr>
+  <tr>
+    <td>Edge Cases</td>
+    <td>20-100</td>
+    <td>Weekly</td>
+    <td>80-90%</td>
+  </tr>
+  <tr>
+    <td>Safety/Jailbreak</td>
+    <td>50-200</td>
+    <td>Before release</td>
+    <td>>98%</td>
+  </tr>
+</table>
+
+<div class="example-box">
+<pre><code># Comprehensive failure mode taxonomy
+FAILURE_TAXONOMY = {
+    "hallucination": {
+        "description": "Factually incorrect or fabricated information",
+        "detection": "Compare to knowledge base or external source",
+        "severity": "critical"
+    },
+    "refusal": {
+        "description": "Inappropriate refusal to answer legitimate requests",
+        "detection": "Manual review of false positives",
+        "severity": "medium"
+    },
+    "latency": {
+        "description": "Response takes >5 seconds",
+        "detection": "Automated timeout tracking",
+        "severity": "medium"
+    },
+    "format_violation": {
+        "description": "Output doesn't match required schema",
+        "detection": "JSON schema validation",
+        "severity": "high"
+    }
+}
+</code></pre>
+</div>
+
+<h2>Continuous Integration and Deployment Gating</h2>
+<p>CI/CD pipelines gate model deployments on evaluation metrics. Before production release, models must pass: 99%+ functionality tests, >95% on maintained regression suites, and <2% safety violation rate. Using staged rollouts with canary deployments to 5-10% of traffic enables real-time monitoring before full release.</p>
+<p>Comprehensive system evaluation requires multi-layer test coverage spanning functionality, performance, safety, and user experience. Functional tests verify correct behavior: prompt → response matching expected patterns, specified format schemas, correct tool usage. Performance tests establish baselines: response latency under 500ms at p95, token generation rate greater than 50 tokens/second, memory usage under 8GB concurrent. Safety tests ensure harm prevention: jailbreak resistance (custom attacks + known exploit database), hallucination rate under 2%, refusal false positive rate under 5%. User experience tests measure practical quality: task completion rates in simulated user scenarios, information retrieval success (answer relevance), dialogue coherence across multi-turn conversations. Regression test suites maintain test coverage across model versions: maintain 100+ Golden tests (hand-curated high-quality examples) that must never regress. Automated flakiness detection identifies tests failing randomly due to model stochasticity, excluding those from critical gates. Continuous integration gates prevent model degradation: block deployment if any metric regresses greater than 5% from baseline. For LLM systems specifically, evaluation must incorporate domain expertise: medical outputs require clinician review, code outputs need automated testing, legal documents need compliance verification.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

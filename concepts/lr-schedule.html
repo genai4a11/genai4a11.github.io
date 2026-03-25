@@ -304,6 +304,27 @@ class LRFinder:
 
 
 
+<h2>Warmup Strategies</h2>
+<p>Learning rate warmup prevents training instability early in optimization when gradient estimates are noisy. Warmup duration typically scales with model size: small models use 100-500 steps, while 70B+ parameter models benefit from 5000-10000 warmup steps to establish stable gradient flow.</p>
+
+<div class="example-box">
+<pre><code># Custom warmup + cosine schedule
+from torch.optim.lr_scheduler import LambdaLR
+import math
+
+def lr_lambda(current_step: int, num_warmup_steps=500, num_total_steps=10000):
+    if current_step < num_warmup_steps:
+        return float(current_step) / float(max(1, num_warmup_steps))
+    return max(0.0, math.cos(math.pi * 0.5 * (current_step - num_warmup_steps) / (num_total_steps - num_warmup_steps)))
+
+scheduler = LambdaLR(optimizer, lr_lambda)
+</code></pre>
+</div>
+
+<h2>Adaptive Learning Rate Scheduling</h2>
+<p>Modern training pipelines often use dynamic scheduling that adjusts based on validation metrics or loss plateau detection. Techniques like ReduceLROnPlateau and warm restarts (SGDR) help escape local minima and achieve better final model performance compared to fixed schedules.</p>
+<p>Modern machine learning training dynamics benefit significantly from sophisticated learning rate scheduling that adapts to training phases. Early-stage training with high learning rates enables rapid loss descent, while later stages with lower learning rates enable fine-tuning of learned representations. The warmup phase typically spans 5-10% of total training steps, during which the learning rate increases linearly from 0 to the peak value. This prevents catastrophic gradient spikes that can corrupt learned representations. Following warmup, decay schedules (linear, exponential, cosine, or polynomial) gradually reduce the learning rate. Cosine annealing with warm restarts (SGDR) periodically resets learning rates to encourage escape from local minima while maintaining overall descent trajectory. For language model training specifically, research shows that learning rate schedules interact strongly with batch size and weight decay—larger batch sizes require higher peak learning rates (scaled by sqrt(batch_size)), while weight decay effectiveness increases with learning rate. Practical guidelines for transformer training: use peak LR in range [0.0001, 0.001] depending on batch size, warmup for 5000-10000 steps regardless of total training steps, use cosine annealing with final LR = peak LR / 100, and combine with gradient clipping (norm=1.0) for stability.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

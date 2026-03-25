@@ -193,6 +193,118 @@ sf.write("output.wav", audio, 24000)
 <p>MOS (Mean Opinion Score): human listeners rate naturalness 1–5. WER (Word Error Rate): run ASR on generated audio, compare to original text. Character Error Rate (CER): finer-grained than WER. Speaker Similarity: cosine distance between speaker <a class="concept-link" href="embeddings.html">embeddings</a> of reference and generated audio. For production: WER &lt; 2% and speaker similarity &gt; 0.85 are common thresholds.</p>
 </div>
 </div>
+<h2>Real-Time TTS Systems</h2>
+<p>Production TTS systems require sub-100ms latency for interactive applications. Techniques include streaming vocoder inference, KV-cache optimization, and spectrogram batching. Modern systems achieve 50-80ms end-to-end latency by breaking synthesis into streaming chunks, enabling real-time conversation without user-perceptible delay.</p>
+
+<div class="example-box">
+<pre><code># Streaming TTS implementation with chunking
+class StreamingTTSEngine:
+    def __init__(self, model_path, vocoder_path):
+        self.acoustic_model = self.load_model(model_path)
+        self.vocoder = self.load_model(vocoder_path)
+        self.chunk_size = 256  # tokens
+    
+    async def synthesize_streaming(self, text, chunk_callback):
+        """Synthesize with streaming output"""
+        # Split text into chunks
+        tokens = self.tokenize(text)
+        
+        for i in range(0, len(tokens), self.chunk_size):
+            chunk_tokens = tokens[i:i + self.chunk_size]
+            
+            # Generate mel-spectrogram
+            mel = self.acoustic_model.infer(chunk_tokens)
+            
+            # Convert to audio with streaming vocoder
+            audio_chunk = self.vocoder.infer_streaming(mel)
+            
+            # Stream to client immediately
+            await chunk_callback(audio_chunk)
+
+# Usage
+async def tts_request_handler(text):
+    engine = StreamingTTSEngine("models/acoustic", "models/vocoder")
+    
+    async def send_chunk(audio):
+        await websocket.send(audio)
+    
+    await engine.synthesize_streaming(text, send_chunk)
+</code></pre>
+</div>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Model</th>
+    <th>Latency (ms)</th>
+    <th>Quality</th>
+    <th>Language Support</th>
+  </tr>
+  <tr>
+    <td>Tacotron2 + WaveGlow</td>
+    <td>150-200</td>
+    <td>High</td>
+    <td>Limited</td>
+  </tr>
+  <tr>
+    <td>Glow-TTS + HiFi-GAN</td>
+    <td>80-120</td>
+    <td>High</td>
+    <td>Limited</td>
+  </tr>
+  <tr>
+    <td>FastSpeech2</td>
+    <td>50-80</td>
+    <td>Medium-High</td>
+    <td>Limited</td>
+  </tr>
+  <tr>
+    <td>XTTS (Coqui)</td>
+    <td>200-300</td>
+    <td>High</td>
+    <td>28+ languages</td>
+  </tr>
+</table>
+
+<div class="example-box">
+<pre><code># Voice cloning with minimal samples
+class VoiceCloneController:
+    def __init__(self, xtts_model):
+        self.model = xtts_model
+    
+    def clone_voice(self, reference_audio_path, target_text, num_samples=1):
+        """Clone voice from 5-30 second reference"""
+        # Extract speaker embedding from reference
+        speaker_embedding = self.model.get_speaker_embedding(reference_audio_path)
+        
+        # Generate synthesis with cloned voice
+        audio = self.model.synthesize(
+            text=target_text,
+            speaker_embedding=speaker_embedding,
+            temperature=0.75  # Control voice variation
+        )
+        
+        return audio
+    
+    def multi_speaker_synthesis(self, speakers_dict, script):
+        """Synthesize multi-speaker dialogue"""
+        output_segments = []
+        
+        for speaker_name, reference_audio in speakers_dict.items():
+            embedding = self.model.get_speaker_embedding(reference_audio)
+            speaker_lines = script.get(speaker_name, [])
+            
+            for line in speaker_lines:
+                audio = self.model.synthesize(line, speaker_embedding=embedding)
+                output_segments.append(audio)
+        
+        return self.concatenate_audio(output_segments)
+</code></pre>
+</div>
+
+<h2>Multi-Lingual and Accent Preservation</h2>
+<p>Modern TTS systems handle 50+ languages through multilingual acoustic models and language-aware grapheme-to-phoneme converters. Accent preservation requires fine-tuning on speaker-specific data or using speaker embeddings. Commercial systems achieve naturalness ratings of 4.2/5 on MOS (Mean Opinion Score) across diverse languages and accents.</p>
+<p>TTS model selection depends on specific use case constraints. Real-time conversational AI systems require under 100ms latency, demanding lightweight models like FastPitch or TacotronLite with 1-2 parameter models. Offline batch synthesis for content creation can tolerate 200-500ms latency, enabling use of higher-quality models like Glow-TTS + HiFi-GAN with 50M+ parameters that produce more natural prosody. Multilingual systems require careful model selection: end-to-end multilingual models (e.g., XTTS) sacrifice per-language quality versus language-specific models, trading 5-10% MOS (Mean Opinion Score) for simplicity. Voice cloning quality improves with reference audio duration: 5-10 seconds provides basic quality, 30-60 seconds enables accent preservation and speaker identity capture. Vocoder choice significantly impacts quality and latency: neural vocoders (HiFi-GAN, UnivNet) provide superior quality but require 50-200ms, while parametric vocoders (Griffin-Lim) enable under 10ms inference at cost of lower quality. Production systems use model quantization (int8, fp16) reducing model size 60-75% with under 2% MOS degradation. Multi-speaker TTS for dialogue systems requires speaker turn detection and voice switching logic: implement speaker scheduling to avoid abrupt voice changes mid-sentence.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

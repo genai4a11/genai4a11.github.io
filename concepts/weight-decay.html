@@ -298,6 +298,39 @@ def monitor_regularization(train_losses, val_losses, window=10):
 
 
 
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>When Weight Decay Helps vs Hurts</h2>
+<p>Weight decay acts as a form of regularization by penalizing large weights. However, it's not universally beneficial. Biases (especially in normalization layers) often shouldn't be decayed because they don't contribute to overfitting in the same way as weights do. Modern optimizers like AdamW decouple weight decay from the gradient-based update.</p>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>L2 vs L1 Regularization vs Weight Decay</h2>
+<p>In traditional machine learning, L2 regularization (weight decay in SGD) adds a penalty term to the loss. In deep learning with adaptive optimizers like Adam, weight decay as a direct penalty can interact poorly with the adaptive learning rates, which is why AdamW separates them. Understanding this distinction prevents silent performance regressions when switching optimizers.</p>
+
+<p><strong>Weight decay as regularization:</strong> Weight decay penalizes the magnitude of weights, pushing them toward zero. In standard SGD with L2 regularization, the update rule becomes: w := w - lr * (grad + lambda * w), where lambda is the decay factor. This is mathematically equivalent to adding a L2 penalty to the loss function. However, with adaptive optimizers like Adam, the interaction between momentum and weight decay becomes subtle—this is why AdamW decouples them.</p>
+<p>Different layer types have different regularization needs. Biases in normalization layers (batch norm, layer norm) rarely benefit from weight decay because they're not part of the feature transformation. Embedding matrices in language models also typically don't use weight decay. Selective weight decay—applying it only to certain parameter groups—often outperforms uniform weight decay across all parameters. PyTorch's parameter groups feature (in optimizers) makes this straightforward.</p>
+<p>Hyperparameter tuning for weight decay requires patience. Common values range from 0.01 to 0.1 for AdamW. Too high and the model underfits; too low and overfitting dominates. Combining weight decay with dropout, mixup, or other regularization techniques requires careful balancing to avoid over-regularization. Modern practice often uses relatively high weight decay (0.05-0.1) combined with warmup schedules to stabilize early training.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>Weight Decay in Optimization Theory</h2>
+<p>From an optimization perspective, weight decay is a form of structural regularization that biases the optimizer toward simpler models (models with smaller weights). In classical machine learning, this regularization is often justified by generalization bounds—simpler models have lower VC dimension and are less likely to overfit. In deep learning, the relationship between weight magnitude and generalization is more nuanced and dataset-dependent.</p>
+<p>The "lottery ticket hypothesis" suggests that neural networks contain subnetworks capable of learning to the same accuracy as the full network when trained in isolation. Weight decay influences which tickets are drawn during training by penalizing complex weight patterns. This perspective connects classical regularization to modern insights about neural network structure and trainability.</p>
+<p>Adaptive weight decay schedules (reducing decay as training progresses) can outperform fixed decay rates. Early in training, strong decay prevents feature learning; later, it helps refine and compress learned representations. Research on curriculum learning and scheduling provides frameworks for principled choices of decay schedules, though empirical tuning remains standard practice.</p>
+</div>
+
+<p>Transfer learning interacts with weight decay in non-obvious ways. When fine-tuning a pretrained model, should you use the same weight decay as pretraining? Empirically, reducing weight decay for fine-tuning often works better because the pretrained weights already represent compressed knowledge. Applying strong additional decay could destroy useful features. Selective decay (different rates for different layers) becomes important in transfer scenarios.</p>
+<p>Debugging whether weight decay is helping or hurting requires careful ablations. Train the same model with and without weight decay, same learning rate and batch size, and compare validation metrics. Sometimes weight decay hurts! This happens when the task benefits from large weights (e.g., memorization in small datasets) or when regularization is already provided by other mechanisms like dropout. Blind application of common recipes is dangerous.</p>
+<p>In adversarial training and robustness contexts, weight decay interacts with attack generation and defense. Stronger regularization can paradoxically make models less robust to adversarial examples. The relationship between weight magnitude and adversarial robustness remains an active research area. Practitioners should empirically verify that weight decay choices improve robustness metrics, not just clean accuracy.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>Weight Decay and Model Compression</h2>
+<p>Weight decay indirectly enables model compression by penalizing weight magnitude. After training with strong weight decay, many weights are small and can be pruned with minimal accuracy loss. This inductive bias toward sparse, compressible models is sometimes intentional—trainers use weight decay explicitly to prepare models for subsequent pruning or quantization. Understanding this connection explains why weight decay improves not just generalization but also model efficiency.</p>
+<p>Magnitude pruning (removing smallest-magnitude weights) works well on models trained with weight decay because they naturally develop sparse structure. Models trained without weight decay have more uniform weight magnitudes, making magnitude pruning less effective. This provides another reason to use weight decay: it improves both generalization and compressibility, creating win-win scenarios in practice.</p>
+<p>Structured pruning (removing entire neurons or filters) interacts differently with weight decay. When entire structures are pruned, remaining weights must compensate, potentially requiring higher magnitudes. Weight decay in this context is a trade-off—too strong and remaining weights are penalized for compensating; too weak and overfitting dominates. Balancing these objectives requires empirical tuning specific to the pruning strategy and application.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

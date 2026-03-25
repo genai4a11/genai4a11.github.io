@@ -198,6 +198,138 @@ frames = pipe(image, num_frames=25, motion_bucket_id=127).frames[0]</code></pre>
 <p>Video diffusion powers: product visualization, advertising creative, game cinematic generation, social media content, scientific simulation visualization, and AI-assisted filmmaking. Key integration patterns include pairing with <a class="concept-link" href="image-gen.html">image generation</a> pipelines (generate a keyframe, animate it), and using video inpainting to insert generated elements into existing footage.</p>
 </div>
 </div>
+<h2>Temporal Consistency in Video Generation</h2>
+<p>Video diffusion models must maintain temporal consistency across frames while generating diverse content. Key techniques include temporal convolutions, optical flow conditioning, and frame interpolation. Modern architectures like Stable Video Diffusion achieve <4% frame-to-frame jitter while maintaining high visual quality across 24+ frame sequences.</p>
+
+<div class="example-box">
+<pre><code># Video generation with temporal consistency
+from diffusers import StableVideoDiffusionPipeline
+import torch
+
+class VideoGenerationPipeline:
+    def __init__(self, model_id="stabilityai/stable-video-diffusion-img2vid-xt"):
+        self.pipe = StableVideoDiffusionPipeline.from_pretrained(
+            model_id,
+            torch_dtype=torch.float16,
+            variant="fp16"
+        ).to("cuda")
+    
+    def generate_video(self, image_path, num_frames=24, num_inference_steps=25):
+        """Generate video from single image"""
+        image = self.load_image(image_path)
+        
+        # Generate with temporal consistency
+        frames = self.pipe(
+            image=image,
+            height=576,
+            width=1024,
+            num_frames=num_frames,
+            num_inference_steps=num_inference_steps,
+            min_guidance_scale=1.0,
+            max_guidance_scale=3.0
+        ).frames[0]
+        
+        # Optional: enhance temporal smoothing
+        frames = self.temporal_smooth(frames, kernel_size=3)
+        
+        return frames
+    
+    def temporal_smooth(self, frames, kernel_size=3):
+        """Apply temporal filtering for smoothness"""
+        smoothed = []
+        for i in range(len(frames)):
+            start = max(0, i - kernel_size // 2)
+            end = min(len(frames), i + kernel_size // 2 + 1)
+            avg_frame = torch.mean(torch.stack(frames[start:end]), dim=0)
+            smoothed.append(avg_frame)
+        return smoothed
+</code></pre>
+</div>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Model</th>
+    <th>Resolution</th>
+    <th>Frame Count</th>
+    <th>Inference Time (s)</th>
+  </tr>
+  <tr>
+    <td>SVD Lite</td>
+    <td>576x1024</td>
+    <td>24</td>
+    <td>8-12</td>
+  </tr>
+  <tr>
+    <td>SVD</td>
+    <td>576x1024</td>
+    <td>24</td>
+    <td>30-45</td>
+  </tr>
+  <tr>
+    <td>Runway Gen2</td>
+    <td>1280x768</td>
+    <td>100</td>
+    <td>60-120</td>
+  </tr>
+  <tr>
+    <td>Pika 1.0</td>
+    <td>1080x1920</td>
+    <td>60</td>
+    <td>120-180</td>
+  </tr>
+</table>
+
+<div class="example-box">
+<pre><code># Advanced: Multi-view synthesis for 3D content
+class MultiViewVideoGenerator:
+    def __init__(self, diffusion_model):
+        self.model = diffusion_model
+    
+    def generate_multi_view(self, description, num_views=4, base_seed=42):
+        """Generate consistent multi-view video"""
+        views = []
+        
+        # Generate base video
+        base_video = self.model.generate(
+            description,
+            num_frames=24,
+            seed=base_seed
+        )
+        views.append(base_video)
+        
+        # Generate variations from different camera angles
+        for angle in range(1, num_views):
+            prompt_variant = f"{description} (camera angle: {angle * 90}°)"
+            view_video = self.model.generate(
+                prompt_variant,
+                num_frames=24,
+                seed=base_seed + angle
+            )
+            views.append(view_video)
+        
+        return self.warp_for_consistency(views)
+    
+    def warp_for_consistency(self, views):
+        """Warp frames for 3D consistency"""
+        # Use optical flow to align frames across views
+        warped_views = []
+        for view_idx, view in enumerate(views):
+            warped_frames = []
+            for frame_idx in range(len(view)):
+                # Apply perspective warp based on camera angle
+                angle = view_idx * 90
+                warped = self.perspective_warp(view[frame_idx], angle)
+                warped_frames.append(warped)
+            warped_views.append(warped_frames)
+        
+        return warped_views
+</code></pre>
+</div>
+
+<h2>Efficient Inference and Optimization</h2>
+<p>Video generation is computationally expensive, requiring 80-100GB VRAM for high-quality synthesis. Production systems use quantization (int8/fp16), model distillation, and latent-space inference to reduce memory by 40-50%. Batch processing and multi-GPU inference enable processing 100+ video requests per day on a single A100 cluster.</p>
+<p>Video generation requires scaling diffusion models to temporal dimensions while maintaining computational tractability. Frame-by-frame generation (GAN-based sequential prediction) is unstable and jittery due to error accumulation. Modern approaches use latent-space diffusion: compress frames to low-dimensional embeddings (256x reduction in memory), apply diffusion in latent space, then decode back to high-resolution video. Temporal consistency requires architectural innovations: temporal convolutions with causal masking prevent "looking ahead" during generation, optical flow conditioning guides motion naturally, and frame interpolation networks fill temporal gaps to reduce jitter. Training video diffusion requires enormous compute: 1M+ video sequences, 100+ GPU-hours for model convergence, making pretrained models essential for most practitioners. Fine-tuning strategies reduce requirements: dataset-specific fine-tuning (10K videos, 10 GPU-hours) improves quality for niche domains like product visualization or medical imaging. Inference optimization is critical due to cost: generate low-resolution draft (256x256) at 4 FPS, then super-resolution pass at target resolution reduces compute 10x. Multi-stage generation: generate key frames → interpolate intermediate frames achieves 30% latency reduction. For production systems, batch processing 100+ generation requests together achieves 5-10x better throughput than sequential requests through GPU utilization optimization.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

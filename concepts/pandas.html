@@ -301,6 +301,46 @@ loader = DataLoader(tokenized["train"], batch_size=8, shuffle=True)</div>
 
 
 
+<h2>Performance Optimization</h2>
+<p>Pandas operations on large datasets (>1GB) benefit from chunking, category dtypes for strings, and downcast integer types. Using <code>eval()</code> and <code>query()</code> with expression optimization can accelerate filtering operations by 2-10x compared to boolean indexing on massive DataFrames.</p>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Operation</th>
+    <th>Time (1M rows)</th>
+    <th>Memory (MB)</th>
+    <th>Best For</th>
+  </tr>
+  <tr>
+    <td>Boolean Indexing</td>
+    <td>145ms</td>
+    <td>128</td>
+    <td>Small-medium datasets</td>
+  </tr>
+  <tr>
+    <td>DataFrame.query()</td>
+    <td>82ms</td>
+    <td>105</td>
+    <td>Complex conditions</td>
+  </tr>
+  <tr>
+    <td>DataFrame.eval()</td>
+    <td>56ms</td>
+    <td>95</td>
+    <td>Column operations</td>
+  </tr>
+  <tr>
+    <td>Numba JIT</td>
+    <td>12ms</td>
+    <td>110</td>
+    <td>Custom loops</td>
+  </tr>
+</table>
+
+<h2>Integration with Machine Learning Pipelines</h2>
+<p>Pandas DataFrames seamlessly integrate with scikit-learn pipelines through sklearn's <code>ColumnTransformer</code> and <code>Pipeline</code> classes. For deep learning, <code>pandas.DataFrame.iterrows()</code> should be avoided; instead, use <code>numpy.array_split()</code> or PyArrow for zero-copy conversion to PyTorch tensors.</p>
+<p>Pandas performance optimization becomes critical when working with datasets exceeding 1GB. Memory-efficient workflows use chunked processing: split large files into 100K-1M row chunks, process independently, then combine results. Category dtypes reduce memory usage for string columns by 90%, converting repeated strings to integer indices. Downcast numeric types from float64 to float32 (or int64 to int32) halves memory for numeric columns with minimal accuracy loss. For time-series data with timestamp indices, Pandas' DatetimeIndex enables fast window operations and resampling. Multi-index DataFrames support hierarchical operations essential for grouped analyses. The apply() function with raw=True avoids Series creation overhead, while groupby().agg() with dictionaries specifying per-column operations outperforms lambda functions. For production data pipelines, Pandas integrates with Spark through PySpark's Pandas API, enabling distributed computation while maintaining familiar syntax. The DataFrame.to_parquet() format provides superior compression and read performance versus CSV for repeated access patterns.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -221,6 +221,67 @@ def generate_variations(seed_examples: list[dict], n_per_seed: int = 10) -&gt; l
 <p>10,000 high-quality synthetic examples outperform 100,000 low-quality ones. Apply quality filters: minimum response length, no truncation, passes a relevance check ('is this response actually answering the question?'), and no repetition of the instruction in the response. Deduplicate with MinHash after generation — <a class="concept-link" href="llms.html">LLMs</a> often produce near-identical examples.</p>
 </div>
 </div>
+<h2>Evaluation and Quality Control</h2>
+<p>Synthetic data quality requires rigorous evaluation. Key metrics include diversity (Bleu/ROUGE across generated samples), validity (parsing/format compliance), and utility (downstream task performance). Typically 30-40% synthetic data mixed with human examples maintains model quality while reducing annotation costs.</p>
+
+<div class="example-box">
+<pre><code># Synthetic data quality evaluation
+def evaluate_synthetic_quality(synthetic_texts, human_texts):
+    from nltk.translate.bleu_score import corpus_bleu
+    from rouge_score import rouge_scorer
+    
+    scorer = rouge_scorer.RougeScorer(['rouge1', 'rougeL'])
+    
+    # Diversity: BLEU between synthetic samples
+    diversity_bleu = corpus_bleu(
+        [[s.split()] for s in synthetic_texts[:50]],
+        synthetic_texts[50:100]
+    )
+    
+    # Quality: comparison to human examples
+    rouge_scores = [scorer.score(human, syn) for human, syn in zip(human_texts[:100], synthetic_texts[:100])]
+    
+    return {"diversity_bleu": diversity_bleu, "quality_rouge": rouge_scores}
+</code></pre>
+</div>
+
+<table border="1" cellpadding="8">
+  <tr>
+    <th>Generation Method</th>
+    <th>Diversity</th>
+    <th>Quality</th>
+    <th>Cost per 1K samples</th>
+  </tr>
+  <tr>
+    <td>Rule-based Templates</td>
+    <td>Low</td>
+    <td>High</td>
+    <td>$0.10</td>
+  </tr>
+  <tr>
+    <td>LLM Instruction-Following</td>
+    <td>High</td>
+    <td>Medium</td>
+    <td>$2.50</td>
+  </tr>
+  <tr>
+    <td>Seed-Based Perturbation</td>
+    <td>Medium</td>
+    <td>High</td>
+    <td>$0.50</td>
+  </tr>
+  <tr>
+    <td>GAN-based</td>
+    <td>High</td>
+    <td>Variable</td>
+    <td>Compute</td>
+  </tr>
+</table>
+
+<h2>Scaling Synthetic Data Production</h2>
+<p>Production systems generate synthetic data through parallel batch processing. Using distributed frameworks like Ray or MapReduce scales generation to billions of samples. Cost optimization strategies include using cheaper models for seed generation and expensive models for filtering/validation, achieving 10-50x cost reduction compared to naive approaches.</p>
+<p>Synthetic data generation at scale requires sophisticated engineering. Batch generation systems process thousands of samples in parallel using distributed frameworks like Ray or Kubernetes jobs. Quality filters remove low-quality outputs through automated scoring, reducing downstream annotation burden by 30-50%. Diversity metrics (using embeddings or BLEU scores) prevent mode collapse where generation systems produce repetitive samples despite diverse prompts. Temperature and top-k sampling parameters control generation creativity: temperature=0.3 yields deterministic, focused outputs suitable for instruction following, while temperature=1.0 provides creative variation for dialogue and story generation. Self-supervised pre-training on synthetic data before fine-tuning on human data is an emerging pattern that reduces annotation requirements by 50-70%. Hybrid approaches combining human-generated seeds with model-based expansion achieve cost/quality ratios 10-100x better than pure manual annotation. For domain-specific synthesis (medical, legal, financial), incorporating domain-specific constraints and terminology databases prevents hallucination. Evaluation metrics must combine automated scoring (perplexity, classification accuracy) with human spot checks (5% sample review) to detect systematic failures.</p>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

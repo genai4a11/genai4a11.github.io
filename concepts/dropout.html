@@ -303,6 +303,39 @@ class FineTunedClassifier(nn.Module):
       </div>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Dropout Schedules and Adaptive Dropout</h2>
+<p>Standard dropout applies a fixed probability p throughout training. Adaptive dropout varies p during training or across layers, often starting high (0.5) and decaying toward zero. Some architectures use layer-dependent dropout where deeper layers have higher dropout rates to prevent the representational collapse that can occur in very deep networks.</p>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Dropout in Production Deployment</h2>
+<p>A critical gotcha: always call model.eval() before inference to disable dropout. Leaving dropout enabled during inference adds unwanted stochasticity to predictions, degrading reproducibility and performance. For uncertainty quantification, use dedicated Bayesian techniques or Monte Carlo dropout with explicit forward passes, not accidental training-mode inference.</p>
+
+<p><strong>Dropout implementation details:</strong> During training, dropout randomly sets activations to zero with probability p, then scales remaining activations by 1/(1-p) to maintain expected value. This scaling (called inverted dropout) is crucial: without it, disabling dropout at inference would effectively change the model's learned feature magnitudes. PyTorch's nn.Dropout implements inverted dropout automatically, making the training→inference transition seamless as long as eval() mode is used correctly.</p>
+<p>Dropout interacts with batch normalization in non-obvious ways. Placing dropout before batch norm can interfere with the norm's centering and scaling. Placing it after allows batch norm to stabilize the training signal before dropout's stochasticity. Modern best practices suggest dropout after the activation function but sometimes before the next layer's input. The interaction depends on the specific architecture; empirical evaluation on the target problem is often necessary.</p>
+<p>Dropout rates vary significantly across architectures and domains. Vision transformers often use minimal dropout (0.0-0.1) because data augmentation handles regularization. Language models may use 0.1-0.3 for moderate regularization. Very deep networks may use depth-dependent dropout (increasing with depth) to prevent severe feature collapse in later layers. Tuning dropout rate is often overlooked in hyperparameter sweeps but can significantly impact generalization.</p>
+</div>
+<div class="section-block" id="extra1">
+<div class="section-marker">EXTRA</div>
+<h2>Dropout in Context and Alternatives</h2>
+<p>Dropout is one regularization technique among many. Batch normalization acts as a regularizer by adding noise through batch statistics. Data augmentation (random crops, rotations, color jittering) provides implicit regularization. Early stopping halts training when validation performance plateaus. Ensemble methods combine multiple models for better generalization. Modern best practice often combines multiple techniques—dropout alone is rarely sufficient.</p>
+<p>For recurrent networks (RNNs, LSTMs), standard dropout on activations causes information loss across timesteps. Variational dropout (applying the same dropout mask across timesteps) preserves information flow while still regularizing. This distinction explains why standard dropout can severely damage RNN performance while variational dropout preserves it. Implementation details like this matter deeply for architectural choices.</p>
+<p>Dropout probability schedules (varying p during training) have been explored: starting with no dropout, gradually increasing p during training, then disabling it near convergence. The theoretical justification is that the model needs sufficient signal early in training before regularization becomes helpful. Empirical results are mixed, suggesting that fixed dropout rates tuned via validation sets typically outperform complex schedules.</p>
+</div>
+
+<p>Theoretical analysis of dropout reveals connections to ensemble methods. Applying dropout is equivalent to training an exponentially large ensemble of networks (with shared weights). Each forward pass with dropout samples from this ensemble. At inference with dropout disabled, the predictions average over the ensemble. This ensemble interpretation explains why dropout improves generalization—ensemble methods have strong generalization guarantees from statistical learning theory.</p>
+<p>Bernoulli dropout (the standard) randomly zeros activations with fixed probability. Variational dropout (used in RNNs) uses the same dropout mask across timesteps. Concrete dropout treats dropout rates as learnable parameters, optimized via backprop to maximize generalization. Spatial dropout (used in CNNs) zeros entire feature maps instead of individual activations. Choosing the right dropout variant for your architecture and domain matters significantly.</p>
+<p>Modern architectures often minimize dropout (sometimes using zero) because data augmentation and other regularization techniques provide sufficient regularization. Vision transformers with strong augmentation (RandAugment, Mixup) often use minimal dropout. Language models rely on dropout but are trending toward lower rates as model capacity and dataset size increase. There's a general trend toward data-centric over regularization-centric approaches.</p>
+<div class="section-block" id="boost1">
+<div class="section-marker">BOOST</div>
+<h2>Dropout and Uncertainty Quantification</h2>
+<p>Monte Carlo dropout uses multiple forward passes with dropout enabled to estimate model uncertainty. By running the same input multiple times with different dropout masks, you get different predictions. The distribution of these predictions estimates confidence. High variance across runs indicates low confidence; low variance indicates high confidence. This technique enables uncertainty quantification without modifying the model, using the regularization mechanism as an uncertainty estimator.</p>
+<p>Applications of uncertainty quantification include active learning (querying unlabeled examples where the model is most uncertain), out-of-distribution detection (rejecting samples where uncertainty is anomalously high), and calibration (relating reported confidence to actual accuracy). Dropout-based uncertainty is approximate (not true Bayesian posteriors) but computationally efficient and often effective in practice.</p>
+<p>Comparing dropout to other uncertainty methods (ensemble, temperature scaling, Laplace approximation, full Bayesian) reveals trade-offs. Dropout is cheap and easy to implement; full Bayesian is theoretically correct but computationally expensive. Ensembles are effective but require multiple models. Practitioners should choose uncertainty methods based on computational budget and accuracy requirements, not religious adherence to any single approach.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
