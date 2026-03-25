@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Router | GenAI Mindmap</title>
+  <meta name="description" content="Route queries to cheap vs expensive models based on complexity. Simple queries go to GPT-4o-mini; complex ones go to GPT-4o. RouteLLM, LiteLLM routing, and custom classifiers all implement this pattern." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="LLM Router" />
+  <meta property="og:description" content="Route queries to cheap vs expensive models based on complexity. Simple queries go to GPT-4o-mini; complex ones go to GPT-4o. RouteLLM, LiteLLM routing, and custom classifiers all implement this pattern." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/llm-router.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/llm-router.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "LLM Router | GenAI Mindmap",
+  "description": "Route queries to cheap vs expensive models based on complexity. Simple queries go to GPT-4o-mini; complex ones go to GPT-4o. RouteLLM, LiteLLM routing, and custom classifiers all implement this pattern.",
+  "url": "https://genai4a11.github.io/concepts/llm-router.html",
+  "dateModified": "2026-03-25T00:27:44.483245",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "LLM Router | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/llm-router.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #7c3aed;
+      --accent-dark: #6d28d9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/serving.html" class="nav-back">← Serving Infrastructure</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Infra</span>
+    <h1><em>LLM Router</em></h1>
+    <p class="hero-sub">Route queries to cheap vs expensive models based on complexity. Simple queries go to GPT-4o-mini; complex ones go to GPT-4o. RouteLLM, LiteLLM routing, and custom classifiers all implement this pattern.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Cost savings</div><div class="stat-label">40-70% typical</div></div>
+      <div><div class="stat-num">Quality maintained</div><div class="stat-label">Hard queries still get GPT-4</div></div>
+      <div><div class="stat-num">RouteLLM</div><div class="stat-label">Open-source router</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why routing saves money</a></li>
+        <li><a href="#s2" data-num="02">Routing strategies</a></li>
+        <li><a href="#s3" data-num="03">RouteLLM open-source router</a></li>
+        <li><a href="#s4" data-num="04">Building a custom classifier router</a></li>
+        <li><a href="#s5" data-num="05">LiteLLM routing</a></li>
+        <li><a href="#s6" data-num="06">Measuring router effectiveness</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Why routing saves money</h2>
+<p>In most LLM applications, not all queries are equally hard. "What is the capital of France?" can be answered correctly by gpt-4o-mini ($0.00015/1K tokens). "Analyse the legal implications of this 50-page contract" needs GPT-4o ($0.0025/1K). If you send all queries to GPT-4o, you're paying 16× more than necessary for the easy queries. LLM routing classifies each query by complexity and sends it to the cheapest model that can handle it correctly. Typical savings: 40–70% cost reduction with &lt;2% quality degradation on overall traffic.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Routing strategies</h2>
+<ul>
+<li><strong>Cascade routing</strong>: Try the cheap model first. If its confidence is low (e.g. logprob below threshold), escalate to the expensive model. Works well for classification and QA tasks where confidence is measurable.</li>
+<li><strong>Classifier routing</strong>: A small model classifies each query as "easy" or "hard" before routing. The classifier can be a fine-tuned BERT or a prompt-based LLM call that's much cheaper than the main task.</li>
+<li><strong>Rule-based routing</strong>: Simple heuristics — query length, presence of specific keywords, detected task type (math → strong model; casual chat → cheap model).</li>
+<li><strong>RouteLLM</strong>: Open-source library that uses a trained preference matrix from human feedback to route queries. Achieves strong results on MMLU-style benchmarks.</li>
+</ul>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>RouteLLM open-source router</h2>
+<pre><code class="language-python">pip install routellm
+
+from routellm.controller import Controller
+
+# RouteLLM routes between a "strong" and "weak" model
+controller = Controller(
+    routers=["mf"],         # "mf" = matrix factorisation router (recommended)
+    strong_model="gpt-4o",
+    weak_model="gpt-4o-mini",
+)
+
+# threshold: fraction of queries sent to strong model
+# 0.11618 = ~40% of queries go to strong model (from RouteLLM paper)
+response = controller.chat.completions.create(
+    model="router-mf-0.11618",
+    messages=[{"role": "user", "content": "What is the integral of x^2?"}],
+)
+print(response.choices[0].message.content)
+
+# Check which model was used:
+# response.model == "gpt-4o" or "gpt-4o-mini"
+
+# Calibrate threshold on your own data:
+from routellm.evals.calibration import calibrate_threshold
+threshold = calibrate_threshold(
+    data=your_eval_data,
+    target_strong_model_calls=0.3,  # want 30% of queries to use strong model
+)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Building a custom classifier router</h2>
+<pre><code class="language-python">import openai
+
+client = openai.OpenAI()
+
+ROUTER_PROMPT = '''Classify this user query as "simple" or "complex".
+Simple: factual lookups, basic calculations, short responses, greetings.
+Complex: multi-step reasoning, code generation, analysis, synthesis, long content.
+Respond with only one word: simple or complex.
+
+Query: {query}'''
+
+def route_query(query: str) -> str:
+    # Use a very cheap model for routing (tiny cost)
+    classification = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": ROUTER_PROMPT.format(query=query)}],
+        max_tokens=5,
+        temperature=0.0,
+    ).choices[0].message.content.strip().lower()
+
+    return "gpt-4o" if classification == "complex" else "gpt-4o-mini"
+
+def routed_completion(query: str, **kwargs) -> str:
+    model = route_query(query)
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": query}],
+        **kwargs,
+    )
+    return resp.choices[0].message.content, model
+
+answer, used_model = routed_completion("What is 2+2?")
+print(f"Answer: {answer} (used: {used_model})")
+# Answer: 4 (used: gpt-4o-mini)
+
+answer, used_model = routed_completion("Explain the proof of Fermat's Last Theorem")
+print(f"Answer: {answer[:100]}... (used: {used_model})")
+# ... (used: gpt-4o)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>LiteLLM routing</h2>
+<pre><code class="language-python">from litellm import Router
+
+router = Router(
+    model_list=[
+        {"model_name": "cheap", "litellm_params": {"model": "gpt-4o-mini"}},
+        {"model_name": "expensive", "litellm_params": {"model": "gpt-4o"}},
+    ],
+    # Routing strategies: "simple-shuffle", "latency-based-routing", "usage-based-routing"
+    routing_strategy="usage-based-routing",  # route to model with most capacity
+)
+
+# Or use fallback routing (try cheap first, fallback to expensive on error)
+response = router.completion(
+    model="cheap",
+    messages=[{"role": "user", "content": "Hello"}],
+    fallbacks=[{"model": "expensive"}],  # fallback if cheap fails
+)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Measuring router effectiveness</h2>
+<pre><code class="language-python">def measure_router_roi(queries: list[str], ground_truth: list[str]) -> dict:
+    # Baseline: all queries to expensive model
+    baseline_cost = len(queries) * 0.01  # ~$0.01 per expensive query avg
+
+    routed_cost = 0
+    quality_maintained = 0
+
+    for query, expected in zip(queries, ground_truth):
+        answer, model = routed_completion(query)
+        cost = 0.001 if model == "gpt-4o-mini" else 0.01
+        routed_cost += cost
+        # Check quality (simplified)
+        if expected.lower() in answer.lower():
+            quality_maintained += 1
+
+    return {
+        "cost_savings_pct": (baseline_cost - routed_cost) / baseline_cost * 100,
+        "quality_maintained_pct": quality_maintained / len(queries) * 100,
+        "cheap_model_pct": sum(1 for _ in queries if route_query(_) == "gpt-4o-mini") / len(queries) * 100,
+    }
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<ul>
+<li><strong>Router accuracy matters</strong>: A router that sends complex queries to the cheap model reduces quality. Measure false negatives (complex queries classified as simple) carefully — these are more damaging than false positives.</li>
+<li><strong>Task-specific calibration</strong>: RouteLLM's default thresholds are calibrated on LMSYS Arena data (general chat). For specialised domains (legal, medical, code), recalibrate on your own query distribution.</li>
+<li><strong>Cascading latency</strong>: Cascade routing (cheap first, escalate on low confidence) adds latency for the queries that need escalation. If p99 latency matters, prefer classifier routing (one call to decide, one call to answer) over cascade routing.</li>
+</ul>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/serving.html" style="color:var(--accent)">Serving Infrastructure</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
