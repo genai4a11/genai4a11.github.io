@@ -548,6 +548,67 @@ spec:
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Scaling latency:</strong> HPA adds 30–60 sec to spin up new pods. For bursty traffic, pre-scale or use spot instances with Karpenter. For real-time, maintain headroom (run at 50% capacity).</span>
+
+<div class="example-box">
+<div class="example-label">Python · Multi-cloud LLM router with latency-based failover</div>
+<pre><code class="language-python">import time, logging
+from openai import OpenAI
+import anthropic
+
+logger = logging.getLogger(__name__)
+
+class MultiCloudRouter:
+    """Route LLM requests across providers with latency tracking and failover."""
+    def __init__(self):
+        self.providers = {
+            "openai":    {"client": OpenAI(), "model": "gpt-4o-mini",
+                          "latencies": [], "errors": 0},
+            "anthropic": {"client": anthropic.Anthropic(), "model": "claude-haiku-4-5-20251001",
+                          "latencies": [], "errors": 0},
+        }
+
+    def _call_openai(self, p: dict, prompt: str) -> str:
+        return p["client"].chat.completions.create(
+            model=p["model"],
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=256
+        ).choices[0].message.content
+
+    def _call_anthropic(self, p: dict, prompt: str) -> str:
+        return p["client"].messages.create(
+            model=p["model"],
+            max_tokens=256,
+            messages=[{"role": "user", "content": prompt}]
+        ).content[0].text
+
+    def route(self, prompt: str, prefer_fast: bool = True) -> dict:
+        # Sort providers by recent avg latency
+        def avg_lat(name):
+            lats = self.providers[name]["latencies"][-5:]
+            return sum(lats)/len(lats) if lats else float('inf')
+
+        order = sorted(self.providers.keys(), key=avg_lat) if prefer_fast                 else list(self.providers.keys())
+
+        for name in order:
+            p = self.providers[name]
+            t0 = time.perf_counter()
+            try:
+                call_fn = self._call_openai if name == "openai" else self._call_anthropic
+                result = call_fn(p, prompt)
+                latency = time.perf_counter() - t0
+                p["latencies"].append(latency)
+                return {"provider": name, "response": result, "latency_ms": round(latency*1000)}
+            except Exception as e:
+                p["errors"] += 1
+                logger.warning(f"{name} failed: {e}, trying next provider")
+        raise RuntimeError("All providers failed")
+
+router = MultiCloudRouter()
+result = router.route("What is 42 * 37?")
+print(f"[{result['provider']}] {result['latency_ms']}ms: {result['response']}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <div class="section-block" id="cost-optim">

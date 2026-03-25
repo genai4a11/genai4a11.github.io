@@ -613,6 +613,63 @@
 <div class="method-body">
 <h3>Complex reasoning + coding</h3>
 <p><a class="concept-link" href="gpt4o.html">GPT-4o</a> or <a class="concept-link" href="claude35.html">Claude 3.5 Sonnet</a>. Run on your own benchmark. Both are excellent; test on your task.</p>
+
+<div class="example-box">
+<div class="example-label">Python · Model router: pick model based on task complexity</div>
+<pre><code class="language-python">from openai import OpenAI
+import anthropic
+
+oai = OpenAI()
+ant = anthropic.Anthropic()
+
+def classify_complexity(prompt: str) -> str:
+    """Classify prompt complexity to route to appropriate model."""
+    indicators = {
+        "hard": ["analyze", "compare", "evaluate", "design", "implement", "prove",
+                 "debug", "architecture", "trade-off", "code review"],
+        "medium": ["explain", "summarize", "write", "list", "describe"],
+    }
+    p_lower = prompt.lower()
+    if len(prompt) > 500 or any(w in p_lower for w in indicators["hard"]):
+        return "hard"
+    if any(w in p_lower for w in indicators["medium"]):
+        return "medium"
+    return "easy"
+
+def smart_route(prompt: str) -> dict:
+    """Route to cheapest model that can handle the complexity."""
+    complexity = classify_complexity(prompt)
+    if complexity == "easy":
+        # Cheapest: GPT-4o-mini
+        resp = oai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=256
+        ).choices[0].message.content
+        return {"model": "gpt-4o-mini", "complexity": complexity, "response": resp}
+    elif complexity == "medium":
+        # Mid-tier: Claude Haiku
+        resp = ant.messages.create(
+            model="claude-haiku-4-5-20251001", max_tokens=512,
+            messages=[{"role": "user", "content": prompt}]
+        ).content[0].text
+        return {"model": "claude-haiku", "complexity": complexity, "response": resp}
+    else:
+        # Hard: best available model
+        resp = oai.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1024
+        ).choices[0].message.content
+        return {"model": "gpt-4o", "complexity": complexity, "response": resp}
+
+# Example
+for q in ["What is 2+2?", "Explain transformers.", "Design a distributed RAG system."]:
+    r = smart_route(q)
+    print(f"[{r['complexity']}→{r['model']}] {q[:40]}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <div class="method-card">
@@ -679,6 +736,54 @@
 <div class="tool-category">Observability</div>
 <div class="tool-name">W&amp;B</div>
 <div class="tool-desc">Model monitoring and experiments</div>
+
+<div class="example-box">
+<div class="example-label">Python · Multi-provider benchmark: compare GPT-4o vs Claude vs Gemini</div>
+<pre><code class="language-python">import time, statistics, json
+from openai import OpenAI
+import anthropic
+import google.generativeai as genai
+
+oai = OpenAI()
+ant = anthropic.Anthropic()
+genai.configure()
+gem = genai.GenerativeModel("gemini-1.5-flash")
+
+TASKS = [
+    {"name": "factual",  "prompt": "What year was Python created?", "expected": "1991"},
+    {"name": "math",     "prompt": "What is 17 × 23?",              "expected": "391"},
+    {"name": "reasoning","prompt": "If all A are B, and all B are C, are all A C?", "expected": "yes"},
+]
+
+def run_provider(name: str, prompt: str) -> tuple[str, float]:
+    t0 = time.perf_counter()
+    if name == "gpt-4o-mini":
+        resp = oai.chat.completions.create(model="gpt-4o-mini",
+            messages=[{"role":"user","content":prompt}], max_tokens=64
+        ).choices[0].message.content
+    elif name == "claude-haiku":
+        resp = ant.messages.create(model="claude-haiku-4-5-20251001", max_tokens=64,
+            messages=[{"role":"user","content":prompt}]
+        ).content[0].text
+    elif name == "gemini-flash":
+        resp = gem.generate_content(prompt).text
+    return resp.strip(), round((time.perf_counter()-t0)*1000)
+
+results = {}
+for provider in ["gpt-4o-mini", "claude-haiku", "gemini-flash"]:
+    scores, latencies = [], []
+    for task in TASKS:
+        resp, ms = run_provider(provider, task["prompt"])
+        correct = task["expected"].lower() in resp.lower()
+        scores.append(correct); latencies.append(ms)
+    results[provider] = {
+        "accuracy": round(statistics.mean(scores), 2),
+        "avg_latency_ms": round(statistics.mean(latencies))
+    }
+print(json.dumps(results, indent=2))
+</code></pre>
+</div>
+
 </div>
 </div>
 <p style="margin-top: 1.5rem;"><strong>Example: <a class="concept-link" href="litellm.html">LiteLLM</a> router config for multi-model routing and fallback</strong></p>

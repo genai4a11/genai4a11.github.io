@@ -291,5 +291,66 @@ def generate_training_example(user_input):
   <span class="concept-nav-cat">Strategy & Design</span>
   <span></span>
 </nav>
+<div class="section-block" id="practical-implications">
+<div class="section-marker">06 — Practice</div>
+<h2>Practical Engineering Implications</h2>
+<p>Each frontier capability shift changes what is worth building. Long context (1M+ tokens) means document retrieval pipelines need rethinking — instead of chunking and searching, you can sometimes just stuff the entire corpus into the context window. But "can" doesn't mean "should": long-context models still degrade on needle-in-a-haystack retrieval, cost more, and have higher latency. RAG remains valuable for very large or rapidly changing knowledge bases.</p>
+<p>Native multimodal models collapse separate pipelines: instead of OCR → text extraction → LLM, you pass the image directly. This simplifies architecture but raises new questions about what the model "sees" vs what humans see in the same image. Test multimodal pipelines on diverse image types before trusting them for production document processing.</p>
+<table>
+<thead><tr><th>Frontier Capability</th><th>Architectural Impact</th><th>Old Pattern</th><th>New Pattern</th></tr></thead>
+<tbody>
+<tr><td>Long context (1M tokens)</td><td>Rethink retrieval granularity</td><td>Chunk → embed → search → inject</td><td>Full-doc context if ≤ 100k tokens</td></tr>
+<tr><td>Native multimodal</td><td>Collapse modality-specific pipelines</td><td>OCR → extract → LLM</td><td>Image → VLM directly</td></tr>
+<tr><td>Test-time compute scaling</td><td>Adjustable quality-cost dial</td><td>Fixed model tier choice</td><td>Budget tokens per request</td></tr>
+<tr><td>Distillation / small capable models</td><td>Edge &amp; on-device deployment</td><td>Cloud API for everything</td><td>Small model on-device for common tasks</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block" id="staying-current">
+<div class="section-marker">07 — Currency</div>
+<h2>Staying Current in a Fast-Moving Field</h2>
+<p>Frontier model capabilities shift faster than any other area of software engineering — major capability jumps happen every 3–6 months. The practical survival strategy: anchor your architecture to stable abstractions (the OpenAI API spec, standard eval frameworks, vector database interfaces) rather than specific models, so you can swap in better models without rewriting pipelines.</p>
+<p>Track releases via model cards and technical reports rather than press coverage — the papers contain the benchmark numbers and capability descriptions that actually matter for engineering decisions. Maintain a personal eval set of 20–50 representative queries for your use case; run every new model release against it to get a signal on whether to upgrade. The best engineers in this space treat model evaluation as a core competency, not an afterthought.</p>
+<div class="example-box">
+<div class="example-label">Python · Personal model tracking: run your eval on every new release</div>
+<pre><code class="language-python">import json, statistics
+from datetime import datetime
+from pathlib import Path
+from openai import OpenAI
+
+client = OpenAI()
+HISTORY = Path("model_evals.jsonl")
+
+# Your personal eval set — 20-50 queries representative of your use case
+MY_EVALS = [
+    {"input": "Explain RAG in one sentence.", "must_contain": ["retrieval", "generation"]},
+    {"input": "Write a Python function to reverse a list.", "must_contain": ["def", "return"]},
+    {"input": "What is 17 squared?", "must_contain": ["289"]},
+]
+
+def run_personal_eval(model: str) -> dict:
+    scores = []
+    for item in MY_EVALS:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": item["input"]}],
+            max_tokens=200, temperature=0.0
+        ).choices[0].message.content.lower()
+        scores.append(all(kw in resp for kw in item["must_contain"]))
+    result = {"model": model, "date": datetime.now().isoformat(),
+              "accuracy": round(statistics.mean(scores), 3), "n": len(MY_EVALS)}
+    HISTORY.open("a").write(json.dumps(result) + "
+")
+    return result
+
+# Run on every new model release
+for model in ["gpt-4o-mini", "gpt-4o"]:
+    print(run_personal_eval(model))
+</code></pre>
+<p>Establish a personal knowledge-update cadence: subscribe to model provider release notes, set a weekly 30-minute block to skim arxiv cs.AI abstracts, and track a short watchlist of repos (e.g. vLLM, LiteLLM, LlamaIndex). Prioritise reading the official technical reports for major model releases — they contain latency, pricing, and capability details that secondary coverage often distorts. When a genuinely new capability lands (e.g. native multimodal output, million-token context), immediately prototype a minimal integration to understand real-world behaviour before committing to a production design. Most capability claims require 20-30% discount for production workloads versus benchmark conditions.</p>
+
+</div>
+</div>
 </body>
 </html>

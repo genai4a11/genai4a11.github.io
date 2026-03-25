@@ -340,5 +340,56 @@ async def run_with_limit(role, task):
   <span class="concept-nav-cat">Agents & Orchestration</span>
   <a class="concept-nav-next" href="state-sessions.html">→ State &amp; Session Management for LLM Apps</a>
 </nav>
+<div class="section-block" id="multi-agent-patterns">
+<div class="section-marker">07 — Patterns</div>
+<h2>Multi-Agent Architecture Patterns</h2>
+<p>Multi-agent systems succeed when tasks are genuinely parallelisable or benefit from specialisation — a researcher agent, a writer agent, and a critic agent each doing what they're best at. They fail when coordination overhead dominates, when agents have inconsistent world-states, or when debugging becomes impossible because errors compound across agent boundaries.</p>
+<p>The most reliable production pattern is the <strong>supervisor-worker hierarchy</strong>: one orchestrator agent decomposes the task, assigns subtasks to specialist workers, and synthesises results. This gives a single control point for monitoring, error handling, and human oversight. Avoid fully autonomous peer-to-peer agent communication in production — it's nearly impossible to audit or debug.</p>
+<table>
+<thead><tr><th>Pattern</th><th>Structure</th><th>Best For</th><th>Pitfall</th></tr></thead>
+<tbody>
+<tr><td>Orchestrator-Worker</td><td>1 orchestrator → N workers</td><td>Parallelisable subtasks</td><td>Orchestrator becomes bottleneck</td></tr>
+<tr><td>Pipeline</td><td>Agent A → Agent B → Agent C</td><td>Sequential transformation stages</td><td>Error propagation, no backtracking</td></tr>
+<tr><td>Debate/Critic</td><td>Generator + Critic agents</td><td>Quality improvement, fact-checking</td><td>Agents may agree rather than debate</td></tr>
+<tr><td>Specialist Pool</td><td>Router → domain specialist agents</td><td>Multi-domain queries</td><td>Routing errors send to wrong specialist</td></tr>
+<tr><td>Peer-to-Peer</td><td>Agents communicate freely</td><td>Complex emergent behaviour</td><td>Very hard to debug, audit, or control</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block" id="multi-agent-testing">
+<div class="section-marker">Supplemental</div>
+<h2>Testing Multi-Agent Systems</h2>
+<p>Multi-agent systems are harder to test than single-agent systems because failures emerge from agent interactions, not just individual agent behaviour. A solid test strategy layers unit tests (each agent in isolation), integration tests (pairs of agents), and end-to-end tests (full orchestration with mocked external APIs).</p>
+<p>Key things to assert in integration tests: the orchestrator correctly decomposes tasks; each worker receives complete, well-formed inputs; the synthesiser produces coherent output even when workers return conflicting results; and the entire pipeline completes within your latency budget. Use deterministic model stubs in unit tests to keep CI fast:</p>
+<pre><code class="language-python">class StubAgent:
+    # Deterministic stand-in for a real LLM agent in unit tests.
+    def __init__(self, fixed_response: str):
+        self.fixed_response = fixed_response
+        self.call_count = 0
+
+    def run(self, task: str) -&gt; str:
+        self.call_count += 1
+        return self.fixed_response
+
+def test_orchestrator_calls_all_workers():
+    research  = StubAgent("Research result: LLMs use transformers.")
+    analysis  = StubAgent("Analysis result: cost is O(n^2).")
+    synthesis = StubAgent("Final: transformers are expensive.")
+
+    orchestrator = Orchestrator(
+        research_agent=research,
+        analysis_agent=analysis,
+        synthesis_agent=synthesis
+    )
+    result = orchestrator.run("Compare LLM architectures")
+
+    assert research.call_count == 1
+    assert analysis.call_count == 1
+    assert synthesis.call_count == 1
+    assert "transformers" in result.lower()
+</code></pre>
+<p>For latency regression testing, record a baseline wall-clock time for a representative orchestration run, then alert if any PR increases it by more than 20%. Multi-agent latency is dominated by the longest serial chain, so optimising the critical path yields the best returns.</p>
+</div>
 </body>
 </html>

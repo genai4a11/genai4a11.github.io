@@ -494,6 +494,47 @@
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>MMLU is one benchmark.</strong> Pick models by your actual workload: customer support, code, reasoning, etc. Fine-tuned 7B models often beat larger untuned ones on specific tasks.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Compare open models on a custom benchmark</div>
+<pre><code class="language-python">import time, statistics
+from openai import OpenAI
+
+# Both vLLM instances expose OpenAI-compatible API
+clients = {
+    "llama3-8b":    OpenAI(base_url="http://llama3:8000/v1",    api_key="x"),
+    "mistral-7b":   OpenAI(base_url="http://mistral:8000/v1",   api_key="x"),
+    "gemma2-9b":    OpenAI(base_url="http://gemma2:8000/v1",    api_key="x"),
+}
+
+EVAL_PROMPTS = [
+    {"q": "What is the capital of France?", "a": "paris"},
+    {"q": "Write a Python function to reverse a string.", "a": "def"},
+    {"q": "Explain gradient descent in one sentence.", "a": "optimiz"},
+]
+
+def benchmark_model(name: str, client: OpenAI) -> dict:
+    scores, latencies = [], []
+    for item in EVAL_PROMPTS:
+        t0 = time.perf_counter()
+        resp = client.chat.completions.create(
+            model=name,
+            messages=[{"role": "user", "content": item["q"]}],
+            max_tokens=128, temperature=0.0
+        ).choices[0].message.content
+        latencies.append(time.perf_counter() - t0)
+        scores.append(1 if item["a"].lower() in resp.lower() else 0)
+    return {
+        "model": name,
+        "accuracy": round(statistics.mean(scores), 2),
+        "avg_latency_s": round(statistics.mean(latencies), 2)
+    }
+
+for name, c in clients.items():
+    print(benchmark_model(name, c))
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 3. LICENCES ── -->
@@ -592,6 +633,49 @@ curl http://localhost:11434/api/generate -d '{
 <li>Fine-tune for style, RAG for facts</li>
 <li>Higher implementation cost</li>
 </ul>
+
+<div class="example-box">
+<div class="example-label">Python · Run Llama 3 locally with Ollama (simplest path)</div>
+<pre><code class="language-python">import requests, json
+
+# Install Ollama: https://ollama.com
+# Pull model: ollama pull llama3.2
+
+OLLAMA_URL = "http://localhost:11434"
+
+def ollama_chat(model: str, messages: list[dict],
+                stream: bool = False) -> str:
+    """Chat with a locally-running Ollama model."""
+    resp = requests.post(
+        f"{OLLAMA_URL}/api/chat",
+        json={"model": model, "messages": messages, "stream": stream},
+        timeout=120
+    )
+    resp.raise_for_status()
+    return resp.json()["message"]["content"]
+
+def ollama_list_models() -> list[str]:
+    """List locally available models."""
+    resp = requests.get(f"{OLLAMA_URL}/api/tags")
+    return [m["name"] for m in resp.json().get("models", [])]
+
+# OpenAI-compatible API (also supported by Ollama)
+from openai import OpenAI
+client = OpenAI(base_url=f"{OLLAMA_URL}/v1", api_key="ollama")
+
+response = client.chat.completions.create(
+    model="llama3.2",
+    messages=[{"role": "user", "content": "What is RAG in 2 sentences?"}]
+)
+print(response.choices[0].message.content)
+
+# Other local options:
+# - LM Studio: GUI app, supports GGUF models
+# - llama.cpp: C++ inference, minimal dependencies
+# - vLLM: production serving, best throughput
+</code></pre>
+</div>
+
 </div>
 </div>
 <h3>LoRA Fine-Tuning Workflow</h3>
@@ -714,5 +798,20 @@ curl http://localhost:11434/api/generate -d '{
   <span class="concept-nav-cat">Models & Prompting</span>
   <a class="concept-nav-next" href="programmatic-prompting.html">→ Programmatic Prompting</a>
 </nav>
-</div></body>
+</div><div class="section-block" id="references">
+<div class="section-marker">07 — Further Reading</div>
+<h2>References</h2>
+<div class="ref-group-title">Model Cards &amp; Papers</div>
+<ul class="ref-list">
+<li><span class="ref-badge badge-paper">Paper</span>
+Meta AI. (2024). <em>Llama 3: Open Foundation and Fine-Tuned Chat Models.</em> arXiv 2407.21783.</li>
+<li><span class="ref-badge badge-paper">Paper</span>
+Jiang et al. (2023). <em>Mistral 7B.</em> arXiv 2310.06825.</li>
+<li><span class="ref-badge badge-paper">Paper</span>
+Gemma Team. (2024). <em>Gemma 2: Improving Open Language Models at a Practical Size.</em> arXiv 2408.00118.</li>
+<li><span class="ref-badge badge-docs">Resource</span>
+<a href="https://huggingface.co/open-llm-leaderboard" style="color:var(--indigo)">Open LLM Leaderboard</a> — live benchmark rankings for open models.</li>
+</ul>
+</div>
+</body>
 </html>

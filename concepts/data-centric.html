@@ -545,6 +545,18 @@
 <div class="callout amber">
 <span class="callout-icon">📋</span>
 <span><strong>Before training:</strong> ✓ Remove duplicates ✓ Check accuracy (sample 100) ✓ Verify label distribution ✓ Remove PII ✓ Document provenance ✓ Version dataset</span>
+
+<table>
+<thead><tr><th>Quality Dimension</th><th>Problem</th><th>Detection Method</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Correctness</td><td>Wrong labels, factual errors</td><td>Cross-annotator agreement, LLM audit</td><td>Re-label, expert review</td></tr>
+<tr><td>Completeness</td><td>Missing fields, truncated text</td><td>Schema validation, length histograms</td><td>Filter or impute</td></tr>
+<tr><td>Consistency</td><td>Same input, different labels</td><td>Duplicate detection, inter-rater reliability</td><td>Adjudication, majority vote</td></tr>
+<tr><td>Relevance</td><td>Off-domain examples polluting set</td><td>Embedding clustering, topic modeling</td><td>Domain classifier, manual curation</td></tr>
+<tr><td>Diversity</td><td>Over-represented topics/styles</td><td>Embedding coverage analysis</td><td>Stratified sampling, synthetic data</td></tr>
+</tbody>
+</table>
+
 </div>
 </div>
 <!-- ── 3. CURATION PIPELINE ── -->
@@ -572,6 +584,54 @@
 <div class="workflow-step">
 <div class="step-num">5</div>
 <div class="step-text"><strong>Versioning.</strong> Track changes, commit to version control</div>
+
+<div class="example-box">
+<div class="example-label">Python · LLM-assisted data quality scoring and filtering</div>
+<pre><code class="language-python">import json
+from openai import OpenAI
+from pydantic import BaseModel, Field
+
+client = OpenAI()
+
+class QualityScore(BaseModel):
+    score: int = Field(ge=1, le=5, description="Overall quality 1-5")
+    issues: list[str] = Field(description="List of quality issues found")
+    keep: bool = Field(description="Whether to keep this example in the dataset")
+
+def score_training_example(input_text: str, output_text: str,
+                            task_description: str) -> QualityScore:
+    """Use LLM to score a training example for quality."""
+    prompt = f"""Evaluate this training example for a {task_description} model.
+
+Input: {input_text[:500]}
+Output: {output_text[:500]}
+
+Score on: accuracy, completeness, clarity, and task-relevance.
+Score 1=poor/harmful, 3=acceptable, 5=excellent."""
+
+    result = client.beta.chat.completions.parse(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        response_format=QualityScore,
+        temperature=0.0
+    )
+    return result.choices[0].message.parsed
+
+def filter_dataset(examples: list[dict], task: str,
+                   min_score: int = 3) -> list[dict]:
+    """Filter a dataset, keeping only high-quality examples."""
+    filtered = []
+    for ex in examples:
+        score = score_training_example(ex["input"], ex["output"], task)
+        if score.keep and score.score >= min_score:
+            filtered.append({**ex, "_quality_score": score.score})
+        else:
+            print(f"Dropped (score={score.score}): {ex['input'][:50]}... Issues: {score.issues}")
+    print(f"Kept {len(filtered)}/{len(examples)} examples")
+    return filtered
+</code></pre>
+</div>
+
 </div>
 </div>
 <p><strong>Iterate:</strong> After first training run, analyze errors. Where does the model fail? Collect more examples for those cases.</p>
@@ -616,6 +676,47 @@ print(clean)  # ["The sky is blue", "Water is wet"]
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Dedup + filter = 30–50% size reduction with quality gains.</strong> Spend time here; it compounds across all downstream work.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Dataset deduplication using MinHash LSH</div>
+<pre><code class="language-python">from datasketch import MinHash, MinHashLSH
+import re
+
+def text_to_shingles(text: str, k: int = 5) -> set[str]:
+    """Convert text to k-character shingles for MinHash."""
+    text = re.sub(r'\s+', ' ', text.lower().strip())
+    return {text[i:i+k] for i in range(len(text) - k + 1)}
+
+def build_minhash(text: str, num_perm: int = 128) -> MinHash:
+    m = MinHash(num_perm=num_perm)
+    for shingle in text_to_shingles(text):
+        m.update(shingle.encode('utf8'))
+    return m
+
+def deduplicate_dataset(texts: list[str], threshold: float = 0.8) -> list[int]:
+    """Return indices of unique examples after near-duplicate removal."""
+    lsh = MinHashLSH(threshold=threshold, num_perm=128)
+    keep = []
+    for i, text in enumerate(texts):
+        mh = build_minhash(text)
+        if not lsh.query(mh):  # no near-duplicates found
+            lsh.insert(f"doc_{i}", mh)
+            keep.append(i)
+    return keep
+
+# Example
+documents = [
+    "The quick brown fox jumps over the lazy dog.",
+    "The quick brown fox jumps over the lazy dog!",   # near-duplicate
+    "A completely different sentence about machine learning.",
+    "The quick brown fox jumped over the lazy dog.",  # near-duplicate
+]
+unique_indices = deduplicate_dataset(documents, threshold=0.8)
+print(f"Kept {len(unique_indices)}/{len(documents)}: {unique_indices}")
+# Kept 2/4: [0, 2]
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 5. ANNOTATION ── -->

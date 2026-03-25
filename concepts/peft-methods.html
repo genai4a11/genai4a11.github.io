@@ -534,6 +534,67 @@
 <div class="method-body">
 <h3>Rank 4–8 <em>— minimal</em></h3>
 <p>Style and tone adaptation, simple instruction following. Minimal storage. For lightweight tasks where you're not reshaping the model's reasoning.</p>
+
+<div class="example-box">
+<div class="example-label">Python · LoRA fine-tuning with PEFT + TRL</div>
+<pre><code class="language-python">from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model, TaskType
+from trl import SFTConfig, SFTTrainer
+from datasets import Dataset
+import torch
+
+# QLoRA: load base in 4-bit, train LoRA adapters in fp16
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16
+)
+
+model_id = "mistralai/Mistral-7B-Instruct-v0.2"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, quantization_config=bnb_config, device_map="auto"
+)
+
+# LoRA configuration: target attention projection matrices
+lora_config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=16,             # rank — higher = more capacity, more params
+    lora_alpha=32,    # scaling factor (typically 2×r)
+    lora_dropout=0.05,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj"]
+)
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()
+# trainable params: 13,631,488 || all params: 7,254,540,288 || trainable%: 0.19
+
+# Training data in chat format
+train_data = Dataset.from_list([
+    {"messages": [
+        {"role": "user", "content": "What is gradient descent?"},
+        {"role": "assistant", "content": "Gradient descent is an iterative optimization..."}
+    ]}
+])
+
+trainer = SFTTrainer(
+    model=model,
+    train_dataset=train_data,
+    args=SFTConfig(
+        output_dir="./lora-output",
+        num_train_epochs=3,
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=4,
+        learning_rate=2e-4,
+        fp16=True,
+        max_seq_length=512
+    ),
+    tokenizer=tokenizer
+)
+trainer.train()
+model.save_pretrained("./lora-adapter")  # saves only the ~80MB adapter
+</code></pre>
+</div>
+
 </div>
 </div>
 <div class="method-card">
@@ -577,6 +638,44 @@
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>When to use QLoRA:</strong> You have a 13B+ model and a single GPU under 48GB VRAM. Quality loss is minimal; feasibility gain is massive.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Merge LoRA adapter into base model for deployment</div>
+<pre><code class="language-python">from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+import torch
+
+base_model_id = "mistralai/Mistral-7B-Instruct-v0.2"
+adapter_path   = "./lora-adapter"
+
+# Load base model in full precision for merging
+tokenizer = AutoTokenizer.from_pretrained(base_model_id)
+base_model = AutoModelForCausalLM.from_pretrained(
+    base_model_id,
+    torch_dtype=torch.float16,
+    device_map="cpu"   # merge on CPU to avoid OOM on smaller GPUs
+)
+
+# Load PEFT model (base + adapter)
+peft_model = PeftModel.from_pretrained(base_model, adapter_path)
+
+# Merge adapter weights into base model
+print("Merging adapter into base model...")
+merged_model = peft_model.merge_and_unload()
+print("Merge complete.")
+
+# Save merged model — now a standalone model without PEFT dependency
+merged_model.save_pretrained("./merged-model", safe_serialization=True)
+tokenizer.save_pretrained("./merged-model")
+print("Saved merged model to ./merged-model")
+
+# The merged model:
+# - Has ZERO runtime overhead vs base model
+# - Can be served with any standard inference framework
+# - Is indistinguishable from a full fine-tuned model
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 5. CHOOSING ── -->
@@ -658,6 +757,24 @@
 </div>
 </div>
 <!-- ── 7. REFERENCES ── -->
+
+<div class="section-block" id="production-peft">
+<div class="section-marker">06 — Production</div>
+<h2>Production Deployment of PEFT Models</h2>
+<p>PEFT adapters are small — a LoRA adapter for a 7B model might be 40–80MB while the base model is 14GB. This creates a deployment opportunity: host one base model and hot-swap adapters per tenant or task. The PEFT library and vLLM both support multi-LoRA serving with dynamic adapter loading.</p>
+<p>Key considerations: adapter compatibility (adapters are version-locked to the base model checkpoint), merging vs dynamic loading (merge for single-purpose deployment to eliminate serving overhead, dynamic loading for multi-task scenarios), and adapter versioning (treat adapters like model artifacts — version control, evaluation gates before promotion).</p>
+<table>
+<thead><tr><th>Method</th><th>Trainable Params</th><th>Memory Overhead</th><th>Quality vs Full FT</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>LoRA</td><td>0.1–1%</td><td>~40–80MB adapter</td><td>~95%</td><td>Domain adaptation, style</td></tr>
+<tr><td>QLoRA</td><td>0.1–1%</td><td>~40MB + 4-bit base</td><td>~92%</td><td>Fine-tuning on consumer GPU</td></tr>
+<tr><td>Prefix Tuning</td><td>&lt;0.1%</td><td>Minimal</td><td>~85%</td><td>Prompt-style tasks</td></tr>
+<tr><td>IA³</td><td>&lt;0.05%</td><td>Minimal</td><td>~88%</td><td>Few-shot task specialization</td></tr>
+<tr><td>Full Fine-Tuning</td><td>100%</td><td>Full model copy</td><td>100% (ceiling)</td><td>Maximum quality, large budget</td></tr>
+</tbody>
+</table>
+</div>
+
 <div class="section-block" id="references">
 <div class="section-marker">07 — Further Reading</div>
 <h2>References</h2>

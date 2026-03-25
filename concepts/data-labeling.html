@@ -519,6 +519,119 @@ print(f"Cohen's kappa: {kappa:.2f}")</div>
 <div class="method-body">
 <h3>Design LLM Prompt <em>— capture nuance</em></h3>
 <p>Embed label definitions, examples, edge cases into the prompt. Prompt quality directly impacts pre-label accuracy. Test on 20 examples first.</p>
+
+<div class="example-box">
+<div class="example-label">Python · LLM-assisted labeling pipeline with confidence filtering</div>
+<pre><code class="language-python">from openai import OpenAI
+from pydantic import BaseModel, Field
+
+client = OpenAI()
+
+class Label(BaseModel):
+    label: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str
+
+def auto_label(text: str, label_options: list[str],
+               task_description: str) -> Label:
+    """Auto-label text using LLM with confidence score."""
+    options_str = ", ".join(f'"{l}"' for l in label_options)
+    result = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=[{"role": "user", "content":
+            f"Task: {task_description}
+"
+            f"Text: {text}
+"
+            f"Choose from: {options_str}
+"
+            f"Give label, confidence (0-1), and one-line reasoning."}],
+        response_format=Label,
+        temperature=0.0
+    )
+    return result.choices[0].message.parsed
+
+def label_dataset(texts: list[str], labels: list[str],
+                  task: str, confidence_threshold: float = 0.85) -> dict:
+    """Label dataset, routing low-confidence items to human review."""
+    auto_labeled, human_queue = [], []
+    for text in texts:
+        result = auto_label(text, labels, task)
+        if result.confidence >= confidence_threshold:
+            auto_labeled.append({"text": text, "label": result.label,
+                                  "confidence": result.confidence})
+        else:
+            human_queue.append({"text": text, "predicted": result.label,
+                                 "confidence": result.confidence})
+    print(f"Auto-labeled: {len(auto_labeled)} | Human review: {len(human_queue)}")
+    return {"auto": auto_labeled, "human_queue": human_queue}
+
+# Example
+result = label_dataset(
+    texts=["Great product, very happy!", "Terrible service, never again."],
+    labels=["positive", "negative", "neutral"],
+    task="Classify customer review sentiment"
+)
+</code></pre>
+
+<div class="example-box">
+<div class="example-label">Python · Inter-annotator agreement and quality control</div>
+<pre><code class="language-python">from collections import Counter
+import statistics
+
+def cohens_kappa(labels_a: list, labels_b: list) -> float:
+    """Compute Cohen's Kappa — agreement corrected for chance."""
+    assert len(labels_a) == len(labels_b)
+    n = len(labels_a)
+    categories = set(labels_a) | set(labels_b)
+
+    # Observed agreement
+    p_o = sum(a == b for a, b in zip(labels_a, labels_b)) / n
+
+    # Expected agreement by chance
+    p_e = sum(
+        (labels_a.count(cat) / n) * (labels_b.count(cat) / n)
+        for cat in categories
+    )
+    return (p_o - p_e) / (1 - p_e) if p_e < 1 else 1.0
+
+def majority_vote(label_sets: list[list]) -> list:
+    """Aggregate multiple annotators via majority vote."""
+    return [Counter(labels).most_common(1)[0][0] for labels in zip(*label_sets)]
+
+def annotation_stats(label_sets: list[list]) -> dict:
+    """Compute agreement stats across annotators."""
+    # Pairwise kappa
+    kappas = []
+    for i in range(len(label_sets)):
+        for j in range(i+1, len(label_sets)):
+            kappas.append(cohens_kappa(label_sets[i], label_sets[j]))
+
+    final_labels = majority_vote(label_sets)
+    # Confusion rate: fraction of items where annotators disagree
+    confusion = sum(
+        len(set(item)) > 1 for item in zip(*label_sets)
+    ) / len(label_sets[0])
+
+    return {
+        "mean_kappa": round(statistics.mean(kappas), 3),
+        "min_kappa": round(min(kappas), 3),
+        "confusion_rate": round(confusion, 3),
+        "interpretation": ("good" if statistics.mean(kappas) > 0.6
+                          else "moderate" if statistics.mean(kappas) > 0.4
+                          else "poor — review guidelines")
+    }
+
+# Example with 3 annotators
+a1 = ["pos", "neg", "pos", "neu", "neg"]
+a2 = ["pos", "neg", "neu", "neu", "neg"]
+a3 = ["pos", "neg", "pos", "pos", "neg"]
+print(annotation_stats([a1, a2, a3]))
+</code></pre>
+</div>
+
+</div>
+
 </div>
 </div>
 <div class="method-card">

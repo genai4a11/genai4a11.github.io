@@ -647,6 +647,49 @@ print(answer)</div>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Practical insight:</strong> For on-device video processing, use lightweight codecs (H.265 &gt; H.264 &gt; MPEG-4) and aggressive frame subsampling (1 fps or less). For cloud inference, spend compute on fewer, better frames.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Video understanding with GPT-4o (frame sampling approach)</div>
+<pre><code class="language-python">import base64, cv2
+from openai import OpenAI
+from pathlib import Path
+
+client = OpenAI()
+
+def extract_frames(video_path: str, max_frames: int = 16) -> list[str]:
+    """Sample frames evenly from a video and return as base64 strings."""
+    cap = cv2.VideoCapture(video_path)
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    indices = [int(i * total / max_frames) for i in range(max_frames)]
+    frames = []
+    for idx in indices:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+        ret, frame = cap.read()
+        if ret:
+            _, buf = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            frames.append(base64.b64encode(buf).decode())
+    cap.release()
+    return frames
+
+def analyze_video(video_path: str, question: str) -> str:
+    """Answer a question about a video by sampling frames."""
+    frames = extract_frames(video_path, max_frames=16)
+    content = [{"type": "text", "text": f"These are {len(frames)} evenly-sampled frames from a video. {question}"}]
+    for b64 in frames:
+        content.append({"type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "low"}})
+    return client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": content}],
+        max_tokens=512
+    ).choices[0].message.content
+
+# Example
+answer = analyze_video("demo.mp4", "What is happening in this video? Describe the main action.")
+print(answer)
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 6. EVALUATION METRICS ── -->
