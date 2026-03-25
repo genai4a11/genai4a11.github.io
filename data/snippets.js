@@ -8400,63 +8400,100 @@ print(response)
 
 # OR: 1 command local run via Ollama (→ Ollama node)
 # ollama run llama3.1:8b`,tip:'Llama 3.1 70B is the best open-weight model for most tasks — quality close to GPT-4 at zero per-token cost once running.\n\n8B is the sweet spot for fine-tuning: fits in 16GB VRAM with bfloat16, runs fast enough for experimentation, and small enough to fine-tune on a single A100.\n\nFor production serving use the → vLLM node — it batches requests and achieves 10–20× better GPU utilization than vanilla HuggingFace generation.',questions:{leader:['What is the total cost of running Llama 3.1 70B in-house vs. GPT-4o API at your current usage volume — and how does that change at 10× scale?','In which regulatory or data-privacy contexts does open-weight deployment become a compliance requirement rather than just a cost preference?'],pm:['How do you communicate to users whether a feature is powered by open-weight vs. closed-API models — and does it matter to them?','What product capabilities become possible when you can fine-tune the model on your users\' specific data and vocabulary?'],eng:['What VRAM is required for Llama 3.1 8B, 70B, and 405B at different precisions — and how does quantization (→ QLoRA node, GGUF) change that?','How does → vLLM node continuous batching change throughput compared to serial HuggingFace generation under real traffic?']},refs:[{label:'[1] Llama 3 model card and community license (Meta AI)',url:'https://llama.meta.com/llama3/'},{label:'[2] transformers — HuggingFace model loading and inference library',url:'https://huggingface.co/docs/transformers'},{label:'[3] Ollama — run Llama models locally with one command',url:'https://ollama.com/'},{label:'[4] vLLM — high-throughput Llama serving for production',url:'https://docs.vllm.ai/'}]},
-mistral:{use:'Mistral 7B is a lightweight, efficient open model with 32K context and sliding-window attention; ideal for edge, fast inference, and cost-sensitive deployments.',diag:`
-  Mistral 7B — punch above its weight:
+mistral:{use:'Mistral 7B[1] is a compact open-weight model that outperforms Llama 2 13B on most benchmarks at half the parameter count. It achieves this through Sliding Window Attention[2] (O(n) memory instead of O(n²)) and → GQA node (fast KV cache). Apache 2.0 licensed — free for commercial use.\n\nKey libraries: transformers[3] (local), mistralai[4] (Mistral API), → Ollama node (one-command local)',diag:`
+  Mistral 7B — architectural innovations:
 
-  Key architectural choices:
-  ┌──────────────────────────────────────────┐
-  │ Sliding Window Attention (SWA):          │
-  │   each token attends to last 4K tokens   │
-  │   not the full context → O(n) not O(n²)  │
-  │                                          │
-  │ Grouped-Query Attention (GQA):           │
-  │   8 query groups → fast KV cache         │
-  │                                          │
-  │ Byte Pair Encoding: 32K vocab            │
-  └──────────────────────────────────────────┘
+  Standard self-attention: every token attends to ALL tokens
+  Memory: O(n²) — doubles cost for each doubled context length
 
-  Mistral 7B v0.1: outperforms Llama-2 13B on most benchmarks
-  Mixtral 8×7B: 8 experts, 2 active → ~13B active params
+  Sliding Window Attention (SWA)[2]:
+  Token i attends only to positions [i-4096 … i]
+  ┌─────────────────────────────────┐
+  │  ... [t-4] [t-3] [t-2] [t-1] [t]  [t+1] ...
+  │            └──────────────────┘
+  │              4096-token window
+  └─────────────────────────────────┘
+  Memory: O(n) — scales linearly with context
 
-  License: Apache 2.0 (commercial use allowed)
-  Best for: fast inference, on-prem deployment`,code:`from mistralai.client import MistralClient
-from mistralai.models.chat_message import ChatMessage
+  + → GQA node: 8 query groups share KV → fast cache
 
-client = MistralClient(api_key="your_api_key")
+  Mixtral 8×7B (MoE variant — → MoE node):
+  8 experts × 7B params, top-2 active per token
+  56B total params, 13B active → near-70B quality`,code:`# Option A: run locally via Ollama (→ Ollama node — recommended for dev)
+# ollama pull mistral
+# ollama run mistral
+# Then call via REST:
+import requests
+response = requests.post('http://localhost:11434/api/chat', json={
+    'model': 'mistral',
+    'stream': False,
+    'messages': [{'role': 'user', 'content': 'Write a Python palindrome checker.'}]
+})
+print(response.json()['message']['content'])
+
+# Option B: Mistral API (mistral-small is cheapest)
+from mistralai import Mistral   # pip install mistralai>=1.0
+
+client = Mistral(api_key='YOUR_MISTRAL_API_KEY')
+response = client.chat.complete(
+    model='mistral-small-latest',
+    messages=[{'role': 'user', 'content': 'Write a Python palindrome checker.'}]
+)
+print(response.choices[0].message.content)
+
+# Option C: HuggingFace transformers (full local control)
+from transformers import pipeline
+pipe = pipeline('text-generation', model='mistralai/Mistral-7B-Instruct-v0.3',
+                device_map='auto', torch_dtype='bfloat16')
+out = pipe([{'role': 'user', 'content': 'What is 7 * 8?'}], max_new_tokens=64)
+print(out[0]['generated_text'][-1]['content'])`,tip:'Mistral 7B fits in 8GB VRAM with bfloat16 — runs on a single consumer GPU. Its Sliding Window Attention[2] makes it genuinely faster than standard 7B models on long inputs, not just on paper.\n\nFor production throughput use the → vLLM node — it applies continuous batching and paged attention on top of Mistral, achieving 10–20× better GPU utilization than the HuggingFace pipeline.\n\nMixtral 8×7B (see → MoE node) is the step up: 13B active params with near-70B quality — worth the VRAM jump if 7B quality is insufficient.',questions:{leader:['When does Mistral\'s Apache 2.0 license create meaningful competitive advantage over using a closed API — and at what usage volume does self-hosting become cheaper?','How do you evaluate whether Mistral 7B quality is sufficient for your specific task before committing to infrastructure to run it at scale?'],pm:['What product features become viable when model inference costs drop 10–50× (self-hosted vs API) — and does that change your pricing model?','How do you communicate model selection decisions (open vs closed, 7B vs 70B) to non-technical stakeholders who care about output quality?'],eng:['How do you benchmark Mistral 7B vs GPT-4o-mini on your specific task distribution — and what sample size gives statistically meaningful results?','What serving configuration (batch size, tensor parallelism, quantization) do you use to maximize throughput of Mistral 7B on your available hardware?']},refs:[{label:'[1] Mistral 7B — Mistral AI technical blog and model card',url:'https://mistral.ai/news/announcing-mistral-7b/'},{label:'[2] Sliding Window Attention — Longformer: Long-Document Transformer (Beltagy et al., 2020)',url:'https://arxiv.org/abs/2004.05150'},{label:'[3] transformers — HuggingFace library for loading and running Mistral locally',url:'https://huggingface.co/docs/transformers'},{label:'[4] mistralai Python SDK (v1.0+)',url:'https://github.com/mistralai/client-python'}]},
+phi3:{use:'Phi-3/Phi-4[1] from Microsoft are small models (3.8B–14B) trained primarily on high-quality synthetic and curated data rather than raw web scale. The result: a 3.8B model that matches GPT-3.5 on many benchmarks, runs on a phone, and costs almost nothing to serve.\n\nKey libraries: transformers[2] (local), → Ollama node (phi3 built-in), Azure AI[3] (cloud API)',diag:`
+  Phi-3 philosophy: data quality beats data quantity
+
+  Standard large model:  Many params + many tokens
+  Phi-3 approach:        Fewer params + textbook-quality data
+
+  Training data: synthetic "textbook-style" problems
+  + curated web (filtered for educational content)
+  + code from GitHub, StackOverflow
+
+  Model family:
+  ┌────────────┬────────┬─────────┬─────────────────────┐
+  │ Model      │ Params │ Context │ Runs on              │
+  ├────────────┼────────┼─────────┼─────────────────────┤
+  │ Phi-3 Mini │  3.8B  │  128K   │ Phone (NPU), laptop  │
+  │ Phi-3 Small│  7B    │  128K   │ RTX 3090 (16GB)      │
+  │ Phi-3 Med. │ 14B    │  128K   │ A10G (24GB)          │
+  │ Phi-4      │ 14B    │  16K    │ A10G — strongest     │
+  └────────────┴────────┴─────────┴─────────────────────┘
+
+  Phi-3 Mini 3.8B ≈ Mixtral 8×7B quality on MMLU
+  Key tradeoff: weaker multi-step reasoning, better per-FLOP`,code:`from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+
+# Phi-3 Mini 3.8B — fits in 8GB VRAM with bfloat16
+model_id = 'microsoft/Phi-3-mini-128k-instruct'
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    torch_dtype=torch.bfloat16,
+    device_map='auto',
+    trust_remote_code=True      # required for Phi-3
+)
+
 messages = [
-    ChatMessage(role="user", content="Explain quantum entanglement in 100 words.")
+    {'role': 'user', 'content': 'Write a Python function to check if a number is prime.'}
 ]
-response = client.chat(model="mistral-7b-instruct-v0.2", messages=messages)
-print(response.choices[0].message.content)`,tip:'7B fits in 16GB VRAM; sliding window reduces memory vs full attention.\n\nGreat for real-time chat on edge devices.\n\nMultilingual support is weaker than Llama 3.1; benchmark before using.',refs:[{label:"Mistral 7B",url:"concepts/mistral.html"}]},
-phi3:{use:'Phi-3/Phi-4 (Microsoft) are tiny but capable models optimized for on-device inference, mobile, and edge; perfect when latency and power matter.',diag:`
-  Phi-3 — small model, big quality:
+prompt = tokenizer.apply_chat_template(
+    messages, tokenize=False, add_generation_prompt=True
+)
+inputs = tokenizer(prompt, return_tensors='pt').to(model.device)
+outputs = model.generate(**inputs, max_new_tokens=256, temperature=0.0)
+response = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+print(response)
 
-  Phi-3 philosophy: quality data > quantity
-  Training data: carefully curated "textbook quality"
-  synthetic + filtered web data
-
-  ┌───────────────────────────────────────────┐
-  │ Model      │ Params │ Context │ Fits on   │
-  ├────────────┼────────┼─────────┼───────────┤
-  │ Phi-3 Mini │  3.8B  │  128K   │ Phone GPU │
-  │ Phi-3 Small│  7B    │  128K   │ RTX 3090  │
-  │ Phi-3 Med. │ 14B    │  128K   │ A10G      │
-  └───────────┴────────┴─────────┴───────────┘
-
-  Phi-3 Mini 3.8B matches Mixtral 8×7B on benchmarks
-  Key: data quality matters more than data volume
-  Best for: edge devices, mobile, cost-sensitive apps`,code:`import requests
-import json
-
-url = "http://localhost:8000/v1/chat/completions"
-payload = {
-    "model": "phi-3-mini",
-    "messages": [{"role": "user", "content": "What is 7 + 5?"}],
-    "temperature": 0.7,
-    "max_tokens": 128
-}
-response = requests.post(url, json=payload)
-print(response.json()["choices"][0]["message"]["content"])`,tip:'2B–14B range; think of it as "GPT-3 but tiny".\n\nRuns on iPad, Raspberry Pi, low-power servers.\n\nTrade-off: weaker reasoning than Llama 70B; test on your tasks.',refs:[{label:"Phi-3 / Phi-4",url:"concepts/phi3.html"}]},
+# Via Ollama (→ Ollama node) — single command:
+# ollama run phi3:mini`,tip:'Phi-3 Mini (3.8B) is the model to reach for when you need on-device inference — it runs on Apple Neural Engine (Core ML), Android NPU, and Raspberry Pi 5 with acceptable latency.\n\nFor tasks where response quality matters more than size, Phi-4 (14B) often beats models 4× larger because its training data is so carefully curated — benchmark it against Mistral 7B and Llama 3.1 8B before assuming bigger is better.\n\nWeakness: multi-step reasoning chains longer than 3–4 steps degrade quickly. Use the → o3 / o4-mini node or Llama 3.1 70B for tasks requiring deep logical chaining.',questions:{leader:['Where in your product roadmap does on-device AI (no API call, no data leaving the device) unlock features that cloud-based models cannot — especially for privacy-sensitive applications?','What is the cost comparison between running Phi-3 on-device vs. the cheapest cloud API at your expected query volume?'],pm:['Which user-facing features can run acceptably on Phi-3 quality — and which genuinely need frontier model quality?','How do you validate that a small model\'s outputs meet quality thresholds across the range of real user inputs, not just benchmark problems?'],eng:['How do you export Phi-3 to ONNX or Core ML for on-device deployment on iOS/Android — and what quantization precision gives the best quality/speed tradeoff?','What is the latency of Phi-3 Mini on your target device vs. an API call with network round-trip — at what network latency does on-device win?']},refs:[{label:'[1] Phi-3 Technical Report — Microsoft Research (Abdin et al., 2024)',url:'https://arxiv.org/abs/2404.14219'},{label:'[2] transformers — HuggingFace library (requires trust_remote_code=True for Phi-3)',url:'https://huggingface.co/microsoft/Phi-3-mini-128k-instruct'},{label:'[3] Azure AI Studio — cloud API for Phi-3/Phi-4 without self-hosting',url:'https://ai.azure.com/'}]},
 qwen25:{use:'Qwen 2.5 (0.5B–72B) from Alibaba is strong in math, coding, and multilingual understanding with Apache 2.0 license and excellent MTEB embeddings.',diag:`
   Qwen 2.5 — Alibaba's frontier open series:
 

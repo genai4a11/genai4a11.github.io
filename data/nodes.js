@@ -95,7 +95,7 @@ const DN=[
 {id:'gemini15',label:'Gemini 1.5 Pro',cat:'llms',g:3,p:'frontier_models',desc:'Google\'s frontier model with a 1M-token context window — fit an entire codebase, book, or hour of video into a single API call for end-to-end reasoning.'},
 {id:'o3',label:'o3 / o4-mini',cat:'llms',g:3,p:'frontier_models',desc:'Reasoning models that run an internal chain-of-thought search before answering — dramatically more accurate on hard math and logic at the cost of 10s–5min latency.'},
 {id:'llama3',label:'Llama 3.1',cat:'llms',g:3,p:'open_models',desc:'Meta\'s open-weight model family (8B/70B/405B) — trained on 15T tokens, commercially licensed, fine-tunable, and deployable on your own infrastructure.'},
-{id:'mistral',label:'Mistral 7B',cat:'llms',g:3,p:'open_models',desc:'Sliding window attention, GQA, efficient inference, strong instruct.'},
+{id:'mistral',label:'Mistral 7B',cat:'llms',g:3,p:'open_models',desc:'7B open-weight model with Sliding Window Attention and GQA — outperforms Llama 2 13B at half the size; Apache 2.0 licensed for commercial use.'},
 {id:'phi3',label:'Phi-3 / Phi-4',cat:'llms',g:3,p:'open_models',desc:'Microsoft small language models punching above their size.'},
 {id:'qwen25',label:'Qwen 2.5',cat:'llms',g:3,p:'open_models',desc:'Alibaba multilingual models with strong code and math skills.'},
 {id:'gemma2',label:'Gemma 2',cat:'llms',g:3,p:'open_models',desc:'Google 2B/9B/27B open models, efficient for fine-tuning.'},

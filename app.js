@@ -547,11 +547,23 @@ function sp(d){
     } else learnSection.style.display='none';
   }
   learnEl.querySelectorAll('[data-target]').forEach(el=>el.addEventListener('click',()=>{const t=N.find(n=>n.id===el.dataset.target);if(t){sn(t);sp(t)}}));
-  // KEY TOOLS — only for g:1 domain nodes (g:2 topics already show their g:3 children above)
+  // KEY TOPICS/TOOLS/CONCEPTS — only for g:1 domain nodes
   if(d.g===1){
     const getAllDesc=(id)=>{const kids=N.filter(n=>n.p===id);return kids.flatMap(k=>[k,...getAllDesc(k.id)])};
     const tools=getAllDesc(d.id).filter(n=>n.g===3).slice(0,14);
     if(tools.length>0){
+      // Dynamic section title based on what's inside
+      const sectionTitles={
+        llms:'Key models', infra:'Key tools', custom:'Key tools',
+        foundations:'Concepts & libraries', ml_core:'Key concepts',
+        transformers:'Key concepts', prompting:'Key techniques',
+        finetuning:'Techniques & tools', multimodal:'Key concepts',
+        rag:'Concepts & tools', agents:'Concepts & tools',
+        eval:'Concepts & tools', safety:'Key concepts',
+        applications:'Key topics', sysdesign:'Key topics',
+        data_eng:'Techniques & tools', prod_eng:'Key tools',
+      };
+      document.querySelector('#ps-tools-sec .panel-section-title').textContent=sectionTitles[d.cat]||'Topics & tools';
       const toolsEl=document.getElementById('ps-tools-pills');
       toolsEl.innerHTML=tools.map(t=>`<div class="panel-pill pill-tool" data-target="${t.id}">${t.label}</div>`).join('');
       toolsEl.querySelectorAll('.panel-pill').forEach(pill=>pill.addEventListener('click',()=>{const t=N.find(n=>n.id===pill.dataset.target);if(t){sn(t);sp(t)}}));
