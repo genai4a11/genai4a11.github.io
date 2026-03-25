@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flux | GenAI Mindmap</title>
+  <meta name="description" content="Black Forest Labs' flow matching image generation model. FLUX.1[dev] and FLUX.1[schnell] rival or exceed DALL-E 3 at open weights. Uses a novel hybrid transformer-diffusion architecture." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Flux" />
+  <meta property="og:description" content="Black Forest Labs' flow matching image generation model. FLUX.1[dev] and FLUX.1[schnell] rival or exceed DALL-E 3 at open weights. Uses a novel hybrid transformer-diffusion architecture." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/flux.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/flux.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Flux | GenAI Mindmap",
+  "description": "Black Forest Labs' flow matching image generation model. FLUX.1[dev] and FLUX.1[schnell] rival or exceed DALL-E 3 at open weights. Uses a novel hybrid transformer-diffusion architecture.",
+  "url": "https://genai4a11.github.io/concepts/flux.html",
+  "dateModified": "2026-03-25T00:18:31.523021",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Flux | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/flux.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0891b2;
+      --accent-dark: #0e7490;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0891b2 0%,#0e7490 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/image-gen.html" class="nav-back">← Image Generation</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Image Generation</span>
+    <h1><em>Flux</em></h1>
+    <p class="hero-sub">Black Forest Labs' flow matching image generation model. FLUX.1[dev] and FLUX.1[schnell] rival or exceed DALL-E 3 at open weights. Uses a novel hybrid transformer-diffusion architecture.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Flow matching</div><div class="stat-label">Not denoising diffusion</div></div>
+      <div><div class="stat-num">FLUX.1[dev]</div><div class="stat-label">Best open weights</div></div>
+      <div><div class="stat-num">12B params</div><div class="stat-label">Transformer backbone</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Flux architecture</a></li>
+        <li><a href="#s2" data-num="02">FLUX variants</a></li>
+        <li><a href="#s3" data-num="03">Generating images with diffusers</a></li>
+        <li><a href="#s4" data-num="04">Fine-tuning Flux with LoRA</a></li>
+        <li><a href="#s5" data-num="05">Running Flux locally</a></li>
+        <li><a href="#s6" data-num="06">Flux vs DALL-E 3 vs SD3</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Flux architecture</h2>
+<p>Flux (Black Forest Labs, August 2024) introduces several architectural innovations over Stable Diffusion. It uses <strong>flow matching</strong> instead of DDPM denoising — a cleaner theoretical framework that trains a direct mapping from noise to image distributions, enabling faster sampling with fewer steps. The backbone is a hybrid: a stack of <strong>multimodal diffusion transformer</strong> (MM-DiT) blocks that jointly process image and text tokens, plus a final stack of single-stream transformer blocks. The text conditioning uses T5-XXL (4.9B parameter encoder) for rich semantic understanding — much more powerful than the CLIP text encoders in earlier SD models. Total parameter count: ~12B.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>FLUX variants</h2>
+<ul>
+<li><strong>FLUX.1[pro]</strong>: Closed model, available via API from Black Forest Labs and Replicate. Best quality.</li>
+<li><strong>FLUX.1[dev]</strong>: Open weights (non-commercial license). Comparable quality to [pro], 50 steps for best quality. ~23 GB VRAM for fp16. The practical choice for research and personal projects.</li>
+<li><strong>FLUX.1[schnell]</strong>: Open weights (Apache 2.0). 4-step fast generation. Slightly lower quality than [dev] but 10× faster. ~23 GB for fp16; quantised versions (~8-12GB) work on consumer hardware.</li>
+</ul>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Generating images with diffusers</h2>
+<pre><code class="language-python">from diffusers import FluxPipeline
+import torch
+
+pipe = FluxPipeline.from_pretrained(
+    "black-forest-labs/FLUX.1-dev",
+    torch_dtype=torch.bfloat16,
+)
+pipe.enable_sequential_cpu_offload()  # saves VRAM, slower but fits on 16GB GPU
+# pipe.to("cuda")  # if you have 24+ GB VRAM
+
+image = pipe(
+    prompt="A serene Japanese garden at sunrise, golden light through bamboo, photorealistic",
+    guidance_scale=3.5,      # Flux uses much lower CFG than SD (3-4 is typical)
+    num_inference_steps=50,  # 50 for [dev]; 4 for [schnell]
+    max_sequence_length=512,
+    generator=torch.Generator("cpu").manual_seed(42),
+    height=1024,
+    width=1024,
+).images[0]
+
+image.save("output.png")
+
+# FLUX.1[schnell] (faster, 4-step):
+pipe_schnell = FluxPipeline.from_pretrained(
+    "black-forest-labs/FLUX.1-schnell",
+    torch_dtype=torch.bfloat16,
+)
+image = pipe_schnell(
+    prompt="A cat sitting on a windowsill watching rain",
+    num_inference_steps=4,
+    guidance_scale=0.0,  # schnell uses CFG=0 (no guidance)
+).images[0]
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Fine-tuning Flux with LoRA</h2>
+<pre><code class="language-python">pip install diffusers accelerate peft
+
+# Use the diffusers training script for Flux LoRA
+# First prepare your dataset: 10-30 images + captions
+
+# training_script: train_dreambooth_lora_flux.py
+# python train_dreambooth_lora_flux.py \
+#   --pretrained_model_name_or_path="black-forest-labs/FLUX.1-dev" \
+#   --instance_data_dir="./my_images" \
+#   --output_dir="./flux-lora" \
+#   --instance_prompt="a photo of sks person" \
+#   --resolution=512 \
+#   --train_batch_size=1 \
+#   --gradient_accumulation_steps=4 \
+#   --learning_rate=1e-4 \
+#   --lr_scheduler="constant" \
+#   --max_train_steps=500
+
+# Load trained LoRA at inference
+from diffusers import FluxPipeline
+pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-dev", torch_dtype=torch.bfloat16)
+pipe.load_lora_weights("./flux-lora", weight_name="pytorch_lora_weights.safetensors")
+pipe.to("cuda")
+image = pipe("sks person in a space suit", num_inference_steps=50).images[0]
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Running Flux locally</h2>
+<p>Memory requirements and options:</p>
+<ul>
+<li><strong>fp16 full precision</strong>: ~23 GB VRAM — requires A100/H100 or multiple consumer GPUs</li>
+<li><strong>bfloat16 + sequential offload</strong>: ~12-16 GB VRAM — works on RTX 3090/4090</li>
+<li><strong>GGUF quantised (Q4)</strong>: ~8 GB VRAM via ComfyUI or llama.cpp image — good quality, slower</li>
+<li><strong>ComfyUI</strong>: Most popular UI for Flux; handles quantised models and custom LoRA workflows</li>
+<li><strong>Ollama</strong>: Coming in newer versions; currently best via ComfyUI or direct diffusers</li>
+</ul>
+<pre><code class="language-bash">ollama run llama3  # (text only — no Flux in Ollama yet as of 2025)
+# Use ComfyUI for Flux image generation locally
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Flux vs DALL-E 3 vs SD3</h2>
+<ul>
+<li><strong>Prompt following</strong>: Flux ≈ DALL-E 3 &gt; SD3. Flux's T5-XXL text encoder gives strong semantic understanding.</li>
+<li><strong>Image quality</strong>: Flux[dev] ≈ DALL-E 3 HD at portrait/artistic. DALL-E 3 slightly better at text rendering.</li>
+<li><strong>Speed</strong>: DALL-E 3 ~6s (API). Flux[schnell] 4 steps ~2s locally on A100. Flux[dev] 50 steps ~20s.</li>
+<li><strong>Cost</strong>: DALL-E 3 $0.04–$0.12/image. Flux[dev] — just compute cost, free at scale with own hardware.</li>
+<li><strong>Fine-tuning</strong>: Flux supports LoRA fine-tuning. DALL-E 3 does not.</li>
+</ul>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<ul>
+<li><strong>Low guidance scale</strong>: Flux uses classifier-free guidance scale of 3-4, much lower than Stable Diffusion (7-9). Using higher CFG with Flux causes oversaturated, artifact-heavy images. Start at 3.5 and adjust minimally.</li>
+<li><strong>FLUX.1[dev] license</strong>: Non-commercial use only. FLUX.1[schnell] is Apache 2.0 (commercial OK). Check licensing before production deployment.</li>
+<li><strong>Quantisation quality</strong>: GGUF Q4 quantisation noticeably reduces fine detail and texture quality vs full precision. For best results use bfloat16; quantise only if VRAM is the constraint.</li>
+</ul>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/image-gen.html" style="color:var(--accent)">Image Generation</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
