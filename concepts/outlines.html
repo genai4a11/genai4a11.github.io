@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Outlines | GenAI Mindmap</title>
-  <meta name="description" content="A library that uses finite-state machines and regex constraints to guarantee structured LLM output at the token level for local models." />
+  <meta name="description" content="A Python library for constrained text generation — enforcing JSON schemas, regex patterns, and grammars at the token level for local models, guaranteeing 100% format compliance." />
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Outlines" />
-  <meta property="og:description" content="A library that uses finite-state machines and regex constraints to guarantee structured LLM output at the token level for local models." />
+  <meta property="og:description" content="A Python library for constrained text generation — enforcing JSON schemas, regex patterns, and grammars at the token level for local models, guaranteeing 100% format compliance." />
   <meta property="og:url" content="https://genai4a11.github.io/concepts/outlines.html" />
   <meta property="og:site_name" content="GenAI Mindmap" />
   <link rel="canonical" href="https://genai4a11.github.io/concepts/outlines.html" />
@@ -19,9 +19,9 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Outlines | GenAI Mindmap",
-  "description": "A library that uses finite-state machines and regex constraints to guarantee structured LLM output at the token level for local models.",
+  "description": "A Python library for constrained text generation \u2014 enforcing JSON schemas, regex patterns, and grammars at the token level for local models, guaranteeing 100% format compliance.",
   "url": "https://genai4a11.github.io/concepts/outlines.html",
-  "dateModified": "2026-03-25T00:34:03+00:00",
+  "dateModified": "2026-03-25T00:39:02+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -64,8 +64,8 @@
 </script>
   <style>
     :root {
-      --accent: #6d28d9;
-      --accent-dark: #5b21b6;
+      --accent: #374151;
+      --accent-dark: #1f2937;
       --text: #0f172a;
       --muted: #64748b;
       --border: #e2e8f0;
@@ -80,7 +80,7 @@
     .nav-brand:hover { color:#22c55e; }
     .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
     .nav-back:hover { color:white; }
-    .hero { background:linear-gradient(135deg,#6d28d9 0%,#5b21b6 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero { background:linear-gradient(135deg,#374151 0%,#1f2937 100%); color:white; padding:4rem 2rem; text-align:center; }
     .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
     .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
     .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
@@ -124,17 +124,17 @@
 <body>
   <nav>
     <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/prompt-engineering.html" class="nav-back">← Prompt Engineering</a>
+    <a href="/concepts/applications.html" class="nav-back">← Applications</a>
   </nav>
 
   <div class="hero">
-    <span class="hero-tag">Prompt Engineering</span>
+    <span class="hero-tag">Applications</span>
     <h1><em>Outlines</em></h1>
-    <p class="hero-sub">A library that uses finite-state machines and regex constraints to guarantee structured LLM output at the token level for local models.</p>
+    <p class="hero-sub">A Python library for constrained text generation — enforcing JSON schemas, regex patterns, and grammars at the token level for local models, guaranteeing 100% format compliance.</p>
     <div class="hero-stats">
-      <div><div class="stat-num">FSM-guided</div><div class="stat-label">Decoding</div></div>
-      <div><div class="stat-num">Regex + CFG</div><div class="stat-label">Constraints</div></div>
-      <div><div class="stat-num">Local models</div><div class="stat-label">Primary target</div></div>
+      <div><div class="stat-num">Compliance</div><div class="stat-label">100%</div></div>
+      <div><div class="stat-num">Backends</div><div class="stat-label">HuggingFace/vLLM/llama.cpp/mlx</div></div>
+      <div><div class="stat-num">Method</div><div class="stat-label">token-level FSM masking</div></div>
     </div>
   </div>
 
@@ -142,192 +142,48 @@
     <div class="toc-card">
       <h3>Table of Contents</h3>
       <ul class="toc-list">
-        <li><a href="#s1" data-num="01">Beyond JSON mode: token-level guarantees</a></li>
-        <li><a href="#s2" data-num="02">How Outlines works</a></li>
-        <li><a href="#s3" data-num="03">Installation and backends</a></li>
-        <li><a href="#s4" data-num="04">Regex constraints</a></li>
-        <li><a href="#s5" data-num="05">JSON schema enforcement</a></li>
-        <li><a href="#s6" data-num="06">Choice constraints</a></li>
-        <li><a href="#s7" data-num="07">Context-free grammars</a></li>
-        <li><a href="#s8" data-num="08">Outlines vs. alternatives</a></li>
+        <li><a href="#s1" data-num="01">What Is Outlines?</a></li>
+        <li><a href="#s2" data-num="02">JSON Schema Generation</a></li>
+        <li><a href="#s3" data-num="03">Regex & Choice</a></li>
+        <li><a href="#s4" data-num="04">Custom Grammars</a></li>
+        <li><a href="#s5" data-num="05">vLLM Integration</a></li>
+        <li><a href="#s6" data-num="06">Outlines vs Instructor</a></li>
       </ul>
     </div>
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-<h2>Beyond JSON mode: token-level guarantees</h2>
-<p>JSON mode from hosted providers (OpenAI, Anthropic) gives you high-reliability JSON — but it's implemented via training and retries, not mathematical guarantees. For local models (Llama, Mistral, Phi) there's no "JSON mode" switch at all.</p>
-<p>Outlines solves this differently: it compiles your constraint (a regex, a JSON schema, a grammar) into a Finite State Machine, then at each decoding step it calculates which tokens can legally extend the current output prefix and masks all others to probability 0. The result is a <em>hard guarantee</em>: it is impossible for the model to produce output that violates the constraint.</p>
+('What Is Outlines?', 'Outlines provides constrained generation for locally-run models. Unlike prompt-based approaches (which have ~90% compliance), Outlines applies a finite state machine (FSM) mask at the logit level: only tokens that could produce a valid output are sampled. The result is 100% format compliance with no retries. Works with HuggingFace Transformers, vLLM, llama.cpp, and Apple MLX.')
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-<h2>How Outlines works</h2>
-<p>The key insight: a regex or JSON schema defines a set of valid strings. This set can be represented as a Finite State Machine (FSM). At decoding step <em>t</em>, the FSM is in some state <em>s</em>. The set of tokens that keep the FSM in a valid state is the <em>allowed token set</em>. All other tokens get logit = -∞ before softmax, making them impossible.</p>
-<p>This happens synchronously during generation — there's no retry loop, no post-processing. The model simply cannot stray from the valid set.</p>
-<p>The FSM compilation step is expensive (seconds) but happens once per unique constraint. Outlines caches it aggressively.</p>
+('JSON Schema Generation', 'from pydantic import BaseModel\nfrom typing import Literal\nimport outlines\n\nmodel = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.2")\n\nclass Sentiment(BaseModel):\n    label: Literal["positive", "negative", "neutral"]\n    confidence: float\n    reasoning: str\n\ngenerator = outlines.generate.json(model, Sentiment)\n\nresult = generator("Classify: The product exceeded my expectations in every way!")\nprint(result.label)        # "positive"\nprint(result.confidence)   # 0.95 (or similar)\nprint(type(result))        # <class \'Sentiment\'>')
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-<h2>Installation and backends</h2>
-<pre><code class="language-bash">pip install outlines
-# For transformers backend:
-pip install transformers torch
-# For vLLM backend (high-throughput production):
-pip install vllm
-</code></pre>
-<pre><code class="language-python">import outlines
-
-# HuggingFace Transformers backend
-model = outlines.models.transformers(
-    "microsoft/Phi-3.5-mini-instruct",
-    device="cuda"
-)
-
-# vLLM backend (for production throughput)
-model = outlines.models.vllm("mistralai/Mistral-7B-Instruct-v0.3")
-</code></pre>
-<p>Outlines primarily targets local model inference. For hosted APIs (OpenAI, Anthropic) use their native JSON mode or Instructor instead — those providers don't expose logits.</p>
+('Regex & Choice', 'For simple structured outputs, regex and choice generators are faster than full JSON schemas.\n\nimport outlines\n\nmodel = outlines.models.transformers("microsoft/phi-2")\n\n# Force a choice from a fixed set\nclassifier = outlines.generate.choice(model, ["spam", "not_spam"])\nlabel = classifier("Email: Congratulations! You won $1000000. Click here!")\nprint(label)  # "spam"\n\n# Force a regex pattern — e.g. ISO date\ndate_gen = outlines.generate.regex(model, r"\\d{4}-\\d{2}-\\d{2}")\ndate = date_gen("When did World War II end? ")\nprint(date)  # "1945-09-02"')
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-<h2>Regex constraints</h2>
-<pre><code class="language-python">import outlines
-
-model = outlines.models.transformers("microsoft/Phi-3.5-mini-instruct")
-
-# Force output to match a date pattern YYYY-MM-DD
-generator = outlines.generate.regex(
-    model,
-    r"(19|20)\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])"
-)
-
-date = generator("When was the first iPhone released? Date: ")
-print(date)  # 2007-01-09  — guaranteed to match the regex
-</code></pre>
-<pre><code class="language-python"># US phone number
-phone_gen = outlines.generate.regex(
-    model,
-    r"\(\d{3}\) \d{3}-\d{4}"
-)
-phone = phone_gen("Customer support number: ")
-print(phone)  # (800) 555-0199
-
-# Float with 2 decimal places
-price_gen = outlines.generate.regex(model, r"\d+\.\d{2}")
-price = price_gen("The price is $")
-print(price)  # 24.99
-</code></pre>
+('Custom Grammars', "For complex structured outputs (SQL, code, custom DSLs), define a context-free grammar. Outlines supports EBNF grammars: any output matching the grammar is valid, any output that doesn't is impossible to generate. This is particularly powerful for code generation where syntactic correctness is required.")
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-<h2>JSON schema enforcement</h2>
-<pre><code class="language-python">from pydantic import BaseModel
-from typing import Literal
-import outlines
-
-model = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.3")
-
-class MovieReview(BaseModel):
-    title: str
-    year: int
-    rating: float           # 0.0 - 10.0
-    genre: Literal["action", "comedy", "drama", "sci-fi", "horror"]
-    summary: str
-
-generator = outlines.generate.json(model, MovieReview)
-
-review = generator(
-    "Write a review for Inception (2010), a mind-bending sci-fi thriller. "
-    "Christopher Nolan's masterpiece explores dreams within dreams."
-)
-
-# review is a MovieReview Pydantic object — guaranteed valid
-print(review.rating)  # 9.2 (type: float)
-print(review.genre)   # sci-fi (guaranteed to be one of the 5 options)
-</code></pre>
-<p>Outlines converts the Pydantic model to JSON Schema, compiles an FSM from the schema, and guides decoding. Every field is guaranteed to have the correct type and every enum value is guaranteed to be in the allowed set.</p>
+('vLLM Integration', "Outlines integrates natively with vLLM's guided decoding feature. Pass a json_schema or regex to vLLM's SamplingParams and constrained generation runs at full GPU throughput — no latency overhead beyond the FSM computation. This makes Outlines the go-to solution for high-throughput structured generation at scale.")
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-<h2>Choice constraints</h2>
-<pre><code class="language-python">import outlines
-
-model = outlines.models.transformers("microsoft/Phi-3.5-mini-instruct")
-
-# Hard classification — output MUST be one of these exact strings
-classifier = outlines.generate.choice(
-    model,
-    ["positive", "negative", "neutral"]
-)
-
-labels = [
-    classifier(f"Classify the sentiment of: '{text}'")
-    for text in ["Great product!", "Total waste of money", "It's okay"]
-]
-print(labels)  # ['positive', 'negative', 'neutral']
-
-# Binary yes/no
-yesno = outlines.generate.choice(model, ["yes", "no"])
-answer = yesno("Is Paris the capital of France? Answer yes or no: ")
-print(answer)  # yes
-</code></pre>
-<p>Choice constraints are the simplest and fastest Outlines constraint — the FSM has exactly N terminal states, one per choice.</p>
-    </div>
-
-    <div class="section-block" id="s7">
-      <div class="section-marker">SECTION 07</div>
-<h2>Context-free grammars</h2>
-<p>For structured output that goes beyond what regex can express (e.g., nested arithmetic, SQL, simple programming languages) Outlines supports EBNF grammars:</p>
-<pre><code class="language-python">import outlines
-
-model = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.3")
-
-# Simple arithmetic expression grammar
-arithmetic_grammar = '''
-    expression: term ((PLUS | MINUS) term)*
-    term: factor ((TIMES | DIVIDE) factor)*
-    factor: NUMBER | LPAREN expression RPAREN
-    NUMBER: /[0-9]+(\.[0-9]+)?/
-    PLUS: "+"
-    MINUS: "-"
-    TIMES: "*"
-    DIVIDE: "/"
-    LPAREN: "("
-    RPAREN: ")"
-    %ignore /\s+/
-'''
-
-generator = outlines.generate.cfg(model, arithmetic_grammar)
-expr = generator("Write an arithmetic expression for the area of a 5×3 rectangle: ")
-print(expr)  # 5 * 3   — guaranteed to be valid arithmetic
-</code></pre>
-<p>CFG-guided generation is powerful but the FSM compilation is significantly more expensive than regex or JSON schema. Reserve it for complex structured outputs.</p>
-    </div>
-
-    <div class="section-block" id="s8">
-      <div class="section-marker">SECTION 08</div>
-<h2>Outlines vs. alternatives</h2>
-<table>
-<thead><tr><th>Tool</th><th>Constraint type</th><th>Model requirement</th><th>Guarantee strength</th></tr></thead>
-<tbody>
-<tr><td>Outlines</td><td>Regex, JSON schema, CFG, choice</td><td>Local (logit access)</td><td>Hard (mathematical)</td></tr>
-<tr><td>LMQL</td><td>Python predicates, regex, types</td><td>Local best; hosted via retries</td><td>Hard (local) / Soft (hosted)</td></tr>
-<tr><td>Guidance</td><td>Grammar, regex, interleaving</td><td>Local preferred</td><td>Hard (local)</td></tr>
-<tr><td>Instructor</td><td>Pydantic schema</td><td>Any (retry-based)</td><td>Soft (retry)</td></tr>
-<tr><td>OpenAI Structured Outputs</td><td>JSON schema subset</td><td>OpenAI only</td><td>Hard (provider-side)</td></tr>
-</tbody>
-</table>
-<p><strong>When to use Outlines:</strong> you're running local models (Llama, Mistral, Phi) and need hard constraints on the output format. For hosted APIs, use Instructor (simplest) or the provider's native structured outputs.</p>
+('Outlines vs Instructor', "Instructor works with API models (OpenAI, Anthropic) via prompt engineering + retry loops. Outlines works with local models via true token-level constraints. Use Instructor for API-based workflows where occasional retries are acceptable. Use Outlines when you need guaranteed compliance, run local models, or can't afford retries.")
     </div>
   </div>
 
   <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/prompt-engineering.html" style="color:var(--accent)">Prompt Engineering</a> &bull; Last updated March 2026</p>
+    <p>GenAI Mindmap &bull; <a href="/concepts/applications.html" style="color:var(--accent)">Applications</a> &bull; Last updated March 2026</p>
   </footer>
 </body>
 </html>

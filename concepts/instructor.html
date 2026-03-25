@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Instructor | GenAI Mindmap</title>
-  <meta name="description" content="A Python library that wraps LLM clients to return validated Pydantic objects instead of raw text, with automatic retry on validation failure." />
+  <meta name="description" content="A Python library that makes it trivial to get structured, validated outputs from LLMs using Pydantic models — the simplest path from LLM text to typed Python objects." />
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Instructor" />
-  <meta property="og:description" content="A Python library that wraps LLM clients to return validated Pydantic objects instead of raw text, with automatic retry on validation failure." />
+  <meta property="og:description" content="A Python library that makes it trivial to get structured, validated outputs from LLMs using Pydantic models — the simplest path from LLM text to typed Python objects." />
   <meta property="og:url" content="https://genai4a11.github.io/concepts/instructor.html" />
   <meta property="og:site_name" content="GenAI Mindmap" />
   <link rel="canonical" href="https://genai4a11.github.io/concepts/instructor.html" />
@@ -19,9 +19,9 @@
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Instructor | GenAI Mindmap",
-  "description": "A Python library that wraps LLM clients to return validated Pydantic objects instead of raw text, with automatic retry on validation failure.",
+  "description": "A Python library that makes it trivial to get structured, validated outputs from LLMs using Pydantic models \u2014 the simplest path from LLM text to typed Python objects.",
   "url": "https://genai4a11.github.io/concepts/instructor.html",
-  "dateModified": "2026-03-25T00:34:03+00:00",
+  "dateModified": "2026-03-25T00:39:02+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -64,8 +64,8 @@
 </script>
   <style>
     :root {
-      --accent: #6d28d9;
-      --accent-dark: #5b21b6;
+      --accent: #374151;
+      --accent-dark: #1f2937;
       --text: #0f172a;
       --muted: #64748b;
       --border: #e2e8f0;
@@ -80,7 +80,7 @@
     .nav-brand:hover { color:#22c55e; }
     .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
     .nav-back:hover { color:white; }
-    .hero { background:linear-gradient(135deg,#6d28d9 0%,#5b21b6 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero { background:linear-gradient(135deg,#374151 0%,#1f2937 100%); color:white; padding:4rem 2rem; text-align:center; }
     .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
     .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
     .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
@@ -124,17 +124,17 @@
 <body>
   <nav>
     <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/prompt-engineering.html" class="nav-back">← Prompt Engineering</a>
+    <a href="/concepts/applications.html" class="nav-back">← Applications</a>
   </nav>
 
   <div class="hero">
-    <span class="hero-tag">Prompt Engineering</span>
+    <span class="hero-tag">Applications</span>
     <h1><em>Instructor</em></h1>
-    <p class="hero-sub">A Python library that wraps LLM clients to return validated Pydantic objects instead of raw text, with automatic retry on validation failure.</p>
+    <p class="hero-sub">A Python library that makes it trivial to get structured, validated outputs from LLMs using Pydantic models — the simplest path from LLM text to typed Python objects.</p>
     <div class="hero-stats">
-      <div><div class="stat-num">Pydantic</div><div class="stat-label">Native validation</div></div>
-      <div><div class="stat-num">Auto-retry</div><div class="stat-label">On failure</div></div>
-      <div><div class="stat-num">Any provider</div><div class="stat-label">Supported</div></div>
+      <div><div class="stat-num">Validation</div><div class="stat-label">Pydantic v2</div></div>
+      <div><div class="stat-num">Retry logic</div><div class="stat-label">built-in</div></div>
+      <div><div class="stat-num">Backends</div><div class="stat-label">OpenAI/Anthropic/Gemini/Ollama</div></div>
     </div>
   </div>
 
@@ -142,214 +142,48 @@
     <div class="toc-card">
       <h3>Table of Contents</h3>
       <ul class="toc-list">
-        <li><a href="#s1" data-num="01">Raw text to typed objects</a></li>
-        <li><a href="#s2" data-num="02">How Instructor works</a></li>
-        <li><a href="#s3" data-num="03">Installation and setup</a></li>
-        <li><a href="#s4" data-num="04">Your first extraction</a></li>
-        <li><a href="#s5" data-num="05">Nested models and lists</a></li>
-        <li><a href="#s6" data-num="06">Retry logic and error recovery</a></li>
-        <li><a href="#s7" data-num="07">Async and streaming</a></li>
-        <li><a href="#s8" data-num="08">Gotchas</a></li>
+        <li><a href="#s1" data-num="01">What Is Instructor?</a></li>
+        <li><a href="#s2" data-num="02">Basic Usage</a></li>
+        <li><a href="#s3" data-num="03">Validation & Retries</a></li>
+        <li><a href="#s4" data-num="04">Nested Models</a></li>
+        <li><a href="#s5" data-num="05">Streaming Structured Output</a></li>
+        <li><a href="#s6" data-num="06">When to Use Instructor</a></li>
       </ul>
     </div>
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-<h2>Raw text to typed objects</h2>
-<p>Without Instructor, getting structured data from an LLM looks like:</p>
-<ol>
-<li>Ask the model to return JSON.</li>
-<li>Parse the JSON string.</li>
-<li>Check the types manually.</li>
-<li>Handle the case where the model returned markdown fences, or the wrong keys, or a string instead of a number.</li>
-<li>Retry and hope.</li>
-</ol>
-<p>With Instructor, that entire workflow collapses into one function call that returns a typed Python object. Validation, retries, and error messages are handled for you.</p>
+('What Is Instructor?', 'Instructor wraps LLM clients (OpenAI, Anthropic, Gemini, Cohere, Ollama) and patches them to accept a response_model parameter. You pass a Pydantic model as the expected return type; Instructor prompts the LLM to return JSON matching that schema, validates the output, and automatically retries on validation failures. The result: every LLM call returns a typed Python object.')
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-<h2>How Instructor works</h2>
-<p>Instructor patches the LLM client to:</p>
-<ol>
-<li>Convert your Pydantic model's JSON schema into a tool definition or JSON mode instruction.</li>
-<li>Make the API call.</li>
-<li>Parse the response and validate it against the Pydantic model.</li>
-<li>If validation fails, send the validation error back to the model as a follow-up message and retry (up to <code>max_retries</code> times).</li>
-</ol>
-<p>The retry prompt is automatically constructed from the Pydantic <code>ValidationError</code>, so the model sees exactly what went wrong and why.</p>
+('Basic Usage', 'from pydantic import BaseModel\nimport instructor\nfrom openai import OpenAI\n\nclient = instructor.from_openai(OpenAI())\n\nclass UserInfo(BaseModel):\n    name: str\n    age: int\n    email: str\n\nuser = client.chat.completions.create(\n    model="gpt-4o-mini",\n    response_model=UserInfo,\n    messages=[{"role": "user", "content": "Extract: John Smith, 34 years old, john@example.com"}],\n)\nprint(user.name)   # "John Smith"\nprint(user.age)    # 34\nprint(user.email)  # "john@example.com"\nprint(type(user))  # <class \'UserInfo\'>')
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-<h2>Installation and setup</h2>
-<pre><code class="language-bash">pip install instructor anthropic
-</code></pre>
-<pre><code class="language-python">import instructor
-import anthropic
-from pydantic import BaseModel
-
-# Patch the Anthropic client
-client = instructor.from_anthropic(anthropic.Anthropic())
-
-# That's it — client.messages.create now returns Pydantic objects
-</code></pre>
-<p>Instructor supports Anthropic, OpenAI, Mistral, Cohere, Gemini, and any OpenAI-compatible endpoint — same API, different backends.</p>
+('Validation & Retries', 'Pydantic validators run on the extracted output. If validation fails, "\n   "Instructor retries with the error message appended to the prompt — "\n   "the LLM sees its mistake and corrects it.\n\nfrom pydantic import BaseModel, field_validator\n\nclass ProductReview(BaseModel):\n    sentiment: str\n    score: int\n    summary: str\n\n    @field_validator("score")\n    def score_range(cls, v):\n        if not 1 <= v <= 5:\n            raise ValueError("Score must be between 1 and 5")\n        return v\n\n    @field_validator("sentiment")\n    def sentiment_values(cls, v):\n        if v not in ("positive", "negative", "neutral"):\n            raise ValueError("Must be positive, negative, or neutral")\n        return v\n\nreview = client.chat.completions.create(\n    model="gpt-4o-mini",\n    response_model=ProductReview,\n    max_retries=3,  # retry up to 3 times on validation error\n    messages=[{"role": "user", "content": "Review: Great product, works perfectly! 5 stars."}],\n)')
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-<h2>Your first extraction</h2>
-<pre><code class="language-python">from pydantic import BaseModel, Field
-import instructor, anthropic
-
-client = instructor.from_anthropic(anthropic.Anthropic())
-
-class Person(BaseModel):
-    name: str = Field(description="Full name of the person")
-    age: int  = Field(description="Age in years, must be positive", gt=0)
-    city: str = Field(description="City of residence")
-
-person = client.messages.create(
-    model="claude-3-5-haiku-20241022",
-    max_tokens=256,
-    messages=[{
-        "role": "user",
-        "content": "Extract info: Dr. Sarah Chen is a 41-year-old cardiologist based in Boston."
-    }],
-    response_model=Person,   # ← this is the Instructor extension
-)
-
-print(person.name)  # Dr. Sarah Chen  (type: str)
-print(person.age)   # 41              (type: int)
-print(person.city)  # Boston          (type: str)
-</code></pre>
-<p>The return type of <code>client.messages.create</code> is now <code>Person</code>, not a <code>Message</code> object. Full type-safety, no manual parsing.</p>
+('Nested Models', 'Instructor handles arbitrarily nested Pydantic models — "\n   "LLMs reliably produce complex structured outputs.\n\nfrom typing import Optional\nfrom pydantic import BaseModel\n\nclass Address(BaseModel):\n    street: str\n    city: str\n    country: str\n\nclass Company(BaseModel):\n    name: str\n    industry: str\n    founded_year: Optional[int] = None\n    headquarters: Address\n\ncompany = client.chat.completions.create(\n    model="gpt-4o",\n    response_model=Company,\n    messages=[{"role": "user", "content": "Extract company info: OpenAI, founded 2015, San Francisco, AI research"}],\n)\nprint(company.headquarters.city)  # "San Francisco"')
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-<h2>Nested models and lists</h2>
-<pre><code class="language-python">from pydantic import BaseModel
-from typing import Optional
-import instructor, anthropic
-
-client = instructor.from_anthropic(anthropic.Anthropic())
-
-class Address(BaseModel):
-    street: str
-    city: str
-    country: str
-
-class Company(BaseModel):
-    name: str
-    industry: str
-    headquarters: Address
-    employee_count: Optional[int] = None   # null if not mentioned
-
-class MeetingNotes(BaseModel):
-    date: str
-    attendees: list[str]
-    action_items: list[str]
-    companies_mentioned: list[Company]
-
-notes = client.messages.create(
-    model="claude-3-5-sonnet-20241022",
-    max_tokens=1024,
-    messages=[{"role":"user","content": meeting_transcript}],
-    response_model=MeetingNotes,
-)
-
-for item in notes.action_items:
-    print(f"TODO: {item}")
-</code></pre>
-<p>Instructor handles arbitrarily nested Pydantic models — the model receives a complete JSON schema and must fill every required field.</p>
+('Streaming Structured Output', "Instructor supports streaming partial objects as they're generated — useful for progressive rendering in UIs. Use instructor.Partial[YourModel] as the response_model to receive partial objects as each field completes.")
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-<h2>Retry logic and error recovery</h2>
-<pre><code class="language-python">import instructor
-import anthropic
-from pydantic import BaseModel, field_validator
-
-client = instructor.from_anthropic(anthropic.Anthropic())
-
-class PhoneNumber(BaseModel):
-    raw: str
-    formatted: str
-
-    @field_validator("formatted")
-    @classmethod
-    def must_be_e164(cls, v: str) -> str:
-        import re
-        if not re.match(r"^\+\d{10,15}$", v):
-            raise ValueError(f"Must be E.164 format (+12125551234), got: {v}")
-        return v
-
-# Instructor will retry up to 3 times if the validator raises
-result = client.messages.create(
-    model="claude-3-5-haiku-20241022",
-    max_tokens=128,
-    max_retries=3,          # ← Instructor retry count
-    messages=[{"role":"user","content":"My US number is (212) 555-1234"}],
-    response_model=PhoneNumber,
-)
-print(result.formatted)  # +12125551234
-</code></pre>
-<p>On each retry, Instructor sends the validation error as a new user message: <em>"Validation failed: formatted — Must be E.164 format (+12125551234), got: (212) 555-1234. Please fix and return the corrected JSON."</em></p>
-    </div>
-
-    <div class="section-block" id="s7">
-      <div class="section-marker">SECTION 07</div>
-<h2>Async and streaming</h2>
-<pre><code class="language-python">import instructor
-import anthropic
-import asyncio
-from pydantic import BaseModel
-
-# Async client
-async_client = instructor.from_anthropic(anthropic.AsyncAnthropic())
-
-class Summary(BaseModel):
-    headline: str
-    key_points: list[str]
-    word_count: int
-
-async def summarise(text: str) -> Summary:
-    return await async_client.messages.create(
-        model="claude-3-5-haiku-20241022",
-        max_tokens=512,
-        messages=[{"role":"user","content":f"Summarise:\n{text}"}],
-        response_model=Summary,
-    )
-
-# Streaming partial objects (shows fields as they're generated)
-from instructor import Partial
-
-async def stream_summary(text: str):
-    async for partial in async_client.messages.stream(
-        model="claude-3-5-haiku-20241022",
-        max_tokens=512,
-        messages=[{"role":"user","content":f"Summarise:\n{text}"}],
-        response_model=Partial[Summary],
-    ):
-        print(partial)  # prints partial object as fields populate
-</code></pre>
-    </div>
-
-    <div class="section-block" id="s8">
-      <div class="section-marker">SECTION 08</div>
-<h2>Gotchas</h2>
-<p><strong>Retry cost adds up.</strong> Each retry is a full LLM call. With <code>max_retries=3</code> and a flaky validator, you could pay 3× the expected cost. Write validators that are achievable given the input — don't require E.164 phone numbers if the input text only has informal formats.</p>
-<p><strong>Optional fields need defaults.</strong> If a field is <code>Optional[str]</code> without <code>= None</code>, Pydantic v2 will raise a validation error when the model omits it. Use <code>Optional[str] = None</code> consistently.</p>
-<p><strong>Large schemas increase prompt length.</strong> Instructor converts your Pydantic model to a JSON schema that goes into the prompt (or tool definition). A model with 30 fields is a large tool definition — factor this into your token budget.</p>
-<p><strong>Field descriptions matter.</strong> Use <code>Field(description="...")</code> for every field. The model uses these descriptions to understand what to extract — vague field names produce vague results.</p>
+('When to Use Instructor', "Use when you need: typed LLM outputs in Python, zero-boilerplate JSON extraction, automatic validation and retries, or complex nested data structures from unstructured text. It's the fastest way to go from 'I want structured data from LLM' to working code.")
     </div>
   </div>
 
   <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/prompt-engineering.html" style="color:var(--accent)">Prompt Engineering</a> &bull; Last updated March 2026</p>
+    <p>GenAI Mindmap &bull; <a href="/concepts/applications.html" style="color:var(--accent)">Applications</a> &bull; Last updated March 2026</p>
   </footer>
 </body>
 </html>
