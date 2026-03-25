@@ -110,7 +110,18 @@ paged_attn:{use:'Core of vLLM — enables continuous batching and high GPU utili
   └────┴────┴────┴────┴────┴────┘
    Req1: [P1 → P3 → P5]         Req2: [P2 → P4]
    ↑ page table maps logical → physical
-   Result: ~0% fragmentation, 2–4× more requests`,code:`# pip install vllm\nfrom vllm import LLM, SamplingParams\nllm = LLM(model='meta-llama/Meta-Llama-3-8B-Instruct')\nparams = SamplingParams(\n    temperature=0.7, top_p=0.9, max_tokens=512\n)\nprompts = ['Explain attention in one paragraph.']\noutputs = llm.generate(prompts, params)\nprint(outputs[0].outputs[0].text)`,tip:'Set gpu_memory_utilization=0.90 to leave headroom. Use tensor_parallel_size for multi-GPU.',refs:[{label:"Paged Attention",url:"concepts/paged-attention.html"}]},
+   Result: ~0% fragmentation, 2–4× more requests`,code:`# pip install vllm\nfrom vllm import LLM, SamplingParams\nllm = LLM(model='meta-llama/Meta-Llama-3-8B-Instruct')\nparams = SamplingParams(\n    temperature=0.7, top_p=0.9, max_tokens=512\n)\nprompts = ['Explain attention in one paragraph.']\noutputs = llm.generate(prompts, params)\nprint(outputs[0].outputs[0].text)`,tip:'Set gpu_memory_utilization=0.90 to leave headroom. Use tensor_parallel_size for multi-GPU.',questions:{
+  leader:['PagedAttention is the key innovation in vLLM that makes high-concurrency LLM serving practical — how does it affect your infrastructure capacity planning?','When you move from single-user to production serving, what is the expected throughput improvement from adopting vLLM vs transformers serve?'],
+  pm:['More efficient KV cache management means lower GPU cost per user — how do you model the infrastructure savings from adopting vLLM?','What concurrency level (requests/sec) justifies moving from naive serving to PagedAttention-based infrastructure?'],
+  eng:['How does PagedAttention map KV cache to non-contiguous memory pages — what is the block table and how does it reduce fragmentation?','How do you configure vLLM's max_num_seqs and gpu_memory_utilization for your model and hardware?','How does continuous batching (iteration-level scheduling) improve GPU utilization vs static batching?']
+},
+learn:[
+  {type:'paper',label:'Efficient Memory Management for LLM Serving with PagedAttention (Kwon et al., 2023)',url:'https://arxiv.org/abs/2309.06180'},
+  {type:'blog',label:'vLLM blog: PagedAttention — how vLLM manages KV cache as virtual memory',url:'https://blog.vllm.ai/2023/06/20/vllm.html'},
+  {type:'paper',label:'Orca: A Distributed Serving System (Yu et al., 2022) — continuous batching precursor',url:'https://www.usenix.org/conference/osdi22/presentation/yu'},
+  {type:'tool',label:'vLLM documentation — deployment and configuration guide',url:'https://docs.vllm.ai/'},
+  {type:'paper',label:'S-LoRA: Serving Thousands of Concurrent LoRA Adapters (Sheng et al., 2023)',url:'https://arxiv.org/abs/2311.03285'}
+],refs:[{label:"Paged Attention",url:"concepts/paged-attention.html"}]},
 spec_dec:{use:'Speed up inference 2-3× using a small draft model for token proposals.',diag:`
   Without speculative decoding:
   Target model generates 1 token/step → slow
@@ -128,7 +139,18 @@ spec_dec:{use:'Speed up inference 2-3× using a small draft model for token prop
   │    Reject rest, re-draft             │
   └──────────────────────────────────────┘
   Accept rate ≈ 70–85% → 2–3× speedup
-  Output distribution identical to target`,code:`from transformers import AutoModelForCausalLM, AutoTokenizer\nimport torch\nass_model = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-125m', torch_dtype=torch.float16).cuda()\ntarget = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-1.3b', torch_dtype=torch.float16).cuda()\ntok = AutoTokenizer.from_pretrained('facebook/opt-1.3b')\ninputs = tok('Hello world', return_tensors='pt').to('cuda')\n# HF handles speculative decoding via assistant_model\nout = target.generate(**inputs,\n    assistant_model=ass_model, max_new_tokens=50)\nprint(tok.decode(out[0]))`,tip:'Use a 7B target + 1B draft. Both must share the same tokenizer.',refs:[{label:"Speculative Decoding",url:"concepts/speculative-decoding.html"}]},
+  Output distribution identical to target`,code:`from transformers import AutoModelForCausalLM, AutoTokenizer\nimport torch\nass_model = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-125m', torch_dtype=torch.float16).cuda()\ntarget = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-1.3b', torch_dtype=torch.float16).cuda()\ntok = AutoTokenizer.from_pretrained('facebook/opt-1.3b')\ninputs = tok('Hello world', return_tensors='pt').to('cuda')\n# HF handles speculative decoding via assistant_model\nout = target.generate(**inputs,\n    assistant_model=ass_model, max_new_tokens=50)\nprint(tok.decode(out[0]))`,tip:'Use a 7B target + 1B draft. Both must share the same tokenizer.',questions:{
+  leader:['Speculative decoding can 2–3× inference throughput without changing output quality — how does this affect your GPU cost model for serving?','When evaluating serving frameworks, do you verify speculative decoding is available and what speedup to expect on your model+hardware combination?'],
+  pm:['Faster token generation directly improves user-perceived latency — how do you measure time-to-first-token and inter-token latency in your product?','At what latency SLA does speculative decoding become a necessary optimization vs a nice-to-have?'],
+  eng:['How does speculative decoding work — what is the draft model, how are tokens verified in parallel, and why is acceptance rate the key metric?','What draft model size gives the best speedup-to-quality trade-off for your main model — what acceptance rate do you target?','How do you implement speculative decoding with vLLM — what configuration enables it and what hardware requirements does it have?']
+},
+learn:[
+  {type:'paper',label:'Fast Inference from Transformers via Speculative Decoding (Leviathan et al., 2022)',url:'https://arxiv.org/abs/2211.17192'},
+  {type:'paper',label:'SpecInfer: Accelerating LLM Serving with Speculative Inference (Miao et al., 2023)',url:'https://arxiv.org/abs/2305.09781'},
+  {type:'blog',label:'HuggingFace: Assisted generation (speculative decoding) guide',url:'https://huggingface.co/blog/assisted-generation'},
+  {type:'paper',label:'Medusa: Simple LLM Inference Acceleration Framework (Cai et al., 2024)',url:'https://arxiv.org/abs/2401.10774'},
+  {type:'tool',label:'vLLM: speculative decoding configuration documentation',url:'https://docs.vllm.ai/en/latest/models/spec_decode.html'}
+],refs:[{label:"Speculative Decoding",url:"concepts/speculative-decoding.html"}]},
 gpt4o:{use:'GPT-4o[1] is OpenAI\'s multimodal flagship — it processes text, images, and audio natively in a single model, not as separate pipelines. Use it for: vision tasks (charts, documents, screenshots), complex multi-step reasoning, structured JSON outputs, and function calling in agentic workflows. It is the default starting point for new OpenAI-based products.\n\nKey library: openai[2] (pip install openai)',diag:`
   GPT-4o unified multimodal architecture:
 
@@ -419,7 +441,18 @@ invoice = client.chat.completions.create(
 )
 print(f'Vendor: {invoice.vendor}, Ref: {invoice.invoice_number}')
 for item in invoice.line_items:
-    print(f'  {item.description}: \${item.quantity * item.unit_price:.2f}')` ,tip:'Use entity_type not type as a field name — type shadows the Python builtin. Add Field(description=\"...\") to guide extraction. Use Literal for enums. Instructor uses function calling under the hood — expect ~50-100ms extra latency vs plain completion. Auto-retries 3× on validation failure.',refs:[{label:"Instructor",url:"concepts/instructor.html"}]},
+    print(f'  {item.description}: \${item.quantity * item.unit_price:.2f}')` ,tip:'Use entity_type not type as a field name — type shadows the Python builtin. Add Field(description=\"...\") to guide extraction. Use Literal for enums. Instructor uses function calling under the hood — expect ~50-100ms extra latency vs plain completion. Auto-retries 3× on validation failure.',questions:{
+  leader:['Instructor makes LLM structured output reliable via Pydantic — how does this change the reliability bar for integrating LLMs into your backend services?','What is the maintenance overhead of Instructor schemas as your data models evolve?'],
+  pm:['How do you ensure Instructor-validated outputs meet your product's data integrity requirements?','What failure modes remain even with Instructor — when does validation still fail, and what fallback do you implement?'],
+  eng:['How does Instructor's retry mechanism work — what happens when the LLM output fails Pydantic validation?','How do you handle optional fields and nested models in Instructor schemas — what Pydantic patterns work best with LLM output?','When is Instructor preferable to raw JSON mode or Outlines — what distinguishes these approaches?']
+},
+learn:[
+  {type:'tool',label:'Instructor documentation — structured LLM outputs with Pydantic',url:'https://python.useinstructor.com/'},
+  {type:'blog',label:'Jason Liu (Instructor author): why structured outputs matter for production LLMs',url:'https://jxnl.co/writing/2024/05/28/structured-outputs/'},
+  {type:'tool',label:'Pydantic documentation — data validation for Python',url:'https://docs.pydantic.dev/'},
+  {type:'paper',label:'OpenAI: Structured Outputs — function calling and JSON schema',url:'https://openai.com/index/introducing-structured-outputs-in-the-api/'},
+  {type:'tool',label:'Marvin: AI function calling with type-safe outputs',url:'https://www.askmarvin.ai/'}
+],refs:[{label:"Instructor",url:"concepts/instructor.html"}]},
 fc_api:{use:'Letting LLMs call your Python functions reliably with structured arguments.',diag:`
   Function calling flow:
 
@@ -452,7 +485,18 @@ st_lib:{use:'Generating embeddings for semantic search, RAG, and similarity task
   L2-normalize → unit vector
 
   Bi-encoder (fast):  encode both separately, dot product
-  Cross-encoder (slow): encode pair together, richer signal`,code:`from sentence_transformers import SentenceTransformer\nimport numpy as np\nmodel = SentenceTransformer('BAAI/bge-large-en-v1.5')\nsentences = [\n    'Machine learning is a subset of AI',\n    'Deep learning uses neural networks',\n    'Python is a programming language'\n]\nembeddings = model.encode(sentences, normalize_embeddings=True)\n# Cosine similarity (normalized = dot product)\nsim = embeddings @ embeddings.T\nprint(sim)\n# For queries, prefix with 'Represent this sentence:'\nquery = model.encode(['Represent: What is ML?'],\n    normalize_embeddings=True)`,tip:'BGE-large-en-v1.5 or gte-Qwen2-1.5B are best open-source choices as of 2024.',refs:[{"label":"Reimers & Gurevych (2019) — Sentence-BERT","url":"https://arxiv.org/abs/1908.10084"},{"label":"Sentence Transformers documentation","url":"https://www.sbert.net/"}]},
+  Cross-encoder (slow): encode pair together, richer signal`,code:`from sentence_transformers import SentenceTransformer\nimport numpy as np\nmodel = SentenceTransformer('BAAI/bge-large-en-v1.5')\nsentences = [\n    'Machine learning is a subset of AI',\n    'Deep learning uses neural networks',\n    'Python is a programming language'\n]\nembeddings = model.encode(sentences, normalize_embeddings=True)\n# Cosine similarity (normalized = dot product)\nsim = embeddings @ embeddings.T\nprint(sim)\n# For queries, prefix with 'Represent this sentence:'\nquery = model.encode(['Represent: What is ML?'],\n    normalize_embeddings=True)`,tip:'BGE-large-en-v1.5 or gte-Qwen2-1.5B are best open-source choices as of 2024.',questions:{
+  leader:['Sentence Transformers is the standard library for text embeddings — how do you choose between it, OpenAI embeddings, and Cohere for your embedding use case?','At what query volume does self-hosted embedding (sentence-transformers) become cheaper than an API?'],
+  pm:['How do you evaluate embedding quality for your specific domain — what semantic search metrics do you use?','How do you explain to stakeholders what makes one embedding model better than another for a given use case?'],
+  eng:['How do you choose between all-MiniLM-L6-v2, all-mpnet-base-v2, and E5-large for your RAG use case — what benchmarks guide this?','How do you batch encode documents efficiently with sentence-transformers — what batch_size and device settings maximize throughput?','How do you fine-tune a sentence-transformers model on your domain data using contrastive loss?']
+},
+learn:[
+  {type:'paper',label:'Sentence-BERT: Sentence Embeddings using Siamese BERT (Reimers & Gurevych, 2019)',url:'https://arxiv.org/abs/1908.10084'},
+  {type:'tool',label:'sentence-transformers documentation — usage and model selection guide',url:'https://www.sbert.net/'},
+  {type:'blog',label:'MTEB: Massive Text Embedding Benchmark — choosing the best embedding model',url:'https://huggingface.co/spaces/mteb/leaderboard'},
+  {type:'paper',label:'E5: Text Embeddings by Weakly-Supervised Contrastive Pre-training',url:'https://arxiv.org/abs/2212.03533'},
+  {type:'blog',label:'Pinecone: Choosing the right embedding model for RAG',url:'https://www.pinecone.io/learn/series/rag/embedding-models-rundown/'}
+],refs:[{"label":"Reimers & Gurevych (2019) — Sentence-BERT","url":"https://arxiv.org/abs/1908.10084"},{"label":"Sentence Transformers documentation","url":"https://www.sbert.net/"}]},
 oai_emb:{use:'Production semantic search and RAG where quality matters most.',diag:`
   OpenAI Embeddings API:
 
@@ -486,7 +530,18 @@ pinecone:{use:'Serverless managed vector search — no infra to manage.',diag:`
                    [(id, score, metadata), ...]
 
   Namespaces = logical partitions (tenant isolation)
-  Metadata filter applied BEFORE ANN — use it to narrow scope`,code:`from pinecone import Pinecone, ServerlessSpec\npc = Pinecone(api_key='YOUR_KEY')\npc.create_index(\n    name='genai-docs', dimension=1536,\n    metric='cosine',\n    spec=ServerlessSpec(cloud='aws', region='us-east-1')\n)\nindex = pc.Index('genai-docs')\n# Upsert vectors\nindex.upsert(vectors=[\n    {'id': 'doc1', 'values': [0.1]*1536,\n     'metadata': {'text': 'hello', 'source': 'docs'}}\n])\n# Query\nresults = index.query(\n    vector=[0.1]*1536, top_k=3,\n    include_metadata=True,\n    filter={'source': {'$eq': 'docs'}}\n)\nprint(results['matches'])`,tip:'Use namespaces to isolate tenants without separate indexes.',refs:[{label:"Pinecone",url:"concepts/pinecone.html"}]},
+  Metadata filter applied BEFORE ANN — use it to narrow scope`,code:`from pinecone import Pinecone, ServerlessSpec\npc = Pinecone(api_key='YOUR_KEY')\npc.create_index(\n    name='genai-docs', dimension=1536,\n    metric='cosine',\n    spec=ServerlessSpec(cloud='aws', region='us-east-1')\n)\nindex = pc.Index('genai-docs')\n# Upsert vectors\nindex.upsert(vectors=[\n    {'id': 'doc1', 'values': [0.1]*1536,\n     'metadata': {'text': 'hello', 'source': 'docs'}}\n])\n# Query\nresults = index.query(\n    vector=[0.1]*1536, top_k=3,\n    include_metadata=True,\n    filter={'source': {'$eq': 'docs'}}\n)\nprint(results['matches'])`,tip:'Use namespaces to isolate tenants without separate indexes.',questions:{
+  leader:['Pinecone is a managed vector database — what is the cost/benefit vs hosting your own (pgvector, Qdrant)?','How do you evaluate vector database performance for your specific index size, query pattern, and SLA?'],
+  pm:['What vector database SLAs do your product features require — p99 latency, availability, and data freshness?','How do you communicate the value of semantic search vs keyword search to product stakeholders?'],
+  eng:['How do you choose the right pod type and dimension for your Pinecone index — what factors affect cost vs performance?','How do you implement hybrid search in Pinecone — combining sparse BM25 and dense vector search?','How do you handle metadata filtering in Pinecone at scale — what filter selectivity affects performance?']
+},
+learn:[
+  {type:'tool',label:'Pinecone documentation — getting started with vector search',url:'https://docs.pinecone.io/'},
+  {type:'blog',label:'Pinecone: Learn — RAG, embeddings, and vector search guides',url:'https://www.pinecone.io/learn/'},
+  {type:'paper',label:'HNSW: Efficient and robust approximate nearest neighbor search',url:'https://arxiv.org/abs/1603.09320'},
+  {type:'blog',label:'Weaviate: Vector database comparison (Pinecone, Chroma, Qdrant, pgvector)',url:'https://weaviate.io/blog/vector-library-vs-vector-database'},
+  {type:'tool',label:'Pinecone Python client documentation',url:'https://docs.pinecone.io/reference/python-sdk'}
+],refs:[{label:"Pinecone",url:"concepts/pinecone.html"}]},
 chroma:{use:'Local development RAG — zero setup, in-memory or persistent.',diag:`
   Chroma local workflow:
 
@@ -505,7 +560,18 @@ chroma:{use:'Local development RAG — zero setup, in-memory or persistent.',dia
        │
   returns: documents, distances, metadata
 
-  Best for: dev/test, local prototyping, no infra`,code:`import chromadb\nfrom chromadb.utils import embedding_functions\nclient = chromadb.PersistentClient(path='./chroma_db')\nef = embedding_functions.SentenceTransformerEmbeddingFunction(\n    model_name='BAAI/bge-small-en-v1.5'\n)\ncollection = client.get_or_create_collection(\n    name='docs', embedding_function=ef\n)\ncollection.add(\n    documents=['Python is great', 'FastAPI is fast'],\n    ids=['1', '2'],\n    metadatas=[{'source': 'wiki'}]*2\n)\nresults = collection.query(\n    query_texts=['best web framework'],\n    n_results=2\n)\nprint(results['documents'])`,tip:'Switch from chromadb.Client() to PersistentClient() to keep data between restarts.',refs:[{label:"Chroma",url:"concepts/chroma.html"}]},
+  Best for: dev/test, local prototyping, no infra`,code:`import chromadb\nfrom chromadb.utils import embedding_functions\nclient = chromadb.PersistentClient(path='./chroma_db')\nef = embedding_functions.SentenceTransformerEmbeddingFunction(\n    model_name='BAAI/bge-small-en-v1.5'\n)\ncollection = client.get_or_create_collection(\n    name='docs', embedding_function=ef\n)\ncollection.add(\n    documents=['Python is great', 'FastAPI is fast'],\n    ids=['1', '2'],\n    metadatas=[{'source': 'wiki'}]*2\n)\nresults = collection.query(\n    query_texts=['best web framework'],\n    n_results=2\n)\nprint(results['documents'])`,tip:'Switch from chromadb.Client() to PersistentClient() to keep data between restarts.',questions:{
+  leader:['ChromaDB is the simplest local vector database to get started with — when does it become a bottleneck and what do you migrate to?','How do you evaluate when your vector database needs (persistence, scale, latency) require moving beyond local/SQLite Chroma?'],
+  pm:['ChromaDB enables rapid RAG prototyping — what is your quality and reliability bar before moving to a production vector store?','How do you explain vector database migration risk to product stakeholders when scaling up?'],
+  eng:['How do you configure Chroma for persistent storage vs in-memory — what is the PersistentClient vs Client API?','How do you implement metadata filtering in Chroma — what $eq, $contains operators does the where clause support?','At what collection size does Chroma's SQLite backend become a performance bottleneck — what is your migration trigger?']
+},
+learn:[
+  {type:'tool',label:'Chroma documentation — getting started with local vector search',url:'https://docs.trychroma.com/'},
+  {type:'blog',label:'LangChain: Using Chroma as a vector store (integration guide)',url:'https://python.langchain.com/docs/integrations/vectorstores/chroma/'},
+  {type:'blog',label:'Weaviate: When to move from prototype to production vector database',url:'https://weaviate.io/blog/vector-library-vs-vector-database'},
+  {type:'paper',label:'HNSW: Efficient approximate nearest neighbor search (Malkov & Yashunin)',url:'https://arxiv.org/abs/1603.09320'},
+  {type:'tool',label:'LlamaIndex: Chroma vector store integration',url:'https://docs.llamaindex.ai/'}
+],refs:[{label:"Chroma",url:"concepts/chroma.html"}]},
 qdrant:{use:'Production vector DB with strong filtering and payload support.',diag:`
   Qdrant filtering pipeline:
 
@@ -1293,7 +1359,18 @@ learn:[
   {type:'course',label:'DeepLearning.AI: Finetuning Large Language Models (short course, free)',url:'https://www.deeplearning.ai/short-courses/finetuning-large-language-models/'},
   {type:'tool',label:'PEFT library: LoRA, QLoRA, IA3 and more (HuggingFace)',url:'https://github.com/huggingface/peft'}
 ],refs:[{"label":"Hu et al. (2021) — LoRA: Low-Rank Adaptation of LLMs","url":"https://arxiv.org/abs/2106.09685"},{"label":"Dettmers et al. (2023) — QLoRA: Efficient Fine-tuning of Quantized LLMs","url":"https://arxiv.org/abs/2305.14314"},{"label":"HuggingFace PEFT library","url":"https://huggingface.co/docs/peft/"}]},
-self_attention:{use:'Understanding the core mechanism that makes transformers so powerful.',diag:`  Input tokens:  [The]   [cat]   [sat]\n                   │       │       │\n              ┌────┴──┐ ┌──┴────┐ ┌┴──────┐\n              │  Q,K,V│ │  Q,K,V│ │  Q,K,V│  (linear projections)\n              └────┬──┘ └──┬────┘ └┬──────┘\n                   │       │       │\n              Scores = Q × Kᵀ  ÷  √d_k\n                   │\n              Softmax  →  Attention weights\n                   │\n              Output = weights × V\n                   │\n  "cat" attends strongly to "sat" (subject→verb)\n  "sat" attends strongly to "cat" (verb→subject)`,code:`import torch\nimport torch.nn.functional as F\nimport math\n\ndef scaled_dot_product_attention(Q, K, V, mask=None):\n    """The core of every transformer.\n    Q, K, V: (batch, seq_len, d_k)\n    """\n    d_k = Q.size(-1)\n\n    # 1. Compute attention scores\n    scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(d_k)\n    # Shape: (batch, seq_len, seq_len)\n\n    # 2. Mask future tokens (decoder only)\n    if mask is not None:\n        scores = scores.masked_fill(mask == 0, -1e9)\n\n    # 3. Softmax → attention weights\n    weights = F.softmax(scores, dim=-1)\n\n    # 4. Weighted sum of values\n    return torch.matmul(weights, V), weights\n\n# Example\nB, T, d_k = 1, 4, 64\nQ = K = V = torch.randn(B, T, d_k)\nout, attn = scaled_dot_product_attention(Q, K, V)\nprint("Output:", out.shape)   # (1, 4, 64)\nprint("Weights:", attn.shape) # (1, 4, 4)`,tip:'The √d_k scaling prevents dot products from saturating softmax when d_k is large. Without it, gradients vanish.',refs:[{"label":"Vaswani et al. (2017) — Attention Is All You Need","url":"https://arxiv.org/abs/1706.03762"},{"label":"The Illustrated Transformer — Jay Alammar","url":"https://jalammar.github.io/illustrated-transformer/"}]},
+self_attention:{use:'Understanding the core mechanism that makes transformers so powerful.',diag:`  Input tokens:  [The]   [cat]   [sat]\n                   │       │       │\n              ┌────┴──┐ ┌──┴────┐ ┌┴──────┐\n              │  Q,K,V│ │  Q,K,V│ │  Q,K,V│  (linear projections)\n              └────┬──┘ └──┬────┘ └┬──────┘\n                   │       │       │\n              Scores = Q × Kᵀ  ÷  √d_k\n                   │\n              Softmax  →  Attention weights\n                   │\n              Output = weights × V\n                   │\n  "cat" attends strongly to "sat" (subject→verb)\n  "sat" attends strongly to "cat" (verb→subject)`,code:`import torch\nimport torch.nn.functional as F\nimport math\n\ndef scaled_dot_product_attention(Q, K, V, mask=None):\n    """The core of every transformer.\n    Q, K, V: (batch, seq_len, d_k)\n    """\n    d_k = Q.size(-1)\n\n    # 1. Compute attention scores\n    scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(d_k)\n    # Shape: (batch, seq_len, seq_len)\n\n    # 2. Mask future tokens (decoder only)\n    if mask is not None:\n        scores = scores.masked_fill(mask == 0, -1e9)\n\n    # 3. Softmax → attention weights\n    weights = F.softmax(scores, dim=-1)\n\n    # 4. Weighted sum of values\n    return torch.matmul(weights, V), weights\n\n# Example\nB, T, d_k = 1, 4, 64\nQ = K = V = torch.randn(B, T, d_k)\nout, attn = scaled_dot_product_attention(Q, K, V)\nprint("Output:", out.shape)   # (1, 4, 64)\nprint("Weights:", attn.shape) # (1, 4, 4)`,tip:'The √d_k scaling prevents dot products from saturating softmax when d_k is large. Without it, gradients vanish.',questions:{
+  leader:['Self-attention is the core operation in every transformer — how does understanding it help you make informed decisions about model architecture choices?','When does self-attention become the compute bottleneck, and how does that affect your context window and latency decisions?'],
+  pm:['Self-attention is O(n²) in sequence length — how does this translate to the API cost of longer prompts?','What product use cases are limited by self-attention's quadratic cost, and what alternatives exist?'],
+  eng:['How does the Q, K, V mechanism work step by step — what does each matrix represent geometrically?','What is the difference between self-attention and cross-attention — when does the query come from a different sequence than the key and value?','How does FlashAttention speed up self-attention without changing the output — what is IO-aware optimization?']
+},
+learn:[
+  {type:'paper',label:'Attention Is All You Need — self-attention mechanism (Vaswani et al., 2017)',url:'https://arxiv.org/abs/1706.03762'},
+  {type:'blog',label:'Jay Alammar: The Illustrated Transformer — self-attention visual walkthrough',url:'https://jalammar.github.io/illustrated-transformer/'},
+  {type:'video',label:'3Blue1Brown: Attention in transformers — visual explanation',url:'https://youtu.be/eMlx5fFNoYc'},
+  {type:'video',label:'Andrej Karpathy: Let's build GPT from scratch (self-attention implementation)',url:'https://youtu.be/kCc8FmEb1nY'},
+  {type:'blog',label:'Peter Bloem: Transformers from Scratch — self-attention math derivation',url:'https://peterbloem.nl/blog/transformers'}
+],refs:[{"label":"Vaswani et al. (2017) — Attention Is All You Need","url":"https://arxiv.org/abs/1706.03762"},{"label":"The Illustrated Transformer — Jay Alammar","url":"https://jalammar.github.io/illustrated-transformer/"}]},
 tokenization:{use:'Debugging token costs, understanding model inputs, and working with special tokens.',diag:`
   BPE tokenization example:
 
@@ -1313,7 +1390,18 @@ tokenization:{use:'Debugging token costs, understanding model inputs, and workin
   • Non-English text uses more tokens per word
   • Special chars (
 , spaces) are their own tokens
-  • Vocabulary size ≈ 50K–100K tokens`,code:`import tiktoken\nfrom transformers import AutoTokenizer\n\n# OpenAI tokenizer\nenc = tiktoken.encoding_for_model("gpt-4o")\ntext = "LLMs use byte-pair encoding for tokenisation."\ntokens = enc.encode(text)\nprint(f"GPT-4o tokens: {len(tokens)}")\nprint(f"Token strings: {[enc.decode([t]) for t in tokens]}")\n\n# HuggingFace tokenizer (Llama 3)\ntok = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B")\nencoded = tok(text, return_tensors="pt")\nprint(f"Llama-3 tokens: {encoded.input_ids.shape[1]}")\n\n# Cost estimate\ndef estimate_cost(text: str, price_per_1m: float = 2.50) -> float:\n    n = len(enc.encode(text))\n    return n / 1_000_000 * price_per_1m\n\nprint(f"Cost: {estimate_cost(text * 1000):.4f} for 1000 repeats")`,tip:'1 token ≈ 4 chars in English, ≈ 2-3 chars in code. Special tokens (<|system|>, <|user|>) count too — check with tokenizer.special_tokens_map.',refs:[{"label":"Sennrich et al. (2016) — Byte Pair Encoding","url":"https://arxiv.org/abs/1508.07909"},{"label":"Kudo & Richardson (2018) — SentencePiece","url":"https://arxiv.org/abs/1808.06226"},{"label":"Tiktokenizer — interactive tokenizer visualization","url":"https://tiktokenizer.vercel.app/"}]},
+  • Vocabulary size ≈ 50K–100K tokens`,code:`import tiktoken\nfrom transformers import AutoTokenizer\n\n# OpenAI tokenizer\nenc = tiktoken.encoding_for_model("gpt-4o")\ntext = "LLMs use byte-pair encoding for tokenisation."\ntokens = enc.encode(text)\nprint(f"GPT-4o tokens: {len(tokens)}")\nprint(f"Token strings: {[enc.decode([t]) for t in tokens]}")\n\n# HuggingFace tokenizer (Llama 3)\ntok = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B")\nencoded = tok(text, return_tensors="pt")\nprint(f"Llama-3 tokens: {encoded.input_ids.shape[1]}")\n\n# Cost estimate\ndef estimate_cost(text: str, price_per_1m: float = 2.50) -> float:\n    n = len(enc.encode(text))\n    return n / 1_000_000 * price_per_1m\n\nprint(f"Cost: {estimate_cost(text * 1000):.4f} for 1000 repeats")`,tip:'1 token ≈ 4 chars in English, ≈ 2-3 chars in code. Special tokens (<|system|>, <|user|>) count too — check with tokenizer.special_tokens_map.',questions:{
+  leader:['Tokenization affects what your model can read and how much it costs — how do you factor vocabulary coverage and token costs into model selection for your languages and domains?','For non-English products, how does tokenizer quality (tokens per character) translate to cost and quality differences across models?'],
+  pm:['How do you explain to stakeholders why token count is the right pricing unit — and what does "this document is 2000 tokens" mean in practical terms?','How do you optimize prompt design to reduce token count without losing quality?'],
+  eng:['How do you profile tokenizer efficiency for your domain — what tokens-per-character ratio do you target for technical text vs prose?','How does BPE tokenization handle OOV (out-of-vocabulary) tokens — and when does tokenization break down for your use case?','How do you estimate token count before sending to the API — what fast approximation do you use (4 chars ≈ 1 token)?']
+},
+learn:[
+  {type:'paper',label:'BPE: Neural Machine Translation of Rare Words with Subword Units (Sennrich et al., 2016)',url:'https://arxiv.org/abs/1508.07909'},
+  {type:'paper',label:'SentencePiece: A simple and language independent subword tokenizer (Kudo & Richardson, 2018)',url:'https://arxiv.org/abs/1808.06226'},
+  {type:'blog',label:'Jay Alammar: The Illustrated Word2Vec — tokenization and embeddings',url:'https://jalammar.github.io/illustrated-word2vec/'},
+  {type:'tool',label:'OpenAI Tokenizer — visualize and count tokens interactively',url:'https://platform.openai.com/tokenizer'},
+  {type:'blog',label:'HuggingFace: Tokenizers library — fast BPE, WordPiece, and SentencePiece',url:'https://huggingface.co/docs/tokenizers'}
+],refs:[{"label":"Sennrich et al. (2016) — Byte Pair Encoding","url":"https://arxiv.org/abs/1508.07909"},{"label":"Kudo & Richardson (2018) — SentencePiece","url":"https://arxiv.org/abs/1808.06226"},{"label":"Tiktokenizer — interactive tokenizer visualization","url":"https://tiktokenizer.vercel.app/"}]},
 hybrid_search:{use:'When neither pure semantic nor pure keyword search gives enough recall.',diag:`
   Hybrid search: dense + sparse fusion
 
@@ -1403,7 +1491,18 @@ try:
     ast.parse(raw_code)
     print('Syntax OK')
 except SyntaxError as e:
-    print(f'Syntax error: {e}')`,tip:'JSON mode is zero-cost to add and catches ~80% of format failures. Layer in Instructor when you need typed fields and retries. Reserve Outlines for local models or sub-word-level constraints. Always validate before executing generated code — ast.parse() is one line.',refs:[{label:"Output Control",url:"concepts/output-control.html"}]},
+    print(f'Syntax error: {e}')`,tip:'JSON mode is zero-cost to add and catches ~80% of format failures. Layer in Instructor when you need typed fields and retries. Reserve Outlines for local models or sub-word-level constraints. Always validate before executing generated code — ast.parse() is one line.',questions:{
+  leader:['Controlling LLM output format (JSON, structured schemas) is essential for integration reliability — how do you ensure output format consistency across model upgrades?','What percentage of your LLM API calls need structured output vs free-form text — and how does that affect your prompting strategy?'],
+  pm:['Unreliable output format causes production incidents — what validation layer do you require before deploying an LLM integration?','How do you explain to non-technical stakeholders why LLMs don't always follow formatting instructions reliably?'],
+  eng:['How do you choose between JSON mode, function calling, and structured output (grammar-constrained decoding) for your use case?','What validation library (Pydantic, Instructor, Outlines) do you use to parse and validate LLM structured outputs?','How do you handle the case where the LLM produces invalid JSON despite JSON mode — what retry and fallback logic do you implement?']
+},
+learn:[
+  {type:'blog',label:'OpenAI: Structured Outputs guide — guaranteed JSON schema compliance',url:'https://platform.openai.com/docs/guides/structured-outputs'},
+  {type:'tool',label:'Instructor: structured LLM outputs with Pydantic validation',url:'https://python.useinstructor.com/'},
+  {type:'tool',label:'Outlines: grammar-constrained generation for LLMs',url:'https://github.com/outlines-dev/outlines'},
+  {type:'blog',label:'Anthropic: Tool use for structured outputs — reliable JSON extraction',url:'https://docs.anthropic.com/en/docs/tool-use'},
+  {type:'paper',label:'Constrained Decoding for Structured Prediction — survey',url:'https://arxiv.org/abs/2104.07138'}
+],refs:[{label:"Output Control",url:"concepts/output-control.html"}]},
 json_mode:{use:'Getting structured JSON back from any OpenAI/Anthropic model without extra libraries.',diag:`
   Structured output options:
 
@@ -1423,7 +1522,18 @@ json_mode:{use:'Getting structured JSON back from any OpenAI/Anthropic model wit
 
   Instructor/Outlines:
   LLM output → parse → validate Pydantic
-          → auto-retry on validation failure`,code:`from openai import OpenAI\nfrom pydantic import BaseModel\nimport json\nclient = OpenAI()\n\n# Method 1: JSON mode (valid JSON guaranteed, schema not enforced)\nresp = client.chat.completions.create(\n    model="gpt-4o-mini",\n    response_format={"type": "json_object"},\n    messages=[{"role": "user",\n        "content": 'Extract: {"entities":[{"name":str,"type":str}]}'\n                   "\\nText: Steve Jobs founded Apple in Cupertino."}]\n)\ndata = json.loads(resp.choices[0].message.content)\nprint(data)\n\n# Method 2: Structured outputs (schema strictly enforced)\nclass Entity(BaseModel):\n    name: str\n    entity_type: str\n\nclass Result(BaseModel):\n    entities: list[Entity]\n\nresp2 = client.beta.chat.completions.parse(\n    model="gpt-4o-mini",\n    messages=[{"role": "user",\n        "content": "Extract: Steve Jobs founded Apple"}],\n    response_format=Result\n)\nprint(resp2.choices[0].message.parsed.entities)`,tip:'Prefer Structured Outputs (Method 2) when you have a strict schema — it guarantees field names and types, not just valid JSON syntax.',refs:[{label:"JSON Mode",url:"concepts/json-mode.html"}]},
+          → auto-retry on validation failure`,code:`from openai import OpenAI\nfrom pydantic import BaseModel\nimport json\nclient = OpenAI()\n\n# Method 1: JSON mode (valid JSON guaranteed, schema not enforced)\nresp = client.chat.completions.create(\n    model="gpt-4o-mini",\n    response_format={"type": "json_object"},\n    messages=[{"role": "user",\n        "content": 'Extract: {"entities":[{"name":str,"type":str}]}'\n                   "\\nText: Steve Jobs founded Apple in Cupertino."}]\n)\ndata = json.loads(resp.choices[0].message.content)\nprint(data)\n\n# Method 2: Structured outputs (schema strictly enforced)\nclass Entity(BaseModel):\n    name: str\n    entity_type: str\n\nclass Result(BaseModel):\n    entities: list[Entity]\n\nresp2 = client.beta.chat.completions.parse(\n    model="gpt-4o-mini",\n    messages=[{"role": "user",\n        "content": "Extract: Steve Jobs founded Apple"}],\n    response_format=Result\n)\nprint(resp2.choices[0].message.parsed.entities)`,tip:'Prefer Structured Outputs (Method 2) when you have a strict schema — it guarantees field names and types, not just valid JSON syntax.',questions:{
+  leader:['JSON mode ensures structured output from LLMs — what reliability guarantee does it provide, and when is it not enough?','How do you version and evolve your JSON schemas as your product requirements change?'],
+  pm:['What product integrations break when LLM output format is inconsistent — and what is the incident cost of format failures?','How do you communicate JSON output requirements to non-technical stakeholders who define product features?'],
+  eng:['What is the difference between JSON mode (best-effort), function calling (schema-constrained), and structured outputs (grammar-constrained) — when do you need each?','How do you implement retry logic when JSON mode produces invalid JSON — what error handling pattern is most reliable?','How do you handle deeply nested or optional fields in LLM JSON output — what Pydantic model structure works best?']
+},
+learn:[
+  {type:'blog',label:'OpenAI: JSON mode and Structured Outputs documentation',url:'https://platform.openai.com/docs/guides/structured-outputs'},
+  {type:'tool',label:'Instructor: structured LLM outputs with Pydantic (built on function calling)',url:'https://python.useinstructor.com/'},
+  {type:'blog',label:'Anthropic: Using tool use for structured JSON extraction',url:'https://docs.anthropic.com/en/docs/tool-use'},
+  {type:'tool',label:'Outlines: grammar-constrained decoding for reliable JSON',url:'https://github.com/outlines-dev/outlines'},
+  {type:'paper',label:'Constraining LLM Generation with Context-Free Grammars (Scholak et al., 2021)',url:'https://arxiv.org/abs/2104.07138'}
+],refs:[{label:"JSON Mode",url:"concepts/json-mode.html"}]},
 code_output_validation:{use:'When an LLM generates code, parse it with ast.parse() before execution — catches syntax errors instantly, without running anything. Combine with regex extraction to pull the code block from surrounding prose.',diag:`  LLM response (raw string):
   "Sure! Here's the code:\n\`\`\`python\ndef add(a, b)\n    return a + b\n\`\`\`"
 
@@ -1864,7 +1974,18 @@ topic = "Should I use RAG or fine-tuning for my use case?"
 print("--- Engineer ---")
 print(ask("engineer", topic))
 print("--- Critic ---")
-print(ask("critic", "My plan: always use RAG, never fine-tune."))`,tip:'Combine role + audience: "You are a {expert} explaining to a {audience}." This single addition often doubles output quality because it sets both the knowledge level and the communication style simultaneously.',refs:[{label:"Role Prompting",url:"concepts/role-prompting.html"}]},
+print(ask("critic", "My plan: always use RAG, never fine-tune."))`,tip:'Combine role + audience: "You are a {expert} explaining to a {audience}." This single addition often doubles output quality because it sets both the knowledge level and the communication style simultaneously.',questions:{
+  leader:['Role prompting can significantly change model output style and expertise level — how do you standardize persona definitions across your product's system prompts?','What is the risk of overly constraining a model via role prompting — how do you balance persona consistency with handling edge cases?'],
+  pm:['How do you test whether a role prompt achieves the desired user experience vs just sounding different?','When does giving the model a role (e.g. "You are an expert doctor") improve output quality vs introduce reliability risks?'],
+  eng:['How do you measure the effect of role prompting on output quality vs a neutral system prompt — what eval do you use?','How does role prompting interact with safety constraints — can a role prompt bypass safety filters, and how do you prevent misuse?','What is the most effective role prompt structure — name, expertise, communication style, constraints — and in what order?']
+},
+learn:[
+  {type:'blog',label:'Anthropic: System prompts guide — persona and role definition',url:'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts'},
+  {type:'paper',label:'Large Language Models Understand and Can Be Enhanced by Emotional Stimuli',url:'https://arxiv.org/abs/2307.11760'},
+  {type:'blog',label:'OpenAI: Prompt engineering — using personas and roles',url:'https://platform.openai.com/docs/guides/prompt-engineering'},
+  {type:'blog',label:'Lilian Weng: Prompt Engineering — role prompting section',url:'https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/'},
+  {type:'paper',label:'Is "Think Step by Step" a Universal Prompt? (Kojima et al., analysis)',url:'https://arxiv.org/abs/2205.11916'}
+],refs:[{label:"Role Prompting",url:"concepts/role-prompting.html"}]},
 prompt_caching:{use:'Reducing latency and cost when your prompt has a long shared prefix — system prompts, retrieved docs, few-shot examples.',diag:`  Standard API call:\n  ┌──────────────────────────────────────┐\n  │ [System prompt 2000 tokens]          │  \n  │ [Retrieved docs 5000 tokens]         │  Process ALL tokens\n  │ [User question 50 tokens]            │  every single call\n  └──────────────────────────────────────┘\n  Cost: 7050 tokens input\n\n  With Prompt Caching:\n  ┌──────────────────────────────────────┐\n  │ [System prompt 2000 tokens] ✓ cached │  0.1x cost\n  │ [Retrieved docs 5000 tokens] ✓ cached│  0.1x cost\n  │ [User question 50 tokens]    fresh   │  1x cost\n  └──────────────────────────────────────┘\n  Cost: 50 tokens (+ tiny cache read fee)`,code:`import anthropic\n\nclient = anthropic.Anthropic()\n\n# Long shared content (system prompt + docs)\nSYSTEM_DOCS = """You are an expert assistant.\n\"\"\" + ("documentation text " * 500)  # simulate 2000+ token prefix\n\n# First call — content is processed and cached automatically\nresp1 = client.messages.create(\n    model="claude-opus-4-6",\n    max_tokens=1024,\n    system=[\n        {\n            "type": "text",\n            "text": SYSTEM_DOCS,\n            "cache_control": {"type": "ephemeral"}  # mark for caching\n        }\n    ],\n    messages=[{"role": "user", "content": "What is RAG?"}]\n)\nprint("Cache write tokens:", resp1.usage.cache_creation_input_tokens)\n\n# Second call — prefix is served from cache (90% cheaper, 2x faster)\nresp2 = client.messages.create(\n    model="claude-opus-4-6",\n    max_tokens=1024,\n    system=[\n        {"type": "text", "text": SYSTEM_DOCS,\n         "cache_control": {"type": "ephemeral"}}\n    ],\n    messages=[{"role": "user", "content": "Explain vector search?"}]\n)\nprint("Cache read tokens:", resp2.usage.cache_read_input_tokens)`,tip:'Cache breakeven is ~2 requests for Anthropic (cache write costs 25% more, reads cost 90% less). For apps with 10+ users sharing the same system prompt, savings are massive.',refs:[{label:"Prompt Caching",url:"concepts/prompt-caching.html"}]},
 chunking:{use:'How you split documents is the single biggest lever on RAG quality — more impactful than your choice of vector DB or embedding model. Bad chunking silently degrades retrieval: the right content exists but is always cut at the wrong boundary. There are now seven distinct strategies, ranging from zero-dependency fixed splitting to LLM-guided agentic boundary detection. Click each strategy node below to see code and full details.',diag:`  Strategy comparison — all 7 approaches
   ──────────────────────────────────────────────────────────────────
@@ -5836,7 +5957,18 @@ model = Mamba(
 
 x = torch.randn(2, 1024, 256).to("cuda")  # (batch, seq, dim)
 y = model(x)
-print(y.shape)  # (2, 1024, 256) — same shape, linear time`,tip:'Mamba excels at sequences longer than 32K tokens. For short sequences, transformers still win on accuracy. Hybrid models (some attention + some SSM layers) are the practical sweet spot.',refs:[{label:'Mamba paper (2023)',url:'https://arxiv.org/abs/2312.00752'},{label:'Mamba-2 paper (2024)',url:'https://arxiv.org/abs/2405.21060'},{label:'Mamba GitHub',url:'https://github.com/state-spaces/mamba'},{label:'Jamba hybrid model',url:'https://arxiv.org/abs/2403.19887'}]},
+print(y.shape)  # (2, 1024, 256) — same shape, linear time`,tip:'Mamba excels at sequences longer than 32K tokens. For short sequences, transformers still win on accuracy. Hybrid models (some attention + some SSM layers) are the practical sweet spot.',questions:{
+  leader:['Mamba challenges the transformer's dominance with linear-time state space models — at what scale or task type does this architectural bet become meaningful for your product?','How do you evaluate emerging architectures like Mamba before they have the same ecosystem maturity as transformers?'],
+  pm:['Mamba enables very long sequences at linear cost — what product use cases (very long documents, real-time streaming) justify exploring it?','What is the risk profile of building on a newer architecture vs a battle-tested transformer?'],
+  eng:['How does a state space model (SSM) differ computationally from attention — what is the recurrent vs convolutional duality?','How do you benchmark Mamba vs transformer quality on your task at the same parameter count?','What is the selective state space mechanism in Mamba — how does input-dependent SSM differ from fixed SSM?']
+},
+learn:[
+  {type:'paper',label:'Mamba: Linear-Time Sequence Modeling with Selective State Spaces (Gu & Dao, 2023)',url:'https://arxiv.org/abs/2312.00752'},
+  {type:'paper',label:'S4: Efficiently Modeling Long Sequences with Structured State Spaces (Gu et al., 2021)',url:'https://arxiv.org/abs/2111.00396'},
+  {type:'blog',label:'Lilian Weng: The Transformer Family v2 — SSM and Mamba section',url:'https://lilianweng.github.io/posts/2023-01-27-the-transformer-family-v2/'},
+  {type:'video',label:'Mamba explained: selective state spaces for sequence modeling',url:'https://youtu.be/9dSkvxS2EB0'},
+  {type:'paper',label:'Jamba: A Hybrid Transformer-Mamba Language Model (AI21 Labs, 2024)',url:'https://arxiv.org/abs/2403.19887'}
+],refs:[{label:'Mamba paper (2023)',url:'https://arxiv.org/abs/2312.00752'},{label:'Mamba-2 paper (2024)',url:'https://arxiv.org/abs/2405.21060'},{label:'Mamba GitHub',url:'https://github.com/state-spaces/mamba'},{label:'Jamba hybrid model',url:'https://arxiv.org/abs/2403.19887'}]},
 hybrid_llm:{use:'Hybrid LLM architectures interleave transformer attention layers with SSM layers — attention for precise, position-sensitive reasoning; SSM for efficient long-context processing.\n\nModels like Jamba (AI21) and OLMo-Hybrid (AllenAI) use roughly 1 attention layer per 4–8 SSM layers. The result: near-linear memory at long contexts with accuracy close to pure transformers.',diag:`  Pure Transformer — accurate, expensive at long context:
   [Attn]─[Attn]─[Attn]─[Attn]─[Attn]─ ...
    O(n²) memory grows with sequence length
@@ -6168,7 +6300,18 @@ def loss(x):
     return (x - 3)**2 + 2
 result = minimize(loss, x0=0)
 print(f'Optimal x: {result.x[0]:.3f}')
-`,tip:'Eigenvalues: Determine matrix behavior. SVD: Decompose any matrix.\n\nDerivatives: Foundation for backprop. Chain rule: f(g(x)) → f\'(g) * g\'(x).\n\nBayes: P(A|B) = P(B|A)*P(A)/P(B). Prior → likelihood → posterior.',refs:[{"label":"3Blue1Brown — Essence of Linear Algebra","url":"https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab"},{"label":"Mathematics for Machine Learning (free book)","url":"https://mml-book.github.io/"},{"label":"Goodfellow et al. — Deep Learning book","url":"https://www.deeplearningbook.org/"}]},
+`,tip:'Eigenvalues: Determine matrix behavior. SVD: Decompose any matrix.\n\nDerivatives: Foundation for backprop. Chain rule: f(g(x)) → f\'(g) * g\'(x).\n\nBayes: P(A|B) = P(B|A)*P(A)/P(B). Prior → likelihood → posterior.',questions:{
+  leader:['How much math does your team need to understand to build production LLM applications — and what's the minimum viable foundation?','When evaluating ML engineers, what mathematical intuition do you look for beyond coding ability?'],
+  pm:['How do you explain loss functions and optimization to non-technical stakeholders in terms of product quality?','What mathematical concepts underlie the quality vs cost trade-offs you make when choosing models?'],
+  eng:['How do you use linear algebra intuition to debug tensor shape errors in PyTorch — what mental model helps?','When does numerical precision (float16 vs float32) cause training instability — what math explains why?','What calculus concepts do you need to understand backpropagation intuitively vs just using autograd?']
+},
+learn:[
+  {type:'video',label:'3Blue1Brown: Essence of Linear Algebra (visual series, free)',url:'https://youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab'},
+  {type:'video',label:'3Blue1Brown: Essence of Calculus (visual series, free)',url:'https://youtube.com/playlist?list=PLZHQObOWTQDMsr9K-rj53DwVRMYO3t5Yr'},
+  {type:'book',label:'Mathematics for Machine Learning — Deisenroth et al. (free PDF)',url:'https://mml-book.github.io/'},
+  {type:'course',label:'Khan Academy: Linear Algebra (self-paced, free)',url:'https://www.khanacademy.org/math/linear-algebra'},
+  {type:'book',label:'Deep Learning — Goodfellow, Bengio, Courville (Chapter 2-4: math review)',url:'https://www.deeplearningbook.org/'}
+],refs:[{"label":"3Blue1Brown — Essence of Linear Algebra","url":"https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab"},{"label":"Mathematics for Machine Learning (free book)","url":"https://mml-book.github.io/"},{"label":"Goodfellow et al. — Deep Learning book","url":"https://www.deeplearningbook.org/"}]},
 python_ecosystem:{use:'Leverage numpy, pandas, scikit-learn, and HuggingFace for ML workflows.',diag:`
   GenAI Python stack layers:
 
@@ -6216,7 +6359,18 @@ X_train, X_test = train_test_split(X_scaled, test_size=0.2)
 nlp = pipeline('sentiment-analysis')
 result = nlp('I love machine learning!')[0]
 print(f'Label: {result[\'label\']}, Score: {result[\'score\']:.3f}')
-`,tip:'NumPy: Foundation for all ML in Python. Broadcasting vectorizes operations.\n\nPandas: Load CSVs, aggregate, pivot. df.groupby() + agg() for analysis.\n\nHuggingFace: 100k+ models via pipeline(). Fine-tune with Trainer class.',refs:[{"label":"NumPy documentation","url":"https://numpy.org/doc/stable/"},{"label":"Pandas documentation","url":"https://pandas.pydata.org/docs/"},{"label":"Scientific Python lectures","url":"https://lectures.scientific-python.org/"}]},
+`,tip:'NumPy: Foundation for all ML in Python. Broadcasting vectorizes operations.\n\nPandas: Load CSVs, aggregate, pivot. df.groupby() + agg() for analysis.\n\nHuggingFace: 100k+ models via pipeline(). Fine-tune with Trainer class.',questions:{
+  leader:['The Python ML ecosystem is where most AI development happens — what Python tooling investment does your team need to be competitive?','How do you standardize Python environments and dependencies across your ML team to avoid "works on my machine" issues?'],
+  pm:['What Python libraries are must-haves vs nice-to-haves for building LLM applications in your product context?','How do you evaluate Python vs other languages for ML workloads at your scale?'],
+  eng:['How do you manage Python virtual environments and dependency pinning for reproducible ML experiments?','What Python profiling tools do you use to identify performance bottlenecks in ML code?','How do you package and deploy Python ML code to production — what packaging and serving approaches work at scale?']
+},
+learn:[
+  {type:'course',label:'fast.ai: Practical Deep Learning — code-first Python ML (free)',url:'https://course.fast.ai/'},
+  {type:'tool',label:'HuggingFace ecosystem: transformers, datasets, accelerate, peft, trl',url:'https://huggingface.co/'},
+  {type:'blog',label:'Real Python: Python virtual environments — a primer',url:'https://realpython.com/python-virtual-environments-a-primer/'},
+  {type:'blog',label:'Made With ML: MLOps — Python best practices for production',url:'https://madewithml.com/'},
+  {type:'tool',label:'uv: blazing-fast Python package manager (replaces pip + venv)',url:'https://github.com/astral-sh/uv'}
+],refs:[{"label":"NumPy documentation","url":"https://numpy.org/doc/stable/"},{"label":"Pandas documentation","url":"https://pandas.pydata.org/docs/"},{"label":"Scientific Python lectures","url":"https://lectures.scientific-python.org/"}]},
 pytorch_basics:{use:'Master PyTorch tensors, autograd, and training loops.',diag:`
   PyTorch vs TensorFlow paradigm:
 
@@ -6278,7 +6432,18 @@ for epoch in range(100):
     optimizer.step()
 
 print('Training complete')
-`,tip:'Tensors are like NumPy arrays but GPU-accelerated and differentiable.\n\nAutograd: Set requires_grad=True, call .backward() to compute gradients automatically.\n\nnn.Module: Subclass for reusable models. .parameters() for optimizer access.',refs:[{"label":"PyTorch official tutorials","url":"https://pytorch.org/tutorials/"},{"label":"Andrej Karpathy — micrograd (backprop from scratch)","url":"https://github.com/karpathy/micrograd"},{"label":"Fast.ai deep learning course","url":"https://course.fast.ai/"}]},
+`,tip:'Tensors are like NumPy arrays but GPU-accelerated and differentiable.\n\nAutograd: Set requires_grad=True, call .backward() to compute gradients automatically.\n\nnn.Module: Subclass for reusable models. .parameters() for optimizer access.',questions:{
+  leader:['PyTorch is the dominant ML framework — what level of PyTorch fluency does your team need for fine-tuning vs just calling APIs?','How do you evaluate ML engineers on practical PyTorch skills beyond benchmark exercises?'],
+  pm:['What PyTorch knowledge is required to debug model quality issues vs just use pre-built pipelines?','How does the choice of PyTorch vs TensorFlow affect your team's hiring pool and tool ecosystem?'],
+  eng:['How do you manage GPU memory in PyTorch — what does torch.cuda.empty_cache() do and when do you need it?','How do you profile PyTorch code to find bottlenecks — what does torch.profiler reveal?','How do you write custom PyTorch Modules — what are the minimum required methods to implement?']
+},
+learn:[
+  {type:'course',label:'fast.ai: Practical Deep Learning — PyTorch fundamentals (free)',url:'https://course.fast.ai/'},
+  {type:'video',label:'Andrej Karpathy: micrograd + makemore — build neural nets from scratch',url:'https://youtu.be/VMj-3S1tku0'},
+  {type:'book',label:'Programming PyTorch for Deep Learning — Ian Pointer (O'Reilly)',url:'https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html'},
+  {type:'tool',label:'PyTorch documentation and tutorials (official)',url:'https://pytorch.org/tutorials/'},
+  {type:'blog',label:'Sebastian Raschka: Machine Learning Q and A (PyTorch tips)',url:'https://magazine.sebastianraschka.com/'}
+],refs:[{"label":"PyTorch official tutorials","url":"https://pytorch.org/tutorials/"},{"label":"Andrej Karpathy — micrograd (backprop from scratch)","url":"https://github.com/karpathy/micrograd"},{"label":"Fast.ai deep learning course","url":"https://course.fast.ai/"}]},
 neural_nets:{use:'Implement feedforward networks, backpropagation, and train with common loss functions.',diag:`
   Universal approximation — how NNs work:
 
@@ -6338,7 +6503,18 @@ for epoch in range(10):
     loss.backward()
     optimizer.step()
     print(f'Epoch {epoch}, Loss: {loss.item():.4f}')
-`,tip:'ReLU: Fast, avoids vanishing gradients. GELU: Smoother, slightly better (modern default).\n\nBackprop: Reverse-mode autodiff. PyTorch computes automatically via .backward().\n\nLoss choice: MSE for regression, CrossEntropy for classification, BCEWithLogits for binary.',refs:[{"label":"Goodfellow et al. — Deep Learning (Ch. 6)","url":"https://www.deeplearningbook.org/contents/mlp.html"},{"label":"3Blue1Brown — Neural Networks playlist","url":"https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi"},{"label":"Stanford CS231n — Convolutional Neural Networks","url":"https://cs231n.github.io/"}]},
+`,tip:'ReLU: Fast, avoids vanishing gradients. GELU: Smoother, slightly better (modern default).\n\nBackprop: Reverse-mode autodiff. PyTorch computes automatically via .backward().\n\nLoss choice: MSE for regression, CrossEntropy for classification, BCEWithLogits for binary.',questions:{
+  leader:['Neural networks are the foundation of all LLMs — what level of neural network understanding does your team need for effective ML development?','How do you communicate the fundamental idea of neural networks to non-technical stakeholders?'],
+  pm:['What makes a neural network more or less capable for a given task — and how does that translate to model selection decisions?','How do you explain to stakeholders why large neural networks generalize better than small ones in ways that are hard to predict?'],
+  eng:['How do you initialize and train a simple feed-forward network from scratch in PyTorch — what are the minimum components?','How does depth vs width in a neural network affect expressivity and trainability?','What does universal approximation theorem say about neural networks — and what are its practical limits?']
+},
+learn:[
+  {type:'video',label:'3Blue1Brown: Neural networks series (visual, free, 4 videos)',url:'https://youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi'},
+  {type:'video',label:'Andrej Karpathy: makemore — building language models from scratch',url:'https://youtu.be/PaCmpygFfXo'},
+  {type:'course',label:'fast.ai: Practical Deep Learning for Coders (free, neural nets with PyTorch)',url:'https://course.fast.ai/'},
+  {type:'book',label:'Neural Networks and Deep Learning — Michael Nielsen (free online)',url:'http://neuralnetworksanddeeplearning.com/'},
+  {type:'course',label:'Stanford CS231n: Convolutional Neural Networks (lecture notes + slides)',url:'https://cs231n.github.io/'}
+],refs:[{"label":"Goodfellow et al. — Deep Learning (Ch. 6)","url":"https://www.deeplearningbook.org/contents/mlp.html"},{"label":"3Blue1Brown — Neural Networks playlist","url":"https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi"},{"label":"Stanford CS231n — Convolutional Neural Networks","url":"https://cs231n.github.io/"}]},
 optimization:{use:'Apply AdamW, learning rate schedules, and regularization for efficient model training.',diag:`
   Loss landscape and optimizer behavior:
 
@@ -6552,7 +6728,18 @@ def mha(query, key, value, num_heads):
     attn_weights = F.softmax(scores, dim=-1)
     output = torch.matmul(attn_weights, V)
     return output.transpose(1, 2).reshape(batch_size, seq_len, d_model)
-`,tip:'MHA: Full O(n²) compute, best quality. GQA: Grouped heads reduce KV memory 4-8x. Flash Attention: Minimize HBM reads via block-wise compute.\n\nUse GQA for long-context inference; Flash for training efficiency.\n\nCross-attention: Query from decoder, K/V from encoder—critical for multimodal fusion and retrieval augmentation.',refs:[{"label":"Vaswani et al. (2017) — Attention Is All You Need","url":"https://arxiv.org/abs/1706.03762"},{"label":"3Blue1Brown — Attention in transformers","url":"https://www.youtube.com/watch?v=eMlx5fFNoYc"},{"label":"Bahdanau et al. (2015) — Neural Machine Translation by Jointly Learning to Align","url":"https://arxiv.org/abs/1409.0473"}]},
+`,tip:'MHA: Full O(n²) compute, best quality. GQA: Grouped heads reduce KV memory 4-8x. Flash Attention: Minimize HBM reads via block-wise compute.\n\nUse GQA for long-context inference; Flash for training efficiency.\n\nCross-attention: Query from decoder, K/V from encoder—critical for multimodal fusion and retrieval augmentation.',questions:{
+  leader:['Attention mechanisms are the core of modern LLMs — what practical knowledge of attention do you need to make good model selection and deployment decisions?','How does attention complexity translate to cost — what is your cost model for processing long documents?'],
+  pm:['How do you explain attention to a non-technical audience — what analogy helps stakeholders understand why it enables powerful language understanding?','What user use cases require attention over very long contexts, and what does that cost?'],
+  eng:['How does the attention score matrix size grow with sequence length — and at what length do you switch from standard to FlashAttention?','How do you visualize which tokens a model attends to — what tools expose attention patterns?','How does masked attention in decoder-only models differ from full attention in encoder models?']
+},
+learn:[
+  {type:'paper',label:'Attention Is All You Need — original transformer attention (Vaswani et al., 2017)',url:'https://arxiv.org/abs/1706.03762'},
+  {type:'blog',label:'Jay Alammar: The Illustrated Transformer — attention mechanism visual',url:'https://jalammar.github.io/illustrated-transformer/'},
+  {type:'video',label:'3Blue1Brown: Attention in transformers, visually explained',url:'https://youtu.be/eMlx5fFNoYc'},
+  {type:'blog',label:'Lilian Weng: Attention Mechanisms survey (comprehensive)',url:'https://lilianweng.github.io/posts/2018-06-24-attention/'},
+  {type:'paper',label:'FlashAttention: Fast and Memory-Efficient Attention (Dao et al., 2022)',url:'https://arxiv.org/abs/2205.14135'}
+],refs:[{"label":"Vaswani et al. (2017) — Attention Is All You Need","url":"https://arxiv.org/abs/1706.03762"},{"label":"3Blue1Brown — Attention in transformers","url":"https://www.youtube.com/watch?v=eMlx5fFNoYc"},{"label":"Bahdanau et al. (2015) — Neural Machine Translation by Jointly Learning to Align","url":"https://arxiv.org/abs/1409.0473"}]},
 pos_encoding:{use:'Implement position encodings (RoPE, ALiBi) to extend context length.',diag:`
   Why positional encoding?
   Attention has no built-in notion of order.
@@ -6608,7 +6795,18 @@ def ali_bi(seq_len, num_heads):
 max_pos = 2048
 extended_max = 16384
 scale_factor = extended_max / max_pos  # ~8x extension
-`,tip:'RoPE: Extrapolates well to longer sequences (YaRN fine-tunes it).\n\nALiBi: No learned embeddings, ultra-efficient; ALiBi alone extends context.\n\nYaRN: Dynamically scales rope freq for 8-16x context extension with minimal fine-tune.',refs:[{"label":"Vaswani et al. (2017) — Attention Is All You Need (sinusoidal PE)","url":"https://arxiv.org/abs/1706.03762"},{"label":"Su et al. (2021) — RoFormer: Enhanced Transformer with RoPE","url":"https://arxiv.org/abs/2104.09864"},{"label":"Press et al. (2021) — ALiBi: Train Short, Test Long","url":"https://arxiv.org/abs/2108.12409"}]},
+`,tip:'RoPE: Extrapolates well to longer sequences (YaRN fine-tunes it).\n\nALiBi: No learned embeddings, ultra-efficient; ALiBi alone extends context.\n\nYaRN: Dynamically scales rope freq for 8-16x context extension with minimal fine-tune.',questions:{
+  leader:['Position encoding determines whether your model can generalize to longer sequences than it was trained on — how does this affect your model selection for long-document use cases?','What position encoding approach do frontier models use, and why does that matter for production deployment?'],
+  pm:['Users paste documents of varying lengths — at what point does position encoding become a quality constraint, and how do you communicate that limit?','What is the cost implication of extending context length when position encoding becomes the bottleneck?'],
+  eng:['How do you test whether a model with a given position encoding handles your document lengths well — what eval reveals degradation?','When does positional encoding interact with fine-tuning — do you need to freeze or train positional embeddings?','What is the key difference between absolute position encoding (sinusoidal, learned) and relative position encoding (RoPE, ALiBi)?']
+},
+learn:[
+  {type:'paper',label:'Attention Is All You Need — sinusoidal positional encoding original (Vaswani et al., 2017)',url:'https://arxiv.org/abs/1706.03762'},
+  {type:'paper',label:'RoFormer: Rotary Position Embedding (RoPE) — Su et al. (2021)',url:'https://arxiv.org/abs/2104.09864'},
+  {type:'paper',label:'ALiBi: Train Short, Test Long — linear bias extrapolation (Press et al., 2021)',url:'https://arxiv.org/abs/2108.12409'},
+  {type:'blog',label:'EleutherAI: Rotary Embeddings — a relative revolution',url:'https://blog.eleuther.ai/rotary-embeddings/'},
+  {type:'paper',label:'Survey of Positional Encoding Methods in Transformers (2024)',url:'https://arxiv.org/abs/2402.07615'}
+],refs:[{"label":"Vaswani et al. (2017) — Attention Is All You Need (sinusoidal PE)","url":"https://arxiv.org/abs/1706.03762"},{"label":"Su et al. (2021) — RoFormer: Enhanced Transformer with RoPE","url":"https://arxiv.org/abs/2104.09864"},{"label":"Press et al. (2021) — ALiBi: Train Short, Test Long","url":"https://arxiv.org/abs/2108.12409"}]},
 transformer_arch:{use:'Understand Multi-Head Attention, GQA, FFN/SwiGLU, and pre-norm design.',diag:`
   Transformer block (decoder-only, e.g. GPT):
 
@@ -6672,7 +6870,18 @@ class Transformer(nn.Module):
         for block in self.blocks:
             x = block(x)
         return x
-`,tip:'Pre-norm: LayerNorm before operation. Stabilizes training, improves convergence.\n\nGQA: Group Query Attention reduces KV computation. Replace MHA for inference speed.\n\nSwiGLU: FFN(x) = (xW + b) ⊗ (xV + c) where ⊗ is element-wise mul. ~2% better than ReLU/GELU.',refs:[{"label":"Vaswani et al. (2017) — Attention Is All You Need","url":"https://arxiv.org/abs/1706.03762"},{"label":"Devlin et al. (2018) — BERT","url":"https://arxiv.org/abs/1810.04805"},{"label":"Brown et al. (2020) — GPT-3 / decoder-only","url":"https://arxiv.org/abs/2005.14165"},{"label":"Raffel et al. (2019) — T5 / encoder-decoder","url":"https://arxiv.org/abs/1910.10683"}]},
+`,tip:'Pre-norm: LayerNorm before operation. Stabilizes training, improves convergence.\n\nGQA: Group Query Attention reduces KV computation. Replace MHA for inference speed.\n\nSwiGLU: FFN(x) = (xW + b) ⊗ (xV + c) where ⊗ is element-wise mul. ~2% better than ReLU/GELU.',questions:{
+  leader:['The transformer architecture underlies nearly every frontier AI model — what architectural knowledge does your team need to make good build vs buy decisions?','When evaluating open-weight models, what architectural differences (encoder-only vs decoder-only, MoE vs dense) most affect your use case?'],
+  pm:['How does the transformer architecture explain why models have strengths in generation vs classification — and how does that map to your product requirements?','What should a product manager understand about transformer architecture to have credible conversations with ML engineers?'],
+  eng:['How does the residual stream flow through a transformer block — what does "residual connection" mean and why does it enable deep networks?','What is the role of the FFN (feed-forward network) vs attention in a transformer block — what kind of knowledge does each store?','How does layer normalization placement (pre-norm vs post-norm) affect training stability for very deep models?']
+},
+learn:[
+  {type:'paper',label:'Attention Is All You Need — original transformer architecture (Vaswani et al., 2017)',url:'https://arxiv.org/abs/1706.03762'},
+  {type:'blog',label:'Jay Alammar: The Illustrated Transformer (most-read transformer explainer)',url:'https://jalammar.github.io/illustrated-transformer/'},
+  {type:'video',label:'Andrej Karpathy: Let's build GPT from scratch — full transformer implementation',url:'https://youtu.be/kCc8FmEb1nY'},
+  {type:'blog',label:'Lilian Weng: The Transformer Family v2 — survey of all variants',url:'https://lilianweng.github.io/posts/2023-01-27-the-transformer-family-v2/'},
+  {type:'book',label:'Deep Learning — Goodfellow et al., attention and transformer chapter (free)',url:'https://www.deeplearningbook.org/'}
+],refs:[{"label":"Vaswani et al. (2017) — Attention Is All You Need","url":"https://arxiv.org/abs/1706.03762"},{"label":"Devlin et al. (2018) — BERT","url":"https://arxiv.org/abs/1810.04805"},{"label":"Brown et al. (2020) — GPT-3 / decoder-only","url":"https://arxiv.org/abs/2005.14165"},{"label":"Raffel et al. (2019) — T5 / encoder-decoder","url":"https://arxiv.org/abs/1910.10683"}]},
 kv_cache:{use:'Optimize inference by managing KV cache trade-offs and implementing prefix caching.',diag:`
   KV cache: avoid recomputing past tokens
 
