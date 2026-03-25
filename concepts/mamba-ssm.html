@@ -231,6 +231,49 @@ print(tokenizer.decode(output[0]))
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Mamba practical deployment and benchmarks</h2>
+<p>Mamba's linear-time inference is its defining practical advantage over transformers for long-sequence tasks. Processing a 16K token sequence with Mamba requires approximately the same compute as processing a 1K token sequence (8x sequences fit in the same time), while a transformer requires 256x more attention computation (sequence_length² scaling). This efficiency makes Mamba compelling for genomics, long document understanding, and time-series forecasting, where sequence lengths of tens of thousands of tokens are common and transformer quadratic scaling becomes prohibitive.</p>
+<table>
+<thead><tr><th>Model</th><th>Context scaling</th><th>Inference VRAM</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>Transformer</td><td>O(n²) attention</td><td>Grows with sequence</td><td>Short-medium sequences, NLU</td></tr>
+<tr><td>Mamba (SSM)</td><td>O(n) recurrence</td><td>Fixed (state size)</td><td>Very long sequences</td></tr>
+<tr><td>Jamba (hybrid)</td><td>O(n) mostly</td><td>Low</td><td>Long context + reasoning</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code>from mamba_ssm import Mamba
+import torch
+
+# Single Mamba block
+batch, length, d_model = 2, 64, 16
+x = torch.randn(batch, length, d_model).to("cuda")
+
+model = Mamba(
+    d_model=d_model,   # model dimension (D)
+    d_state=16,        # SSM state expansion factor
+    d_conv=4,          # local convolution width
+    expand=2,          # block expansion factor
+).to("cuda")
+
+y = model(x)
+print(y.shape)  # (2, 64, 16) — same shape as input
+
+# For full models, use pretrained Mamba from HuggingFace:
+# from transformers import MambaForCausalLM, AutoTokenizer
+# model = MambaForCausalLM.from_pretrained("state-spaces/mamba-2.8b-hf")</code></pre>
+</div>
+
+<div class="section-block">
+<h2>Sequence Modeling with State Space Models: Theory and Practice</h2>
+<p>State Space Models (SSMs) represent sequences through differential equations dx/dt = A(t) × x(t) + B(t) × u(t), y(t) = C(t) × x(t) + D(t) × u(t), where x is the state, u is input, y is output. Discretizing via bilinear transformation (Tustin approximation, typical in SSM literature) converts continuous equations to recurrent form: x[n+1] = A × x[n] + B × u[n], enabling efficient O(n) parallel inference. Traditional recurrent models (LSTMs, GRUs) use fixed recurrence relations; SSMs parameterize state matrices A, B, C, D learnable, allowing adaptation to task-specific dynamics. Theory proves SSMs can approximate any bounded linear time-invariant (LTI) system with sufficient hidden dimension; in practice, SSM layers alternate with nonlinearities to model complex sequence dependencies. Mamba's innovation is bidirectional selectivity: the "selection mechanism" makes A, B, C depend on input tokens, allowing dynamic attention-like behavior where each position determines how much history to remember. This solves SSMs' core limitation — fixed state mixing that can't implement selection (recall specific tokens from long ago) — making SSMs competitive with transformers on long-context tasks.</p>
+<h2>Mamba vs. Transformers: Computational and Architectural Trade-offs</h2>
+<p>Transformers compute attention O(n²) by comparing every pair of tokens; Mamba processes sequences in O(n) with constant memory per step. For short sequences (n<2048), transformer attention dominates speed (highly optimized in CUDA kernels via Flash Attention); transformers are faster per token. For long sequences (n>4096), Mamba's O(n) complexity becomes advantageous — a 64k token sequence runs 10–50× faster on Mamba vs transformer (with linearized attention approximations). Memory requirements: transformers store KV cache O(n) growing with sequence length, Mamba's state is fixed dimension (e.g., state_size=256) regardless of sequence length. However, Mamba's selectivity mechanism (computing A, B, C per token) requires more computation per step than transformer attention; empirically, Mamba-7B achieves 3.5 tokens/second vs GPT-2-like transformer's 4.2 tokens/second on A100 GPU. This gap narrows at longer contexts: processing 32k tokens, Mamba sustains 3.0 tokens/sec while transformers drop to 0.5 tokens/sec due to KV cache pressure. Mamba's lack of explicit attention also changes interpretability: attention maps directly show which tokens influence each prediction, Mamba's state-based processing is opaque, complicating debugging. In practice, Mamba excels for long-document QA (legal contracts, arxiv papers), time-series forecasting, and DNA sequence modeling; transformers remain superior for short-context tasks and datasets where pre-training scale dominates (most LLMs), since transformer-based models have vastly more pre-training corpus available (GPT-4 > 10B examples).</p>
+<h2>Hybrid Architectures and Multi-Modal Sequence Processing</h2>
+<p>Hybrid architectures interleave attention (short-range, interpretable) and SSM (long-range, efficient) layers to balance strengths. Mamba-2 and Opus model designs use transformer attention for first 2–4 layers (capturing local patterns), then transition to Mamba layers for remaining depth (efficiently modeling long dependencies). This hybrid approach achieves 99% of transformer accuracy on standard benchmarks while maintaining Mamba's efficiency gains, measured as tokens-per-second-per-dollar on different GPU tiers. For multi-modal tasks (text + images), hybrid models apply attention within each modality (image patches, text tokens) and SSM layers for cross-modal alignment, enabling efficient processing of image-caption pairs without quadratic attention over entire image. Streaming inference (processing token streams with no lookahead) is a major advantage for Mamba: the recurrent form x[n+1] = A × x[n] + B × u[n] processes each token in constant time, perfect for live transcription or chat. Transformers require the full sequence upfront for attention computation; streaming transformers use local attention windows or approximations, always sub-optimal compared to Mamba's native streaming. Practical deployment: LLaMA-2-70B chat on 8×H100 serves ~50 tokens/sec per GPU; Mamba-7B achieves ~1000 tokens/sec per GPU due to O(n) complexity, allowing >10× throughput increase for long-context applications. The trade-off: Mamba models lack massive pre-training and instruction-tuning datasets, so capabilities lag behind equivalently-sized transformers trained on vast corpora; as Mamba gains adoption, pre-training corpus will expand and this gap will narrow.</p>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

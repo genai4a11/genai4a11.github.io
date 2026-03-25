@@ -300,6 +300,38 @@ args = TrainingArguments(
       </div>
 </div>
 </div>
+<div class="section-block">
+<h2>Selective checkpointing strategies</h2>
+<p>Not all transformer layers benefit equally from gradient checkpointing. Attention layers store large activation tensors proportional to sequence_length² while feed-forward layers store activations proportional to sequence_length × hidden_dim. For models with long sequences, checkpointing only the attention layers captures most of the memory savings (60–80% reduction) while incurring less recomputation overhead than checkpointing every layer. Hugging Face's gradient_checkpointing_kwargs parameter in TrainingArguments enables fine-grained control over which modules are checkpointed.</p>
+
+<h2>Activation offloading to CPU</h2>
+<p>Activation offloading extends gradient checkpointing by moving stored activations to CPU RAM instead of recomputing them. This approach reduces GPU memory usage while avoiding the compute overhead of full recomputation, at the cost of PCIe bandwidth for transferring activations between GPU and CPU memory. Activation offloading is most beneficial when GPU memory is the binding constraint but PCIe bandwidth is not — typical for single-GPU setups with fast NVMe SSDs where CPU memory is plentiful. DeepSpeed ZeRO-3 with CPU offload implements this strategy at the parameter level for both model weights and optimizer states.</p>
+<table>
+<thead><tr><th>Strategy</th><th>Memory savings</th><th>Compute overhead</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>No checkpointing</td><td>None</td><td>None</td><td>Small models, adequate VRAM</td></tr>
+<tr><td>Selective (attention only)</td><td>40–60%</td><td>~10%</td><td>Long sequences</td></tr>
+<tr><td>Full checkpointing</td><td>60–80%</td><td>~30–40%</td><td>Very large models</td></tr>
+<tr><td>CPU offloading</td><td>80–90%</td><td>PCIe bandwidth</td><td>VRAM-constrained single GPU</td></tr>
+</tbody>
+</table>
+
+<div class="section-block">
+<h2>FSDP Interaction and Distributed Training</h2>
+<p>Gradient checkpointing becomes essential in fully sharded data parallel (FSDP) setups, where model weights, activations, and gradients are distributed across multiple GPUs. When using FSDP with Hugging Face transformers, combining gradient_checkpointing=True with fsdp="full_shard" dramatically reduces per-GPU memory footprint. The interaction works by checkpointing activations before gradient computation, allowing FSDP to gather only the necessary weight shards for backward pass rather than maintaining full activation tensors. This synergy is crucial for training 70B+ parameter models on 8×H100 clusters; without checkpointing, activation memory alone exceeds per-GPU capacity. FSDP's activation checkpointing is compatible with both use_reentrant=True and False modes, though False (modern implementation) is recommended for better integration with torch.compile and asynchronous communication overlapping in newer frameworks.</p>
+<h2>Fine-grained Checkpoint Granularity and Segment Sizing</h2>
+<p>The checkpoint granularity — how often activations are saved along the forward path — directly impacts the memory-compute trade-off curve. Checkpointing every layer minimizes recomputation (only 1 extra forward pass) but stores many checkpoints. Checkpointing every N layers (where N=√depth for optimal memory) balances storage and recomputation. For 32-layer models, N≈6 gives ~20% memory usage with ~33% compute overhead. For 175B-parameter models with 96 layers, N≈10 checkpoint segments prove optimal in practice. PyTorch's checkpoint_sequential function allows specifying segment count directly; segment_count=4 divides a 96-layer model into 24-layer chunks. Empirically, activation memory is dominated by attention score matrices (O(seq²)), so selective checkpointing that targets only attention layers reclaims 60–75% of memory savings with just 10–15% compute overhead, making it the preferred strategy for long-context inference-adapted models like LLaMA-2-70b-chat.</p>
+<h2>Memory vs. Latency Profiling and Adaptive Strategies</h2>
+<p>Measuring gradient checkpointing's real-world impact requires profiling both peak memory and wall-clock training time. torch.cuda.memory_reserved() and torch.cuda.max_memory_allocated() reveal the true memory footprint; empirically, a 13B model trained on A100-40GB shows ~35GB peak without checkpointing, ~15GB with full checkpointing (57% reduction). Wall-clock overhead depends on GPU compute density and memory bandwidth: models with high arithmetic intensity (transformer layers) see ~25–30% slowdown, while memory-bandwidth-limited operations (large linear layers) may slow by 40–50%. Adaptive strategies that enable checkpointing only when peak memory approaches capacity, detected via monitoring torch.cuda.memory_allocated() during training, provide optimal throughput. This approach is implemented in frameworks like DeepSpeed's default training recipes and Hugging Face's Trainer with gradient_checkpointing="auto" (experimental) flag.</p>
+</div>
+
+<div class="section-block">
+<h2>Activation Memory Breakdown by Layer Type</h2>
+<p>Gradient checkpointing's memory savings vary dramatically by layer type. Attention layers dominate memory consumption due to attention score matrices of size batch×seq_len×seq_len — a single attention head with seq_len=4096 and batch=8 requires 4096×4096×8×2 bytes = 256MB per head, multiplied by number of heads (e.g., 32 heads → 8GB just for scores). Feed-forward layers consume batch×seq_len×4×hidden_dim, much smaller: 8×4096×4×4096×2 = 1GB. This 8:1 ratio in storage explains selective checkpointing strategies that focus on attention layers exclusively. Empirical profiling with torch.cuda.memory_allocated() before and after attention layers reveals the asymmetry; many practitioners checkpoint only attention (10–15% speedup) instead of all layers (30–40% speedup), recovering 60–75% of memory benefit with far less recomputation. For sequence lengths exceeding 8K tokens on single H100 GPUs, selective checkpointing becomes necessary — full checkpointing cannot sustain inference latency SLAs.</p>
+<h2>Checkpointing and KV Cache Behavior in Inference</h2>
+<p>Gradient checkpointing during training explicitly disables KV cache (must set model.config.use_cache=False). At inference time (generation), KV cache is essential for reducing autoregressive generation cost from O(n²) to O(n): previously computed key/value pairs are cached, avoiding recomputation for each new token. This creates a training-inference gap: models trained with gradient_checkpointing=True have no KV cache experience, potentially degrading generation efficiency. In practice, this gap is negligible (inference automatically caches regardless of training procedure), but implications exist for efficient generation libraries: vLLM and text-generation-webui's KV cache manager must allocate sufficient GPU memory for caching all intermediate states. For a 70B model generating 2k tokens with batch_size=32, KV cache consumes ~40GB (scales linearly with output length), often exceeding model weights. Combined strategy in inference: use KV cache for efficient generation, reduce batch size if memory-bound, and optionally enable per-layer KV cache offloading (store older layers' cache on CPU, younger layers on GPU) for 20–30% memory reduction at 5–10% latency cost.</p>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
