@@ -486,6 +486,44 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="callout green">
 <span class="callout-icon">💡</span>
 <span><strong>Continuous batching is the single highest-leverage optimization for throughput.</strong> Enables 5–10× better GPU utilization vs naive batching. If you're running a custom serving system, implement this first.</span>
+
+<div class="example-box">
+<div class="example-label">Python · vLLM OpenAI-compatible client with streaming</div>
+<pre><code class="language-python">from openai import OpenAI  # vLLM exposes OpenAI-compatible API
+
+# Point to local vLLM server instead of OpenAI
+client = OpenAI(
+    base_url="http://localhost:8000/v1",
+    api_key="not-needed"  # vLLM doesn't require auth by default
+)
+
+def stream_from_vllm(prompt: str, model: str = "mistral-7b"):
+    """Stream tokens from a locally-served vLLM model."""
+    stream = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=256,
+        temperature=0.0,
+        stream=True
+    )
+    full_response = ""
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content or ""
+        print(delta, end="", flush=True)
+        full_response += delta
+    print()
+    return full_response
+
+# Example
+response = stream_from_vllm("Explain speculative decoding in 3 bullet points.")
+
+# Check server metrics
+import requests
+metrics = requests.get("http://localhost:8000/metrics").text
+# Returns Prometheus metrics: vllm:num_requests_running, gpu_cache_usage_perc, etc.
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 3. PAGEDATTENTION AND MEMORY MANAGEMENT ── -->
@@ -616,6 +654,60 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Prefix-aware routing can double KV cache hit rates in production.</strong> Critical optimization for chatbots. Implement a hash of the system prompt, route all requests with same hash to same replica.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Load balancing across multiple vLLM replicas</div>
+<pre><code class="language-python">import random, time, httpx, asyncio
+from dataclasses import dataclass, field
+
+@dataclass
+class VLLMReplica:
+    url: str
+    weight: float = 1.0
+    active_requests: int = 0
+    total_requests: int = 0
+    error_count: int = 0
+
+class RoundRobinBalancer:
+    def __init__(self, replicas: list[str]):
+        self.replicas = [VLLMReplica(url) for url in replicas]
+        self._idx = 0
+
+    def get_replica(self) -> VLLMReplica:
+        """Least-connections routing: pick replica with fewest active requests."""
+        return min(self.replicas, key=lambda r: r.active_requests)
+
+    async def generate(self, payload: dict) -> dict:
+        replica = self.get_replica()
+        replica.active_requests += 1
+        replica.total_requests += 1
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                resp = await client.post(
+                    f"{replica.url}/v1/chat/completions",
+                    json=payload
+                )
+                return resp.json()
+        except Exception as e:
+            replica.error_count += 1
+            raise
+        finally:
+            replica.active_requests -= 1
+
+    def stats(self) -> list[dict]:
+        return [{"url": r.url, "total": r.total_requests,
+                 "errors": r.error_count, "active": r.active_requests}
+                for r in self.replicas]
+
+# Usage
+balancer = RoundRobinBalancer([
+    "http://vllm-1:8000",
+    "http://vllm-2:8000",
+    "http://vllm-3:8000"
+])
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 7. FRAMEWORK COMPARISON ── -->

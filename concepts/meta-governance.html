@@ -422,6 +422,18 @@
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Key principle:</strong> You can't know if a system works or is safe without measurement. Intuition and hope are not strategies. Build evaluation and safety testing into the development process, not the end.</span>
+
+<table>
+<thead><tr><th>Governance Area</th><th>What It Covers</th><th>Primary Tool</th><th>Frequency</th></tr></thead>
+<tbody>
+<tr><td>Offline Evaluation</td><td>Golden set accuracy, task benchmarks</td><td>Custom eval harness</td><td>Every model/prompt change</td></tr>
+<tr><td>Online Monitoring</td><td>Live quality, latency, error rates</td><td>Langfuse, LangSmith</td><td>Continuous</td></tr>
+<tr><td>Red-teaming</td><td>Adversarial probes, jailbreak attempts</td><td>Garak, custom suite</td><td>Pre-release + monthly</td></tr>
+<tr><td>PII / Privacy audit</td><td>Sensitive data in prompts &amp; outputs</td><td>Presidio, custom regex</td><td>Continuous</td></tr>
+<tr><td>Content policy review</td><td>Policy compliance, brand safety</td><td>Human review queue</td><td>Sampled (1–5% traffic)</td></tr>
+</tbody>
+</table>
+
 </div>
 </div>
 <!-- ── 2. EVAL PILLAR ── -->
@@ -440,6 +452,55 @@
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Eval best practice:</strong> Start with automated metrics for speed. Use LLM-as-judge for nuanced evaluation. Do periodic human eval to catch issues the metrics miss. Track metrics over time — if they're dropping, investigate why.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Governance dashboard: aggregate eval + safety metrics</div>
+<pre><code class="language-python">import json, statistics
+from pathlib import Path
+from datetime import datetime, timedelta
+
+def load_eval_logs(log_dir: str, days: int = 7) -> list[dict]:
+    cutoff = datetime.now() - timedelta(days=days)
+    logs = []
+    for f in Path(log_dir).glob("eval_*.jsonl"):
+        for line in f.read_text().splitlines():
+            entry = json.loads(line)
+            ts = datetime.fromisoformat(entry["timestamp"])
+            if ts > cutoff:
+                logs.append(entry)
+    return logs
+
+def governance_report(log_dir: str = "./logs") -> dict:
+    logs = load_eval_logs(log_dir)
+    if not logs:
+        return {"error": "No logs found"}
+
+    quality_scores = [l["quality_score"] for l in logs if "quality_score" in l]
+    safety_flags   = [l for l in logs if l.get("safety_flagged")]
+    latencies      = [l["latency_ms"] for l in logs if "latency_ms" in l]
+
+    return {
+        "period": "7d",
+        "total_calls": len(logs),
+        "quality": {
+            "mean": round(statistics.mean(quality_scores), 3) if quality_scores else None,
+            "p10": round(sorted(quality_scores)[len(quality_scores)//10], 3) if quality_scores else None
+        },
+        "safety": {
+            "flag_rate": round(len(safety_flags) / len(logs), 4),
+            "flagged_count": len(safety_flags)
+        },
+        "latency": {
+            "p50_ms": round(sorted(latencies)[len(latencies)//2]) if latencies else None,
+            "p95_ms": round(sorted(latencies)[int(len(latencies)*.95)]) if latencies else None
+        }
+    }
+
+report = governance_report()
+print(json.dumps(report, indent=2))
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 3. SAFETY PILLAR ── -->
@@ -460,6 +521,55 @@
 <div class="callout rose">
 <span class="callout-icon">⚠️</span>
 <span><strong>Safety reality:</strong> Models don't have inherent values. Safety is engineered. It requires active testing, adversarial examples, and ongoing monitoring. If you ship without safety testing, you're gambling.</span>
+
+<div class="example-box">
+<div class="example-label">Python · PII detection and redaction before LLM calls</div>
+<pre><code class="language-python">import re
+from dataclasses import dataclass
+
+@dataclass
+class PIIRedactor:
+    patterns: dict = None
+
+    def __post_init__(self):
+        self.patterns = {
+            "email": re.compile(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}'),
+            "phone": re.compile(r'(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'),
+            "ssn":   re.compile(r'\d{3}-\d{2}-\d{4}'),
+            "cc":    re.compile(r'(?:\d{4}[-\s]?){3}\d{4}'),
+            "ip":    re.compile(r'(?:\d{1,3}\.){3}\d{1,3}'),
+        }
+
+    def redact(self, text: str) -> tuple[str, dict]:
+        """Redact PII and return cleaned text + redaction map."""
+        redacted = text
+        redactions = {}
+        for pii_type, pattern in self.patterns.items():
+            matches = pattern.findall(text)
+            if matches:
+                redactions[pii_type] = len(matches)
+                redacted = pattern.sub(f"[{pii_type.upper()}_REDACTED]", redacted)
+        return redacted, redactions
+
+    def scan_output(self, text: str) -> list[str]:
+        """Scan LLM output for PII leakage."""
+        found = []
+        for pii_type, pattern in self.patterns.items():
+            if pattern.search(text):
+                found.append(pii_type)
+        return found
+
+redactor = PIIRedactor()
+clean, info = redactor.redact(
+    "Contact john.doe@company.com or call 555-123-4567 for support."
+)
+print(f"Cleaned: {clean}")
+print(f"Redacted: {info}")
+# Cleaned: Contact [EMAIL_REDACTED] or call [PHONE_REDACTED] for support.
+# Redacted: {'email': 1, 'phone': 1}
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 4. FEEDBACK LOOP ── -->
@@ -476,6 +586,67 @@
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Feedback loop principle:</strong> Real-world failures are your best teachers. Build a pipeline to capture user feedback (thumbs up/down, bug reports, safety flags), add examples to your test set, and improve continuously.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Eval-safety feedback loop: auto-escalate failing items</div>
+<pre><code class="language-python">import json
+from openai import OpenAI
+from enum import Enum
+
+client = OpenAI()
+
+class EvalResult(Enum):
+    PASS = "pass"
+    QUALITY_FAIL = "quality_fail"
+    SAFETY_FAIL = "safety_fail"
+
+SAFETY_VIOLATIONS = [
+    "i'll help you harm", "here's how to make a weapon",
+    "ignore your instructions", "jailbreak"
+]
+
+def evaluate_output(question: str, response: str) -> tuple[EvalResult, str]:
+    # Safety check first (fast, rule-based)
+    resp_lower = response.lower()
+    for violation in SAFETY_VIOLATIONS:
+        if violation in resp_lower:
+            return EvalResult.SAFETY_FAIL, f"Contains: '{violation}'"
+
+    # Quality check (LLM judge)
+    judge = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content":
+            f"Is this a helpful, accurate response to '{question}'?
+"
+            f"Response: {response}
+Reply: PASS or FAIL only."}],
+        max_tokens=5, temperature=0.0
+    ).choices[0].message.content.strip()
+
+    if judge.upper() == "FAIL":
+        return EvalResult.QUALITY_FAIL, "LLM judge rated as poor quality"
+    return EvalResult.PASS, ""
+
+def process_with_governance(question: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": question}]
+    ).choices[0].message.content
+
+    result, reason = evaluate_output(question, response)
+
+    if result == EvalResult.SAFETY_FAIL:
+        # Escalate to human review immediately
+        print(f"[SAFETY ESCALATION] {reason}")
+        return "[Response withheld pending safety review]"
+    elif result == EvalResult.QUALITY_FAIL:
+        # Log for quality improvement
+        print(f"[QUALITY FLAG] {reason}")
+
+    return response
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 5. RED-TEAMING ── -->

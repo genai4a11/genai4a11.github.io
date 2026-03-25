@@ -612,6 +612,56 @@ Revision: "[Improved response that addresses the critique]"</div>
 <li>Requires security expertise</li>
 <li>Best for critical systems</li>
 </ul>
+
+<div class="example-box">
+<div class="example-label">Python · Automated red-teaming with Garak (open-source LLM security scanner)</div>
+<pre><code class="language-python"># Install: pip install garak
+# Garak tests LLMs for: jailbreaks, prompt injection, toxicity,
+# hallucination, data leakage, and more.
+
+# Command-line usage (simplest):
+# python -m garak --model_type openai --model_name gpt-4o #   --probes dan.Dan_11_0,encoding,continuation
+
+# Programmatic usage:
+import garak.cli
+
+def run_security_scan(model_name: str, probe_categories: list[str]) -> dict:
+    """Run a subset of Garak probes against an OpenAI model."""
+    # Build probe list
+    probes = ",".join(probe_categories)
+
+    # Run scan (writes results to ./garak_runs/)
+    import subprocess
+    result = subprocess.run([
+        "python", "-m", "garak",
+        "--model_type", "openai",
+        "--model_name", model_name,
+        "--probes", probes,
+        "--report_prefix", f"scan_{model_name.replace('/', '_')}"
+    ], capture_output=True, text=True)
+
+    return {
+        "model": model_name,
+        "probes": probe_categories,
+        "stdout": result.stdout[-2000:],
+        "returncode": result.returncode
+    }
+
+# Common probe categories for a standard security baseline:
+scan = run_security_scan(
+    model_name="gpt-4o",
+    probe_categories=[
+        "dan.Dan_11_0",      # jailbreak: Do Anything Now variant
+        "encoding",          # encoding-based bypasses (base64, ROT13)
+        "continuation",      # harmful text continuation
+        "promptinject",      # prompt injection attacks
+        "leakreplay",        # training data memorization
+    ]
+)
+print(f"Scan complete. Exit: {scan['returncode']}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <div class="method-card">

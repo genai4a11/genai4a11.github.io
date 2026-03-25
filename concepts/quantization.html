@@ -522,6 +522,47 @@
 <li>Slow to quantize (hours for 70B) but very fast inference</li>
 <li>Excellent quality at INT4</li>
 </ul>
+
+<div class="example-box">
+<div class="example-label">Python · Load an AWQ-quantized model and compare output quality</div>
+<pre><code class="language-python">from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch, time
+
+model_id = "TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
+prompt = "Explain transformer attention in exactly two sentences."
+
+# Load AWQ-quantized model (4-bit, ~4GB vs ~14GB for fp16)
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    device_map="auto",
+    torch_dtype=torch.float16
+)
+
+inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+
+# Benchmark generation
+start = time.perf_counter()
+with torch.inference_mode():
+    output = model.generate(
+        **inputs,
+        max_new_tokens=128,
+        temperature=0.0,
+        do_sample=False
+    )
+elapsed = time.perf_counter() - start
+
+response = tokenizer.decode(output[0][inputs.input_ids.shape[1]:],
+                             skip_special_tokens=True)
+tokens_generated = output.shape[1] - inputs.input_ids.shape[1]
+print(f"Output: {response}")
+print(f"Speed: {tokens_generated/elapsed:.1f} tok/s")
+print(f"Memory: {torch.cuda.max_memory_allocated()/1e9:.2f} GB")
+# AWQ 4-bit: ~3.8GB, ~45 tok/s on A10G
+# fp16: ~14GB,  ~18 tok/s on A10G
+</code></pre>
+</div>
+
 </div>
 </div>
 <div class="method-card">

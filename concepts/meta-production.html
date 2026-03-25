@@ -440,6 +440,19 @@
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Systems thinking:</strong> A production GenAI system is not just "call the LLM API and return the result." It's a sophisticated system with caching, fallbacks, monitoring, cost controls, and error handling. Design for all three pillars from day one.</span>
+
+<table>
+<thead><tr><th>Pillar</th><th>Key Component</th><th>Primary Concern</th><th>Key Metric</th></tr></thead>
+<tbody>
+<tr><td>Infrastructure</td><td>Model serving (vLLM, TGI)</td><td>Throughput &amp; cost</td><td>Tokens/sec/GPU</td></tr>
+<tr><td>Infrastructure</td><td>Caching layer</td><td>Reducing redundant calls</td><td>Cache hit rate</td></tr>
+<tr><td>System Design</td><td>Retry &amp; fallback</td><td>Reliability at P99</td><td>Error rate, P99 latency</td></tr>
+<tr><td>System Design</td><td>Async/streaming</td><td>Perceived responsiveness</td><td>Time-to-first-token</td></tr>
+<tr><td>Prod Engineering</td><td>Observability (LangSmith)</td><td>Debug &amp; audit trail</td><td>Trace coverage</td></tr>
+<tr><td>Prod Engineering</td><td>Human-in-the-loop</td><td>Safety &amp; quality gate</td><td>Review queue depth</td></tr>
+</tbody>
+</table>
+
 </div>
 </div>
 <!-- ── 3. INFRASTRUCTURE ── -->
@@ -458,6 +471,50 @@
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Infra best practice:</strong> Start with hosted APIs (OpenAI) for speed, but design for portability. Build an abstraction layer so you can swap providers. Monitor costs aggressively. Optimize latency obsessively — every 100ms matters for user experience.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Production LLM call with latency tracking and semantic caching</div>
+<pre><code class="language-python">import hashlib, time, json
+from functools import lru_cache
+from openai import OpenAI
+
+client = OpenAI()
+_cache: dict = {}   # replace with Redis in production
+
+def semantic_cache_key(prompt: str, model: str) -> str:
+    """Exact-match cache key (use embedding similarity for semantic caching)."""
+    return hashlib.sha256(f"{model}:{prompt}".encode()).hexdigest()
+
+def tracked_completion(prompt: str, model: str = "gpt-4o",
+                       use_cache: bool = True) -> dict:
+    """LLM call with timing, caching, and basic observability."""
+    key = semantic_cache_key(prompt, model)
+
+    if use_cache and key in _cache:
+        return {"response": _cache[key], "source": "cache", "latency_ms": 0}
+
+    start = time.perf_counter()
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    latency_ms = (time.perf_counter() - start) * 1000
+    content = resp.choices[0].message.content
+
+    _cache[key] = content
+    return {
+        "response": content,
+        "source": "llm",
+        "latency_ms": round(latency_ms),
+        "tokens": resp.usage.total_tokens,
+        "model": model
+    }
+
+result = tracked_completion("What is the KV cache in LLMs?")
+print(f"[{result['source']}] {result['latency_ms']}ms: {result['response'][:80]}...")
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 4. SYSTEM DESIGN ── -->
@@ -539,6 +596,61 @@ On Failure:
 <div class="callout rose">
 <span class="callout-icon">⚠️</span>
 <span><strong>Reality check:</strong> If you can't check all these boxes, you're not ready for production. It's okay — take the time to build the right foundation. Shipping without these is how you end up with $10K bills and angry users.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Human-in-the-loop review queue for flagged outputs</div>
+<pre><code class="language-python">import json, time
+from dataclasses import dataclass, field
+from openai import OpenAI
+from pathlib import Path
+
+client = OpenAI()
+
+@dataclass
+class ReviewItem:
+    id: str
+    input: str
+    output: str
+    flag_reason: str
+    timestamp: float = field(default_factory=time.time)
+    reviewed: bool = False
+    approved: bool = False
+
+class ReviewQueue:
+    def __init__(self, path: str = "review_queue.jsonl"):
+        self.path = Path(path)
+
+    def flag(self, item: ReviewItem):
+        with self.path.open("a") as f:
+            f.write(json.dumps(item.__dict__) + "
+")
+        print(f"[QUEUE] Flagged: {item.flag_reason} — {item.input[:50]}")
+
+    def pending(self) -> list[dict]:
+        if not self.path.exists(): return []
+        return [json.loads(l) for l in self.path.read_text().splitlines()
+                if not json.loads(l).get("reviewed")]
+
+queue = ReviewQueue()
+
+def safe_generate(user_input: str, system: str) -> str:
+    resp = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "system", "content": system},
+                  {"role": "user", "content": user_input}]
+    ).choices[0].message.content
+
+    # Flag if output looks sensitive
+    if any(w in resp.lower() for w in ["sorry", "cannot", "unsafe", "harmful"]):
+        queue.flag(ReviewItem(
+            id=f"r-{int(time.time())}",
+            input=user_input, output=resp,
+            flag_reason="potential_refusal_or_safety"
+        ))
+    return resp
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── PRODUCTION TOPICS ── -->

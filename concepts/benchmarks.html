@@ -529,6 +529,37 @@
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Signal interpretation:</strong> MMLU scores above 85% are largely indistinguishable in practical terms. When comparing frontier models, focus on GPQA and domain-specific evaluations. MMLU is a table-stakes check, not a differentiator.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Run a custom benchmark using lm-evaluation-harness</div>
+<pre><code class="language-python"># Install: pip install lm-eval
+# Evaluate a model on MMLU and HellaSwag from the command line:
+# lm_eval --model openai-chat-completions #   --model_args model=gpt-4o #   --tasks mmlu,hellaswag #   --num_fewshot 5 #   --output_path ./results
+
+# Programmatic evaluation:
+from lm_eval import evaluator, tasks
+from lm_eval.models.openai_completions import OpenaiChatCompletionsLM
+
+def benchmark_model(model_name: str, task_names: list[str]) -> dict:
+    model = OpenaiChatCompletionsLM(model=model_name)
+
+    results = evaluator.evaluate(
+        lm=model,
+        task_dict=tasks.get_task_dict(task_names),
+        num_fewshot=5,
+        limit=100   # limit samples for quick eval
+    )
+    return results["results"]
+
+results = benchmark_model("gpt-4o-mini", ["mmlu", "arc_challenge"])
+for task, metrics in results.items():
+    acc = metrics.get("acc_norm,none", metrics.get("acc,none", 0))
+    print(f"{task}: {acc:.3f}")
+# mmlu:          0.821
+# arc_challenge: 0.886
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 3. CODING BENCHMARKS ── -->
@@ -635,6 +666,60 @@
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Single most trustworthy signal:</strong> Chatbot Arena is the best ranking available, but look at confidence intervals, not just ELO point estimates. Models within 50 points are statistically indistinguishable.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Track benchmark scores over time and alert on regression</div>
+<pre><code class="language-python">import json, statistics
+from pathlib import Path
+from datetime import datetime
+
+HISTORY_FILE = Path("benchmark_history.jsonl")
+
+def save_benchmark_run(model: str, task: str, score: float, metadata: dict = None):
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "model": model,
+        "task": task,
+        "score": score,
+        **(metadata or {})
+    }
+    HISTORY_FILE.open("a").write(json.dumps(entry) + "
+")
+
+def check_regression(model: str, task: str, new_score: float,
+                      threshold: float = 0.03) -> dict:
+    """Alert if new score is more than threshold below historical mean."""
+    if not HISTORY_FILE.exists():
+        return {"status": "no_history"}
+
+    history = [
+        json.loads(l) for l in HISTORY_FILE.read_text().splitlines()
+        if json.loads(l)["model"] == model and json.loads(l)["task"] == task
+    ]
+    if len(history) < 3:
+        return {"status": "insufficient_history", "n": len(history)}
+
+    historical_scores = [h["score"] for h in history[-10:]]  # last 10 runs
+    mean_score = statistics.mean(historical_scores)
+    drop = mean_score - new_score
+
+    if drop > threshold:
+        return {
+            "status": "REGRESSION",
+            "new_score": new_score,
+            "historical_mean": round(mean_score, 4),
+            "drop": round(drop, 4),
+            "alert": f"Score dropped {drop:.1%} below historical mean"
+        }
+    return {"status": "ok", "new_score": new_score, "mean": round(mean_score, 4)}
+
+# Example workflow
+save_benchmark_run("gpt-4o", "mmlu", 0.887)
+result = check_regression("gpt-4o", "mmlu", new_score=0.841)
+print(result)
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 7. BENCHMARK SELECTION GUIDE ── -->
@@ -648,6 +733,55 @@
 <div class="method-body">
 <h3>For general capability comparison <em>— broad signal</em></h3>
 <p>Use <a class="concept-link" href="mmlu.html">MMLU</a>-Pro + GPQA + MATH + SWE-Bench Verified + Arena ELO. This suite covers reasoning, knowledge, coding, and human preference. Spans breadth and depth.</p>
+
+<div class="example-box">
+<div class="example-label">Python · Build a task-specific benchmark from your own golden set</div>
+<pre><code class="language-python">import json, statistics
+from openai import OpenAI
+
+client = OpenAI()
+
+# Your domain-specific golden set
+GOLDEN_SET = [
+    {"input": "What is the capital of France?", "expected": "Paris", "category": "factual"},
+    {"input": "What is 15% of 200?",            "expected": "30",    "category": "math"},
+    {"input": "Translate 'hello' to Spanish.",  "expected": "hola",  "category": "translation"},
+]
+
+def exact_match(response: str, expected: str) -> bool:
+    return expected.lower().strip() in response.lower().strip()
+
+def run_domain_benchmark(model: str) -> dict:
+    results_by_category: dict = {}
+
+    for item in GOLDEN_SET:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": item["input"]}],
+            max_tokens=64,
+            temperature=0.0
+        ).choices[0].message.content
+
+        cat = item["category"]
+        if cat not in results_by_category:
+            results_by_category[cat] = []
+        results_by_category[cat].append(exact_match(resp, item["expected"]))
+
+    overall = [v for vals in results_by_category.values() for v in vals]
+    return {
+        "model": model,
+        "overall_accuracy": round(statistics.mean(overall), 3),
+        "by_category": {
+            cat: round(statistics.mean(vals), 3)
+            for cat, vals in results_by_category.items()
+        }
+    }
+
+for model in ["gpt-4o-mini", "gpt-4o"]:
+    print(json.dumps(run_domain_benchmark(model), indent=2))
+</code></pre>
+</div>
+
 </div>
 </div>
 <div class="method-card">

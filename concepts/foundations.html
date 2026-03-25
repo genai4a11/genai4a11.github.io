@@ -418,6 +418,18 @@
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Learning strategy:</strong> Learn by doing. Theory alone won't stick. Write code to implement concepts — matrix multiply, gradient computation, layer forward passes. Formulas become intuition through implementation.</span>
+
+<table>
+<thead><tr><th>Topic</th><th>Why It Matters for LLMs</th><th>Key Concept</th><th>Resource</th></tr></thead>
+<tbody>
+<tr><td>Linear algebra</td><td>Every layer is matrix multiply + activation</td><td>Matrix multiply, dot product, norms</td><td>3Blue1Brown Essence of LA</td></tr>
+<tr><td>Calculus</td><td>Backpropagation is chain rule applied repeatedly</td><td>Partial derivatives, chain rule</td><td>Karpathy micrograd</td></tr>
+<tr><td>Probability</td><td>LLMs output token probability distributions</td><td>Softmax, cross-entropy, KL divergence</td><td>Blitzstein &amp; Hwang</td></tr>
+<tr><td>Optimization</td><td>Training = gradient descent toward lower loss</td><td>SGD, Adam, learning rate schedules</td><td>fast.ai Practical DL</td></tr>
+<tr><td>NumPy / PyTorch</td><td>Implement every concept as runnable code</td><td>Tensor ops, autograd, nn.Module</td><td>PyTorch tutorials</td></tr>
+</tbody>
+</table>
+
 </div>
 </div>
 <!-- ── 2. THE MATH ── -->
@@ -433,6 +445,38 @@
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>You don't need every proof:</strong> Understand intuition and derivation, not proofs from first principles. Know what matrix multiply does; you don't need to prove it's associative.</span>
+
+<div class="example-box">
+<div class="example-label">Python · NumPy fundamentals: vectors, matrices, and broadcasting</div>
+<pre><code class="language-python">import numpy as np
+
+# Vectors and basic operations
+v1 = np.array([1.0, 2.0, 3.0])
+v2 = np.array([4.0, 5.0, 6.0])
+
+print(f"Dot product: {np.dot(v1, v2)}")         # 32.0
+print(f"L2 norm: {np.linalg.norm(v1):.4f}")     # 3.7417
+print(f"Cosine sim: {np.dot(v1,v2) / (np.linalg.norm(v1)*np.linalg.norm(v2)):.4f}")  # 0.9746
+
+# Matrix operations (the core of neural networks)
+A = np.random.randn(4, 8)   # 4 rows, 8 columns
+B = np.random.randn(8, 16)  # 8 rows, 16 columns
+C = A @ B                   # matrix multiply → shape (4, 16)
+print(f"A @ B shape: {C.shape}")
+
+# Broadcasting — apply same operation to each row
+batch = np.random.randn(32, 512)   # 32 tokens, 512-dim embeddings
+scale = np.random.randn(512)       # per-dimension scale
+scaled = batch * scale             # broadcasts: (32, 512) * (512,) → (32, 512)
+
+# Eigenvalues — used in PCA, understanding attention patterns
+M = np.random.randn(4, 4)
+M = M @ M.T                        # make symmetric positive definite
+eigenvalues, eigenvectors = np.linalg.eigh(M)
+print(f"Eigenvalues: {eigenvalues.round(2)}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 3. PYTHON SCIENTIFIC STACK ── -->
@@ -448,9 +492,102 @@
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Jupyter notebooks:</strong> For exploration and learning, use Jupyter. Interactive, visual, great for iterating. For production code, use .py files and version control.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Probability essentials used in language models</div>
+<pre><code class="language-python">import numpy as np
+
+# 1. Probability distributions
+def softmax(x):
+    e = np.exp(x - x.max())
+    return e / e.sum()
+
+logits = np.array([3.0, 1.0, 0.2])
+probs = softmax(logits)
+print(f"Softmax: {probs.round(3)}")  # [0.844, 0.114, 0.042]
+
+# 2. Sampling with temperature
+def sample_with_temperature(logits, temperature=1.0):
+    """Higher temp = more random; lower temp = more greedy."""
+    scaled = logits / temperature
+    probs = softmax(scaled)
+    return np.random.choice(len(probs), p=probs)
+
+token = sample_with_temperature(logits, temperature=0.7)
+
+# 3. Cross-entropy loss — the training objective for LLMs
+def cross_entropy(logits, target_idx):
+    probs = softmax(logits)
+    return -np.log(probs[target_idx] + 1e-9)
+
+loss = cross_entropy(logits, target_idx=0)   # high confidence → low loss
+print(f"Cross-entropy loss: {loss:.4f}")     # 0.1699
+
+# 4. KL Divergence — measures distribution distance (used in RLHF)
+def kl_divergence(p, q):
+    """KL(P || Q) — how different Q is from the reference P."""
+    return np.sum(p * np.log(p / (q + 1e-9) + 1e-9))
+
+# Reference model vs fine-tuned model output distributions
+p_ref = softmax(np.array([2.0, 1.5, 0.5]))
+p_new = softmax(np.array([1.8, 1.6, 0.8]))
+kl = kl_divergence(p_ref, p_new)
+print(f"KL divergence: {kl:.4f}")   # small = fine-tuned close to reference
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 4. PYTORCH BASICS ── -->
+
+<div class="section-block" id="shortcut-path">
+<div class="section-marker">06 — Shortcut</div>
+<h2>Fast Track: What You Actually Need Day 1</h2>
+<p>You don't need to master all of calculus, linear algebra, and probability before building. A practical minimum for starting LLM engineering work: understand what a matrix multiply is (it's a weighted combination), understand that softmax converts numbers to probabilities, understand that training minimizes a loss function via gradient steps. That's enough to read papers and understand what's happening.</p>
+<p>The deeper foundations pay off over time — especially when debugging training instabilities, reading architecture papers, or designing evaluation metrics. But don't block shipping on a math prerequisite. Build first, deepen foundations in parallel.</p>
+<div class="example-box">
+<div class="example-label">Python · The 5 NumPy / math operations every LLM engineer needs</div>
+<pre><code class="language-python">import numpy as np
+
+# 1. Matrix multiply — the core of every transformer layer
+W = np.random.randn(512, 512)   # weight matrix
+x = np.random.randn(512)         # input token embedding
+out = W @ x                      # linear projection: (512,)
+
+# 2. Softmax — converts raw scores to a probability distribution
+def softmax(logits):
+    e = np.exp(logits - logits.max())  # subtract max for stability
+    return e / e.sum()
+
+vocab_logits = np.random.randn(50000)  # one score per token
+token_probs = softmax(vocab_logits)    # sums to 1.0
+next_token = token_probs.argmax()      # greedy decoding
+
+# 3. Cross-entropy loss — measures how wrong the model's prediction is
+def cross_entropy(probs, target_idx):
+    return -np.log(probs[target_idx] + 1e-9)  # add eps to avoid log(0)
+
+loss = cross_entropy(token_probs, target_idx=42)
+
+# 4. Cosine similarity — used in embedding search
+def cos_sim(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+emb1 = np.random.randn(1536)  # OpenAI text-embedding-3-small dimension
+emb2 = np.random.randn(1536)
+similarity = cos_sim(emb1, emb2)  # range: -1 to 1
+
+# 5. Layer norm — stabilises training, used in every transformer block
+def layer_norm(x, eps=1e-5):
+    mean = x.mean()
+    std  = x.std()
+    return (x - mean) / (std + eps)
+
+normed = layer_norm(out)  # zero mean, unit variance
+</code></pre>
+</div>
+</div>
+
 <div class="section-block" id="pytorch-basics">
 <div class="section-marker">04 — PyTorch Framework</div>
 <h2>PyTorch Basics</h2>

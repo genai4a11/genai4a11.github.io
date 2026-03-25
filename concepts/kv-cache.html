@@ -671,6 +671,42 @@ Output: 150 tokens
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Speculative decoding is production-ready in vLLM, SGLang, and LM Studio.</strong> Use it for latency-sensitive workloads (chatbots, real-time APIs) with compatible model pairs (both models must share the same tokenizer).</span>
+
+<div class="example-box">
+<div class="example-label">Python · Measure KV cache hit rate and memory usage with vLLM</div>
+<pre><code class="language-python">from vllm import LLM, SamplingParams
+import time
+
+llm = LLM(model="mistralai/Mistral-7B-Instruct-v0.2",
+          enable_prefix_caching=True,   # prefix cache = reuse shared prefixes
+          max_model_len=4096)
+
+params = SamplingParams(temperature=0.0, max_tokens=64)
+
+# Simulate workload with shared system prompt (benefits from prefix caching)
+SYSTEM_PROMPT = "You are a helpful assistant. " * 50  # ~50 tokens of shared prefix
+queries = [
+    SYSTEM_PROMPT + f"Question {i}: What is {i} + {i}?"
+    for i in range(20)
+]
+
+# First batch — cold cache
+t0 = time.perf_counter()
+outputs_cold = llm.generate(queries, params)
+cold_time = time.perf_counter() - t0
+
+# Second batch — warm cache (same system prompt prefix)
+t1 = time.perf_counter()
+outputs_warm = llm.generate(queries, params)
+warm_time = time.perf_counter() - t1
+
+print(f"Cold cache: {cold_time:.2f}s")
+print(f"Warm cache: {warm_time:.2f}s")
+print(f"Speedup from prefix caching: {cold_time/warm_time:.1f}×")
+# Typical: 1.5–3× speedup on workloads with long shared prefixes
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 7. PRODUCTION KNOBS ── -->

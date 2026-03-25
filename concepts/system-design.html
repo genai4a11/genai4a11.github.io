@@ -507,6 +507,53 @@ Eval &amp; observability (Langfuse, Arize, etc.)</div>
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Design your eval harness before your system architecture.</strong> If you cannot measure quality, you cannot make reliable design decisions.</span>
+
+<div class="example-box">
+<div class="example-label">Python · System design: decision tree implementation</div>
+<pre><code class="language-python">from enum import Enum
+from dataclasses import dataclass
+
+class PatternType(Enum):
+    RAG = "rag"
+    AGENT = "agent"
+    STRUCTURED_OUTPUT = "structured_output"
+    FINE_TUNED = "fine_tuned"
+    SIMPLE_PROMPT = "simple_prompt"
+
+@dataclass
+class Requirements:
+    needs_realtime_data: bool = False
+    needs_multi_step_reasoning: bool = False
+    output_is_structured: bool = False
+    high_volume: bool = False
+    domain_specific: bool = False
+    latency_sensitive: bool = False
+
+def choose_pattern(req: Requirements) -> PatternType:
+    """Decision tree for selecting the right GenAI architecture."""
+    if req.needs_realtime_data or req.domain_specific:
+        return PatternType.RAG
+    if req.needs_multi_step_reasoning:
+        return PatternType.AGENT
+    if req.output_is_structured:
+        return PatternType.STRUCTURED_OUTPUT
+    if req.high_volume and req.domain_specific:
+        return PatternType.FINE_TUNED
+    return PatternType.SIMPLE_PROMPT
+
+# Examples
+cases = [
+    Requirements(needs_realtime_data=True),
+    Requirements(needs_multi_step_reasoning=True),
+    Requirements(output_is_structured=True, high_volume=True),
+    Requirements(domain_specific=True, high_volume=True),
+]
+for r in cases:
+    print(f"{choose_pattern(r).value}")
+# rag, agent, structured_output, fine_tuned
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 2. CORE DECISIONS ── -->
@@ -577,6 +624,48 @@ Eval &amp; observability (Langfuse, Arize, etc.)</div>
 <div class="tool-category">Observability</div>
 <div class="tool-name">Arize Phoenix</div>
 <div class="tool-desc">Production monitoring, drift detection, performance tracking.</div>
+
+<div class="example-box">
+<div class="example-label">Python · Evaluation-first development: golden set + regression gate</div>
+<pre><code class="language-python">import json, statistics
+from openai import OpenAI
+
+client = OpenAI()
+GOLDEN_SET = [
+    {"input": "What is RAG?",
+     "must_contain": ["retrieval", "generation"],
+     "must_not_contain": ["hallucination is fine"]},
+    {"input": "Explain fine-tuning in one sentence.",
+     "must_contain": ["training", "weights"],
+     "must_not_contain": []},
+]
+
+def evaluate_system(system_prompt: str, model: str = "gpt-4o") -> dict:
+    results = []
+    for item in GOLDEN_SET:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": item["input"]}
+            ]
+        ).choices[0].message.content.lower()
+
+        passed = (
+            all(kw in resp for kw in item["must_contain"]) and
+            all(kw not in resp for kw in item["must_not_contain"])
+        )
+        results.append({"input": item["input"], "passed": passed, "response": resp[:100]})
+
+    score = sum(r["passed"] for r in results) / len(results)
+    return {"score": score, "details": results, "passed": score >= 0.8}
+
+# Gate deploys on eval results
+result = evaluate_system("You are a concise GenAI expert. Answer clearly.")
+print(f"Score: {result['score']:.0%} → {'DEPLOY OK' if result['passed'] else 'BLOCK'}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <h3>The Eval Harness Workflow</h3>
@@ -606,6 +695,66 @@ Eval &amp; observability (Langfuse, Arize, etc.)</div>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Cost runaway:</strong> An agent that loops infinitely can drain your budget in minutes. Always set max_iterations, max_tokens, and cost budgets.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Production AI system with observability and circuit breaker</div>
+<pre><code class="language-python">import time, logging, functools
+from openai import OpenAI
+from dataclasses import dataclass, field
+
+client = OpenAI()
+logger = logging.getLogger(__name__)
+
+@dataclass
+class CircuitBreaker:
+    failure_threshold: int = 5
+    reset_timeout: float = 60.0
+    failures: int = 0
+    last_failure: float = 0
+    state: str = "closed"  # closed, open, half-open
+
+    def call(self, fn, *args, **kwargs):
+        if self.state == "open":
+            if time.time() - self.last_failure > self.reset_timeout:
+                self.state = "half-open"
+            else:
+                raise RuntimeError("Circuit breaker OPEN — service unavailable")
+        try:
+            result = fn(*args, **kwargs)
+            if self.state == "half-open":
+                self.state = "closed"
+                self.failures = 0
+            return result
+        except Exception as e:
+            self.failures += 1
+            self.last_failure = time.time()
+            if self.failures >= self.failure_threshold:
+                self.state = "open"
+                logger.error(f"Circuit breaker opened after {self.failures} failures")
+            raise
+
+cb = CircuitBreaker()
+
+def call_with_observability(prompt: str, **kwargs) -> str:
+    start = time.perf_counter()
+    try:
+        def _call():
+            return client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": prompt}],
+                **kwargs
+            ).choices[0].message.content
+        result = cb.call(_call)
+        latency = time.perf_counter() - start
+        logger.info(f"LLM call ok latency={latency:.3f}s tokens={len(result.split())}")
+        return result
+    except Exception as e:
+        latency = time.perf_counter() - start
+        logger.error(f"LLM call failed latency={latency:.3f}s error={e}")
+        raise
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 5. CODE EXAMPLE ── -->
@@ -671,6 +820,24 @@ print(result)</code></div>
 <p>Key features: caching before retrieval, exponential backoff on failure, structured return (source tracking), and graceful fallback.</p>
 </div>
 <!-- ── 6. WHAT TO EXPLORE NEXT ── -->
+
+<div class="section-block" id="tradeoffs">
+<div class="section-marker">06 — Trade-offs</div>
+<h2>Cost, Latency &amp; Quality Triangle</h2>
+<p>Every production AI system lives inside a triangle: cost, latency, and quality. You can optimise any two, but improving all three simultaneously requires architectural changes. Understanding this triangle prevents the most common mistake — chasing quality in development, then discovering the latency and cost are unacceptable at scale.</p>
+<p>Typical levers: model size (quality vs cost/latency), quantization (cost/latency vs slight quality drop), caching (latency/cost vs freshness), retrieval (quality vs latency), streaming (perceived latency vs complexity). Map your requirements first, then choose the point in the triangle your use case demands.</p>
+<table>
+<thead><tr><th>Lever</th><th>Improves</th><th>Trade-off</th><th>Typical Savings</th></tr></thead>
+<tbody>
+<tr><td>Smaller model (GPT-4o → 4o-mini)</td><td>Cost, latency</td><td>Quality drop on hard tasks</td><td>10–30× cheaper</td></tr>
+<tr><td>Quantization (fp16 → int4)</td><td>Cost, latency</td><td>Slight accuracy loss</td><td>2–4× faster serving</td></tr>
+<tr><td>Response caching</td><td>Cost, latency</td><td>Stale results on dynamic queries</td><td>Up to 60% cache hit</td></tr>
+<tr><td>Streaming output</td><td>Perceived latency</td><td>More complex client code</td><td>Time-to-first-token -80%</td></tr>
+<tr><td>Prompt compression</td><td>Cost, latency</td><td>Possible information loss</td><td>30–50% token reduction</td></tr>
+</tbody>
+</table>
+</div>
+
 <div class="section-block" id="what-next">
 <div class="section-marker">06 — Go Deeper</div>
 <h2>What to Explore Next</h2>
