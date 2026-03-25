@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speculative Decoding | GenAI Mindmap</title>
+  <meta name="description" content="Use a small draft model to propose multiple tokens in parallel, then verify them with the large target model in a single forward pass. Achieves 2-3× latency speedup with identical output distribution." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Speculative Decoding" />
+  <meta property="og:description" content="Use a small draft model to propose multiple tokens in parallel, then verify them with the large target model in a single forward pass. Achieves 2-3× latency speedup with identical output distribution." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/speculative-decoding.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/speculative-decoding.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Speculative Decoding | GenAI Mindmap",
+  "description": "Use a small draft model to propose multiple tokens in parallel, then verify them with the large target model in a single forward pass. Achieves 2-3\u00d7 latency speedup with identical output distribution.",
+  "url": "https://genai4a11.github.io/concepts/speculative-decoding.html",
+  "dateModified": "2026-03-25T00:02:33.337399",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Speculative Decoding | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/speculative-decoding.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0369a1;
+      --accent-dark: #0284c7;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0369a1 0%,#0284c7 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/transformers.html" class="nav-back">← Transformer Architecture</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Transformer Architecture</span>
+    <h1><em>Speculative Decoding</em></h1>
+    <p class="hero-sub">Use a small draft model to propose multiple tokens in parallel, then verify them with the large target model in a single forward pass. Achieves 2-3× latency speedup with identical output distribution.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">2-3× speedup</div><div class="stat-label">On latency</div></div>
+      <div><div class="stat-num">Same quality</div><div class="stat-label">Identical distribution</div></div>
+      <div><div class="stat-num">Draft + target</div><div class="stat-label">Two model sizes</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The decoding bottleneck</a></li>
+        <li><a href="#s2" data-num="02">Speculative decoding algorithm</a></li>
+        <li><a href="#s3" data-num="03">Acceptance sampling</a></li>
+        <li><a href="#s4" data-num="04">Python implementation sketch</a></li>
+        <li><a href="#s5" data-num="05">Draft model selection</a></li>
+        <li><a href="#s6" data-num="06">Throughput vs latency impact</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The decoding bottleneck</h2>
+<p>Autoregressive LLM generation is sequential: you generate one token at a time, each step requires a full forward pass through the model. For a 70B parameter model, each token costs ~140 GFLOPS. The throughput bottleneck is memory bandwidth — loading all 140B parameters from HBM to compute units to generate a single token. On an A100 80GB, this limits you to roughly 50 tokens/second for a 70B model.</p>
+<p>Speculative decoding exploits the observation that a small model (e.g. 7B) can correctly predict the next 3–5 tokens most of the time. If we can verify all those predictions in a single large-model forward pass, we get multiple tokens per expensive call.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Speculative decoding algorithm</h2>
+<p>At each step of speculative decoding:</p>
+<ol>
+<li><strong>Draft</strong>: Run the small draft model autoregressively for γ steps, generating γ draft tokens x̃₁, ..., x̃_γ with draft probabilities q(x̃_i).</li>
+<li><strong>Verify</strong>: Run the large target model on the original context + all γ draft tokens in a single forward pass (possible because it's not causal during verification). Get target probabilities p(x̃_i) for each draft position plus p(x_{γ+1}) for the next new token.</li>
+<li><strong>Accept/reject</strong>: For each draft token in order, accept it with probability min(1, p(x̃_i)/q(x̃_i)). If rejected, sample a correction token from a normalised residual distribution. Once any token is rejected, discard all subsequent draft tokens.</li>
+<li>On average α × γ tokens are accepted per verification step, where α is the acceptance rate (typically 0.7–0.9 for a good draft model).</li>
+</ol>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Acceptance sampling</h2>
+<p>The acceptance criterion min(1, p/q) is the key insight. It guarantees that the output distribution of speculative decoding is <em>identical</em> to that of the target model — no quality degradation. The math: if we accept x̃ with probability p(x̃)/q(x̃) when p ≤ q, and always accept when p ≥ q, the resulting marginal distribution equals p.</p>
+<p>When a token is rejected at position i, we sample from the residual distribution max(0, p - q) / Z rather than simply resampling from p. This ensures no token is wasted — the rejection produces a valid target sample that's different from the draft token.</p>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Python implementation sketch</h2>
+<pre><code class="language-python">import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+def speculative_decode(draft_model, target_model, tokenizer, prompt, gamma=4, max_new=100):
+    input_ids = tokenizer(prompt, return_tensors="pt").input_ids.cuda()
+    generated = input_ids.clone()
+
+    for _ in range(max_new // gamma + 1):
+        # Step 1: draft gamma tokens
+        draft_ids = generated.clone()
+        draft_probs = []
+        for _ in range(gamma):
+            with torch.no_grad():
+                logits = draft_model(draft_ids).logits[:, -1, :]
+            probs = torch.softmax(logits, dim=-1)
+            next_tok = torch.multinomial(probs, 1)
+            draft_probs.append(probs[0, next_tok[0, 0]].item())
+            draft_ids = torch.cat([draft_ids, next_tok], dim=-1)
+
+        # Step 2: verify with target model (single forward pass)
+        with torch.no_grad():
+            target_logits = target_model(draft_ids).logits[0, generated.shape[1]-1:, :]
+        target_probs = torch.softmax(target_logits, dim=-1)
+
+        # Step 3: accept/reject
+        accepted = 0
+        for i in range(gamma):
+            draft_tok = draft_ids[0, generated.shape[1] + i].item()
+            p = target_probs[i, draft_tok].item()
+            q = draft_probs[i]
+            if torch.rand(1).item() <= p / q:
+                accepted += 1
+            else:
+                break
+
+        new_tokens = draft_ids[:, generated.shape[1]:generated.shape[1] + accepted]
+        generated = torch.cat([generated, new_tokens], dim=-1)
+
+        # Add one target-sampled token
+        bonus_tok = torch.multinomial(target_probs[accepted], 1).unsqueeze(0)
+        generated = torch.cat([generated, bonus_tok], dim=-1)
+
+    return tokenizer.decode(generated[0], skip_special_tokens=True)
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Draft model selection</h2>
+<p>The draft model is the most important hyperparameter. Requirements: (1) same vocabulary as the target model, (2) fast enough that γ draft steps cost less than 1 target step, (3) high acceptance rate ≥ 0.7. Good pairs:</p>
+<ul>
+<li>Llama 3 70B (target) + Llama 3 8B (draft): acceptance rate ~0.75–0.85 on typical prompts</li>
+<li>GPT-4 class target + GPT-3.5-turbo draft (used internally by some providers)</li>
+<li>Self-speculative decoding: use early exit layers of the same model as the draft</li>
+</ul>
+<p>For a 70B/7B pair, if acceptance rate α=0.8 and γ=4, the expected tokens per target call is α × γ + 1 ≈ 4.2, giving ~4× fewer target calls and ~2–3× wall-clock speedup (draft overhead reduces the theoretical gain).</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Throughput vs latency impact</h2>
+<p>Speculative decoding primarily reduces <strong>latency</strong> (time for a single request), not throughput (total tokens/second across many requests). When the GPU is already fully utilised with batched requests, speculative decoding may not help — the verification step has the same batch dimension as the target-only baseline. It shines in:</p>
+<ul>
+<li>Interactive chat (single-user, latency-critical)</li>
+<li>Edge deployment (single GPU, low concurrency)</li>
+<li>Long generation tasks where p99 latency matters</li>
+</ul>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<ul>
+<li><strong>Memory</strong>: Running two models simultaneously doubles GPU memory requirements. On memory-constrained hardware, consider self-speculative decoding (no second model) or medusa heads instead.</li>
+<li><strong>Temperature 0</strong>: At temperature=0 (greedy decoding), acceptance becomes deterministic (always accept if draft token = argmax). Acceptance rate is essentially 1 for easy tokens.</li>
+<li><strong>Batching</strong>: Speculative decoding with batched requests is harder because different sequences in the batch may reject at different steps. vLLM and TGI implement efficient batched speculative decoding.</li>
+<li><strong>Medusa alternative</strong>: Medusa adds multiple prediction heads to the target model to generate draft tokens without a separate model — lower memory cost but requires fine-tuning.</li>
+</ul>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/transformers.html" style="color:var(--accent)">Transformer Architecture</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cross-Attention | GenAI Mindmap</title>
+  <meta name="description" content="Cross-attention lets a decoder query information from an encoder's output. The mechanism that connects encoder and decoder in seq2seq models — and reappears in multimodal architectures to fuse vision and language." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Cross-Attention" />
+  <meta property="og:description" content="Cross-attention lets a decoder query information from an encoder's output. The mechanism that connects encoder and decoder in seq2seq models — and reappears in multimodal architectures to fuse vision and language." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/cross-attention.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/cross-attention.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Cross-Attention | GenAI Mindmap",
+  "description": "Cross-attention lets a decoder query information from an encoder's output. The mechanism that connects encoder and decoder in seq2seq models \u2014 and reappears in multimodal architectures to fuse vision and language.",
+  "url": "https://genai4a11.github.io/concepts/cross-attention.html",
+  "dateModified": "2026-03-25T00:02:31.733946",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Cross-Attention | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/cross-attention.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0369a1;
+      --accent-dark: #0284c7;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0369a1 0%,#0284c7 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/transformers.html" class="nav-back">← Transformer Architecture</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Transformer Architecture</span>
+    <h1><em>Cross-Attention</em></h1>
+    <p class="hero-sub">Cross-attention lets a decoder query information from an encoder's output. The mechanism that connects encoder and decoder in seq2seq models — and reappears in multimodal architectures to fuse vision and language.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Q from decoder</div><div class="stat-label">KV from encoder</div></div>
+      <div><div class="stat-num">Seq2seq core</div><div class="stat-label">Translation, summarisation</div></div>
+      <div><div class="stat-num">Multimodal</div><div class="stat-label">Vision-language fusion</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Cross-attention vs self-attention</a></li>
+        <li><a href="#s2" data-num="02">Mathematical formulation</a></li>
+        <li><a href="#s3" data-num="03">Implementation in PyTorch</a></li>
+        <li><a href="#s4" data-num="04">Role in encoder-decoder models</a></li>
+        <li><a href="#s5" data-num="05">Cross-attention in multimodal models</a></li>
+        <li><a href="#s6" data-num="06">Attention patterns visualised</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>Cross-attention vs self-attention</h2>
+<p>In <strong>self-attention</strong>, queries, keys, and values all come from the same sequence — each position attends to every other position in the same sequence. In <strong>cross-attention</strong>, the queries come from one sequence (typically the decoder's hidden states) while the keys and values come from a different sequence (typically the encoder's output). This lets the decoder look up which parts of the source are most relevant for generating the next token.</p>
+<p>Cross-attention is the mechanism that connects encoder and decoder in seq2seq architectures like the original Transformer (Vaswani et al. 2017), T5, and BART. It also reappears in multimodal models (LLaVA, Flamingo) to fuse visual features into a language decoder.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>Mathematical formulation</h2>
+<p>Given decoder hidden states <strong>H_dec</strong> ∈ ℝ<sup>T_dec × d_model</sup> and encoder output <strong>H_enc</strong> ∈ ℝ<sup>T_enc × d_model</sup>:</p>
+<ul>
+<li>Q = H_dec · W_Q (from decoder)</li>
+<li>K = H_enc · W_K (from encoder)</li>
+<li>V = H_enc · W_V (from encoder)</li>
+</ul>
+<p>Attention(Q, K, V) = softmax(QK<sup>T</sup> / √d_k) · V</p>
+<p>The result has shape T_dec × d_v — each decoder position gets a weighted combination of encoder positions. The attention weights (shape T_dec × T_enc) show which source positions the decoder is attending to when generating each target token.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Implementation in PyTorch</h2>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
+
+class CrossAttention(nn.Module):
+    def __init__(self, d_model: int, n_heads: int):
+        super().__init__()
+        self.n_heads = n_heads
+        self.d_head = d_model // n_heads
+        self.W_q = nn.Linear(d_model, d_model, bias=False)
+        self.W_k = nn.Linear(d_model, d_model, bias=False)
+        self.W_v = nn.Linear(d_model, d_model, bias=False)
+        self.W_o = nn.Linear(d_model, d_model, bias=False)
+
+    def forward(self, dec_hidden, enc_output, enc_mask=None):
+        # dec_hidden: (B, T_dec, d_model)
+        # enc_output: (B, T_enc, d_model)
+        B, T_dec, _ = dec_hidden.shape
+        T_enc = enc_output.shape[1]
+
+        Q = self.W_q(dec_hidden).view(B, T_dec, self.n_heads, self.d_head).transpose(1, 2)
+        K = self.W_k(enc_output).view(B, T_enc, self.n_heads, self.d_head).transpose(1, 2)
+        V = self.W_v(enc_output).view(B, T_enc, self.n_heads, self.d_head).transpose(1, 2)
+
+        scale = math.sqrt(self.d_head)
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / scale  # (B, H, T_dec, T_enc)
+
+        if enc_mask is not None:
+            scores = scores.masked_fill(enc_mask.unsqueeze(1).unsqueeze(2) == 0, -1e9)
+
+        attn = F.softmax(scores, dim=-1)
+        out = torch.matmul(attn, V)  # (B, H, T_dec, d_head)
+        out = out.transpose(1, 2).contiguous().view(B, T_dec, -1)
+        return self.W_o(out), attn  # return attn weights for visualisation
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Role in encoder-decoder models</h2>
+<p>In the original Transformer decoder, each layer has three sublayers: (1) masked self-attention over previously generated tokens, (2) <strong>cross-attention</strong> over the encoder output, and (3) a feed-forward network. The cross-attention sublayer is what allows the model to focus on relevant source tokens when generating each target token.</p>
+<p>Modern variants like T5 follow the same pattern. During inference, the encoder processes the input once; the decoder runs cross-attention at every step, re-attending to encoder states. This is efficient because encoder keys and values can be cached for the entire generation.</p>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Cross-attention in multimodal models</h2>
+<p>Cross-attention is the dominant mechanism for fusing modalities. In <strong>Flamingo</strong>, visual features from a frozen vision encoder are injected into a language model via cross-attention layers inserted between transformer blocks. In <strong>LLaVA</strong>, visual tokens are projected into the language model's embedding space and prepended to the text — effectively using the language model's self-attention as a form of cross-attention. In <strong>Stable Diffusion</strong>'s UNet, cross-attention fuses CLIP text embeddings with image features at multiple resolutions to condition the denoising process on the text prompt.</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Attention patterns visualised</h2>
+<p>When you inspect cross-attention weights in a trained translation model, clear patterns emerge: when generating a verb in German, the model strongly attends to the corresponding verb in the English source. In summarisation models, attention heads focus on key sentences in the source document. This interpretability is one reason cross-attention is preferred over alternatives like concatenation for fusing two sequences.</p>
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+def plot_cross_attn(attn_weights, src_tokens, tgt_tokens, head=0):
+    # attn_weights: (n_heads, T_dec, T_enc)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.imshow(attn_weights[head].cpu().numpy(), cmap="Blues", aspect="auto")
+    ax.set_xticks(range(len(src_tokens)))
+    ax.set_xticklabels(src_tokens, rotation=45, ha="right")
+    ax.set_yticks(range(len(tgt_tokens)))
+    ax.set_yticklabels(tgt_tokens)
+    ax.set_xlabel("Source (encoder)"); ax.set_ylabel("Target (decoder)")
+    plt.tight_layout(); plt.show()
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<ul>
+<li><strong>Key-value caching</strong>: In cross-attention during generation, K and V are always derived from the encoder output (which doesn't change). Cache them after the encoder pass to avoid recomputing every decoder step.</li>
+<li><strong>Padding masks</strong>: The encoder output has padding tokens for shorter sequences in a batch. Apply the encoder padding mask to cross-attention scores to prevent the decoder from attending to padding.</li>
+<li><strong>Decoder-only models</strong>: GPT-style decoder-only models have no cross-attention layer — they rely entirely on self-attention over a concatenated context (prompt + response). Cross-attention is specific to encoder-decoder architectures.</li>
+</ul>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/transformers.html" style="color:var(--accent)">Transformer Architecture</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

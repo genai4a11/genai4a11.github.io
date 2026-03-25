@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paged Attention | GenAI Mindmap</title>
+  <meta name="description" content="vLLM's KV cache management system inspired by OS virtual memory paging. Eliminates KV cache fragmentation, enabling near-100% GPU memory utilisation and 2-4× higher serving throughput." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Paged Attention" />
+  <meta property="og:description" content="vLLM's KV cache management system inspired by OS virtual memory paging. Eliminates KV cache fragmentation, enabling near-100% GPU memory utilisation and 2-4× higher serving throughput." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/paged-attention.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/paged-attention.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Paged Attention | GenAI Mindmap",
+  "description": "vLLM's KV cache management system inspired by OS virtual memory paging. Eliminates KV cache fragmentation, enabling near-100% GPU memory utilisation and 2-4\u00d7 higher serving throughput.",
+  "url": "https://genai4a11.github.io/concepts/paged-attention.html",
+  "dateModified": "2026-03-25T00:02:32.931595",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Paged Attention | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/paged-attention.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0369a1;
+      --accent-dark: #0284c7;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0369a1 0%,#0284c7 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/transformers.html" class="nav-back">← Transformer Architecture</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Transformer Architecture</span>
+    <h1><em>Paged Attention</em></h1>
+    <p class="hero-sub">vLLM's KV cache management system inspired by OS virtual memory paging. Eliminates KV cache fragmentation, enabling near-100% GPU memory utilisation and 2-4× higher serving throughput.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Fragmentation</div><div class="stat-label">Near-zero with paging</div></div>
+      <div><div class="stat-num">2-4× throughput</div><div class="stat-label">vs HuggingFace baseline</div></div>
+      <div><div class="stat-num">vLLM core</div><div class="stat-label">Enabling technology</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">The KV cache fragmentation problem</a></li>
+        <li><a href="#s2" data-num="02">PagedAttention design</a></li>
+        <li><a href="#s3" data-num="03">Block tables and physical blocks</a></li>
+        <li><a href="#s4" data-num="04">Using vLLM in Python</a></li>
+        <li><a href="#s5" data-num="05">Continuous batching synergy</a></li>
+        <li><a href="#s6" data-num="06">Memory efficiency numbers</a></li>
+        <li><a href="#s7" data-num="07">Gotchas</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+<h2>The KV cache fragmentation problem</h2>
+<p>During LLM inference, you cache key and value tensors for all previous tokens to avoid recomputing them. Naive implementations pre-allocate contiguous memory for the maximum sequence length. This causes two problems: (1) <strong>internal fragmentation</strong> — short sequences waste the unused tail of their allocation; (2) <strong>external fragmentation</strong> — after many sequences complete, the free memory is scattered in small gaps that can't fit new allocations even though total free memory is sufficient. In practice, pre-allocation wastes 60–80% of KV cache memory.</p>
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+<h2>PagedAttention design</h2>
+<p>PagedAttention, introduced in the vLLM paper (Kwon et al. 2023), borrows the OS virtual memory paging concept. The KV cache is divided into fixed-size <strong>physical blocks</strong> (e.g. 16 token positions each). Each sequence maintains a <strong>block table</strong> — a mapping from logical block indices to physical block indices, like a page table. Memory is allocated one block at a time as sequences grow, rather than pre-allocating the full maximum length. When a sequence finishes, its blocks are freed and can be immediately reused by new sequences with no fragmentation.</p>
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+<h2>Block tables and physical blocks</h2>
+<p>The key invariant: logical block i of sequence s maps to some physical block p. The attention kernel reads K and V from the physical block addresses in the block table, not from contiguous memory. This requires a custom CUDA kernel that handles the scatter-gather read pattern efficiently.</p>
+<p>Copy-on-write (CoW) blocks enable prefix caching: if two sequences share a common prefix (e.g. a system prompt), they can share physical blocks for the prefix, with CoW ensuring modifications don't affect the shared copy. This is the basis for vLLM's prefix caching feature.</p>
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+<h2>Using vLLM in Python</h2>
+<pre><code class="language-python">from vllm import LLM, SamplingParams
+
+# vLLM uses PagedAttention internally — no configuration needed
+llm = LLM(
+    model="meta-llama/Llama-3-8B-Instruct",
+    gpu_memory_utilization=0.90,  # fraction of GPU RAM for KV cache
+    max_model_len=8192,
+    # swap_space=4,  # GB of CPU RAM for offloading cold KV blocks
+)
+
+params = SamplingParams(temperature=0.7, max_tokens=512)
+
+# Batch inference — PagedAttention manages memory across all sequences
+prompts = [
+    "Explain quantum entanglement in one paragraph.",
+    "Write a Python function to compute Fibonacci numbers.",
+    "What are the main causes of the French Revolution?",
+]
+outputs = llm.generate(prompts, params)
+for out in outputs:
+    print(out.outputs[0].text[:100], "...")
+
+# Online serving with OpenAI-compatible API:
+# vllm serve meta-llama/Llama-3-8B-Instruct --port 8000
+</code></pre>
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+<h2>Continuous batching synergy</h2>
+<p>PagedAttention and continuous batching (iteration-level scheduling) work together to maximise throughput. Continuous batching adds new requests to a running batch as soon as any sequence finishes a token, rather than waiting for all sequences to complete. Without PagedAttention, the scheduler couldn't predict how much memory a new request needs. With block-level allocation, the scheduler knows exactly how many free blocks exist and can make fine-grained admission decisions.</p>
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+<h2>Memory efficiency numbers</h2>
+<p>From the vLLM paper benchmarks on LLaMA-13B:</p>
+<ul>
+<li><strong>HuggingFace transformers</strong>: 20.4% KV cache utilisation (79.6% wasted to fragmentation and reservations)</li>
+<li><strong>vLLM with PagedAttention</strong>: ~96% KV cache utilisation</li>
+<li><strong>Throughput improvement</strong>: 2.2–3.5× higher request throughput on A100 80GB vs HuggingFace baseline</li>
+</ul>
+<p>The gains are larger for longer sequences and more concurrent requests, where fragmentation under naive allocation is worst.</p>
+    </div>
+
+    <div class="section-block" id="s7">
+      <div class="section-marker">SECTION 07</div>
+<h2>Gotchas</h2>
+<ul>
+<li><strong>Block size tuning</strong>: Smaller blocks (8–16 tokens) reduce internal fragmentation but increase block table overhead. vLLM defaults to 16 tokens/block, which works well for most cases.</li>
+<li><strong>Prefix caching</strong>: Enable with <code>enable_prefix_caching=True</code> in vLLM for workloads with shared system prompts. Reduces time-to-first-token for subsequent requests.</li>
+<li><strong>CPU offloading</strong>: Setting <code>swap_space</code> allows inactive KV blocks to spill to CPU RAM. Enables more concurrent sequences but adds swap-in latency when blocks are retrieved.</li>
+<li><strong>Not just vLLM</strong>: TGI, SGLang, and LMDeploy all implement equivalent paged KV cache management — PagedAttention was the first published formalisation, but the concept is now standard across all serious LLM serving systems.</li>
+</ul>
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/transformers.html" style="color:var(--accent)">Transformer Architecture</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
