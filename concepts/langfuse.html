@@ -305,6 +305,30 @@ docker compose up -d
 <p><strong>Score names</strong>: Define a consistent vocabulary for score names across your team (e.g. "correctness", "faithfulness", "relevance") rather than letting names proliferate. Inconsistent names make dashboard analysis painful.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>LangFuse Observability Architecture</h2>
+<p>LangFuse is an open-source LLM observability platform that provides detailed tracing, evaluation, and dataset management for production AI applications. Unlike hosted-only solutions, LangFuse can be self-hosted, making it suitable for organizations with strict data privacy requirements that prohibit sending production inference data to third-party services.</p>
+<table>
+<thead><tr><th>Feature</th><th>Purpose</th><th>Self-Hosted</th><th>Integration</th></tr></thead>
+<tbody>
+<tr><td>Traces</td><td>Full pipeline visibility</td><td>Yes</td><td>SDK / LangChain / LlamaIndex</td></tr>
+<tr><td>Scores</td><td>Quality annotation</td><td>Yes</td><td>API / UI</td></tr>
+<tr><td>Datasets</td><td>Evaluation sets</td><td>Yes</td><td>Python SDK</td></tr>
+<tr><td>Prompt Management</td><td>Versioned prompt registry</td><td>Yes</td><td>SDK pull/push</td></tr>
+<tr><td>User Feedback</td><td>Thumbs up/down collection</td><td>Yes</td><td>Frontend widget</td></tr>
+</tbody>
+</table>
+<p>LangFuse's trace data model uses a three-level hierarchy: traces (top-level, one per user request), spans (intermediate steps within a trace), and generations (individual LLM calls). This hierarchy maps naturally to RAG and agent pipelines: the trace captures the full user interaction, retrieval and preprocessing steps are spans, and each LLM call is a generation with automatically captured token counts, latency, and cost. The nested structure enables drill-down analysis from high-level quality trends to individual generation-level debugging.</p>
+<p>Prompt management in LangFuse enables version-controlled prompt deployment with rollback capability. Prompts are stored in the LangFuse registry with semantic version tags; application code fetches the current production version at runtime via the SDK rather than hardcoding prompt text. When a prompt change is needed, a new version is created, tested against evaluation datasets, and promoted to production without any code deployment. This decouples prompt iteration cycles from software release cycles, allowing product teams to improve prompt quality without engineering involvement in routine cases.</p>
+
+<p>LangFuse integrates natively with LangChain and LlamaIndex through callback handlers that automatically capture the full execution trace of any chain or agent without requiring manual instrumentation code. Wrapping a chain with the LangFuse callback handler adds a single line to the existing code, and LangFuse captures every LLM call, tool invocation, and retrieval operation with their inputs, outputs, and latencies. For teams already using LangChain or LlamaIndex, this zero-effort integration path makes LangFuse one of the fastest observability solutions to get running in production.</p>
+
+<p>LangFuse scores can be attached to traces programmatically from any part of the application stack — the backend API that processes requests, a separate evaluation microservice, or a human feedback collection frontend. The score data model supports numeric scores (for automated metrics with continuous ranges), boolean scores (for pass/fail assertions), and categorical scores (for labeled quality dimensions). Mixing automated scores from LLM judges with human annotation scores in the same data store enables analysis of how well automated evaluation correlates with human judgment for calibrating the automated metrics.</p>
+
+<p>LangFuse's self-hosted deployment uses Docker Compose for single-server installations or Kubernetes Helm charts for production-scale deployments. The backend stores trace data in PostgreSQL (for structured metadata and scores) and ClickHouse (for high-volume, time-series aggregation queries). The ClickHouse component handles the analytical workloads — aggregating metrics over time, computing percentile latency distributions, and identifying cost trends — that would be prohibitively slow on a transactional PostgreSQL database with millions of trace records.</p>
+
+<p>Team collaboration in LangFuse uses project-based access control where team members are assigned roles (owner, member, viewer) with corresponding permissions. Owners manage project settings and API keys; members add scores and manage datasets; viewers can inspect traces and results without modifying evaluation data. This role hierarchy supports workflows where data scientists configure evaluation pipelines, product managers review quality trends in the dashboard, and developers debug specific trace failures — each role accessing the information they need without requiring full platform access.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

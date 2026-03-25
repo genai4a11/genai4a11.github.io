@@ -347,6 +347,30 @@ async def generate(req: GenerateRequest):
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>FastAPI LLM Service Patterns</h2>
+<p>FastAPI is the most popular Python framework for building LLM API services due to its automatic OpenAPI documentation, Pydantic validation, async support, and high performance. Combining FastAPI with async LLM clients enables non-blocking request handling that maximizes throughput when serving concurrent users.</p>
+<table>
+<thead><tr><th>Pattern</th><th>Implementation</th><th>Throughput</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td>Sync endpoint</td><td>def endpoint()</td><td>Low (blocks)</td><td>Simple prototypes</td></tr>
+<tr><td>Async endpoint</td><td>async def endpoint()</td><td>High</td><td>Production services</td></tr>
+<tr><td>Streaming response</td><td>StreamingResponse + generator</td><td>High + low TTFT</td><td>Chat UIs</td></tr>
+<tr><td>Background tasks</td><td>BackgroundTasks</td><td>High</td><td>Async processing</td></tr>
+<tr><td>WebSocket</td><td>websocket endpoint</td><td>Highest</td><td>Bidirectional streaming</td></tr>
+</tbody>
+</table>
+<p>Streaming LLM responses from FastAPI uses StreamingResponse with an async generator that yields token chunks as they arrive from the LLM API. The generator pattern enables the server to forward tokens to the client as soon as they arrive without buffering the full response, minimizing the client-perceived time to first token. Server-sent event (SSE) format — prefixing each chunk with "data: " and ending with double newline — is compatible with browser EventSource APIs and most streaming LLM client libraries.</p>
+<p>Rate limiting and request queuing are critical for production FastAPI LLM services. Without rate limiting, a burst of concurrent requests can overwhelm LLM API rate limits and cause 429 errors that cascade into client-visible failures. Implementing token bucket rate limiting at the application layer (using libraries like slowapi) controls request admission. A background task queue (using Redis + ARQ or Celery) decouples request acceptance from LLM processing, allowing the API to accept requests at burst speed while processing them at a sustainable rate.</p>
+
+<p>Pydantic models in FastAPI serve as both request validation schemas and API documentation, automatically generating the OpenAPI spec that powers the /docs UI. For LLM service endpoints, defining a strict Pydantic model for the request body — with field validation for model name, temperature range, max tokens, and message structure — prevents malformed requests from reaching the LLM API and produces clear error messages for API consumers. Response models similarly validate that the LLM service's output conforms to the expected schema before returning it to the client.</p>
+
+<p>Dependency injection in FastAPI enables clean separation of LLM client initialization from endpoint logic. A dependency function that initializes and caches the LLM client (OpenAI, Anthropic, or a custom wrapper) is injected into endpoint functions via FastAPI's Depends mechanism. This pattern makes unit testing straightforward — tests can inject mock LLM clients instead of real ones — and ensures that configuration changes (API key rotation, model version updates, timeout adjustments) are made in one place rather than scattered across multiple endpoint functions.</p>
+
+<p>Middleware in FastAPI LLM services handles cross-cutting concerns like request logging, authentication, and usage tracking that should apply to all endpoints uniformly. Custom middleware intercepts every request and response, logging the request ID, latency, token counts, and user identifier to a structured logging system. This observability data is essential for cost allocation, capacity planning, and detecting abuse patterns — users making unexpectedly large requests or hitting endpoints at rates inconsistent with normal usage.</p>
+
+<p>Health check and readiness probe endpoints are essential for production FastAPI LLM services deployed in Kubernetes. A /health endpoint returns 200 when the service is running; a /ready endpoint performs a lightweight LLM call (often with a minimal test prompt) to confirm the LLM client is initialized and the API key is valid before signaling readiness to receive production traffic. Kubernetes uses these probes to route traffic only to ready instances and to restart unhealthy instances, preventing cold-start latency spikes from reaching users.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

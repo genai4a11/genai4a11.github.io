@@ -246,6 +246,30 @@ model.print_trainable_parameters()  # ~1.3% of params
 <p><strong>Phi-4 licence</strong>: Phi-4 uses the MIT licence (fully open). Phi-3 uses the Microsoft Research Licence (also permissive, allows commercial use). Check the specific version's licence before deploying.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Phi-3 Model Family Comparison</h2>
+<p>Microsoft's Phi-3 family demonstrates that careful training data curation can produce models that punch significantly above their parameter weight. The Phi models are trained on "textbook quality" data — carefully filtered educational and reasoning-focused text — rather than raw web crawl data, achieving strong performance on reasoning benchmarks despite being orders of magnitude smaller than frontier models.</p>
+<table>
+<thead><tr><th>Model</th><th>Parameters</th><th>Context</th><th>MMLU</th><th>Deployment Target</th></tr></thead>
+<tbody>
+<tr><td>Phi-3-mini</td><td>3.8B</td><td>4K / 128K</td><td>~70%</td><td>Mobile, edge devices</td></tr>
+<tr><td>Phi-3-small</td><td>7B</td><td>8K / 128K</td><td>~75%</td><td>Laptop, single GPU</td></tr>
+<tr><td>Phi-3-medium</td><td>14B</td><td>4K / 128K</td><td>~78%</td><td>Workstation GPU</td></tr>
+<tr><td>Phi-3.5-mini</td><td>3.8B</td><td>128K</td><td>~69%</td><td>Long context mobile</td></tr>
+<tr><td>Phi-3.5-MoE</td><td>16 × 3.8B (6.6B active)</td><td>128K</td><td>~78%</td><td>High-quality edge</td></tr>
+</tbody>
+</table>
+<p>Phi-3's training data philosophy focuses on synthetic data generation: rather than filtering a massive internet corpus, Microsoft generates educational text, coding exercises, and reasoning problems specifically designed to teach the model skills efficiently. This approach enables strong performance on math, coding, and logical reasoning relative to model size. The trade-off is that Phi models have less factual breadth than larger models trained on more diverse web corpora, making them stronger at reasoning tasks but potentially weaker at knowledge recall tasks about obscure or domain-specific facts.</p>
+<p>ONNX export support for Phi-3 models enables deployment on mobile devices using ONNX Runtime, bypassing the need for heavy PyTorch or HuggingFace dependencies on constrained hardware. Microsoft provides official ONNX model variants for the Phi-3 family through the model catalog, with quantized versions that reduce model size to 2–4GB for on-device deployment. This makes Phi-3 one of the most practical choices for offline, privacy-preserving LLM applications that run entirely on user devices without network connectivity to a model hosting service.</p>
+
+<p>Phi-3's instruction tuning used a combination of human-written demonstrations and model-generated synthetic data carefully filtered for quality and safety. The small parameter count creates particular challenges for safety alignment — smaller models have less capacity to reliably suppress harmful outputs across all contexts. Microsoft addressed this through additional safety fine-tuning focused on the specific failure modes most likely in small models, and provides detailed safety guidance for developers deploying Phi-3 in applications where safety properties need careful evaluation and testing.</p>
+
+<p>Phi-3's strong performance on coding benchmarks makes it a compelling choice for code completion and generation tasks in resource-constrained environments. The 3.8B and 7B variants fit comfortably in browser-based inference environments using WebGPU (via transformers.js or similar) or in mobile applications using ONNX Runtime Mobile. For development tool integrations — code completions, error explanations, documentation generation — where sub-second latency is essential and network calls to cloud APIs are unacceptable, Phi-3 provides frontier-competitive coding quality in an on-device footprint.</p>
+
+<p>Comparative evaluation between Phi-3 and larger models should distinguish between knowledge-recall tasks and reasoning tasks. On knowledge-recall tasks — "What is the capital of Kazakhstan?", "Who wrote Middlemarch?" — Phi-3's smaller training corpus means it will have lower factual coverage than 70B+ models with more training data. On structured reasoning tasks — mathematics, logical inference, code debugging — Phi-3's "textbook quality" training data enables strong performance that exceeds raw parameter count predictions, making it competitive with models 5–10× larger on reasoning-heavy applications.</p>
+
+<p>Fine-tuning Phi-3 models is particularly efficient due to their small size, enabling rapid iteration on domain-specific datasets. A full fine-tuning run on a 10,000-example dataset takes hours rather than days, and QLoRA fine-tuning of the 3.8B model runs on a single consumer GPU with 12GB VRAM. This accessibility makes Phi-3 attractive for organizations that want to create domain-specific models but lack the infrastructure for fine-tuning larger models. The compact size also makes iterating on training data quality and hyperparameters significantly faster than with 13B+ models.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

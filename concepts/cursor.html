@@ -214,6 +214,55 @@
 <p><strong>VS Code extension compatibility</strong>: Most VS Code extensions work in Cursor since it's a fork. Occasionally an extension has compatibility issues. The Cursor team tracks these; check their GitHub issues if an extension breaks.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Cursor AI Features Comparison</h2>
+<p>Cursor is an AI-native code editor built on VS Code that deeply integrates LLM assistance into the development workflow. Unlike IDE plugins that add AI as an afterthought, Cursor is designed from the ground up around AI-assisted coding, with codebase indexing, context-aware completions, and multi-file editing as core features rather than add-ons.</p>
+<table>
+<thead><tr><th>Feature</th><th>How It Works</th><th>Model Used</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Tab autocomplete</td><td>Multi-line inline suggestions</td><td>Cursor-optimized small model</td><td>Boilerplate, repetitive code</td></tr>
+<tr><td>Chat (Ctrl+L)</td><td>Codebase-aware conversation</td><td>GPT-4o / Claude Sonnet</td><td>Explanation, planning</td></tr>
+<tr><td>Composer (Ctrl+I)</td><td>Multi-file editing agent</td><td>Claude Opus / GPT-4o</td><td>Large refactors, new features</td></tr>
+<tr><td>@ Context</td><td>Manual context attachment</td><td>Any</td><td>Precise context control</td></tr>
+<tr><td>Codebase index</td><td>Semantic code search</td><td>Embedding model</td><td>Large repo navigation</td></tr>
+</tbody>
+</table>
+<p>Cursor's codebase indexing builds a semantic search index of the entire repository, enabling the AI to retrieve relevant files, functions, and classes as context when answering questions or making edits. The index is updated incrementally as files change, keeping the AI's knowledge of the codebase current without full reindexing. When the AI needs to understand how a function is used or find related code patterns, the index retrieval is transparent to the user — the AI simply has access to the relevant code without requiring manual @file references for every question.</p>
+<p>The Cursor Composer feature enables multi-file editing where the AI proposes and applies changes across multiple files in a single operation. The developer reviews the proposed changes in a unified diff view before accepting, maintaining oversight of what the AI modifies. This workflow is particularly effective for large refactoring tasks — renaming an interface and updating all implementations, migrating an API version, or restructuring a module's export pattern — where manually applying consistent changes across dozens of files would be tedious and error-prone.</p>
+<div class="example-box">
+<pre><code># Cursor .cursorrules — project-specific AI instructions
+# Placed in project root to guide Cursor's behavior
+
+You are an expert Python developer. Follow these conventions:
+- Use type hints on all function signatures
+- Write docstrings in Google style
+- Prefer dataclasses over plain dicts for structured data
+- Use pathlib.Path instead of os.path
+- Write pytest unit tests for all public functions
+- Never use mutable default arguments</code></pre>
+</div>
+
+<div class="example-box">
+<pre><code># Example: Using Cursor's @ context references in chat
+# Type @ in the chat to reference specific files, functions, or docs
+
+# Reference a specific file:
+# @src/utils/auth.py  - include this file as context
+
+# Reference the current file's function:
+# @getCurrentUser  - reference this function
+
+# Reference documentation:
+# @docs  - search your indexed documentation
+
+# Reference web resources:
+# @https://docs.fastapi.tiangolo.com  - fetch and include URL</code></pre>
+</div>
+
+<p>Cursor's AI-generated commit messages analyze the staged diff and produce descriptive commit messages that summarize what changed and why. For complex diffs spanning multiple files, the AI synthesizes the changes into a coherent narrative rather than listing individual modifications. Teams using this feature consistently produce more informative commit histories without the overhead of writing detailed messages manually. The generated messages can be edited before committing, combining AI efficiency with developer intent and context that the AI cannot infer from the diff alone.</p>
+
+<p>Cursor Rules (.cursorrules) files allow defining project-specific coding conventions, architectural patterns, and guidelines that influence AI suggestions throughout a repository. Placed in the project root, the rules file provides persistent context that modifies how the AI responds to all requests in that project — similar to a persistent system prompt. Teams that maintain detailed .cursorrules files reporting coding standards, testing requirements, naming conventions, and dependency preferences see significantly more consistent AI suggestions that align with the project's established patterns.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

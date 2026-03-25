@@ -300,6 +300,28 @@ r3 = model.generate_content("List all database queries.")
 <p><strong>API vs Vertex AI</strong>: The Google AI Studio API (api.generativeai.google.com) is simpler for prototyping. Vertex AI is recommended for production: better SLAs, IAM-based auth, data residency controls, and enterprise support.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Gemini 1.5 Family Comparison</h2>
+<p>Google's Gemini 1.5 family introduced native 1M+ token context windows as a flagship capability, enabling use cases like full codebase analysis, complete book processing, and hour-long video understanding that were impractical with context-limited predecessors. The family balances context capability with deployment flexibility through Pro and Flash variants.</p>
+<table>
+<thead><tr><th>Model</th><th>Context Window</th><th>Modalities</th><th>Speed</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Gemini 1.5 Pro</td><td>2M tokens</td><td>Text, image, video, audio</td><td>Medium</td><td>Complex long-context tasks</td></tr>
+<tr><td>Gemini 1.5 Flash</td><td>1M tokens</td><td>Text, image, video, audio</td><td>Fast</td><td>High-volume production</td></tr>
+<tr><td>Gemini 1.5 Flash-8B</td><td>1M tokens</td><td>Text, image</td><td>Fastest</td><td>Cost-sensitive workloads</td></tr>
+</tbody>
+</table>
+<p>Gemini 1.5's multimodal long-context capability extends beyond text to native video and audio understanding within the same context window. A one-hour video submitted as input is processed as approximately 1 million tokens (at ~1 frame per second plus audio transcription), enabling questions that require synthesizing information across the full video timeline. This native multimodal long context eliminates the need for separate video segmentation, transcription, and retrieval pipelines that were necessary to make long-form video queryable with previous generation models.</p>
+<p>Context caching in Gemini 1.5 provides significant cost savings for applications that repeatedly use the same large context — a full codebase, a long legal document, a complete product catalog. The cache stores the processed KV state for a specified prefix, charged at a reduced rate for subsequent requests that reuse the cached prefix. For applications where the document corpus is static but queries change frequently, context caching can reduce per-query costs by 75–90% compared to re-processing the full context on every request.</p>
+
+<p>Gemini 1.5's performance on needle-in-a-haystack retrieval tasks at 1M+ token contexts established a new benchmark for long-context recall quality. While earlier long-context models showed significant accuracy degradation when the target information was located in the middle of a very long context, Gemini 1.5 Pro maintained high recall accuracy across the full context length. This capability enables use cases like "find all instances of compliance violations in this 500-page contract" or "trace every reference to this function across the full codebase" that require reliable retrieval from contexts too long for any chunking-based RAG approach.</p>
+
+<p>Gemini 1.5's function calling and code execution capabilities, combined with its long context window, enable a powerful workflow for data analysis on large datasets. A full CSV file (up to millions of rows) can be uploaded as context, and the model can write and execute Python analysis code, interpret the results, and iterate on the analysis in a single session without external tool calls. This inline code execution approach, supported through the Gemini API's code interpreter tool, significantly reduces the infrastructure complexity of building AI-driven data analysis products compared to architectures requiring separate code execution sandboxes and data transfer pipelines.</p>
+
+<p>Pricing for Gemini 1.5 Pro at the 2M token context scale requires careful cost modeling. Long context requests are priced per token including all input tokens, meaning a 2M token context submitted with a 100-token query incurs the cost of 2,000,100 input tokens. Applications that repeatedly query the same large document benefit enormously from context caching, which charges the initial context at full price but subsequent queries reusing the same context at approximately 25% of the standard input token price. Modeling the query frequency against the cache invalidation rate determines the optimal caching strategy for a given application pattern.</p>
+
+<p>Gemini 1.5's system instruction feature functions similarly to the system prompt in OpenAI and Anthropic APIs, providing persistent role and behavior guidance that precedes the conversation history in every request. For applications that use the same Gemini configuration across thousands of requests, placing the system instructions in a cached context prefix reduces input token costs for the instruction portion. The system instruction's position before any user content ensures it receives high-weight processing in the model's attention, maintaining consistent behavior across long conversations even when the user content fills most of the context window.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

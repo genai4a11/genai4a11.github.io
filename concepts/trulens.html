@@ -308,6 +308,30 @@ run_dashboard(session)
 <p><strong>Cost of <a class="concept-link" href="eval.html">evaluation</a></strong>: Running the full RAG Triad on 100 records with <a class="concept-link" href="gpt4o.html">GPT-4o</a>-mini takes ~300 LLM calls and costs around $0.10–$0.30. Budget this when designing CI eval suites.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>TruLens Evaluation Metrics Reference</h2>
+<p>TruLens provides an evaluation and observability layer for LLM applications that tracks inputs, outputs, and intermediate steps while computing automated quality metrics. It supports both RAG pipeline evaluation and general LLM application monitoring through a unified feedback function interface.</p>
+<table>
+<thead><tr><th>Feedback Function</th><th>Measures</th><th>Requires Ground Truth</th><th>LLM Judge Needed</th></tr></thead>
+<tbody>
+<tr><td>Groundedness</td><td>Answer supported by context</td><td>No</td><td>Yes</td></tr>
+<tr><td>Context Relevance</td><td>Retrieved docs match query</td><td>No</td><td>Yes</td></tr>
+<tr><td>Answer Relevance</td><td>Answer addresses query</td><td>No</td><td>Yes</td></tr>
+<tr><td>Correctness</td><td>Factual accuracy</td><td>Yes (reference)</td><td>Optional</td></tr>
+<tr><td>Toxicity</td><td>Harmful content presence</td><td>No</td><td>Via classifier</td></tr>
+</tbody>
+</table>
+<p>TruLens uses a provider-agnostic feedback function architecture where the same evaluation logic can be backed by different LLM providers. The Groundedness feedback function, for example, can use OpenAI, Anthropic, or a local model as the judging LLM, making it flexible for deployments with specific provider constraints or cost requirements. Evaluating with a different provider than the one used for generation also reduces the risk of self-serving evaluation where a model is judged by a model with the same biases.</p>
+<p>TruLens Eval's leaderboard interface aggregates evaluation results across multiple experiment runs, making it easy to compare prompt variants, model choices, and retrieval configurations side by side. Each tracked application version receives aggregate scores for each feedback function, enabling data-driven decisions about which configuration to promote to production. The dashboard also surfaces individual low-scoring examples for each metric, enabling human review of specific failure cases without sifting through logs manually.</p>
+
+<p>TruLens RAG Triad evaluation framework packages the three most important RAG quality metrics — groundedness, context relevance, and answer relevance — as a cohesive evaluation suite. Running all three metrics on every RAG response provides a comprehensive quality picture: context relevance catches retrieval problems, groundedness catches hallucination problems, and answer relevance catches relevance and completeness problems. Tracking all three simultaneously reveals when optimizing for one metric degrades another, which is common when tuning retrieval parameters.</p>
+
+<p>TruLens' asynchronous evaluation mode runs feedback functions after responses are returned to users, avoiding the latency overhead of synchronous evaluation in the critical path. The response is returned immediately while evaluation results are computed in background workers and associated with the logged trace. This architecture enables evaluation coverage of 100% of production traffic without adding any user-perceived latency. When evaluating with a slower or more expensive judge model, the asynchronous approach is essential for maintaining production latency SLOs.</p>
+
+<p>Custom feedback functions in TruLens extend the pre-built metrics with application-specific quality dimensions. A feedback function is a Python function that accepts the application inputs, outputs, and optional ground truth, returning a score between 0 and 1 and an optional explanation string. Custom functions can call any external service — a domain-specific classifier, a business rules engine, a human annotation API — making TruLens's evaluation framework extensible to quality dimensions that are specific to an application's domain and cannot be captured by generic LLM-as-judge prompts.</p>
+
+<p>Multi-modal evaluation support in TruLens extends groundedness and relevance assessment to image and multimodal LLM pipelines. For vision RAG systems that retrieve image documents alongside text and generate multimodal answers, TruLens can evaluate whether the answer's visual claims are grounded in the retrieved images using a multimodal LLM judge. This extension of the RAG Triad to multimodal pipelines is increasingly important as production applications incorporate image retrieval, document scanning, and chart analysis into their RAG architectures.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

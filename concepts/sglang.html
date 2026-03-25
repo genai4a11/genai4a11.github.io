@@ -265,6 +265,29 @@ for q, s in zip(questions, states):
 <p><strong>DSL vs REST API</strong>: The Python DSL is powerful but adds a dependency on the SGLang Python client. For simple deployments, the OpenAI-compatible REST API is lower friction.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>SGLang vs. Other Inference Frameworks</h2>
+<p>SGLang (Structured Generation Language) is a high-performance LLM inference framework that combines a Python DSL for defining structured generation programs with a runtime that efficiently executes them through KV cache reuse and speculative execution. It is designed for workloads that generate structured outputs and benefit from prompt prefix sharing across requests.</p>
+<table>
+<thead><tr><th>Framework</th><th>KV Cache Reuse</th><th>Structured Output</th><th>Throughput Focus</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>SGLang</td><td>RadixAttention</td><td>Native (constrained decoding)</td><td>Very high</td><td>Structured gen, shared prefixes</td></tr>
+<tr><td>vLLM</td><td>PagedAttention</td><td>Via outlines</td><td>High</td><td>General serving</td></tr>
+<tr><td>TGI</td><td>Flash Attention</td><td>Guided decoding</td><td>High</td><td>HF model serving</td></tr>
+<tr><td>Ollama</td><td>llama.cpp</td><td>JSON mode</td><td>Medium</td><td>Local deployment</td></tr>
+</tbody>
+</table>
+<p>SGLang's RadixAttention enables automatic KV cache reuse across requests that share prompt prefixes. When multiple requests begin with the same system prompt or few-shot examples, SGLang computes the KV cache for the shared prefix once and reuses it across all concurrent requests, dramatically reducing both compute cost and latency. This is particularly beneficial for applications like RAG pipelines, where the system prompt and retrieved documents are constant across many user queries differing only in the final question.</p>
+<p>Constrained decoding in SGLang enforces structural constraints on the generated output at the token level, guaranteeing valid JSON, valid regular expression matches, or valid format adherence without post-hoc parsing and retry logic. The constraint is applied at each decoding step by masking tokens that would violate the constraint, ensuring every generated token advances toward a valid output. This eliminates the significant latency and cost overhead of regenerating outputs that fail validation in unconstrained generation approaches.</p>
+
+<p>SGLang's forking primitive enables parallel sampling within a single program execution — the program forks at a specified point, multiple continuations are generated in parallel sharing the prefix KV cache, and results are collected when all forks complete. This is more efficient than making multiple separate API calls with the same prompt because the shared prefix computation happens only once. Applications like best-of-N sampling, diversity sampling for creative tasks, and generating multiple candidate answers for self-consistency voting all benefit from forking's shared prefix efficiency.</p>
+
+<p>SGLang's backend can be deployed as a REST API server compatible with the OpenAI API format, enabling drop-in replacement of OpenAI API calls in existing applications with locally hosted models. The server handles request batching, continuous batching of incoming requests, and speculative decoding optimizations transparently — applications only need to change the base URL configuration. This OpenAI API compatibility is standard across the major open-source inference backends (vLLM, SGLang, TGI) and has become the de facto standard for LLM service interfaces.</p>
+
+<p>Production deployment of SGLang benefits from hardware-specific configuration tuning. The tensor parallelism degree should equal the number of GPUs on a single server (rather than across servers) to minimize communication overhead in the critical path. The chunked prefill feature processes long prompts in smaller chunks to prevent new requests from experiencing high queuing latency while a long prompt is being processed. These configuration choices significantly affect the latency distribution experienced by users in mixed-traffic production environments.</p>
+
+<p>Benchmark comparison between SGLang and vLLM on identical hardware consistently shows SGLang's prefix caching advantage on workloads with high prompt sharing. For general serving workloads with diverse prompts and minimal shared prefixes, vLLM and SGLang perform comparably. The performance gap in favor of SGLang emerges on RAG workloads where the same retrieved documents appear in many requests, agent workloads with long shared system prompts, and multi-turn chat applications where conversation history grows progressively within the context window.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

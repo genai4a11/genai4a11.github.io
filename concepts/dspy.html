@@ -290,6 +290,29 @@ print(optimised_qa(question="What language is TensorFlow written in?").answer)
 <p><strong>Version your compiled programs:</strong> Save optimised program state with <code>program.save("my_program.json")</code> and reload with <code>program.load("my_program.json")</code>. Treat these like model checkpoints.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>DSPy Optimizer Comparison</h2>
+<p>DSPy replaces manual prompt engineering with a programmatic framework where LLM pipelines are defined as Python programs and automatically optimized by compilers. Rather than hand-crafting prompts, developers specify the input/output signature and success metric, then let DSPy optimizers find the prompt wording and few-shot examples that maximize the metric on a development set.</p>
+<table>
+<thead><tr><th>Optimizer</th><th>Strategy</th><th>Calls to LLM</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>LabeledFewShot</td><td>Uses labeled examples directly</td><td>Low</td><td>When you have labeled data</td></tr>
+<tr><td>BootstrapFewShot</td><td>Generates examples via teacher</td><td>Medium</td><td>Limited labeled data</td></tr>
+<tr><td>MIPRO</td><td>Bayesian optimization of instructions</td><td>High</td><td>Max accuracy, big budget</td></tr>
+<tr><td>BetterTogether</td><td>Jointly optimizes prompts + few-shots</td><td>Very high</td><td>Production pipelines</td></tr>
+</tbody>
+</table>
+<p>DSPy's BootstrapFewShot optimizer generates synthetic training examples by running the pipeline with a teacher model (often a stronger, more expensive model) and keeping examples where the pipeline produces correct outputs. These teacher-generated examples are then used as few-shot demonstrations for the student pipeline (typically a smaller, cheaper model). This knowledge distillation approach enables smaller models to achieve quality closer to large teacher models on specific tasks, without requiring human annotation of training examples.</p>
+<p>DSPy's typed predictor system uses Python type annotations to define the expected schema of LLM outputs, automatically adding JSON extraction and validation to the prompt. Typed outputs reduce parsing failures and downstream errors that occur when LLMs produce subtly malformed structured outputs. The type system also makes pipeline interfaces explicit and documentation-friendly — the input/output contract is visible in the Python function signature rather than buried in prompt text, improving maintainability of complex pipelines as they evolve.</p>
+
+<p>DSPy assertions allow defining declarative constraints on intermediate outputs that the optimizer must satisfy. A program assertion like dspy.Assert(len(response) < 500, "Response too long") tells the optimizer that this constraint must hold, and programs that violate it receive zero reward. Hard assertions fail immediately on violation; soft suggestions generate a warning that influences the optimizer but does not terminate the program. These constraint mechanisms bridge the gap between the neural (LLM output) and symbolic (business logic) layers of an application, enforcing invariants without relying on post-hoc filtering.</p>
+
+<p>DSPy's compilation metaphor — treating prompt optimization as compilation — changes the developer workflow compared to manual prompt engineering. Developers write the program logic in Python using DSPy modules, define a metric function that scores outputs, provide a small set of training examples (often 10–50), and call compile(). The compiler handles the tedious work of discovering effective instructions and demonstrations. This workflow is fundamentally more systematic than trial-and-error prompt engineering and produces prompts with measured quality against the metric rather than informal impressions from manual testing.</p>
+
+<p>Multi-hop reasoning pipelines in DSPy decompose complex questions into a sequence of retrieval and reasoning steps, with each step retrieving relevant documents and synthesizing partial answers that feed the next step. A typical three-hop pipeline retrieves context for the initial question, identifies what follow-up information is needed, retrieves that follow-up context, and synthesizes a final answer from all retrieved context. DSPy optimizes each step's prompt jointly through a single compile call, rather than requiring the developer to tune each step independently.</p>
+
+<p>Evaluating DSPy programs requires choosing a metric function that accurately captures the quality of the task. For classification tasks, accuracy suffices. For generation tasks — summarization, question answering, code generation — more sophisticated metrics like F1 overlap, semantic similarity, or LLM-as-judge scoring provide better signal. The metric function is the most influential design decision in a DSPy program: a poorly calibrated metric produces optimized prompts that score well but perform poorly on real-world examples, while a well-calibrated metric directs optimization toward genuine quality improvements.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

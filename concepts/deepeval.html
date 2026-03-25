@@ -311,6 +311,31 @@ jobs:
 <p><strong>Async execution</strong>: Set <code>max_concurrent</code> to control parallel judge calls. Too high and you hit rate limits; too low and evals are slow. Start at 5–10 for GPT-4o-mini.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>DeepEval Metric Suite Overview</h2>
+<p>DeepEval is a Python-based LLM evaluation framework that provides a comprehensive set of pre-built metrics for RAG, agent, and general LLM application testing. It integrates with pytest, enabling LLM quality checks as part of standard test suites with pass/fail thresholds and detailed failure reporting.</p>
+<table>
+<thead><tr><th>Metric</th><th>Evaluates</th><th>Threshold Type</th><th>LLM Judge</th></tr></thead>
+<tbody>
+<tr><td>AnswerRelevancy</td><td>Answer addresses the input</td><td>Score 0–1</td><td>Yes</td></tr>
+<tr><td>Faithfulness</td><td>Answer grounded in context</td><td>Score 0–1</td><td>Yes</td></tr>
+<tr><td>ContextualPrecision</td><td>Retrieved context relevance</td><td>Score 0–1</td><td>Yes</td></tr>
+<tr><td>Hallucination</td><td>Factual accuracy</td><td>Score 0–1</td><td>Yes</td></tr>
+<tr><td>BiasMetric</td><td>Opinion/bias presence</td><td>Score 0–1</td><td>Yes</td></tr>
+<tr><td>ToxicityMetric</td><td>Harmful content</td><td>Score 0–1</td><td>Via classifier</td></tr>
+</tbody>
+</table>
+<p>DeepEval's pytest integration allows embedding LLM quality checks directly into CI/CD pipelines using familiar Python testing patterns. A test case defines the input, actual output, and optional expected output and retrieval context; metric assertions specify the minimum acceptable score for each quality dimension. When a metric falls below threshold, the test fails with a human-readable explanation of what the judging LLM found problematic, making it straightforward to diagnose and fix the underlying issue rather than just knowing a score threshold was breached.</p>
+<p>DeepEval Confident AI is the hosted companion service that provides a web dashboard for visualizing evaluation results, running batch evaluations, and managing evaluation datasets without requiring local infrastructure. For teams without dedicated MLOps resources, the hosted option enables production quality monitoring with minimal setup — instrumentation is added to the application, evaluation runs are submitted to the hosted service, and quality trends are visible in the dashboard without maintaining evaluation infrastructure.</p>
+
+<p>DeepEval's test case synthesis feature generates additional test cases from existing examples by applying perturbation techniques: paraphrasing the input, introducing typos, changing numerical values, negating claims, or adding irrelevant context. This synthetic augmentation expands coverage of the evaluation dataset without requiring additional human annotation effort, helping identify prompt robustness issues where small input variations cause significant quality degradation. Evaluating on perturbed inputs alongside original inputs provides a more conservative and reliable quality estimate than evaluation on clean, ideally-phrased inputs alone.</p>
+
+<p>DeepEval's G-Eval framework provides a flexible metric definition system based on evaluation criteria expressed in natural language. Rather than implementing a specialized feedback function for each quality dimension, developers write evaluation criteria as plain English statements: "The response should acknowledge uncertainty when the question cannot be answered confidently from the provided context." The G-Eval framework constructs an evaluation prompt from these criteria and uses an LLM judge to score responses against them, enabling rapid definition of domain-specific metrics without writing scoring logic from scratch.</p>
+
+<p>Red-teaming integration in DeepEval automatically generates adversarial inputs targeting specific vulnerability categories: prompt injection, jailbreak attempts, data leakage, hallucination triggers, and PII exposure. Running the red-team suite before production deployment provides a systematic safety baseline and documents known attack vectors that the system handles correctly. Unlike manual red-teaming that depends on human creativity, automated red-teaming scales to thousands of attack variants and can be run on every code change to detect newly introduced vulnerabilities before they reach production.</p>
+
+<p>DeepEval's evaluation dataset versioning tracks which version of a dataset was used for each evaluation run, enabling meaningful comparisons across time. When dataset examples are added, modified, or removed — because better examples were found, old examples became irrelevant, or quality thresholds were recalibrated — the versioning ensures that score changes are attributable to model improvements rather than dataset composition changes. This audit trail is particularly important for regulatory compliance contexts where evaluation methodology must be documented and traceable.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
