@@ -107,42 +107,112 @@ spec_dec:{use:'Speed up inference 2-3× using a small draft model for token prop
   └──────────────────────────────────────┘
   Accept rate ≈ 70–85% → 2–3× speedup
   Output distribution identical to target`,code:`from transformers import AutoModelForCausalLM, AutoTokenizer\nimport torch\nass_model = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-125m', torch_dtype=torch.float16).cuda()\ntarget = AutoModelForCausalLM.from_pretrained(\n    'facebook/opt-1.3b', torch_dtype=torch.float16).cuda()\ntok = AutoTokenizer.from_pretrained('facebook/opt-1.3b')\ninputs = tok('Hello world', return_tensors='pt').to('cuda')\n# HF handles speculative decoding via assistant_model\nout = target.generate(**inputs,\n    assistant_model=ass_model, max_new_tokens=50)\nprint(tok.decode(out[0]))`,tip:'Use a 7B target + 1B draft. Both must share the same tokenizer.',refs:[{label:"Speculative Decoding",url:"concepts/speculative-decoding.html"}]},
-gpt4o:{use:'Best for multimodal tasks, complex reasoning, and agentic workflows.',diag:`
-  GPT-4o unified architecture:
+gpt4o:{use:'GPT-4o[1] is OpenAI\'s multimodal flagship — it processes text, images, and audio natively in a single model, not as separate pipelines. Use it for: vision tasks (charts, documents, screenshots), complex multi-step reasoning, structured JSON outputs, and function calling in agentic workflows. It is the default starting point for new OpenAI-based products.\n\nKey library: openai[2] (pip install openai)',diag:`
+  GPT-4o unified multimodal architecture:
 
-  ┌─────────┬──────────┬──────────┐
-  │  Text   │  Image   │  Audio   │
-  └────┬────┴────┬─────┴────┬─────┘
-       │         │          │
-       └────────►│◄─────────┘
-            Unified encoder
-                 │
-          Transformer core
-                 │
-       ┌─────────┼──────────┐
-       ▼         ▼          ▼
-     Text     Image      Audio
-    output   output     output
+  Input:  Text · Image · Audio  (any combination)
+      │
+  ┌───▼──────────────────────────────────────────┐
+  │  Native multimodal encoder (not stitched)    │
+  │  All modalities processed together           │
+  └───────────────────┬──────────────────────────┘
+                      │
+             Transformer core
+                      │
+         ┌────────────┼──────────┐
+         ▼            ▼          ▼
+       Text         Image      Audio
+      output       output     output
 
-  Key: single model, all modalities
-  native — not stitched pipelines`,code:`from openai import OpenAI\nclient = OpenAI()\n# Vision + text\nresponse = client.chat.completions.create(\n    model='gpt-4o',\n    messages=[{\n        'role': 'user',\n        'content': [\n            {'type': 'text', 'text': 'What is in this image?'},\n            {'type': 'image_url',\n             'image_url': {'url': 'https://example.com/img.jpg'}}\n        ]\n    }]\n)\nprint(response.choices[0].message.content)`,tip:'Use max_completion_tokens not max_tokens for o-series models.',refs:[{label:"GPT-4o",url:"concepts/gpt4o.html"}]},
-claude35:{use:'Top choice for coding, analysis, and long-context document tasks.',diag:`
+  Context: 128K tokens
+  Speed: fastest of frontier models (~1–3s)
+  Structured output: JSON mode, function calling`,code:`from openai import OpenAI
+
+client = OpenAI()   # uses OPENAI_API_KEY
+
+# Text: basic chat completion
+response = client.chat.completions.create(
+    model='gpt-4o',
+    max_tokens=1024,
+    messages=[
+        {'role': 'system', 'content': 'You are a helpful Python expert.'},
+        {'role': 'user',   'content': 'Explain Python decorators briefly.'}
+    ]
+)
+print(response.choices[0].message.content)
+
+# Vision: image + text in the same call
+vision_response = client.chat.completions.create(
+    model='gpt-4o',
+    messages=[{
+        'role': 'user',
+        'content': [
+            {'type': 'text',      'text': 'What chart type is this and what does it show?'},
+            {'type': 'image_url', 'image_url': {'url': 'https://example.com/chart.png'}}
+        ]
+    }]
+)
+print(vision_response.choices[0].message.content)
+
+# Structured output: force JSON schema
+from pydantic import BaseModel
+class BugReport(BaseModel):
+    severity: str
+    description: str
+    fix_suggestion: str
+
+parsed = client.beta.chat.completions.parse(
+    model='gpt-4o',
+    messages=[{'role': 'user', 'content': 'Analyze: def add(a,b): return a-b'}],
+    response_format=BugReport
+)
+print(parsed.choices[0].message.parsed)`,tip:'Use structured outputs[1] (response_format with a Pydantic model) to get reliable JSON — far better than prompting for JSON manually and parsing with try/except.\n\nFor tasks that need deep reasoning, use the → o3 / o4-mini node instead — GPT-4o trades accuracy for speed.\n\ngpt-4o-mini is 10–15× cheaper with ~80% quality — use it for classification, routing, and tasks where you will call the model thousands of times.',questions:{leader:['How do you balance cost (gpt-4o-mini at $0.15/M vs gpt-4o at $2.50/M) against quality — and what monitoring tells you which tasks need the full model?','Where in your product does multimodal input (images, documents) unlock features that were previously impossible without human review?'],pm:['How do you design fallback logic when a model call fails or returns low-confidence output — especially in agentic workflows that take multiple steps?','What user-facing features genuinely need vision capability, vs. which just feel like they do?'],eng:['How do structured outputs (Pydantic schema) reduce the validation and retry logic you write vs. parsing freeform JSON from prompts?','How do you implement streaming responses for gpt-4o in a chat UI — and how does that change with function calling mid-stream?']},refs:[{label:'[1] GPT-4o model card and capabilities overview (OpenAI)',url:'https://platform.openai.com/docs/models/gpt-4o'},{label:'[2] OpenAI Python SDK with structured outputs and vision examples',url:'https://platform.openai.com/docs/guides/structured-outputs'}]},
+claude35:{use:'Claude 3.5 Sonnet[1] is Anthropic\'s top model for coding, long-document analysis, and instruction-following. Its 200K context window lets you load entire codebases, legal documents, or research papers in one call. Extended Thinking[2] mode enables explicit chain-of-thought reasoning for hard problems.\n\nKey library: anthropic[3] (pip install anthropic)',diag:`
   Claude 3.5 context window (200K tokens):
 
   ┌──────────────────────────────────────────────┐
-  │ System prompt (instructions, persona)        │
+  │ System prompt — role, rules, format         │
   ├──────────────────────────────────────────────┤
-  │ Documents / code / images (up to 200K)       │
+  │ Documents / code / images (bulk of context) │
+  │ ≈ 500 pages of text, or a full codebase     │
   ├──────────────────────────────────────────────┤
   │ Conversation history                         │
   ├──────────────────────────────────────────────┤
   │ Current user message                         │
-  ├──────────────────────────────────────────────┤
-  │ ← Response generated here (up to 8K out)    │
   └──────────────────────────────────────────────┘
+              ▼ response generated here
+       (up to 8,192 output tokens)
 
-  Strength: instruction-following fidelity
-  Best for: coding, analysis, long documents`,code:`import anthropic\nclient = anthropic.Anthropic()\nmessage = client.messages.create(\n    model='claude-3-5-sonnet-20241022',\n    max_tokens=1024,\n    system='You are an expert Python developer.',\n    messages=[{\n        'role': 'user',\n        'content': 'Review this code for bugs: def add(a,b): return a-b'\n    }]\n)\nprint(message.content[0].text)`,tip:'Claude excels at following complex multi-step instructions. Put key constraints in the system prompt.',refs:[{label:"Claude 3.5 Sonnet",url:"concepts/claude35.html"}]},
+  Extended Thinking[2]: internal CoT before answer
+  Computer Use (beta): control GUI applications`,code:`import anthropic
+
+client = anthropic.Anthropic()   # uses ANTHROPIC_API_KEY
+
+# Basic: code review in one call
+message = client.messages.create(
+    model='claude-3-5-sonnet-20241022',
+    max_tokens=2048,
+    system='You are a senior Python engineer. Be concise and specific.',
+    messages=[{
+        'role': 'user',
+        'content': 'Review this function for bugs and style issues:\n\ndef add(a,b): return a-b'
+    }]
+)
+print(message.content[0].text)
+
+# Long document: load a large file in context
+with open('large_codebase.py') as f:
+    code = f.read()  # e.g. 50K tokens
+
+analysis = client.messages.create(
+    model='claude-3-5-sonnet-20241022',
+    max_tokens=4096,
+    messages=[{
+        'role': 'user',
+        'content': f'Find all places where this code handles errors incorrectly:\n\n{code}'
+    }]
+)
+print(analysis.content[0].text)`,tip:'Put the key constraints and output format in the system prompt — Claude is exceptionally good at following system-level instructions across a long conversation.\n\nExtended Thinking[2] (budget_tokens=8000+) is worth enabling for hard reasoning tasks — it produces explicit step-by-step internal reasoning before answering.\n\nFor 200K context tasks: place the most important information near the beginning or end — both models recall content better from the edges than the middle.',questions:{leader:['When does Claude 3.5\'s instruction-following fidelity matter more than raw benchmark scores — and how do you evaluate that for your specific use case?','How do you build workflows where Claude processes 200K-token documents in a way that is auditable and reproducible at scale?'],pm:['Which long-document use cases in your product genuinely need 200K context — vs. which would be better served by retrieval (→ RAG node) from a structured index?','How do you set user expectations when Claude uses Extended Thinking — should users see that reasoning time, and does it increase trust?'],eng:['How do you implement prompt caching to reduce latency and cost on repeated 200K-context calls with the same system prompt and documents?','When does Extended Thinking produce measurably better results vs. just a well-structured chain-of-thought prompt — and how do you test for that?']},refs:[{label:'[1] Claude 3.5 Sonnet — model overview and capabilities (Anthropic)',url:'https://www.anthropic.com/claude/sonnet'},{label:'[2] Extended Thinking — enabling explicit reasoning in Claude (Anthropic docs)',url:'https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking'},{label:'[3] Anthropic Python SDK',url:'https://github.com/anthropics/anthropic-sdk-python'}]},
 zero_cot:{use:'Prompt the model to reason step by step before answering. A single phrase — "Think step by step" — reliably improves accuracy on multi-step math, logic, and planning tasks by 20–40%.',diag:`  Without CoT:
   Q: "Roger has 5 balls. He buys 2 more
       cans of 3 balls each. How many?"
