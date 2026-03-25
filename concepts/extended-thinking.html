@@ -274,6 +274,71 @@ in a string. Optimise for O(n²) time and O(n) space. Explain your approach.
       </div>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Measuring and optimizing thinking time</h2>
+<p>Extended thinking consumes tokens and latency, so cost scales with thinking_budget. A budget of 50K tokens can add 5–20 seconds of latency per request. For production systems, start with a conservative budget (10K), measure accuracy improvement, and increase only if needed. Track thinking_tokens in your logs to understand per-request costs.</p>
+
+<h2>When extended thinking isn't worth it</h2>
+<p>Extended thinking shines on hard reasoning tasks: <strong>math olympiad problems, code generation with tricky edge cases, multi-step logic puzzles, counterfactual reasoning.</strong> For simple classification, summarization, or formatting tasks, regular thinking is usually enough. In low-latency scenarios (real-time chat, streaming responses), the overhead may not fit your SLA.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Task Type</th><th>Extended Thinking Benefit</th><th>Cost-Justifiable?</th></tr></thead>
+<tbody>
+<tr><td>Math proof verification</td><td>Very high (+20–40% accuracy)</td><td>Yes</td></tr>
+<tr><td>Complex reasoning chains</td><td>High (+10–20%)</td><td>Yes, for critical tasks</td></tr>
+<tr><td>Code generation (tricky bugs)</td><td>Medium (+5–10%)</td><td>Maybe (depends on bug severity)</td></tr>
+<tr><td>Summarization</td><td>Low (minimal improvement)</td><td>No</td></tr>
+<tr><td>Simple classification</td><td>Minimal</td><td>No</td></tr>
+<tr><td>Real-time chat</td><td>Varies, but latency hit is steep</td><td>Usually no</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block">
+<p><strong>Extended thinking infrastructure:</strong> From the user's perspective, extended thinking is transparent: you set a budget and receive a response. Behind the scenes, the model is allocating tokens to visible reasoning (the response) versus hidden thinking. The thinking process is not exposed in the API by default, but you can enable "thinking" in the message to see a summary. Long thinking processes can improve accuracy on tasks like code review, proof verification, and complex reasoning, but the cost in tokens is real.</p>
+<p>Teams using extended thinking report best results when the task has a clear, verifiable ground truth. Math proofs, code correctness, and logical consistency are natural fits. For subjective tasks (writing, creative ideation), extended thinking helps less because there's no "correct" answer to deliberate toward. Hybrid approaches—extended thinking for validation, regular thinking for generation—are emerging as best practice in production systems.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Comparing extended thinking to other reasoning approaches:</strong> Before extended thinking, teams used chain-of-thought (CoT) prompting: ask the model to explain its reasoning before answering. CoT improves accuracy but relies on visible reasoning—the model might make an error that's hidden in its explanation. Extended thinking is invisible—the model deliberates internally, and you only see the final answer. Early results suggest extended thinking outperforms visible CoT by a small margin (2–5%) on math and logic tasks.</p>
+<p>Another approach: debate or multi-agent reasoning, where multiple agents take positions and critique each other. This is conceptually interesting but requires many API calls (expensive). Extended thinking achieves similar accuracy improvements with a single model and single API call, making it more practical.</p>
+<p>The long-term vision: hybrid reasoning systems that combine extended thinking (for hard problems), fast heuristics (for easy problems), and external tools (for factual lookup). Teams are starting to implement this—detect problem difficulty, route accordingly, and optimize both quality and cost. As extended thinking becomes cheaper and more widely available, this becomes the standard approach.</p>
+</div>
+</div>
+
+<div class="section-block">
+<h2>Computational Complexity</h2>
+<p>Extended thinking requires significantly more inference-time computation compared to standard chain-of-thought. The model generates detailed internal reasoning tokens that aren't part of the final output. This computational overhead translates directly to increased latency and cost. For cost-sensitive applications, you must balance the improved quality against this computational expense. The relationship between thinking budget and final answer quality follows a log relationship—initial increases provide substantial improvements, but diminishing returns set in.</p>
+<p>Optimizing extended thinking involves careful budget selection. Too small a budget underutilizes the capability; too large wastes resources. Empirical testing on your specific use case is essential for finding the optimal trade-off between performance and cost.</p>
+</div>
+
+<div class="section-block">
+<h2>Industry Adoption Trends</h2>
+<p>Major research institutions and AI labs continue to explore extended reasoning approaches. OpenAI's o1 model family represents the most prominent commercial implementation. Research from Anthropic, OpenAI, and others demonstrates that scaling compute specifically allocated to reasoning improves performance on challenging problems. This trend reflects a shift from attempting to improve performance through larger models to improving it through more computation allocated at inference time.</p>
+<p>As extended thinking becomes more prevalent, best practices are emerging. Organizations are discovering which tasks benefit most from this approach—typically reasoning-heavy problems including mathematics, coding, and complex analysis. For simpler tasks like classification or straightforward summarization, extended thinking provides minimal benefit and should be avoided to control costs.</p>
+<div class="example-box">
+<pre><code>from anthropic import Anthropic
+
+client = Anthropic()
+
+response = client.messages.create(
+    model="claude-3-7-sonnet-20250219",
+    max_tokens=8000,
+    thinking={
+        "type": "enabled",
+        "budget_tokens": 5000  # Allocate thinking budget
+    },
+    messages=[{
+        "role": "user",
+        "content": "Solve this complex problem..."
+    }]
+)
+
+# Use response.content for final answer</code></pre>
+</div>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
@@ -287,5 +352,7 @@ in a string. Optimise for O(n²) time and O(n) space. Explain your approach.
 <footer>
 <p>GenAI Mindmap • <a href="/concepts/advanced-reasoning.html" style="color:var(--accent)">Advanced Reasoning</a> • Last updated March 2026</p>
 </footer>
+
+<p>As reasoning models become more common, tools and frameworks are evolving to support them effectively. Integration with existing ML pipelines requires careful consideration of the extended latency these models introduce. Production systems must account for variable response times depending on problem complexity and allocated thinking budget.</p>
 </body>
 </html>

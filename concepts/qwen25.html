@@ -247,6 +247,64 @@ messages = [
 </ul>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Fine-tuning and quantization best practices</h2>
+<p>Qwen 2.5 models are designed to be fine-tuned efficiently. The full-size models (70B) can be LoRA-finetuned on a single 80GB GPU, and quantized versions (GPTQ, AWQ) fit on smaller hardware. For domain adaptation (legal, medical, code), even modest fine-tuning (a few hundred examples) improves performance significantly.</p>
+<p>Quantization is the main path to deployment: Qwen 2.5 is available in 4-bit GPTQ, 8-bit, and AWQ formats. Quality loss is minimal (typically <2% on benchmarks), and memory/speed gains are dramatic. For edge deployment, the smaller 1.5B and 3B variants are popular; they trade some quality but fit on phones and embedded systems.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Qwen Variant</th><th>Params</th><th>Memory (FP32)</th><th>Memory (4-bit)</th><th>Throughput (tok/s)</th></tr></thead>
+<tbody>
+<tr><td>Qwen 2.5 Base</td><td>0.5B</td><td>~2GB</td><td>~0.5GB</td><td>100+</td></tr>
+<tr><td>Qwen 2.5</td><td>1.5B</td><td>~6GB</td><td>~1.5GB</td><td>80+</td></tr>
+<tr><td>Qwen 2.5</td><td>3B</td><td>~12GB</td><td>~3GB</td><td>50+</td></tr>
+<tr><td>Qwen 2.5</td><td>7B</td><td>~28GB</td><td>~7GB</td><td>30+</td></tr>
+<tr><td>Qwen 2.5</td><td>32B</td><td>~128GB</td><td>~32GB</td><td>10+</td></tr>
+<tr><td>Qwen 2.5</td><td>72B</td><td>~288GB</td><td>~72GB</td><td>5–10</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block">
+<p><strong>Qwen 2.5 training and architecture:</strong> Qwen 2.5 uses a Transformer architecture with rotary embeddings (RoPE), SwiGLU activation, and layer-wise grouped query attention (GQA). The training data is diverse (Chinese, English, code, multilingual) with a 128K context window. Compared to Qwen 2, version 2.5 improves reasoning, code generation, and long-context performance through architectural refinements and data curation. The models are instruction-tuned out of the box and respond well to few-shot prompts.</p>
+<p>Qwen 2.5's strong performance on code and math benchmarks makes it popular for developer-focused applications. The open-source release includes pre-trained, instruction-tuned, and quantized variants, enabling deployment from edge to cloud. Community fine-tunes are abundant: domain-specific Qwen (medical, legal, e-commerce) variants appear on Hugging Face regularly, often outperforming larger closed-source models on specialized tasks.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Qwen 2.5 competitive positioning:</strong> Qwen 2.5 competes directly with Llama 2/3, Mistral, and Grok. On public benchmarks (MMLU, GSM8K, MATH), Qwen 2.5 consistently ranks in the top tier, often exceeding similarly-sized models. The 72B variant rivals GPT-4 on coding tasks. For teams preferring open-source models, Qwen 2.5 is a solid default; for teams bound to a single provider, Qwen 2.5 LoRA-finetuned on your data often outperforms larger proprietary models on domain-specific tasks.</p>
+<p><strong>Licensing and commercial use:</strong> Qwen 2.5 is licensed under the Qwen License Agreement, which allows commercial use but has restrictions (no reverse engineering, no making competing models). For most companies, this is permissive enough. Always read the license before deployment; edge cases (using Qwen to train another LLM, using Qwen in a competing commercial product) may be restricted.</p>
+<p>Community and ecosystem: Hugging Face, ModelScope, and GitHub have thousands of Qwen 2.5 derivatives (fine-tuned models, LoRA adapters, quantized versions). The community is active and helpful. If you're stuck, the community Discord and GitHub discussions are good resources. For proprietary modifications, Alibaba's official support is available through commercial licensing.</p>
+</div>
+</div>
+
+<div class="section-block">
+<h2>Performance Benchmarks &amp; Optimization</h2>
+<p>Qwen 2.5 achieves state-of-the-art performance on reasoning and instruction-following benchmarks. Detailed benchmark results show strong performance on mathematics, coding, and knowledge-based tasks. The model family spans multiple sizes, from 0.5B to 32B parameters, enabling deployment across diverse hardware constraints. Understanding benchmark results relative to your specific application requirements helps guide model selection. The publicly available benchmarks provide transparent performance data compared to competing models.</p>
+<p>Beyond standard benchmarks, practical performance depends heavily on prompt engineering and fine-tuning. Models require careful instruction design to achieve their full potential, and task-specific fine-tuning often yields improvements beyond standard evaluation. Real-world performance testing on representative examples from your domain is essential, as benchmark performance doesn't always translate directly to production quality.</p>
+<div class="example-box">
+<pre><code>from transformers import AutoModelForCausalLM, AutoTokenizer
+
+# Load Qwen 2.5
+model_name = "Qwen/Qwen2.5-7B-Instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype="auto",
+    device_map="auto"
+)
+
+# Optimized inference
+prompt = "Your question here"
+inputs = tokenizer(prompt, return_tensors="pt")
+
+with torch.no_grad():
+    outputs = model.generate(**inputs, max_new_tokens=1024)
+
+response = tokenizer.decode(outputs[0])</code></pre>
+</div>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
@@ -260,5 +318,17 @@ messages = [
 <footer>
 <p>GenAI Mindmap • <a href="/concepts/open-models.html" style="color:var(--accent)">Open Models</a> • Last updated March 2026</p>
 </footer>
+
+<p>Qwen 2.5 represents significant progress in open-source language modeling. The model family provides accessible alternatives to proprietary models while maintaining competitive performance. As the AI landscape evolves, strong open-source models like Qwen expand options for organizations seeking both performance and independence from proprietary vendors.</p>
+
+
+<p>The quantization options for Qwen 2.5 enable deployment in resource-constrained environments without significant quality loss. 4-bit and 8-bit quantized versions require substantially less memory than full-precision models. These quantized variants enable running models on consumer GPUs or edge devices, expanding deployment possibilities. The trade-offs between memory usage and model quality vary depending on quantization schemes and the specific task.</p>
+
+<p>Multi-lingual capabilities make Qwen 2.5 suitable for applications serving diverse user bases. Strong performance across numerous languages enables international deployments without separate models. This multilingual proficiency extends beyond simple translation to deep understanding of context and nuance across languages. For global applications, the multilingual capabilities represent significant value.</p>
+
+<p>Qwen's vision capabilities in larger models enable visual understanding alongside text processing. This multimodal functionality opens applications including document analysis, image captioning, and visual question answering. As vision capabilities mature in open-source models, applications previously requiring separate vision and language models can consolidate onto unified architectures.</p>
+
+<p>The active development and community support around Qwen models ensure continued improvements and rapid incorporation of new techniques. The Alibaba team regularly releases new versions and capabilities, keeping the model family current with the evolving AI landscape. The strong community adoption provides extensive documentation, examples, and third-party integrations that reduce friction in adoption.</p>
+
 </body>
 </html>

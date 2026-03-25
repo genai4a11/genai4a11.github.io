@@ -225,6 +225,77 @@ class HybridBlock(nn.Module):
 </ul>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Routing and ensemble strategies</h2>
+<p>The core challenge in hybrid systems is <strong>deciding when to call which model</strong>. Simple heuristics (cost, latency) often miss quality variations. Smarter routers use input features, model performance history, or learned confidence scores to route requests.</p>
+<div class="example-box"><pre><code># Simple cost-based router
+def route_query(query: str, budget_ms: int) -> str:
+    if budget_ms > 3000:
+        return "gpt-4"  # best quality, slowest
+    elif budget_ms > 1000:
+        return "gpt-3.5-turbo"  # balanced
+    else:
+        return "mini-model"  # fast, ok quality
+
+# Quality-aware router (learns from feedback)
+class QualityRouter:
+    def __init__(self):
+        self.scores = {}  # model -> avg quality
+    
+    def route(self, task_type: str) -> str:
+        # Pick model with highest avg quality on this task
+        return max(self.scores, key=self.scores.get)
+    
+    def feedback(self, model: str, quality: float):
+        if model not in self.scores:
+            self.scores[model] = []
+        self.scores[model].append(quality)
+</code></pre></div>
+<div class="example-box"><pre><code># Ensemble voting: call multiple models, combine outputs
+async def ensemble_summarize(text: str, n_models: int = 3) -> str:
+    models = ["gpt-4", "claude-3", "llama-70b"][:n_models]
+    summaries = await asyncio.gather(
+        *[call_model(m, text) for m in models]
+    )
+    # Return majority summary or concatenate
+    return merge_summaries(summaries)
+</code></pre></div>
+<p>Trade-offs: ensemble voting is robust but expensive (N× cost). Learned routers are efficient but need labeled data to train. The best approach depends on your budget and quality requirements.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Routing Strategy</th><th>Cost</th><th>Latency</th><th>Quality</th></tr></thead>
+<tbody>
+<tr><td>Always use best model</td><td>High</td><td>High</td><td>High</td></tr>
+<tr><td>Cost-based heuristic</td><td>Low–Medium</td><td>Low–Medium</td><td>Variable</td></tr>
+<tr><td>Learned router</td><td>Medium</td><td>Low</td><td>High (if trained well)</td></tr>
+<tr><td>Ensemble voting</td><td>Very high (N×)</td><td>High</td><td>Very high</td></tr>
+<tr><td>Fallback chain</td><td>Medium</td><td>High (on retry)</td><td>Medium–High</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block">
+<p><strong>Hybrid system architecture patterns:</strong> A typical hybrid-LLM system has three layers: a request intake layer (HTTP API or message queue), a routing layer (decision engine), and a backend layer (multiple model services). The routing layer is the brain—it can be rule-based (if cost < $0.01, use model X), feedback-based (learn from past quality scores), or ML-based (trained classifier that predicts which model will succeed). Feedback loops are crucial: every request should be logged with the chosen model, actual quality, cost, and latency to enable continuous improvement.</p>
+<p>Hybrid systems introduce operational complexity: you must monitor multiple models, handle provider outages, manage rate limits per provider, and ensure consistent output schemas across models. However, the benefits—cost savings, reliability, and the ability to optimize per-task—often justify the complexity for high-scale applications.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Hybrid system failure modes:</strong> The most common failure is bad routing decisions: a cheap model is routed to a task where it fails (classification accuracy drops), and no fallback is triggered. Mitigation: implement confidence thresholds—if a model's output confidence is low, escalate to a higher-tier model. Another failure: cascade effects—if one backend is slow, timeouts cascade upstream, affecting user experience. Use circuit breakers (stop routing to slow providers temporarily) and queue mechanisms to isolate slowdowns.</p>
+<p>Cost overruns happen when a task is routed to an expensive model too eagerly. Implement cost budgets per user or per request and hard-cut at the limit (return a cached response or degrade gracefully). Monitor cost per task type and continuously optimize the routing policy based on cost-benefit analysis.</p>
+<p>Testing hybrid systems is hard: you need fixtures for multiple providers, mock failure scenarios (provider outage, rate limit), and cost tracking across mocks. Some teams build staging environments that route to real providers with quota limits, catching integration issues before production.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Implementing learned routing:</strong> A simple approach: log every request with the chosen model, actual quality score (e.g., user feedback, automatic evaluation), and features (task type, input length, user country). Train a classifier to predict which model will succeed. Use this to route future requests. This creates a feedback loop: better routing -> better quality -> better training data -> even better routing.</p>
+<p>Advanced techniques: multi-armed bandit (explore-exploit tradeoff: try new models sometimes to update beliefs), contextual bandits (different models for different contexts), and reinforcement learning (learn routing policy from reward signals). These are overkill for most applications but valuable if you're operating at scale and want to optimize cost-quality tradeoffs continuously.</p>
+<p>Observability: log latency, cost, and quality per request. Aggregate by task type and model. Plot cost vs. quality curves to understand the pareto frontier (the set of models that are not dominated by any other on both cost and quality). Use this to make strategic decisions about which models to keep, which to retire, and where to allocate budget.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Hybrid LLM systems at scale:</strong> Large tech companies (Google, Microsoft, Meta) deploy internal hybrid systems: fast models for simple queries, specialized models for code/math/reasoning, and flagship models for high-stakes decisions. This infrastructure requires sophisticated routing, monitoring, and cost controls. Open-source alternatives (LocalAI, LiteLLM) provide frameworks for building hybrid systems. For organizations without the resources for custom systems, OpenRouter and similar multi-provider platforms offer hybrid benefits out of the box. The hybrid LLM pattern is becoming industry standard; teams that master it gain significant cost and quality advantages. As models proliferate (open-source, specialized, proprietary), hybrid systems will be essential for competitive AI products.</p>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -243,6 +243,53 @@ print("GQA (8 KV heads): ", kv_cache_gb(80, 8192,  8, 128), "GB")
 </ul>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>GQA in practice: adoption and benchmarks</h2>
+<p>GQA has been adopted by major models including <strong>Llama 2</strong>, <strong>GPT-3.5</strong>, and newer Qwen variants. Empirical benchmarks show GQA typically preserves quality within 1–2% of full MQA on standard benchmarks while reducing KV cache by 8× compared to MHA, and 4× compared to MQA.</p>
+<div class="example-box"><pre><code># Typical memory savings with GQA (4 query groups, H=128 heads)
+# MHA:  H heads × D dims = 128 × 128 = 16,384 KV cache per token per batch
+# MQA:  1 head × D dims  = 128 KV cache per token per batch
+# GQA:  H/G heads × D dims = 32 × 128 = 4,096 KV cache per token per batch
+
+# For a 7B model, seq_len=2048, batch=32:
+# MHA:  16,384 × 2048 × 32 ≈ 1.06 GB
+# GQA:  4,096 × 2048 × 32  ≈ 268 MB (4× smaller)
+</code></pre></div>
+<p>The tradeoff is compute: multi-headed attention is simpler to parallelize. Some frameworks still use full MHA during inference despite the memory cost, prioritizing training speed over memory efficiency.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Variant</th><th>KV Cache Size</th><th>Inference Latency</th><th>Quality vs MHA</th></tr></thead>
+<tbody>
+<tr><td>MHA (baseline)</td><td>Full (1×)</td><td>Baseline</td><td>100%</td></tr>
+<tr><td>MQA</td><td>1/H</td><td>~10% faster</td><td>98–99%</td></tr>
+<tr><td>GQA (G=4)</td><td>1/(H/4)</td><td>~5% faster</td><td>99–100%</td></tr>
+<tr><td>GQA (G=8)</td><td>1/(H/8)</td><td>~2% faster</td><td>99.5–100%</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block">
+<p><strong>GQA implementation details:</strong> Grouped query attention is essentially a compromise: instead of a single shared key-value head (MQA) for all query heads, you have a small number of shared heads, usually 4 or 8. During attention computation, each query head is replicated or broadcasted to match the KV head group. This increases parameter count slightly compared to MQA but maintains most of the memory savings. In training, the gradient flow to KV heads is summed across the group.</p>
+<p>The adoption of GQA in recent large models (Llama 2, Qwen, GPT-3.5) signals industry confidence in the tradeoff. Newer research explores hybrid approaches: using full MHA early in training (for expressiveness) and switching to GQA during inference (for speed). Dynamic GQA, where the number of groups adapts based on sequence length, is an active research area.</p>
+</div>
+
+<div class="section-block">
+<p><strong>GQA performance across sequence lengths:</strong> GQA's benefits scale with sequence length. For short sequences (tokens), all attention variants are fast; the KV cache size doesn't matter. But as sequences reach thousands of tokens (long documents, conversations), memory bandwidth becomes the bottleneck. GQA's smaller cache reduces memory bandwidth, yielding latency improvements of 2–5× on long sequences while maintaining quality. This makes GQA especially valuable for long-context models (32K, 128K tokens).</p>
+<p>Future work in attention mechanisms explores even more radical compression: query-key shared attention (single head for everything), learnable key-value compression (lossy dimensionality reduction), and sparse attention patterns (attending to only important tokens). These techniques are still research-stage but could eventually replace GQA if they prove practical. For now, GQA represents a mature, well-tested sweet spot.</p>
+<p>Practitioners often ask: should I use GQA or MQA? GQA is the safe choice—it maintains quality better while still achieving significant compression. MQA is more aggressive (single KV head) and sometimes fails on reasoning tasks. If you're designing a model from scratch, start with GQA and only move to MQA if you're certain quality loss is acceptable.</p>
+</div>
+
+<div class="section-block">
+<p><strong>GQA implementation details in frameworks:</strong> PyTorch and TensorFlow both support grouped query attention through custom CUDA kernels or TensorRT optimizations. HuggingFace models (Llama 2, Qwen, Mistral) expose GQA configuration in config.json: `"num_key_value_heads": 8` with `"num_attention_heads": 32` means 4 groups. When fine-tuning or quantizing a GQA model, ensure the grouping structure is preserved to avoid silent quality degradation.</p>
+<p>Inference optimization: vLLM and TensorRT both auto-detect and optimize GQA models. If you're using a custom inference engine, ensure KV cache management respects the grouping (reusing KV heads for multiple query groups). Failure to do this results in incorrectly shaped attention computations and wrong outputs.</p>
+<p>Scaling to production: GQA models handle 8× larger batch sizes with the same GPU memory compared to MHA, enabling higher throughput. For serving applications, this translates directly to better cost-per-inference. Benchmarking on your hardware is essential: latency improvements vary based on batch size, sequence length, and memory bandwidth characteristics of your GPU.</p>
+</div>
+
+<div class="section-block">
+<p><strong>GQA in the broader attention landscape:</strong> The attention mechanism is a bottleneck in transformer inference. Research explores many alternatives: sparse attention (attend to only relevant tokens, computed via learned indices), flash attention (hardware-aware optimization with fewer memory transfers), and grouped query attention (reduced KV heads). Flash attention and GQA are complementary; many recent models combine both. GQA is the simpler, more mature approach and will likely remain dominant for several years. Practitioners should understand GQA as a standard technique and know when to apply it (any model with KV cache bottlenecks, especially long-context models). For new projects, default to GQA unless you have specific reasons not to.</p>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -294,6 +294,62 @@ private_response = client.chat.completions.create(
 </ul>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>OpenRouter reliability and cost optimization</h2>
+<p>OpenRouter abstracts away provider outages and rate limits by intelligently routing requests. If OpenAI is down, a request can failover to Anthropic; if Azure is slow, it can try Google. This resilience is valuable for production systems, though latency may vary. OpenRouter also offers discounts for batch requests and longer context use—e.g., a 100K-token prompt costs less with OpenRouter than directly through OpenAI's API.</p>
+<p>Cost optimization tips: Use lower-tier models for simple tasks (routing to Llama 2 instead of GPT-4 cuts costs 10×). Cache long prompts (system messages, documents) to avoid re-processing. Monitor per-model performance and accuracy to ensure you're not paying for overkill. OpenRouter's dashboard shows real-time costs and fallback rates, helping you optimize spend.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model (via OpenRouter)</th><th>Input Cost (per 1M tok)</th><th>Output Cost (per 1M tok)</th><th>Latency (p50)</th><th>Availability</th></tr></thead>
+<tbody>
+<tr><td>GPT-4 Turbo</td><td>$10</td><td>$30</td><td>2–5s</td><td>99.9%</td></tr>
+<tr><td>Claude 3 Opus</td><td>$15</td><td>$75</td><td>1–3s</td><td>99.95%</td></tr>
+<tr><td>Llama 2 70B</td><td>$0.81</td><td>$1.08</td><td>500–1500ms</td><td>98%</td></tr>
+<tr><td>Mistral 7B</td><td>$0.14</td><td>$0.42</td><td>200–500ms</td><td>97%</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block">
+<p><strong>OpenRouter API integration patterns:</strong> Most teams use OpenRouter via a standard OpenAI-compatible client library (LangChain, LlamaIndex, Python requests with a simple wrapper). The API key is your authentication; requests route transparently to backend providers. OpenRouter exposes provider-specific parameters (e.g., "temperature" for sampling, "top_p" for nucleus sampling) that map to each backend's capabilities. If a provider doesn't support a parameter, OpenRouter silently ignores it, ensuring client code is portable.</p>
+<p>Advanced patterns include provider hints (prefer Claude, fallback to GPT-4), custom retry policies (retry 3 times on timeout), and per-user cost caps (prevent runaway spending). OpenRouter's documentation and community Discord are active; issues are resolved quickly. For teams moving from direct OpenAI/Anthropic APIs to OpenRouter, the migration is low-friction because the client code is nearly identical. Monitoring dashboards show per-provider costs and success rates in real time.</p>
+</div>
+
+<div class="section-block">
+<p><strong>OpenRouter use cases and adoption:</strong> Common use cases include: (1) cost-sensitive applications (use cheaper models by default, escalate to GPT-4 only when necessary), (2) high-reliability applications (failover if one provider is down), (3) multi-modal applications (route images to Claude, text to GPT-4, code to Codex), and (4) experimental applications (test multiple models on the same data). Startups often adopt OpenRouter to avoid vendor lock-in; if they later want to switch providers, the code changes are minimal.</p>
+<p><strong>Monitoring and debugging:</strong> OpenRouter provides usage logs (via dashboard or API) showing per-model costs, latencies, and error rates. Set up cost alerts if spending exceeds a threshold. Track per-endpoint error rates (some models fail more often than others on specific tasks) and adjust routing policies accordingly. Use OpenRouter's fallback_models feature to ensure critical requests always complete, even if the primary provider is down.</p>
+<p>One pitfall: assuming all models understand the same parameters. For example, `top_k` means different things in different implementations. OpenRouter normalizes these to a standard set, but knowing the mapping helps when debugging unexpected model behavior. Documentation is thorough, and the support team is responsive.</p>
+</div>
+</div>
+
+<div class="section-block">
+<h2>Cost Optimization &amp; Model Selection</h2>
+<p>OpenRouter provides detailed cost comparison tools to help optimize inference expenses across different model providers and versions. Understanding pricing structures—per-token vs. per-request models, batch discounts, and regional pricing variations—enables informed decisions about cost-performance trade-offs. The platform facilitates A/B testing different models to find the best balance between quality and cost for your specific use case. Real-time pricing information helps you select the most economical option without sacrificing model quality.</p>
+<p>Beyond simple cost comparison, OpenRouter's APIs support sophisticated routing strategies. Implementing fallback chains that gracefully degrade when preferred models are unavailable maintains application reliability. Weight-based routing enables gradually rolling out new models while monitoring quality metrics, supporting production-grade deployments at scale.</p>
+<div class="example-box">
+<pre><code>import openrouter
+
+# Cost-optimized model selection
+response = openrouter.ChatCompletion.create(
+    model="openrouter/auto",  # Automatic model selection
+    routing_preference="cost",  # Prioritize cheaper models
+    messages=[
+        {"role": "user", "content": "Your query here"}
+    ]
+)
+
+# Manual cost optimization
+models_by_cost = openrouter.list_models(
+    sort_by="cost",
+    capability="instruct"
+)
+
+# Use cheapest suitable model
+selected_model = models_by_cost[0]</code></pre>
+</div>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
@@ -307,5 +363,17 @@ private_response = client.chat.completions.create(
 <footer>
 <p>GenAI Mindmap • <a href="/concepts/serving.html" style="color:var(--accent)">Serving Infrastructure</a> • Last updated March 2026</p>
 </footer>
+
+<p>Optimizing inference costs becomes increasingly important as applications scale. OpenRouter addresses this challenge by aggregating multiple providers and offering transparent pricing, enabling data-driven decisions about model selection and routing strategies that balance cost and quality effectively.</p>
+
+
+<p>The API standardization across multiple providers is a major advantage of platforms like OpenRouter. Whether using Claude, GPT-4, Llama, or Mistral models, the API remains consistent. This consistency enables straightforward swapping between models to evaluate different options or handle provider-specific issues. Applications built against OpenRouter APIs port easily to any underlying model, providing valuable flexibility and reducing vendor lock-in concerns.</p>
+
+<p>Monitoring and analytics features help teams understand usage patterns and optimize costs. Detailed logging of API calls, token usage, and latency measurements enables data-driven decisions about cost optimization. Identifying models that perform well for your use cases while minimizing cost becomes tractable with comprehensive analytics.</p>
+
+<p>The reliability layer in OpenRouter includes automatic retries, fallback strategies, and rate limiting protection. Rather than handling these concerns in application code, OpenRouter manages them transparently. This abstraction layer improves application reliability while reducing operational complexity. Teams can focus on application logic rather than low-level API resilience patterns.</p>
+
+<p>OpenRouter continues evolving to support new models and capabilities as they emerge. The platform acts as a rapid adoption mechanism for cutting-edge models, making latest capabilities immediately available to applications. This forward-looking design keeps applications current without major refactoring, supporting continuous improvement as the AI landscape evolves.</p>
+
 </body>
 </html>

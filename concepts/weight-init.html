@@ -312,6 +312,41 @@ for name, param in model.named_parameters():
       </div>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Initialization in modern architectures</h2>
+<p>Transformers don't strictly follow He or Xavier rules—instead, they often use <strong>small uniform initialization</strong> for most weights and <strong>scaled initialization for attention</strong>. GPT uses U(−0.02, 0.02); BERT uses truncated normal with std=0.02. Attention output weights are often scaled by 1/sqrt(num_heads) to prevent score inflation. Layer norms always start at identity (gamma=1, beta=0).</p>
+<p>Output embeddings (in language models) are sometimes tied to input embeddings, which means initialization of one affects the other. Care is needed to avoid double-initialization bugs. Residual connections reduce the importance of intermediate initialization because gradients skip layers, but the first layer and the final output layer still matter.</p>
+
+<h2>Debugging initialization issues</h2>
+<p>If your model trains poorly from scratch, suspicious initialization is often the culprit. Check: (1) activation distribution at layer 0 (should be ~N(0,1) pre-activation), (2) gradient magnitudes across layers (should be roughly equal, not decaying or exploding), (3) loss trajectory in the first 10 steps (should show steady decrease, not blow up or stall). A simple audit: initialize the model, run one batch, and print layer-wise activation/gradient statistics.</p>
+<table>
+<thead><tr><th>Red Flag</th><th>Likely Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Activation scale explodes (>1000) in early layers</td><td>Weights too large</td><td>Scale init by 1/sqrt(fan_in)</td></tr>
+<tr><td>Gradients vanish (magnitude <1e-5) at deep layers</td><td>Poor residual flow or bad layer norm init</td><td>Ensure residuals are present, check gamma/beta</td></tr>
+<tr><td>Loss stays flat for 1000 steps, then crashes</td><td>Initialization fine but learning rate too high or unstable architecture</td><td>Reduce LR, check residual scales</td></tr>
+<tr><td>Model underfits but single-layer baseline overfits</td><td>Deeper model's init may favor solution space that's too narrow</td><td>Increase init scale slightly or use better parameterization</td></tr>
+</tbody>
+</table>
+
+<div class="section-block">
+<p><strong>Initialization in practice:</strong> PyTorch's `nn.Linear` defaults to uniform initialization; TensorFlow's Dense layer uses Glorot uniform. For most modern networks (ResNets, Transformers, Vision Transformers), these defaults work well. But custom layers—attention heads, gating mechanisms, adaptive pools—often need tuning. When in doubt, start with Xavier/Glorot; if training is unstable, try He initialization. For layers with skip connections, slightly larger initialization (scaled up by sqrt(2)) can help because gradients skip the layer.</p>
+<p>The initialization lottery is real: two randomly initialized networks with the same architecture, data, and hyperparameters may converge to different solutions with different generalization. Good initialization reduces variance but doesn't eliminate it. For research, reporting multiple runs from different random seeds is standard; for production, ensemble diverse initializations to improve robustness. Some practitioners use "warm start" initialization: copy weights from a similar pre-trained model rather than random init, which almost always converges faster.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Initialization and generalization:</strong> Recent research suggests initialization affects not just convergence speed but also generalization. Models initialized with larger weights sometimes converge faster but generalize worse (higher test error). Initialization also interacts with regularization: with strong regularization (high L2 penalty), careful initialization matters less. This suggests the best initialization strategy depends on your specific problem: easy tasks need less tuning, hard tasks need more.</p>
+<p><strong>Modern initialization in practice:</strong> Most practitioners use framework defaults and adjust only if training is visibly unstable. A simple sanity check: plot the activation distribution (mean and std) per layer after one forward pass. Ideal: activations have mean ~0 and std ~1 pre-activation, std ~sqrt(2) post-activation (accounting for ReLU dead neurons). If you see explosions (std > 5) or attenuation (std < 0.1), re-initialize.</p>
+<p>For very deep networks (50+ layers), initialization is critical. Techniques like careful residual scaling, layer-wise adaptive initialization, and skip-connection initialization become necessary. Vision Transformers and large language models use careful initialization because their depth and width require it. Smaller networks (< 10 layers) are forgiving and work with any reasonable initialization.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Initialization for transfer learning:</strong> When fine-tuning pre-trained models, you start with learned (non-random) weights. New layers (added on top of pre-trained backbone) need initialization. Best practice: use small random initialization for new layers so they don't interfere with pre-trained weights. If fine-tuning is slow, try slightly larger initialization or lower learning rates for new layers relative to pre-trained weights.</p>
+<p>Adapter modules (like LoRA) are initialized to near-zero to ensure backward compatibility: at the start of fine-tuning, adapter weights contribute almost nothing, and the model behaves like the original. As training progresses, adapter weights grow. This initialization strategy (called "zero initialization" or "identity initialization") is crucial for stable fine-tuning.</p>
+<p>Initialization for pruning: if you plan to prune weights after training, some research suggests initializing differently (larger variance to create more variation) helps pruning find better masks. However, this is active research and not yet standard practice. For now, stick with framework defaults unless you're specifically optimizing for pruning efficiency.</p>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

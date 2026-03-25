@@ -296,6 +296,75 @@ results = tenant_collection.query.near_vector(vector=embed("private"), limit=5)
 <p><strong>gRPC for bulk ingestion.</strong> The v4 client uses gRPC for batch operations by default — much faster than REST for large ingestion jobs. Make sure port 50051 is open if running a self-hosted Weaviate.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Weaviate deployment and scaling</h2>
+<p>Weaviate runs as a containerized service and scales horizontally by sharding data across nodes. A single node is fine for <100K vectors; beyond that, distributed clusters provide resilience and parallel search. Weaviate also integrates with cloud providers: Weaviate Cloud (managed), AWS (self-hosted on ECS), Kubernetes, or local Docker for development.</p>
+<p>Performance depends on vector dimensionality, index type, and query patterns. HNSW indexing is fast for small–medium datasets (millions of vectors); for very large clusters (hundreds of millions), hybrid disk+RAM indices or approximate techniques become necessary. Batch imports and periodic optimization (garbage collection, index compaction) help maintain speed.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Deployment Model</th><th>Vectors Supported</th><th>Latency (p50)</th><th>Cost</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td>Local Docker</td><td>Up to 1M</td><td>&lt;100ms</td><td>Free (compute only)</td><td>Low</td></tr>
+<tr><td>Single node (cloud VM)</td><td>Up to 10M</td><td>100–500ms</td><td>Low–Medium</td><td>Low</td></tr>
+<tr><td>Weaviate Cloud</td><td>Unlimited</td><td>50–200ms</td><td>Medium–High</td><td>Very low</td></tr>
+<tr><td>Kubernetes cluster</td><td>Unlimited</td><td>50–300ms</td><td>High (ops)</td><td>High</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block">
+<p><strong>Weaviate advanced features:</strong> Weaviate supports hybrid search (combining vector similarity with keyword search using BM25), multi-hop graph queries (traverse relationships in a knowledge graph), and integrations with LLMs via the "Bring Your Own" API (BYO) features. You can attach custom vectorizers (OpenAI, Hugging Face, local models) at schema definition time, so every object is automatically vectorized on import. This "auto-vectorization" simplifies workflows but adds latency and cost.</p>
+<p>For large-scale deployments, Weaviate's sharding and replication features ensure resilience. A 3-node cluster survives single-node failure; larger clusters can handle millions of concurrent requests. The query language (GraphQL) is expressive but requires learning; the REST API is simpler for basic operations. Community modules extend Weaviate with custom operators, and the ecosystem includes integrations with LangChain, LlamaIndex, and Hugging Face.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Weaviate vs. other vector databases:</strong> Pinecone (serverless, easy to scale), Qdrant (high performance, self-hosted), Milvus (open-source, production-ready), and Chroma (lightweight, for prototyping) are alternatives. Weaviate's advantages: GraphQL querying (expressive), multi-vectorizer support (flexible), and strong community. Disadvantages: steeper learning curve (GraphQL), more operational overhead for self-hosted deployments. For teams already using GraphQL, Weaviate is natural; for teams preferring REST or simple filtering, Pinecone or Chroma may be better.</p>
+<p>Weaviate's hybrid search (combining vector + keyword) is powerful for retrieval-augmented generation (RAG). You can search by semantic meaning (vector similarity) and keyword presence simultaneously, getting the best of both worlds. Reranking (retrieve 100 results, rerank with an LLM, return top 10) further improves quality at the cost of latency.</p>
+<p>Scaling Weaviate requires planning: decide on sharding strategy early (by data source, by customer, by region), monitor performance, and adjust gradually. For new projects, start simple (single node) and upgrade to clustering only if needed. Most projects never need more than a 3-node cluster.</p>
+</div>
+</div>
+
+<div class="section-block">
+<h2>Integration Patterns &amp; Best Practices</h2>
+<p>Weaviate integrates effectively with various vector processing pipelines and ML frameworks. When building RAG systems, Weaviate can serve as the vector store backend while your application handles orchestration and LLM interaction. The object-centric design enables rich metadata filtering that goes beyond typical vector databases. Integration with existing MLOps infrastructure is straightforward, with support for Python, Go, JavaScript, and other languages.</p>
+<p>Best practices for Weaviate integration include proper schema design upfront, careful consideration of batch size for imports, and appropriate configuration of replication for reliability. Using GraphQL queries effectively requires understanding Weaviate's query language but provides powerful filtering and aggregation capabilities. For production deployments, monitoring query performance and rebalancing shards as data grows becomes important.</p>
+<div class="example-box">
+<pre><code>import weaviate
+
+client = weaviate.Client("http://localhost:8080")
+
+# Create schema
+schema = {
+    "class": "Document",
+    "vectorizer": "text2vec-openai",
+    "properties": [
+        {"name": "content", "dataType": ["text"]},
+        {"name": "source", "dataType": ["string"]},
+        {"name": "timestamp", "dataType": ["date"]}
+    ]
+}
+
+# Query with filtering
+result = client.query.get("Document").with_where({
+    "path": ["source"],
+    "operator": "Equal",
+    "valueString": "handbook.pdf"
+}).with_limit(10).do()</code></pre>
+</div>
+<table>
+<thead>
+<tr><th>Feature</th><th>Strength</th><th>Trade-off</th></tr>
+</thead>
+<tbody>
+<tr><td>Object-centric model</td><td>Rich metadata filtering</td><td>More complex queries</td></tr>
+<tr><td>GraphQL interface</td><td>Powerful & flexible</td><td>Steeper learning curve</td></tr>
+<tr><td>Hybrid search</td><td>Combines vector & keyword</td><td>Added latency</td></tr>
+<tr><td>Replication</td><td>High availability</td><td>Complexity & cost</td></tr>
+</tbody>
+</table>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
@@ -309,5 +378,7 @@ results = tenant_collection.query.near_vector(vector=embed("private"), limit=5)
 <footer>
 <p>GenAI Mindmap • <a href="/concepts/vector-dbs.html" style="color:var(--accent)">Vector Databases</a> • Last updated March 2026</p>
 </footer>
+
+<p>Weaviate continues to evolve with new capabilities. Recent releases have added support for generative modules, enabling in-database answer generation. The community actively contributes integrations and extensions, making Weaviate increasingly valuable in complex RAG architectures.</p>
 </body>
 </html>

@@ -262,6 +262,44 @@ async def my_query(): ...
 <p><strong>Async everywhere:</strong> All LMQL queries are async by default. In synchronous contexts use <code>asyncio.run(my_query(...))</code>.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Production deployment and optimization</h2>
+<p>LMQL queries can be deployed as services, but several factors affect performance. Constraint checking happens per-token, so tight constraints on long sequences add latency. For production systems, profile your constraints and consider caching frequent queries or using adaptive constraint relaxation.</p>
+<p><strong>Model considerations:</strong> Larger models often satisfy constraints more naturally, reducing backtrack cost. Smaller models (7B–13B) may need looser constraints or explicit in-context examples to succeed. Temperature matters too: deterministic modes (temperature=0) hit constraints faster, while sampling explores more freely.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Deployment Pattern</th><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td>Batch processing (local)</td><td>Full constraint power, no API latency</td><td>GPU memory, slow for high volume</td></tr>
+<tr><td>Hosted API fallback</td><td>Easy scaling, managed</td><td>Constraints become prompt-only</td></tr>
+<tr><td>vLLM + Outlines</td><td>Fast, integrates token constraints</td><td>Different API, migration cost</td></tr>
+<tr><td>Streaming + validation</td><td>Responsive UX, post-hoc fix</td><td>May need retries, latency tail</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block">
+<p><strong>LMQL ecosystem:</strong> The project is maintained at Microsoft Research and has active open-source contributions. Community extensions include integrations with additional backends (Hugging Face, local models), custom constraint types, and monitoring tools for production deployments. The design philosophy is to make constraint-driven generation accessible to Python developers without requiring deep knowledge of decoding algorithms.</p>
+<p>For teams evaluating constraint-driven generation, LMQL is strongest when you need predictable, schema-compliant outputs from hosted or local models. Its learning curve is moderate—a developer familiar with Python and prompting can be productive in hours. The constraint language feels natural once you understand the distinction between prompt-level (soft) and decoder-level (hard) constraints. For new projects, consider LMQL alongside Instructor and Outlines to pick the best fit.</p>
+</div>
+
+<div class="section-block">
+<p><strong>LMQL real-world use cases:</strong> Teams use LMQL for structured extraction (contracts, PDFs, forms), multi-turn dialogue systems with hard validation (customer support bots that must collect required fields), and domain-specific reasoning (medical coding, legal document classification). One advantage: LMQL makes implicit constraints explicit in code, so constraints are version-controlled and auditable alongside your application code. This is critical for regulated industries.</p>
+<p>Comparison to hand-coded parsing: if your alternative is regex + post-processing, LMQL is often simpler and more robust. If your alternative is prompt-based retry loops (ask again if output is invalid), LMQL is faster and cheaper because it prunes invalid tokens at generation time rather than starting over. For teams building AI products, adopting LMQL early reduces technical debt from constraint-related bugs.</p>
+<p>Scaling LMQL queries in production requires careful attention to error handling. If a constraint becomes unsatisfiable (model can't generate valid output), the decoder hangs. Mitigation: set strict max_len limits, add timeout guards, and log failures for analysis. Many teams wrap LMQL in a fallback layer: try the constrained query, if it fails after timeout, fall back to a simpler unconstrained generation with post-hoc validation.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Advanced LMQL constraint patterns:</strong> Beyond simple value constraints, LMQL supports complex logic: nested constraints (constraint A only applies if constraint B is satisfied), context-aware constraints (different rules for different input types), and dynamic constraints (adjust constraints based on previous model outputs). For example, after the model generates a category, you can enforce category-specific field constraints. This flexibility makes LMQL suitable for complex domain-specific applications like form extraction with conditional fields.</p>
+<p>Performance tuning: constraint checking adds per-token overhead. For latency-sensitive applications, profile your constraints and consider loosening them (e.g., token budget of 100 instead of 50) if the quality improvement doesn't justify the latency cost. Beam search with constraints is slower than greedy decoding but more robust; for production, choose based on your latency SLA and quality requirements.</p>
+<p>Debugging constraint failures is hard because you don't see the hidden pruning process. Use verbose=True to inspect token-by-token decisions, log the final output, and compare to expected results. If a constraint is never satisfied, check: (1) is the constraint mathematically satisfiable? (2) is the model capable of generating valid outputs? (3) is the constraint too strict? Common fix: relax the constraint or add an escapeHatch (fallback unconstrained generation after timeout).</p>
+</div>
+
+<div class="section-block">
+<p><strong>LMQL for enterprise systems:</strong> Banks and financial institutions use LMQL to extract structured data from customer communications while ensuring compliance. Insurance companies use LMQL to validate claim forms. The key appeal: hard constraints ensure the model can't produce invalid outputs (e.g., a claim ID that doesn't match the expected format). This reduces downstream data quality issues and auditing overhead. Regulations like HIPAA, SOX, and GDPR require that systems handle data correctly; LMQL helps meet these requirements by making invalid outputs literally impossible. For organizations investing in AI infrastructure, LMQL's constraint enforcement is a significant advantage over free-form LLM calls.</p>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

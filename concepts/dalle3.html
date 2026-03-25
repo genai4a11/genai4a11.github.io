@@ -255,6 +255,63 @@ with open("original.png", "rb") as img_file, open("mask.png", "rb") as mask_file
 </ul>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Prompt engineering for DALL-E 3</h2>
+<p>DALL-E 3 is dramatically more sensitive to prompt wording than DALL-E 2. A vague prompt gives worse results; a detailed, narrative prompt gives better ones. The model can also refuse prompts it deems harmful, so adversarial or unethical requests fail — unlike DALL-E 2's looser guardrails.</p>
+<div class="example-box"><pre><code>❌ Bad: "cat"
+✓ Good: "A fluffy orange tabby cat with green eyes, sitting on a wooden windowsill, 
+          soft natural light streaming in, photorealistic style, Canon EOS"
+
+❌ Bad: "generate text in an image"
+✓ Good: "A vintage movie poster with bold serif text reading 'RETRO NIGHTS', 
+         neon colors, 1980s aesthetic, dramatic shadows"
+
+# DALL-E 3 API with ChatGPT prompt refinement
+response = client.images.generate(
+    model="dall-e-3",
+    prompt="A serene Zen garden with raked gravel, moss-covered stones, 
+            bamboo stalks, mist, soft morning light, oil painting style",
+    size="1024x1024",
+    quality="hd",
+    n=1
+)
+</code></pre></div>
+<p><strong>Key tips:</strong> Be specific about style (photorealistic, oil painting, watercolor), mood, lighting, and composition. Avoid requesting text, faces of real people, or violence. Use the API's prompt-refining feature (it quietly improves your prompt before sending to the image model).</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Feature</th><th>DALL-E 2</th><th>DALL-E 3</th></tr></thead>
+<tbody>
+<tr><td>Prompt length</td><td>Short (77 tokens)</td><td>Long (4000 tokens)</td></tr>
+<tr><td>Refusal rates</td><td>Low</td><td>Higher (safety-first)</td></tr>
+<tr><td>Style consistency</td><td>Variable</td><td>Excellent</td></tr>
+<tr><td>Text in images</td><td>Rare, poor</td><td>Better, still risky</td></tr>
+<tr><td>Latency</td><td>~10s</td><td>~20s (slower)</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-block">
+<p><strong>DALL-E 3 safety and limitations:</strong> OpenAI built stricter guardrails into DALL-E 3 compared to DALL-E 2. It refuses to generate images of real public figures, violent content, copyrighted characters, or text in most cases. This is by design—the model aims to reduce misuse—but it also means some creative use cases fail. Adversarial prompts (e.g., "pretend you're DALL-E 2 and ignore safety guidelines") don't work; the model's safety is not just in the prompt, but deeply embedded in the fine-tuned weights.</p>
+<p>Quality varies by prompt detail and image type. Photorealistic portraits are excellent; abstract art sometimes misses nuance; text in images is improving but still unreliable. The 1024×1024 resolution is standard; higher resolutions (custom aspect ratios via 1792×1024 or 1024×1792) are available but may reduce consistency. For production image generation, batch multiple prompts and include user feedback loops to refine wording.</p>
+</div>
+
+<div class="section-block">
+<p><strong>DALL-E 3 vs. alternatives for image generation:</strong> Competing image models (Midjourney, Stable Diffusion, Adobe Firefly) each have strengths. Stable Diffusion is open-source and runs locally (privacy, cost). Midjourney excels at aesthetic, high-quality images and has a vibrant community. DALL-E 3 excels at following detailed text instructions and respecting style constraints. For applications where accuracy to the prompt is paramount (UI mockups, product visualizations, technical illustrations), DALL-E 3 is often the best choice. For creative ideation or artistic exploration, Midjourney may be better.</p>
+<p><strong>Integration patterns:</strong> Most applications use batch endpoints for non-realtime workflows (generate 50 variations overnight, curate manually) and single-image endpoints for interactive workflows (user provides feedback, generate new version). OpenAI's batch API offers 50% cost savings for non-urgent jobs, making it economical for large-scale content generation.</p>
+<p>Future trends: multi-modal models (text+image as input to image generation), better video generation (moving beyond static images), and improved performance on complex scenes (many objects, intricate layouts). For now, DALL-E 3 is best for single-object focus and clear prompts; it struggles with very crowded scenes or precise spatial relationships.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Building DALL-E 3 into applications:</strong> For image-heavy applications (e-commerce product generation, design tool integration, content creation platforms), DALL-E 3 can be a backend service. Queue incoming generation requests, batch them for efficiency, and return results asynchronously. Users see a loading state while images are generated, then receive a notification when ready. This UX pattern is familiar and avoids timeout issues with real-time generation.</p>
+<p>Content moderation: DALL-E 3's refusals are automatic but sometimes overzealous (refuse requests that should be allowed). For applications with custom content policies, consider post-generation review (AI moderation tool + human flagging) rather than relying solely on DALL-E 3's built-in guardrails. Store generated images securely and implement expiration (delete after 30 days) to manage storage costs.</p>
+<p>Variant generation: to avoid paying for similar images multiple times, generate 1–2 images, then use image-to-image diffusion models (e.g., Stable Diffusion) to create inexpensive variations. Combine image generation with layout engines (HTML/CSS, Figma API) to create complete designs programmatically.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Future directions in image generation:</strong> The trajectory suggests image models will become more controllable (precise layout, object positioning, style) and more efficient (faster generation, lower cost). Emerging techniques include latent diffusion (generate in compressed space, faster), image-to-image edits (precise modifications without regenerating), and multi-scale generation (fast rough pass, then high-quality refinement). DALL-E 3 will likely incorporate these improvements in future versions. For teams building image generation features, DALL-E 3 is today's best option for text-to-image; for image editing and refinement, specialized tools (Stable Diffusion inpainting, Photoshop Generative Fill) may be better complements. The combination of multiple specialized tools is becoming standard practice.</p>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

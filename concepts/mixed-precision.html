@@ -304,6 +304,45 @@ for group in optimizer.param_groups:
 # Fix: gradient checkpointing + smaller batch + grad accumulation</div>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Hardware support and framework integration</h2>
+<p>Mixed precision is well-supported on modern GPUs: NVIDIA (CUDA, cuDNN), AMD (ROCm), and Intel (Intel Extension for PyTorch). TPUs support bfloat16 natively and are excellent for large-scale training. Most PyTorch and JAX training code can enable mixed precision with a few lines: `torch.cuda.amp.autocast()` or `jax.experimental.allow_float64(False)`.</p>
+<p><strong>Framework support:</strong> PyTorch (via AMP), TensorFlow (mixed_precision.Policy), JAX (default if you avoid float64), and HuggingFace Transformers (via Trainer API). Pre-trained models are often published in float32, so you're responsible for converting and validating before production.</p>
+
+<h2>Common pitfalls and best practices</h2>
+<p>Loss scaling prevents gradient underflow in FP16 but adds tuning complexity; start with <code>init_scale=65536</code> and let PyTorch's dynamic loss scaling adjust. Always validate numerical stability: log gradients, check for NaN/Inf, and compare a few steps of mixed-precision training to full precision. Some operations (softmax, layer norm) are sensitive to precision; running them in float32 ("keep_fp32_activation") is a safe practice.</p>
+<table>
+<thead><tr><th>Common Issue</th><th>Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>NaN gradients</td><td>Loss overflow in FP16</td><td>Increase loss scale or use dynamic scaling</td></tr>
+<tr><td>Slower convergence</td><td>Gradient variance too high</td><td>Use FP32 for layer norm, softmax</td></tr>
+<tr><td>Training instability</td><td>Learning rate too high relative to precision</td><td>Reduce LR or use gradient clipping</td></tr>
+<tr><td>Model divergence mid-training</td><td>Accumulated rounding errors</td><td>Checkpoint in float32, resume, continue in FP16</td></tr>
+</tbody>
+</table>
+
+<div class="section-block">
+<p><strong>Advanced mixed-precision patterns:</strong> Some practitioners use triple-precision: FP32 for forward pass (stability), FP16 gradients (memory), and FP32 weight updates (precision). Others use layer-wise precision: low-rank layers in FP16, high-rank layers in FP32. AutoFP16 frameworks automatically select precision per operation based on numerical sensitivity analysis. These advanced techniques squeeze the last few percentage points of performance but add significant complexity and debugging burden.</p>
+<p>Production deployment often uses 8-bit quantization post-training: train in mixed FP16/FP32, then quantize the final model to int8 for inference. This gives you the best of both worlds: training stability and deployment efficiency. Tools like ONNX Runtime, TVM, and TensorRT handle mixed-precision inference, abstracting away low-level complexity. For edge devices, 4-bit and 2-bit quantization are gaining traction, though quality degrades if the model wasn't trained with quantization in mind.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Mixed precision in different frameworks:</strong> PyTorch's automatic mixed precision (AMP) is the most mature and easiest to adopt. TensorFlow's mixed_precision API is similar but requires explicit policy setup. JAX requires more manual control but is very flexible. HuggingFace Transformers abstracts the complexity away—just set `fp16=True` or `bf16=True` in the Trainer config. For production code, using framework defaults is recommended; only customize if you hit specific issues.</p>
+<p><strong>Hardware considerations:</strong> NVIDIA's Tensor Cores (A100, H100) excel at mixed precision; AMD's MI300 also supports it well. Older hardware (V100, T4) supports FP16 but may have lower throughput. Intel's Gaudi supports bfloat16 natively. If you're buying GPUs for mixed-precision training, A100 or H100 are the safe choices. For inference on edge (mobile, embedded), consider quantization (4-bit, 8-bit) alongside mixed precision for maximum efficiency.</p>
+<p>Cost impact: training with mixed precision is about 30–50% faster than float32 and uses 2× less memory. For a 10-day training run, this translates to 3–5 days saved and proportional cost savings. For inference, benefits are smaller but still meaningful (20–30% speedup on token generation). For large-scale deployments, mixed precision is financially justifiable.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Mixed precision in distributed training:</strong> When training across multiple GPUs (data parallel, distributed data parallel), mixed precision behavior is consistent: gradients are accumulated in float32, weights updated in float32, but forward/backward passes use FP16. Distributed setups add complexity: ensure all GPUs use the same loss scaling strategy, otherwise training diverges. Most frameworks handle this automatically, but it's worth double-checking in logs.</p>
+<p>Gradient accumulation: if your batch size is limited by GPU memory, use gradient accumulation (compute gradients on small batches, accumulate them, update weights once every N batches). Combined with mixed precision, this allows effective batch size of 512+ on modest GPUs. Ensure loss scaling is applied correctly with accumulated gradients; frameworks like PyTorch handle this transparently.</p>
+<p>Checkpoint and recovery: when saving checkpoints for resumption, save the optimizer state in float32 (not the accumulated FP16 state) to ensure correct recovery. Tools like FSDP (fully sharded data parallel) handle this automatically. For long training runs, periodic checkpoints in mixed precision are essential for fault tolerance.</p>
+</div>
+
+<div class="section-block">
+<p><strong>Mixed precision across different hardware:</strong> TPU (Google Cloud) handles mixed precision exceptionally well and is often the target hardware for large-scale training. NVIDIA's approach (Tensor Cores, cuDNN) is well-optimized. AMD's ROCm implementation is improving but still behind NVIDIA. Intel's Gaudi supports it but is less common. For teams deploying internationally, ensure your mixed precision strategy works across target hardware. If training on TPU but inferencing on NVIDIA GPUs, ensure numerical compatibility (same precision formats, same libraries). Mixed precision isn't a free lunch: it requires careful implementation, validation, and monitoring. But for large models and long training runs, the gains (30–50% faster, 2× lower memory) justify the effort.</p>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
