@@ -374,7 +374,7 @@
   "headline": "Model Quantization",
   "description": "Reducing model memory by 2\u20138\u00d7 with controlled accuracy loss \u2014 formats, methods, and tradeoffs when and how to quantize.",
   "url": "https://genai4a11.github.io/concepts/quantization.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -415,6 +415,17 @@
   }
 }
 </script>
+
+<style>
+.flow-diagram{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:1.5rem 0;font-size:.9rem;}
+.flow-box{background:var(--bg);border:2px solid var(--accent);border-radius:.5rem;padding:.6rem 1rem;font-weight:600;text-align:center;min-width:100px;}
+.flow-arrow{color:var(--accent);font-size:1.2rem;font-weight:700;}
+.flow-label{font-size:.78rem;color:var(--muted);display:block;font-weight:400;margin-top:.2rem;}
+.lp-step{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.25rem;}
+.lp-num{background:var(--accent);color:white;border-radius:50%;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0;margin-top:.1rem;}
+.lp-body h4{margin:0 0 .25rem;font-size:1rem;}
+.lp-body p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.5;}
+</style>
 </head>
 <body>
 
@@ -852,7 +863,31 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
     </ul>
   </div>
 
-  <footer class="page-footer">
+  
+  <div class="section-block" id="learning-path">
+    <div class="section-marker">LEARNING PATH</div>
+    <h2>Learning Path</h2>
+    <p>Quantization sits at the intersection of deep learning math and GPU hardware. Here's how to build up to it:</p>
+
+    <div class="flow-diagram">
+      <div class="flow-box">Float Formats<span class="flow-label">FP32, FP16, BF16</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">INT8 Post-Training<span class="flow-label">bitsandbytes</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">NF4 / GGUF<span class="flow-label">4-bit loading</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">AWQ / GPTQ<span class="flow-label">calibrated quant</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Serving<span class="flow-label">vLLM + quant</span></div>
+    </div>
+
+    <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Load a model in 4-bit first</h4><p>Use <code>BitsAndBytesConfig(load_in_4bit=True)</code> with a Llama 3 8B model. Confirm it fits on your GPU and produces coherent output. Takes 15 minutes.</p></div></div>
+    <div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Measure the quality cost</h4><p>Run a simple benchmark (MMLU sample or your task) at FP16 vs. 4-bit. The gap will usually be &lt;2% on general tasks, larger on math-heavy ones.</p></div></div>
+    <div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Learn AWQ for production</h4><p>AWQ calibrates quantization on a small dataset to minimise the accuracy loss. Use <code>autoawq</code>. This is the recommended path for serving.</p></div></div>
+    <div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Use GGUF for local / edge</h4><p><code>llama.cpp</code> with GGUF models is the fastest path to running models on Mac (Metal) or CPU. Q4_K_M is the best quality/size tradeoff for most use cases.</p></div></div>
+  </div>
+
+<footer class="page-footer">
     <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
     <a id="footer-back" href="../index.html">← Back to mindmap</a>
   </footer>

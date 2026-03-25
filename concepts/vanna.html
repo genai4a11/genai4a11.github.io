@@ -21,7 +21,7 @@
   "headline": "Vanna AI | GenAI Mindmap",
   "description": "An open-source RAG-based Text-to-SQL framework that improves accuracy by retrieving similar past queries and schema documentation as context before generating new SQL.",
   "url": "https://genai4a11.github.io/concepts/vanna.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,61 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('How Vanna Works', 'Vanna uses RAG to improve Text-to-SQL accuracy: it stores DDL (CREATE TABLE statements), documentation, and example (question, SQL) pairs in a vector store. When a new question arrives, it retrieves the most relevant DDL and examples and includes them in the prompt. The LLM generates SQL with this rich context. The more examples you train it on, the better it gets.')
+      <h2>How Vanna Works</h2>
+<p>Vanna uses RAG to improve Text-to-SQL accuracy: it stores DDL (CREATE TABLE statements), documentation, and example (question, SQL) pairs in a vector store. When a new question arrives, it retrieves the most relevant DDL and examples and includes them in the prompt. The LLM generates SQL with this rich context. The more examples you train it on, the better it gets.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Training Vanna', 'Train Vanna by adding DDL, documentation, and example pairs. "\n   "This is a one-time setup + ongoing improvement process.\n\nimport vanna\nfrom vanna.openai import OpenAI_Chat\nfrom vanna.chromadb import ChromaDB_VectorStore\n\nclass MyVanna(ChromaDB_VectorStore, OpenAI_Chat):\n    def __init__(self, config=None):\n        ChromaDB_VectorStore.__init__(self, config=config)\n        OpenAI_Chat.__init__(self, config=config)\n\nvn = MyVanna(config={"api_key": "your-key", "model": "gpt-4o"})\n\n# Add schema knowledge\nvn.train(ddl="CREATE TABLE orders (id INT, customer_id INT, amount FLOAT, date DATE);")\nvn.train(documentation="The orders table contains all purchase records.")\n\n# Add example pairs (most impactful for accuracy)\nvn.train(question="How many orders were placed last month?",\n         sql="SELECT COUNT(*) FROM orders WHERE date >= DATE_TRUNC(\'month\', NOW() - INTERVAL \'1 month\')")')
+      <h2>Training Vanna</h2>
+<p>Train Vanna by adding DDL, documentation, and example pairs. " "This is a one-time setup + ongoing improvement process.</p>
+<pre><code>import vanna
+from vanna.openai import OpenAI_Chat
+from vanna.chromadb import ChromaDB_VectorStore
+class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        ChromaDB_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+vn = MyVanna(config={"api_key": "your-key", "model": "gpt-4o"})
+# Add schema knowledge
+vn.train(ddl="CREATE TABLE orders (id INT, customer_id INT, amount FLOAT, date DATE);")
+vn.train(documentation="The orders table contains all purchase records.")
+# Add example pairs (most impactful for accuracy)
+vn.train(question="How many orders were placed last month?",
+         sql="SELECT COUNT(*) FROM orders WHERE date &gt;= DATE_TRUNC('month', NOW() - INTERVAL '1 month')")</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Querying', 'Once trained, a single call generates, executes, and explains the result.\n\n# Connect to database\nvn.connect_to_postgres(host="localhost", dbname="mydb", user="user", password="pass")\n\n# Generate and run SQL\nsql = vn.generate_sql("What are the top 10 customers by total spend?")\nprint(sql)  # SELECT customer_id, SUM(amount) as total... ORDER BY total DESC LIMIT 10\ndf = vn.run_sql(sql)\n\n# Or do it in one call\ndf, fig, _ = vn.ask("What are the top 10 customers by total spend?")\nfig.show()  # auto-generated chart!')
+      <h2>Querying</h2>
+<p>Once trained, a single call generates, executes, and explains the result.</p>
+<pre><code># Connect to database
+vn.connect_to_postgres(host="localhost", dbname="mydb", user="user", password="pass")
+# Generate and run SQL
+sql = vn.generate_sql("What are the top 10 customers by total spend?")
+print(sql)  # SELECT customer_id, SUM(amount) as total... ORDER BY total DESC LIMIT 10
+df = vn.run_sql(sql)
+# Or do it in one call
+df, fig, _ = vn.ask("What are the top 10 customers by total spend?")
+fig.show()  # auto-generated chart!</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Model & DB Support', 'LLMs: OpenAI, Anthropic, Google Gemini, Mistral, Ollama (any local model). Vector stores: ChromaDB, Qdrant, Pinecone, Weaviate, OpenAI Embeddings. Databases: PostgreSQL, MySQL, SQLite, BigQuery, Snowflake, DuckDB, and more. Mix and match: use Ollama + ChromaDB for a fully local, private setup.')
+      <h2>Model & DB Support</h2>
+<p>LLMs: OpenAI, Anthropic, Google Gemini, Mistral, Ollama (any local model). Vector stores: ChromaDB, Qdrant, Pinecone, Weaviate, OpenAI Embeddings. Databases: PostgreSQL, MySQL, SQLite, BigQuery, Snowflake, DuckDB, and more. Mix and match: use Ollama + ChromaDB for a fully local, private setup.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Self-Hosted vs Cloud', 'Self-hosted (open-source): full control, data stays on-premise, unlimited training examples. Vanna.ai cloud: hosted with a UI for training and querying, team collaboration features. For enterprise/regulated environments, self-hosted is the right choice.')
+      <h2>Self-Hosted vs Cloud</h2>
+<p>Self-hosted (open-source): full control, data stays on-premise, unlimited training examples. Vanna.ai cloud: hosted with a UI for training and querying, team collaboration features. For enterprise/regulated environments, self-hosted is the right choice.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Comparison to Direct Text-to-SQL', "Direct Text-to-SQL: simple, no training required, works out of the box for simple schemas. Vanna: requires upfront training, significantly more accurate for complex schemas and queries, improves over time as more examples are added. The break-even point is roughly 10+ tables or when direct approaches hit 70% accuracy — at that point, Vanna's RAG approach pulls noticeably ahead.")
+      <h2>Comparison to Direct Text-to-SQL</h2>
+<p>Direct Text-to-SQL: simple, no training required, works out of the box for simple schemas. Vanna: requires upfront training, significantly more accurate for complex schemas and queries, improves over time as more examples are added. The break-even point is roughly 10+ tables or when direct approaches hit 70% accuracy — at that point, Vanna's RAG approach pulls noticeably ahead.</p>
     </div>
   </div>
 

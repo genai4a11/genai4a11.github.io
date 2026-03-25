@@ -21,7 +21,7 @@
   "headline": "Test-Time Compute | GenAI Mindmap",
   "description": "Allocating additional compute at inference time \u2014 via best-of-N sampling, majority vote, chain-of-thought, or search \u2014 to improve output quality without retraining.",
   "url": "https://genai4a11.github.io/concepts/test-time-compute.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,72 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('The Core Idea', "A model's average output may be mediocre, but its best output from N tries is much better. Test-time compute (TTC) exploits this by generating multiple candidate outputs and selecting the best — using a verifier, judge, or aggregation rule. Recent work (DeepSeek-R1, OpenAI o1) shows TTC can match much larger models at a fraction of training cost.")
+      <h2>The Core Idea</h2>
+<p>A model's average output may be mediocre, but its best output from N tries is much better. Test-time compute (TTC) exploits this by generating multiple candidate outputs and selecting the best — using a verifier, judge, or aggregation rule. Recent work (DeepSeek-R1, OpenAI o1) shows TTC can match much larger models at a fraction of training cost.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Best-of-N Sampling', 'Generate N responses with temperature > 0, score each, return the best. "\n   "The scorer can be: a reward model, an LLM judge, a verifier (for math/code), "\n   "or a heuristic (length, confidence). N=8–32 is typical; gains plateau beyond 32 for most tasks.\n\nimport asyncio\nfrom openai import AsyncOpenAI\n\nclient = AsyncOpenAI()\n\nasync def best_of_n(prompt: str, n: int = 8, scorer=None) -> str:\n    tasks = [\n        client.chat.completions.create(\n            model="gpt-4o-mini",\n            messages=[{"role": "user", "content": prompt}],\n            temperature=0.8,\n        )\n        for _ in range(n)\n    ]\n    responses = await asyncio.gather(*tasks)\n    candidates = [r.choices[0].message.content for r in responses]\n    if scorer:\n        scores = [scorer(prompt, c) for c in candidates]\n        return candidates[scores.index(max(scores))]\n    # default: return longest (simple heuristic)\n    return max(candidates, key=len)')
+      <h2>Best-of-N Sampling</h2>
+<p>Generate N responses with temperature > 0, score each, return the best. " "The scorer can be: a reward model, an LLM judge, a verifier (for math/code), " "or a heuristic (length, confidence). N=8–32 is typical; gains plateau beyond 32 for most tasks.</p>
+<pre><code>import asyncio
+from openai import AsyncOpenAI
+client = AsyncOpenAI()
+async def best_of_n(prompt: str, n: int = 8, scorer=None) -&gt; str:
+    tasks = [
+        client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.8,
+        )
+        for _ in range(n)
+    ]
+    responses = await asyncio.gather(*tasks)
+    candidates = [r.choices[0].message.content for r in responses]
+    if scorer:
+        scores = [scorer(prompt, c) for c in candidates]
+        return candidates[scores.index(max(scores))]
+    # default: return longest (simple heuristic)
+    return max(candidates, key=len)</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Majority Vote / Self-Consistency', 'For questions with discrete answers (multiple-choice, math), generate N responses "\n   "and return the most common answer. Self-consistency (Wang et al. 2022) reliably improves "\n   "CoT reasoning by 5–15pp on benchmarks like GSM8K and MATH.\n\nfrom collections import Counter\n\nasync def self_consistency(prompt: str, n: int = 10) -> str:\n    tasks = [\n        client.chat.completions.create(\n            model="gpt-4o-mini",\n            messages=[{"role": "user", "content": prompt}],\n            temperature=0.7,\n        )\n        for _ in range(n)\n    ]\n    responses = await asyncio.gather(*tasks)\n    # Extract final answers (assumes last line or boxed answer)\n    answers = [extract_answer(r.choices[0].message.content) for r in responses]\n    most_common = Counter(answers).most_common(1)[0][0]\n    return most_common')
+      <h2>Majority Vote / Self-Consistency</h2>
+<p>For questions with discrete answers (multiple-choice, math), generate N responses " "and return the most common answer. Self-consistency (Wang et al. 2022) reliably improves " "CoT reasoning by 5–15pp on benchmarks like GSM8K and MATH.</p>
+<pre><code>from collections import Counter
+async def self_consistency(prompt: str, n: int = 10) -&gt; str:
+    tasks = [
+        client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+        )
+        for _ in range(n)
+    ]
+    responses = await asyncio.gather(*tasks)
+    # Extract final answers (assumes last line or boxed answer)
+    answers = [extract_answer(r.choices[0].message.content) for r in responses]
+    most_common = Counter(answers).most_common(1)[0][0]
+    return most_common</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Tree-of-Thought & MCTS', 'Tree-of-Thought (ToT) structures reasoning as a tree: generate multiple next-step thoughts, evaluate each with a value function, and continue from the most promising branch. Monte Carlo Tree Search (MCTS) adds rollout estimation for deeper planning. Both are powerful for complex multi-step reasoning but expensive (10–100× compute vs greedy decoding).')
+      <h2>Tree-of-Thought & MCTS</h2>
+<p>Tree-of-Thought (ToT) structures reasoning as a tree: generate multiple next-step thoughts, evaluate each with a value function, and continue from the most promising branch. Monte Carlo Tree Search (MCTS) adds rollout estimation for deeper planning. Both are powerful for complex multi-step reasoning but expensive (10–100× compute vs greedy decoding).</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('When to Use', 'Use TTC when: accuracy matters more than latency/cost, the task is verifiable (math, code), or you have a reliable reward model. Avoid when: real-time response is required, tasks are subjective (creative writing), or you lack a good scorer.')
+      <h2>When to Use</h2>
+<p>Use TTC when: accuracy matters more than latency/cost, the task is verifiable (math, code), or you have a reliable reward model. Avoid when: real-time response is required, tasks are subjective (creative writing), or you lack a good scorer.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Cost/Quality Tradeoffs', 'Best-of-4 with a cheap judge costs ~5× more but gains 15–20% on hard reasoning. Compare to fine-tuning: TTC is zero-shot deployable, works today, but adds per-request cost. A hybrid: fine-tune for cheap common cases, apply TTC only for flagged hard cases.')
+      <h2>Cost/Quality Tradeoffs</h2>
+<p>Best-of-4 with a cheap judge costs ~5× more but gains 15–20% on hard reasoning. Compare to fine-tuning: TTC is zero-shot deployable, works today, but adds per-request cost. A hybrid: fine-tune for cheap common cases, apply TTC only for flagged hard cases.</p>
     </div>
   </div>
 

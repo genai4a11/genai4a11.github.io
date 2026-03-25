@@ -21,7 +21,7 @@
   "headline": "Self-Instruct / Evol | GenAI Mindmap",
   "description": "Data generation techniques (Self-Instruct, WizardLM Evol-Instruct) that use an LLM to iteratively create and complexify instruction datasets for fine-tuning.",
   "url": "https://genai4a11.github.io/concepts/self-instruct.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,70 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Self-Instruct Algorithm', 'Self-Instruct (Wang et al. 2022) generates instruction data in four steps: (1) Sample 8 instructions from a pool (initially 175 seed instructions). (2) Decide if the instruction needs an input field. (3) Generate the output for the instruction (and input if applicable). (4) Filter: remove duplicates (ROUGE-L > 0.7 with any existing instruction) and add valid examples to the pool. Iterate until the desired dataset size is reached.')
+      <h2>Self-Instruct Algorithm</h2>
+<p>Self-Instruct (Wang et al. 2022) generates instruction data in four steps: (1) Sample 8 instructions from a pool (initially 175 seed instructions). (2) Decide if the instruction needs an input field. (3) Generate the output for the instruction (and input if applicable). (4) Filter: remove duplicates (ROUGE-L > 0.7 with any existing instruction) and add valid examples to the pool. Iterate until the desired dataset size is reached.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Evol-Instruct', "WizardLM's Evol-Instruct (Xu et al. 2023) improves Self-Instruct by evolving existing instructions to be more complex. Two evolution types: In-depth: add constraints, deepen complexity, add reasoning steps, concretise. In-breadth: generate a completely new instruction on a related topic. The result is a dataset with graduated difficulty — mixing simple and complex instructions.")
+      <h2>Evol-Instruct</h2>
+<p>WizardLM's Evol-Instruct (Xu et al. 2023) improves Self-Instruct by evolving existing instructions to be more complex. Two evolution types: In-depth: add constraints, deepen complexity, add reasoning steps, concretise. In-breadth: generate a completely new instruction on a related topic. The result is a dataset with graduated difficulty — mixing simple and complex instructions.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('WizardCoder Pipeline', 'Evol-Instruct applied to code: evolve simple code instructions into complex ones. "\n   "Example evolution: \'Write a function to sort a list\' → "\n   "\'Write a memory-efficient in-place merge sort that handles duplicates and returns "\n   "the count of swaps performed, with O(1) extra space.\'\n\nEVOL_PROMPT = """\nI want you to act as an instruction evolver. Given an existing instruction, "\nmake it more complex using one of these methods:\n1. Add more constraints or requirements\n2. Increase the depth of the task\n3. Add a reasoning or explanation requirement\n4. Specialise to a specific domain or edge case\n\nOriginal: {instruction}\nEvolved:\n"""\n\ndef evolve_instruction(instruction: str, model: str = "gpt-4o") -> str:\n    resp = client.chat.completions.create(\n        model=model,\n        messages=[{"role": "user", "content": EVOL_PROMPT.format(instruction=instruction)}],\n        temperature=0.9,\n    )\n    return resp.choices[0].message.content.strip()')
+      <h2>WizardCoder Pipeline</h2>
+<p>Evol-Instruct applied to code: evolve simple code instructions into complex ones. " "Example evolution: 'Write a function to sort a list' → " "'Write a memory-efficient in-place merge sort that handles duplicates and returns " "the count of swaps performed, with O(1) extra space.'</p>
+<p>EVOL_PROMPT = """ I want you to act as an instruction evolver. Given an existing instruction, " make it more complex using one of these methods: 1. Add more constraints or requirements 2. Increase the depth of the task 3. Add a reasoning or explanation requirement 4. Specialise to a specific domain or edge case</p>
+<p>Original: {instruction} Evolved: """</p>
+<pre><code>def evolve_instruction(instruction: str, model: str = "gpt-4o") -&gt; str:
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": EVOL_PROMPT.format(instruction=instruction)}],
+        temperature=0.9,
+    )
+    return resp.choices[0].message.content.strip()</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Orca Technique', "Microsoft's Orca (2023) improves on Self-Instruct by including rich system prompts and chain-of-thought reasoning in the generated responses. The teacher (GPT-4) is prompted to 'think step by step' and 'explain your reasoning', producing detailed explanations that the student model learns from. This transferred reasoning capability rather than just answer patterns.")
+      <h2>Orca Technique</h2>
+<p>Microsoft's Orca (2023) improves on Self-Instruct by including rich system prompts and chain-of-thought reasoning in the generated responses. The teacher (GPT-4) is prompted to 'think step by step' and 'explain your reasoning', producing detailed explanations that the student model learns from. This transferred reasoning capability rather than just answer patterns.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Implementation', 'A minimal Evol-Instruct pipeline:\n\nimport random\n\ndef evol_instruct_pipeline(\n    seed_instructions: list[str],\n    n_rounds: int = 3,\n    n_per_round: int = 1000,\n) -> list[dict]:\n    pool = seed_instructions.copy()\n    dataset = []\n\n    for round_n in range(n_rounds):\n        new_instructions = []\n        sample = random.sample(pool, min(n_per_round, len(pool)))\n        for inst in sample:\n            evolved = evolve_instruction(inst)\n            # Generate response\n            resp = client.chat.completions.create(\n                model="gpt-4o-mini",\n                messages=[{"role": "user", "content": evolved}],\n            ).choices[0].message.content\n            new_instructions.append(evolved)\n            dataset.append({"instruction": evolved, "output": resp, "round": round_n})\n        pool.extend(new_instructions)\n        print(f"Round {round_n+1}: {len(dataset)} total examples")\n    return dataset')
+      <h2>Implementation</h2>
+<p>A minimal Evol-Instruct pipeline:</p>
+<pre><code>import random
+def evol_instruct_pipeline(
+    seed_instructions: list[str],
+    n_rounds: int = 3,
+    n_per_round: int = 1000,
+) -&gt; list[dict]:
+    pool = seed_instructions.copy()
+    dataset = []
+for round_n in range(n_rounds):
+        new_instructions = []
+        sample = random.sample(pool, min(n_per_round, len(pool)))
+        for inst in sample:
+            evolved = evolve_instruction(inst)
+            # Generate response
+            resp = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": evolved}],
+            ).choices[0].message.content
+            new_instructions.append(evolved)
+            dataset.append({"instruction": evolved, "output": resp, "round": round_n})
+        pool.extend(new_instructions)
+        print(f"Round {round_n+1}: {len(dataset)} total examples")
+    return dataset</code></pre>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Quality Evaluation', "Evaluate generated datasets with: LLM-as-judge scoring (GPT-4 rates quality 1–5), task diversity analysis (embedding cluster coverage), difficulty distribution (what fraction requires multi-step reasoning?), and downstream model performance (fine-tune and eval on benchmark). The best signal is always the downstream evaluation — a beautiful-looking dataset that doesn't improve model performance is worthless.")
+      <h2>Quality Evaluation</h2>
+<p>Evaluate generated datasets with: LLM-as-judge scoring (GPT-4 rates quality 1–5), task diversity analysis (embedding cluster coverage), difficulty distribution (what fraction requires multi-step reasoning?), and downstream model performance (fine-tune and eval on benchmark). The best signal is always the downstream evaluation — a beautiful-looking dataset that doesn't improve model performance is worthless.</p>
     </div>
   </div>
 

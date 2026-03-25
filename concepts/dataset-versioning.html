@@ -21,7 +21,7 @@
   "headline": "Dataset Versioning | GenAI Mindmap",
   "description": "Tracking, versioning, and reproducing AI datasets across their full lifecycle \u2014 from raw collection through cleaning, labelling, and splits \u2014 for reproducibility and rollback.",
   "url": "https://genai4a11.github.io/concepts/dataset-versioning.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,61 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Why Version Datasets?', "Without versioning, you can't answer: what data did model v3.1 train on? Why did performance drop after last week's data pipeline run? Can we reproduce experiment #47 exactly? Dataset versioning gives every training run a pointer to the exact dataset state — enabling reproducibility, debugging, and safe rollback when a data update degrades model quality.")
+      <h2>Why Version Datasets?</h2>
+<p>Without versioning, you can't answer: what data did model v3.1 train on? Why did performance drop after last week's data pipeline run? Can we reproduce experiment #47 exactly? Dataset versioning gives every training run a pointer to the exact dataset state — enabling reproducibility, debugging, and safe rollback when a data update degrades model quality.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('DVC for Data Versioning', 'DVC (Data Version Control) stores large files in remote storage (S3, GCS, Azure) "\n   "and tracks them in git as small pointer files (.dvc). "\n   "Every git commit can include a pointer to the exact dataset version used.\n\n# Initialize DVC in a git repo\n# dvc init\n# dvc remote add -d myremote s3://my-bucket/dvc-store\n\nimport subprocess\n\ndef version_dataset(dataset_path: str, message: str):\n    # Add dataset to DVC tracking\n    subprocess.run(["dvc", "add", dataset_path], check=True)\n    # Stage DVC pointer file + data dir for git\n    subprocess.run(["git", "add", f"{dataset_path}.dvc", ".gitignore"], check=True)\n    # Push data to remote\n    subprocess.run(["dvc", "push"], check=True)\n    # Commit git pointer\n    subprocess.run(["git", "commit", "-m", f"Dataset: {message}"], check=True)\n    print(f"Dataset versioned: {message}")')
+      <h2>DVC for Data Versioning</h2>
+<p>DVC (Data Version Control) stores large files in remote storage (S3, GCS, Azure) " "and tracks them in git as small pointer files (.dvc). " "Every git commit can include a pointer to the exact dataset version used.</p>
+<pre><code># Initialize DVC in a git repo
+# dvc init
+# dvc remote add -d myremote s3://my-bucket/dvc-store
+import subprocess
+def version_dataset(dataset_path: str, message: str):
+    # Add dataset to DVC tracking
+    subprocess.run(["dvc", "add", dataset_path], check=True)
+    # Stage DVC pointer file + data dir for git
+    subprocess.run(["git", "add", f"{dataset_path}.dvc", ".gitignore"], check=True)
+    # Push data to remote
+    subprocess.run(["dvc", "push"], check=True)
+    # Commit git pointer
+    subprocess.run(["git", "commit", "-m", f"Dataset: {message}"], check=True)
+    print(f"Dataset versioned: {message}")</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Hugging Face Hub', 'The Hugging Face Hub is the standard for sharing and versioning NLP/LLM datasets. Every dataset repo is a git-LFS repository — push new versions as commits, load any version by git revision hash. Dataset cards (README.md) document provenance, splits, and intended use. The `datasets` library caches and loads any Hub dataset by name and revision.')
+      <h2>Hugging Face Hub</h2>
+<p>The Hugging Face Hub is the standard for sharing and versioning NLP/LLM datasets. Every dataset repo is a git-LFS repository — push new versions as commits, load any version by git revision hash. Dataset cards (README.md) document provenance, splits, and intended use. The `datasets` library caches and loads any Hub dataset by name and revision.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Dataset Cards', 'A dataset card is the metadata document for a dataset. Minimum contents: dataset description and intended use, data source and collection methodology, preprocessing steps applied, train/val/test split sizes and strategy, label distribution statistics, known biases and limitations, and licence + citation information. Without a dataset card, the dataset is effectively undocumented.')
+      <h2>Dataset Cards</h2>
+<p>A dataset card is the metadata document for a dataset. Minimum contents: dataset description and intended use, data source and collection methodology, preprocessing steps applied, train/val/test split sizes and strategy, label distribution statistics, known biases and limitations, and licence + citation information. Without a dataset card, the dataset is effectively undocumented.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Split Reproducibility', 'Use a fixed random seed and deterministic split logic so the same split "\n   "is produced every time. Store split indices alongside the dataset.\n\nimport hashlib\nfrom sklearn.model_selection import train_test_split\n\ndef reproducible_split(ids: list, train_ratio=0.8, val_ratio=0.1, seed=42):\n    # Sort deterministically before splitting\n    ids_sorted = sorted(ids)\n    train, temp = train_test_split(ids_sorted, test_size=1-train_ratio, random_state=seed)\n    val_size = val_ratio / (1 - train_ratio)\n    val, test = train_test_split(temp, test_size=1-val_size, random_state=seed)\n    return {"train": train, "val": val, "test": test}')
+      <h2>Split Reproducibility</h2>
+<p>Use a fixed random seed and deterministic split logic so the same split " "is produced every time. Store split indices alongside the dataset.</p>
+<pre><code>import hashlib
+from sklearn.model_selection import train_test_split
+def reproducible_split(ids: list, train_ratio=0.8, val_ratio=0.1, seed=42):
+    # Sort deterministically before splitting
+    ids_sorted = sorted(ids)
+    train, temp = train_test_split(ids_sorted, test_size=1-train_ratio, random_state=seed)
+    val_size = val_ratio / (1 - train_ratio)
+    val, test = train_test_split(temp, test_size=1-val_size, random_state=seed)
+    return {"train": train, "val": val, "test": test}</code></pre>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Data Lineage Tracking', 'Track the full provenance of every dataset version: which source documents were included, which filters were applied and with what parameters, which annotation job produced which labels, and which model generated synthetic examples. Store this as a lineage graph in a metadata store (e.g. Postgres). When a model trained on dataset v2.3 shows unexpected behaviour, lineage lets you trace it back to the exact data change that caused it.')
+      <h2>Data Lineage Tracking</h2>
+<p>Track the full provenance of every dataset version: which source documents were included, which filters were applied and with what parameters, which annotation job produced which labels, and which model generated synthetic examples. Store this as a lineage graph in a metadata store (e.g. Postgres). When a model trained on dataset v2.3 shows unexpected behaviour, lineage lets you trace it back to the exact data change that caused it.</p>
     </div>
   </div>
 

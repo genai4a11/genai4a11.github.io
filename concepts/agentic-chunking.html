@@ -21,7 +21,7 @@
   "headline": "Agentic Chunking | GenAI Mindmap",
   "description": "A document chunking strategy that uses an LLM to determine chunk boundaries based on content coherence \u2014 producing semantically complete, variable-length chunks without fixed window sizes.",
   "url": "https://genai4a11.github.io/concepts/agentic-chunking.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,69 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What Is Agentic Chunking?', 'Agentic chunking uses an LLM as a document understanding agent: it reads the document and decides where to split based on semantic coherence — keeping related content together and splitting at natural topic boundaries. The result is variable-length chunks that respect document structure: a code block stays with its explanation, a table stays with its header row.')
+      <h2>What Is Agentic Chunking?</h2>
+<p>Agentic chunking uses an LLM as a document understanding agent: it reads the document and decides where to split based on semantic coherence — keeping related content together and splitting at natural topic boundaries. The result is variable-length chunks that respect document structure: a code block stays with its explanation, a table stays with its header row.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('The Chunking Algorithm', "The LLM is given the document (or a rolling window of it) and asked: 'Is this content complete as a standalone chunk, or does it need more context?' If complete, split here. If not, include the next paragraph and re-evaluate. This produces chunks that are semantically complete — each chunk answers a coherent question without requiring surrounding context.")
+      <h2>The Chunking Algorithm</h2>
+<p>The LLM is given the document (or a rolling window of it) and asked: 'Is this content complete as a standalone chunk, or does it need more context?' If complete, split here. If not, include the next paragraph and re-evaluate. This produces chunks that are semantically complete — each chunk answers a coherent question without requiring surrounding context.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Implementation', 'from openai import OpenAI\n\nclient = OpenAI()\n\ndef agentic_chunk(document: str, target_size: int = 500) -> list[str]:\n    paragraphs = document.split("\\n\\n")\n    chunks = []\n    current = []\n    current_len = 0\n\n    for para in paragraphs:\n        current.append(para)\n        current_len += len(para.split())\n\n        if current_len >= target_size:\n            # Ask LLM if current accumulation is a coherent chunk\n            candidate = "\\n\\n".join(current)\n            response = client.chat.completions.create(\n                model="gpt-4o-mini",\n                messages=[{\n                    "role": "user",\n                    "content": (\n                        "Is the following text a semantically complete, standalone unit? "\n                        "Reply with YES or NO.\\n\\n" + candidate[:1000]\n                    )\n                }],\n                max_tokens=5,\n                temperature=0,\n            )\n            if "YES" in response.choices[0].message.content.upper():\n                chunks.append(candidate)\n                current = []\n                current_len = 0\n\n    if current:\n        chunks.append("\\n\\n".join(current))\n    return chunks')
+      <h2>Implementation</h2>
+<pre><code>from openai import OpenAI
+client = OpenAI()
+def agentic_chunk(document: str, target_size: int = 500) -&gt; list[str]:
+    paragraphs = document.split("\n\n")
+    chunks = []
+    current = []
+    current_len = 0
+for para in paragraphs:
+        current.append(para)
+        current_len += len(para.split())
+if current_len &gt;= target_size:
+            # Ask LLM if current accumulation is a coherent chunk
+            candidate = "\n\n".join(current)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{
+                    "role": "user",
+                    "content": (
+                        "Is the following text a semantically complete, standalone unit? "
+                        "Reply with YES or NO.\n\n" + candidate[:1000]
+                    )
+                }],
+                max_tokens=5,
+                temperature=0,
+            )
+            if "YES" in response.choices[0].message.content.upper():
+                chunks.append(candidate)
+                current = []
+                current_len = 0
+if current:
+        chunks.append("\n\n".join(current))
+    return chunks</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('When to Use', 'Use agentic chunking for: heterogeneous documents (technical manuals, reports with mixed content), documents where structure matters (code + explanation, tables + captions), and high-value corpora where retrieval quality justifies indexing cost. Avoid for: homogeneous text corpora (news articles), cost-sensitive pipelines, or real-time indexing.')
+      <h2>When to Use</h2>
+<p>Use agentic chunking for: heterogeneous documents (technical manuals, reports with mixed content), documents where structure matters (code + explanation, tables + captions), and high-value corpora where retrieval quality justifies indexing cost. Avoid for: homogeneous text corpora (news articles), cost-sensitive pipelines, or real-time indexing.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Comparison Table', 'Fixed-size: O(1) cost, low quality, good baseline. Recursive character: O(1) cost, medium quality, respects some structure. Semantic: O(n·embedding) cost, good quality for narrative. Proposition: O(n·LLM) cost, best precision for factoid QA. Agentic: O(n·LLM) cost, best coherence for complex documents. Choose based on the tradeoff between indexing cost and retrieval quality requirements.')
+      <h2>Comparison Table</h2>
+<p>Fixed-size: O(1) cost, low quality, good baseline. Recursive character: O(1) cost, medium quality, respects some structure. Semantic: O(n·embedding) cost, good quality for narrative. Proposition: O(n·LLM) cost, best precision for factoid QA. Agentic: O(n·LLM) cost, best coherence for complex documents. Choose based on the tradeoff between indexing cost and retrieval quality requirements.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Combining with Propositions', 'A powerful two-stage pipeline: (1) Agentic chunking produces semantically complete parent chunks. (2) Proposition extraction produces fine-grained retrieval units from each chunk. At retrieval time, propositions are retrieved for precision; parent chunks are returned for context richness. This is the highest-quality RAG retrieval strategy, at the highest indexing cost.')
+      <h2>Combining with Propositions</h2>
+<p>A powerful two-stage pipeline: (1) Agentic chunking produces semantically complete parent chunks. (2) Proposition extraction produces fine-grained retrieval units from each chunk. At retrieval time, propositions are retrieved for precision; parent chunks are returned for context richness. This is the highest-quality RAG retrieval strategy, at the highest indexing cost.</p>
     </div>
   </div>
 

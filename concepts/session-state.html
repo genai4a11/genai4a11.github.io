@@ -21,7 +21,7 @@
   "headline": "Session State | GenAI Mindmap",
   "description": "Managing conversation history, user context, and intermediate agent state across multi-turn interactions \u2014 in memory for speed, persisted for reliability.",
   "url": "https://genai4a11.github.io/concepts/session-state.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,71 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Types of Session State', 'Conversation state: the message history (role, content, timestamp) for the current session. Agent state: intermediate results, tool call outputs, plan steps, and loop counters for agentic workflows. User state: long-term preferences, past interactions, and personalisation data. Each type has different durability, size, and access-pattern requirements.')
+      <h2>Types of Session State</h2>
+<p>Conversation state: the message history (role, content, timestamp) for the current session. Agent state: intermediate results, tool call outputs, plan steps, and loop counters for agentic workflows. User state: long-term preferences, past interactions, and personalisation data. Each type has different durability, size, and access-pattern requirements.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('In-Memory vs Persistent', 'In-memory (Redis): sub-millisecond access, session TTL eviction, ideal for active conversations. Persistent (Postgres/DynamoDB): survives restarts, queryable, audit trail. Pattern: store active sessions in Redis with a 30-minute TTL; flush to Postgres on session end or at 5-minute checkpoints. Read from Redis if exists, else load from Postgres.')
+      <h2>In-Memory vs Persistent</h2>
+<p>In-memory (Redis): sub-millisecond access, session TTL eviction, ideal for active conversations. Persistent (Postgres/DynamoDB): survives restarts, queryable, audit trail. Pattern: store active sessions in Redis with a 30-minute TTL; flush to Postgres on session end or at 5-minute checkpoints. Read from Redis if exists, else load from Postgres.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Context Window Management', 'Conversation history grows unbounded; fit it in the model\'s context window with a sliding strategy. "\n   "Options: (1) last-N turns only — simple but loses early context. "\n   "(2) summarise older turns — preserves semantics, costs extra tokens. "\n   "(3) retrieve relevant past turns — ideal but adds retrieval latency.\n\ndef trim_history(messages: list[dict], max_tokens: int = 8000) -> list[dict]:\n    import tiktoken\n    enc = tiktoken.get_encoding("cl100k_base")\n    total = 0\n    trimmed = []\n    # Always keep system message\n    system = [m for m in messages if m["role"] == "system"]\n    rest = [m for m in messages if m["role"] != "system"]\n    for m in reversed(rest):\n        tokens = len(enc.encode(m["content"]))\n        if total + tokens > max_tokens:\n            break\n        trimmed.insert(0, m)\n        total += tokens\n    return system + trimmed')
+      <h2>Context Window Management</h2>
+<p>Conversation history grows unbounded; fit it in the model's context window with a sliding strategy. " "Options: (1) last-N turns only — simple but loses early context. " "(2) summarise older turns — preserves semantics, costs extra tokens. " "(3) retrieve relevant past turns — ideal but adds retrieval latency.</p>
+<pre><code>def trim_history(messages: list[dict], max_tokens: int = 8000) -&gt; list[dict]:
+    import tiktoken
+    enc = tiktoken.get_encoding("cl100k_base")
+    total = 0
+    trimmed = []
+    # Always keep system message
+    system = [m for m in messages if m["role"] == "system"]
+    rest = [m for m in messages if m["role"] != "system"]
+    for m in reversed(rest):
+        tokens = len(enc.encode(m["content"]))
+        if total + tokens &gt; max_tokens:
+            break
+        trimmed.insert(0, m)
+        total += tokens
+    return system + trimmed</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('State Schema Design', 'Use a consistent schema for serialised session state to enable safe deserialization across versions.\n\nfrom pydantic import BaseModel\nfrom datetime import datetime\n\nclass Message(BaseModel):\n    role: str\n    content: str\n    timestamp: datetime\n    tokens: int = 0\n\nclass SessionState(BaseModel):\n    session_id: str\n    user_id: str\n    created_at: datetime\n    updated_at: datetime\n    messages: list[Message] = []\n    agent_scratchpad: dict = {}\n    metadata: dict = {}\n\n    def add_message(self, role: str, content: str):\n        self.messages.append(Message(role=role, content=content, timestamp=datetime.utcnow()))\n        self.updated_at = datetime.utcnow()')
+      <h2>State Schema Design</h2>
+<p>Use a consistent schema for serialised session state to enable safe deserialization across versions.</p>
+<pre><code>from pydantic import BaseModel
+from datetime import datetime
+class Message(BaseModel):
+    role: str
+    content: str
+    timestamp: datetime
+    tokens: int = 0
+class SessionState(BaseModel):
+    session_id: str
+    user_id: str
+    created_at: datetime
+    updated_at: datetime
+    messages: list[Message] = []
+    agent_scratchpad: dict = {}
+    metadata: dict = {}
+def add_message(self, role: str, content: str):
+        self.messages.append(Message(role=role, content=content, timestamp=datetime.utcnow()))
+        self.updated_at = datetime.utcnow()</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Multi-Turn Consistency', 'Guard against concurrent modifications: use optimistic locking (version counter) to detect if two requests modify the same session simultaneously. For agent loops, store a lock token in Redis with a short TTL (30 s) to prevent parallel agent runs from corrupting state.')
+      <h2>Multi-Turn Consistency</h2>
+<p>Guard against concurrent modifications: use optimistic locking (version counter) to detect if two requests modify the same session simultaneously. For agent loops, store a lock token in Redis with a short TTL (30 s) to prevent parallel agent runs from corrupting state.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Cleanup & Expiry', "Expire Redis sessions after 30 minutes of inactivity (EXPIRE command). Archive Postgres sessions older than 90 days to cold storage (S3). Delete agent scratchpad data immediately after the agent completes — it contains intermediate data that shouldn't persist. Run nightly cleanup jobs for orphaned sessions.")
+      <h2>Cleanup & Expiry</h2>
+<p>Expire Redis sessions after 30 minutes of inactivity (EXPIRE command). Archive Postgres sessions older than 90 days to cold storage (S3). Delete agent scratchpad data immediately after the agent completes — it contains intermediate data that shouldn't persist. Run nightly cleanup jobs for orphaned sessions.</p>
     </div>
   </div>
 

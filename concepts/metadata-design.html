@@ -21,7 +21,7 @@
   "headline": "Metadata Design | GenAI Mindmap",
   "description": "Designing metadata schemas for AI datasets and vector stores \u2014 the structured information attached to every document chunk that enables filtering, attribution, and retrieval quality improvements.",
   "url": "https://genai4a11.github.io/concepts/metadata-design.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,73 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Why Metadata Matters', "Two chunks may be equally similar to a query by embedding distance, but only one is from a verified source published this year. Without metadata, you can't distinguish them. Good metadata enables: filtered retrieval (only documents from source X), temporal filtering (after date Y), access control (user can only see their tenant's documents), and attribution (show the user which document the answer came from).")
+      <h2>Why Metadata Matters</h2>
+<p>Two chunks may be equally similar to a query by embedding distance, but only one is from a verified source published this year. Without metadata, you can't distinguish them. Good metadata enables: filtered retrieval (only documents from source X), temporal filtering (after date Y), access control (user can only see their tenant's documents), and attribution (show the user which document the answer came from).</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Metadata Taxonomy', 'Provenance: source URL, document title, author, publication date, version. Structure: chunk index, section heading, page number, document type (PDF/HTML/code). Content: summary, keywords, entity types, language, topic category. Access control: tenant ID, user group, permission level. Quality: confidence score, last verified date, human-reviewed flag.')
+      <h2>Metadata Taxonomy</h2>
+<p>Provenance: source URL, document title, author, publication date, version. Structure: chunk index, section heading, page number, document type (PDF/HTML/code). Content: summary, keywords, entity types, language, topic category. Access control: tenant ID, user group, permission level. Quality: confidence score, last verified date, human-reviewed flag.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Schema Design Principles', 'Design for query patterns, not for completeness. "\n   "Ask: what filters will users apply? What attribution do they need? "\n   "Keep metadata values low-cardinality for filters (5–20 unique values) "\n   "or store as lists for multi-value attributes. Avoid free-text metadata fields "\n   "that you\'ll try to filter on — normalise to enums or IDs instead.\n\nfrom pydantic import BaseModel\nfrom datetime import date\nfrom typing import Optional\n\nclass ChunkMetadata(BaseModel):\n    # Provenance\n    source_url: str\n    doc_title: str\n    author: Optional[str] = None\n    published_date: Optional[date] = None\n    # Structure\n    chunk_index: int\n    section: Optional[str] = None\n    page_number: Optional[int] = None\n    doc_type: str  # "pdf", "html", "markdown", "code"\n    # Access\n    tenant_id: str\n    is_public: bool = False\n    # Quality\n    human_reviewed: bool = False')
+      <h2>Schema Design Principles</h2>
+<p>Design for query patterns, not for completeness. " "Ask: what filters will users apply? What attribution do they need? " "Keep metadata values low-cardinality for filters (5–20 unique values) " "or store as lists for multi-value attributes. Avoid free-text metadata fields " "that you'll try to filter on — normalise to enums or IDs instead.</p>
+<pre><code>from pydantic import BaseModel
+from datetime import date
+from typing import Optional
+class ChunkMetadata(BaseModel):
+    # Provenance
+    source_url: str
+    doc_title: str
+    author: Optional[str] = None
+    published_date: Optional[date] = None
+    # Structure
+    chunk_index: int
+    section: Optional[str] = None
+    page_number: Optional[int] = None
+    doc_type: str  # "pdf", "html", "markdown", "code"
+    # Access
+    tenant_id: str
+    is_public: bool = False
+    # Quality
+    human_reviewed: bool = False</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Filtering at Query Time', 'Use metadata filters to narrow the search space before or alongside vector similarity. "\n   "Most vector stores support hybrid filtering (metadata + vector).\n\nfrom qdrant_client import QdrantClient\nfrom qdrant_client.models import Filter, FieldCondition, MatchValue, Range\n\nclient = QdrantClient("localhost", port=6333)\n\nresults = client.search(\n    collection_name="documents",\n    query_vector=query_embedding,\n    query_filter=Filter(\n        must=[\n            FieldCondition(key="tenant_id", match=MatchValue(value="acme-corp")),\n            FieldCondition(key="doc_type", match=MatchValue(value="pdf")),\n            FieldCondition(key="published_date",\n                           range=Range(gte="2024-01-01")),\n        ]\n    ),\n    limit=10,\n)')
+      <h2>Filtering at Query Time</h2>
+<p>Use metadata filters to narrow the search space before or alongside vector similarity. " "Most vector stores support hybrid filtering (metadata + vector).</p>
+<pre><code>from qdrant_client import QdrantClient
+from qdrant_client.models import Filter, FieldCondition, MatchValue, Range
+client = QdrantClient("localhost", port=6333)
+results = client.search(
+    collection_name="documents",
+    query_vector=query_embedding,
+    query_filter=Filter(
+        must=[
+            FieldCondition(key="tenant_id", match=MatchValue(value="acme-corp")),
+            FieldCondition(key="doc_type", match=MatchValue(value="pdf")),
+            FieldCondition(key="published_date",
+                           range=Range(gte="2024-01-01")),
+        ]
+    ),
+    limit=10,
+)</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Embedding Metadata', "For richer semantic retrieval, embed metadata alongside content: prepend document title, section heading, and keywords to the chunk text before embedding. '[Title: Annual Report 2024] [Section: Revenue] Q4 revenue was $1.2B...' This shifts the embedding toward the document's semantic context, improving retrieval for queries like 'what were Q4 revenues?'")
+      <h2>Embedding Metadata</h2>
+<p>For richer semantic retrieval, embed metadata alongside content: prepend document title, section heading, and keywords to the chunk text before embedding. '[Title: Annual Report 2024] [Section: Revenue] Q4 revenue was $1.2B...' This shifts the embedding toward the document's semantic context, improving retrieval for queries like 'what were Q4 revenues?'</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Tooling & Standards', 'LangChain Document: standard metadata dict attached to every Document object. LlamaIndex: rich metadata with per-field embedding control. Unstructured.io: auto-extracts metadata from PDFs, HTMLs, and Office docs. Dublin Core: standard for provenance metadata (title, creator, date, format). Keep metadata versioned alongside the corpus — schema changes require re-ingestion.')
+      <h2>Tooling & Standards</h2>
+<p>LangChain Document: standard metadata dict attached to every Document object. LlamaIndex: rich metadata with per-field embedding control. Unstructured.io: auto-extracts metadata from PDFs, HTMLs, and Office docs. Dublin Core: standard for provenance metadata (title, creator, date, format). Keep metadata versioned alongside the corpus — schema changes require re-ingestion.</p>
     </div>
   </div>
 

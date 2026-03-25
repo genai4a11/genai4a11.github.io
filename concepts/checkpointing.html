@@ -21,7 +21,7 @@
   "headline": "Checkpointing | GenAI Mindmap",
   "description": "Saving intermediate agent and pipeline state at key execution points so that long-running tasks can resume after failures without restarting from scratch.",
   "url": "https://genai4a11.github.io/concepts/checkpointing.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,66 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Why Checkpointing?', 'A 10-step agentic pipeline that fails at step 9 without checkpointing restarts from step 1, wasting compute and time. Checkpointing saves the output of each completed step so on retry, execution resumes from the last successful checkpoint. Critical for: long research tasks, multi-tool agents, batch processing jobs.')
+      <h2>Why Checkpointing?</h2>
+<p>A 10-step agentic pipeline that fails at step 9 without checkpointing restarts from step 1, wasting compute and time. Checkpointing saves the output of each completed step so on retry, execution resumes from the last successful checkpoint. Critical for: long research tasks, multi-tool agents, batch processing jobs.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Checkpoint Granularity', 'Too coarse (checkpoint only at end): no benefit. Too fine (every token): overhead overwhelms. Optimal: checkpoint at natural step boundaries — after each tool call, after each sub-task completion, before expensive operations. For batch jobs, checkpoint every N items (N=100 is typical).')
+      <h2>Checkpoint Granularity</h2>
+<p>Too coarse (checkpoint only at end): no benefit. Too fine (every token): overhead overwhelms. Optimal: checkpoint at natural step boundaries — after each tool call, after each sub-task completion, before expensive operations. For batch jobs, checkpoint every N items (N=100 is typical).</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Storage Backends', 'Redis: fast, ephemeral — good for intra-session checkpoints. "\n   "Postgres/SQLite: persistent, queryable — good for multi-session tasks. "\n   "S3/blob storage: for large intermediate artifacts (generated documents, retrieved corpora).\n\nimport json, redis, hashlib\n\nr = redis.Redis()\n\ndef save_checkpoint(task_id: str, step: int, state: dict, ttl: int = 3600):\n    key = f"checkpoint:{task_id}:{step}"\n    r.set(key, json.dumps(state), ex=ttl)\n    # Track latest checkpoint\n    r.set(f"checkpoint:{task_id}:latest", step, ex=ttl)\n    print(f"Checkpoint saved: step {step}")\n\ndef load_latest_checkpoint(task_id: str) -> tuple[int, dict]:\n    latest = r.get(f"checkpoint:{task_id}:latest")\n    if not latest:\n        return 0, {}\n    step = int(latest)\n    state = json.loads(r.get(f"checkpoint:{task_id}:{step}"))\n    return step, state')
+      <h2>Storage Backends</h2>
+<p>Redis: fast, ephemeral — good for intra-session checkpoints. " "Postgres/SQLite: persistent, queryable — good for multi-session tasks. " "S3/blob storage: for large intermediate artifacts (generated documents, retrieved corpora).</p>
+<pre><code>import json, redis, hashlib
+r = redis.Redis()
+def save_checkpoint(task_id: str, step: int, state: dict, ttl: int = 3600):
+    key = f"checkpoint:{task_id}:{step}"
+    r.set(key, json.dumps(state), ex=ttl)
+    # Track latest checkpoint
+    r.set(f"checkpoint:{task_id}:latest", step, ex=ttl)
+    print(f"Checkpoint saved: step {step}")
+def load_latest_checkpoint(task_id: str) -&gt; tuple[int, dict]:
+    latest = r.get(f"checkpoint:{task_id}:latest")
+    if not latest:
+        return 0, {}
+    step = int(latest)
+    state = json.loads(r.get(f"checkpoint:{task_id}:{step}"))
+    return step, state</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Resumption Logic', 'On task start, check for an existing checkpoint. If found, resume from that step. "\n   "If not found, start from step 0. Pass the checkpoint state to downstream steps.\n\nasync def run_pipeline(task_id: str, inputs: dict) -> dict:\n    start_step, state = load_latest_checkpoint(task_id)\n    if start_step > 0:\n        print(f"Resuming from step {start_step}")\n    else:\n        state = {"inputs": inputs, "results": {}}\n\n    steps = [step_retrieve, step_analyze, step_generate, step_validate, step_format]\n    for i, step_fn in enumerate(steps):\n        if i < start_step:\n            continue  # skip already-completed steps\n        state = await step_fn(state)\n        save_checkpoint(task_id, i + 1, state)\n\n    return state["results"]')
+      <h2>Resumption Logic</h2>
+<p>On task start, check for an existing checkpoint. If found, resume from that step. " "If not found, start from step 0. Pass the checkpoint state to downstream steps.</p>
+<pre><code>async def run_pipeline(task_id: str, inputs: dict) -&gt; dict:
+    start_step, state = load_latest_checkpoint(task_id)
+    if start_step &gt; 0:
+        print(f"Resuming from step {start_step}")
+    else:
+        state = {"inputs": inputs, "results": {}}
+steps = [step_retrieve, step_analyze, step_generate, step_validate, step_format]
+    for i, step_fn in enumerate(steps):
+        if i &lt; start_step:
+            continue  # skip already-completed steps
+        state = await step_fn(state)
+        save_checkpoint(task_id, i + 1, state)
+return state["results"]</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Idempotency Requirements', "Each step must be idempotent: running it twice with the same input produces the same output. For LLM calls, use temperature=0 and store the output hash to detect re-runs. For external API calls (web search, database writes), use idempotency keys. Non-idempotent steps (file writes, emails) must check 'already done' before executing.")
+      <h2>Idempotency Requirements</h2>
+<p>Each step must be idempotent: running it twice with the same input produces the same output. For LLM calls, use temperature=0 and store the output hash to detect re-runs. For external API calls (web search, database writes), use idempotency keys. Non-idempotent steps (file writes, emails) must check 'already done' before executing.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('LangGraph Integration', 'LangGraph has built-in checkpointing via a Checkpointer interface. SqliteSaver, PostgresSaver, and RedisSaver are provided out of the box. Pass a checkpointer to your graph at compile time; LangGraph saves state after each node. On re-run with the same thread_id, execution resumes from the last saved state automatically.')
+      <h2>LangGraph Integration</h2>
+<p>LangGraph has built-in checkpointing via a Checkpointer interface. SqliteSaver, PostgresSaver, and RedisSaver are provided out of the box. Pass a checkpointer to your graph at compile time; LangGraph saves state after each node. On re-run with the same thread_id, execution resumes from the last saved state automatically.</p>
     </div>
   </div>
 

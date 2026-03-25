@@ -21,7 +21,7 @@
   "headline": "Text-to-SQL | GenAI Mindmap",
   "description": "Converting natural language questions into SQL queries using LLMs \u2014 enabling non-technical users to query databases in plain English with production-ready accuracy and safety.",
   "url": "https://genai4a11.github.io/concepts/text2sql.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,78 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('The Text-to-SQL Problem', 'LLMs can generate SQL from natural language questions but need database schema context: table names, column names, types, and relationships. Without schema, the model hallucinates. With full schema, large databases overflow the context window. The core engineering challenge is: how do you give the model exactly the schema it needs for the current query?')
+      <h2>The Text-to-SQL Problem</h2>
+<p>LLMs can generate SQL from natural language questions but need database schema context: table names, column names, types, and relationships. Without schema, the model hallucinates. With full schema, large databases overflow the context window. The core engineering challenge is: how do you give the model exactly the schema it needs for the current query?</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Schema Context Strategy', 'For small databases (<20 tables): include the full schema in every prompt. "\n   "For large databases: retrieve only relevant tables using semantic similarity "\n   "between the query and table/column descriptions.\n\nfrom openai import OpenAI\nfrom sklearn.metrics.pairwise import cosine_similarity\nimport numpy as np\n\nclient = OpenAI()\n\ndef get_relevant_schema(query: str, schema_embeddings: dict, top_k: int = 5) -> str:\n    query_emb = client.embeddings.create(\n        model="text-embedding-3-small", input=query\n    ).data[0].embedding\n\n    scores = {}\n    for table_name, emb in schema_embeddings.items():\n        scores[table_name] = cosine_similarity([query_emb], [emb])[0][0]\n\n    top_tables = sorted(scores, key=scores.get, reverse=True)[:top_k]\n    return build_schema_string(top_tables)')
+      <h2>Schema Context Strategy</h2>
+<p>For small databases (<20 tables): include the full schema in every prompt. " "For large databases: retrieve only relevant tables using semantic similarity " "between the query and table/column descriptions.</p>
+<pre><code>from openai import OpenAI
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+client = OpenAI()
+def get_relevant_schema(query: str, schema_embeddings: dict, top_k: int = 5) -&gt; str:
+    query_emb = client.embeddings.create(
+        model="text-embedding-3-small", input=query
+    ).data[0].embedding
+scores = {}
+    for table_name, emb in schema_embeddings.items():
+        scores[table_name] = cosine_similarity([query_emb], [emb])[0][0]
+top_tables = sorted(scores, key=scores.get, reverse=True)[:top_k]
+    return build_schema_string(top_tables)</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Query Generation', 'Give the LLM the schema, dialect (PostgreSQL/MySQL/SQLite), and a few-shot example. "\n   "Use a structured output format to separate the SQL from reasoning.\n\ndef generate_sql(question: str, schema: str, dialect: str = "PostgreSQL") -> str:\n    prompt = f"""You are a {dialect} expert. Given the schema:\n{schema}\n\nConvert this question to SQL. Return only the SQL query, no explanation.\nQuestion: {question}\nSQL:"""\n    response = client.chat.completions.create(\n        model="gpt-4o",\n        messages=[{"role": "user", "content": prompt}],\n        temperature=0,\n    )\n    return response.choices[0].message.content.strip()')
+      <h2>Query Generation</h2>
+<p>Give the LLM the schema, dialect (PostgreSQL/MySQL/SQLite), and a few-shot example. " "Use a structured output format to separate the SQL from reasoning.</p>
+<pre><code>def generate_sql(question: str, schema: str, dialect: str = "PostgreSQL") -&gt; str:
+    prompt = f"""You are a {dialect} expert. Given the schema:
+{schema}
+Convert this question to SQL. Return only the SQL query, no explanation.
+Question: {question}
+SQL:"""
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,
+    )
+    return response.choices[0].message.content.strip()</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Validation & Safety', 'Never execute generated SQL directly. Always: (1) Parse and validate with sqlparse or sqlglot. (2) Check for forbidden operations (DROP, DELETE, INSERT, UPDATE) unless explicitly allowed. (3) Apply row limits (add LIMIT 1000 if missing). (4) Run against a read-only database replica, never production write DB. (5) Use parameterised query execution to prevent SQL injection from injected values.')
+      <h2>Validation & Safety</h2>
+<p>Never execute generated SQL directly. Always: (1) Parse and validate with sqlparse or sqlglot. (2) Check for forbidden operations (DROP, DELETE, INSERT, UPDATE) unless explicitly allowed. (3) Apply row limits (add LIMIT 1000 if missing). (4) Run against a read-only database replica, never production write DB. (5) Use parameterised query execution to prevent SQL injection from injected values.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Error Recovery', 'When SQL execution fails, feed the error back to the LLM for correction.\n\nasync def query_with_retry(question: str, schema: str, max_attempts: int = 3) -> list:\n    sql = generate_sql(question, schema)\n    for attempt in range(max_attempts):\n        try:\n            return execute_query(sql)\n        except Exception as e:\n            if attempt == max_attempts - 1:\n                raise\n            sql = fix_sql(question, schema, sql, str(e))  # LLM fixes the error\n    return []\n\ndef fix_sql(question: str, schema: str, bad_sql: str, error: str) -> str:\n    prompt = f"Fix this SQL error.\\nQuestion: {question}\\nSchema: {schema}\\nSQL: {bad_sql}\\nError: {error}\\nFixed SQL:"\n    return client.chat.completions.create(\n        model="gpt-4o", messages=[{"role": "user", "content": prompt}], temperature=0\n    ).choices[0].message.content.strip()')
+      <h2>Error Recovery</h2>
+<p>When SQL execution fails, feed the error back to the LLM for correction.</p>
+<pre><code>async def query_with_retry(question: str, schema: str, max_attempts: int = 3) -&gt; list:
+    sql = generate_sql(question, schema)
+    for attempt in range(max_attempts):
+        try:
+            return execute_query(sql)
+        except Exception as e:
+            if attempt == max_attempts - 1:
+                raise
+            sql = fix_sql(question, schema, sql, str(e))  # LLM fixes the error
+    return []
+def fix_sql(question: str, schema: str, bad_sql: str, error: str) -&gt; str:
+    prompt = f"Fix this SQL error.\nQuestion: {question}\nSchema: {schema}\nSQL: {bad_sql}\nError: {error}\nFixed SQL:"
+    return client.chat.completions.create(
+        model="gpt-4o", messages=[{"role": "user", "content": prompt}], temperature=0
+    ).choices[0].message.content.strip()</code></pre>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Production Architecture', 'Use a two-stage approach: (1) NL-to-SQL generation (GPT-4o for accuracy). (2) Result formatting (GPT-4o-mini to summarise the table output in natural language). Cache identical or semantically similar queries (semantic cache). Log all generated queries for review and to build a labelled training dataset for fine-tuning a cheaper model over time.')
+      <h2>Production Architecture</h2>
+<p>Use a two-stage approach: (1) NL-to-SQL generation (GPT-4o for accuracy). (2) Result formatting (GPT-4o-mini to summarise the table output in natural language). Cache identical or semantically similar queries (semantic cache). Log all generated queries for review and to build a labelled training dataset for fine-tuning a cheaper model over time.</p>
     </div>
   </div>
 

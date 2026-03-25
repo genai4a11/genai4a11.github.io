@@ -21,7 +21,7 @@
   "headline": "Data Quality | GenAI Mindmap",
   "description": "Techniques for detecting and remediating quality issues in AI training and retrieval datasets \u2014 from deduplication and outlier detection to format validation and coverage analysis.",
   "url": "https://genai4a11.github.io/concepts/data-quality.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,77 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Quality Dimensions', 'Completeness: are required fields present? Are there gaps in coverage by topic? Accuracy: is the content factually correct? Does it match the source? Consistency: same facts stated the same way, no contradictions. Freshness: is time-sensitive content up to date? Diversity: balanced coverage across topics, styles, and formats. Relevance: is the content actually useful for the target task?')
+      <h2>Quality Dimensions</h2>
+<p>Completeness: are required fields present? Are there gaps in coverage by topic? Accuracy: is the content factually correct? Does it match the source? Consistency: same facts stated the same way, no contradictions. Freshness: is time-sensitive content up to date? Diversity: balanced coverage across topics, styles, and formats. Relevance: is the content actually useful for the target task?</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Deduplication', 'Near-duplicate documents inflate training data, cause retrieval redundancy, "\n   "and bias models toward over-represented content. "\n   "Use MinHash LSH for fast near-duplicate detection at scale.\n\nfrom datasketch import MinHash, MinHashLSH\n\ndef build_lsh_index(texts: list[str], threshold: float = 0.85) -> MinHashLSH:\n    lsh = MinHashLSH(threshold=threshold, num_perm=128)\n    for i, text in enumerate(texts):\n        m = MinHash(num_perm=128)\n        for word in text.lower().split():\n            m.update(word.encode())\n        lsh.insert(f"doc_{i}", m)\n    return lsh\n\ndef find_duplicates(texts: list[str], threshold: float = 0.85) -> list[tuple]:\n    lsh = build_lsh_index(texts, threshold)\n    duplicates = []\n    for i, text in enumerate(texts):\n        m = MinHash(num_perm=128)\n        for word in text.lower().split():\n            m.update(word.encode())\n        similar = lsh.query(m)\n        for match in similar:\n            j = int(match.split("_")[1])\n            if j != i and (j, i) not in duplicates:\n                duplicates.append((i, j))\n    return duplicates')
+      <h2>Deduplication</h2>
+<p>Near-duplicate documents inflate training data, cause retrieval redundancy, " "and bias models toward over-represented content. " "Use MinHash LSH for fast near-duplicate detection at scale.</p>
+<pre><code>from datasketch import MinHash, MinHashLSH
+def build_lsh_index(texts: list[str], threshold: float = 0.85) -&gt; MinHashLSH:
+    lsh = MinHashLSH(threshold=threshold, num_perm=128)
+    for i, text in enumerate(texts):
+        m = MinHash(num_perm=128)
+        for word in text.lower().split():
+            m.update(word.encode())
+        lsh.insert(f"doc_{i}", m)
+    return lsh
+def find_duplicates(texts: list[str], threshold: float = 0.85) -&gt; list[tuple]:
+    lsh = build_lsh_index(texts, threshold)
+    duplicates = []
+    for i, text in enumerate(texts):
+        m = MinHash(num_perm=128)
+        for word in text.lower().split():
+            m.update(word.encode())
+        similar = lsh.query(m)
+        for match in similar:
+            j = int(match.split("_")[1])
+            if j != i and (j, i) not in duplicates:
+                duplicates.append((i, j))
+    return duplicates</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Format & Schema Validation', 'Validate every record before it enters the training pipeline. "\n   "Check: minimum and maximum text length, required metadata fields present, "\n   "no null or empty values in key fields, text encoding (UTF-8 with no mojibake), "\n   "and no binary or HTML artefacts in the text.\n\nfrom pydantic import BaseModel, validator\n\nclass TrainingRecord(BaseModel):\n    text: str\n    label: str\n    source: str\n\n    @validator("text")\n    def text_length(cls, v):\n        if len(v.split()) < 10:\n            raise ValueError("Text too short")\n        if len(v) > 100_000:\n            raise ValueError("Text too long")\n        return v\n\n    @validator("text")\n    def no_html(cls, v):\n        if "<html" in v.lower() or "</div>" in v.lower():\n            raise ValueError("HTML artefacts detected")\n        return v')
+      <h2>Format & Schema Validation</h2>
+<p>Validate every record before it enters the training pipeline. " "Check: minimum and maximum text length, required metadata fields present, " "no null or empty values in key fields, text encoding (UTF-8 with no mojibake), " "and no binary or HTML artefacts in the text.</p>
+<pre><code>from pydantic import BaseModel, validator
+class TrainingRecord(BaseModel):
+    text: str
+    label: str
+    source: str
+@validator("text")
+    def text_length(cls, v):
+        if len(v.split()) &lt; 10:
+            raise ValueError("Text too short")
+        if len(v) &gt; 100_000:
+            raise ValueError("Text too long")
+        return v
+@validator("text")
+    def no_html(cls, v):
+        if "&lt;html" in v.lower() or "&lt;/div&gt;" in v.lower():
+            raise ValueError("HTML artefacts detected")
+        return v</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Coverage Analysis', 'Map your dataset to the intended topic space and identify gaps. Cluster embeddings of your training documents (k-means with k=50–200). Compare cluster sizes: are some topics massively over-represented? Map clusters to topics manually or with an LLM. Under-represented topics predict poor model performance on those topics — collect more data or use synthetic generation to fill gaps.')
+      <h2>Coverage Analysis</h2>
+<p>Map your dataset to the intended topic space and identify gaps. Cluster embeddings of your training documents (k-means with k=50–200). Compare cluster sizes: are some topics massively over-represented? Map clusters to topics manually or with an LLM. Under-represented topics predict poor model performance on those topics — collect more data or use synthetic generation to fill gaps.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Outlier Detection', 'Use embedding-based outlier detection: compute the mean embedding of your dataset, flag documents more than N standard deviations from the centroid. High-distance documents are often: wrong language, corrupted text, off-topic content, or near-duplicates of very different content. Review a sample of flagged outliers before removing — some are valuable edge cases.')
+      <h2>Outlier Detection</h2>
+<p>Use embedding-based outlier detection: compute the mean embedding of your dataset, flag documents more than N standard deviations from the centroid. High-distance documents are often: wrong language, corrupted text, off-topic content, or near-duplicates of very different content. Review a sample of flagged outliers before removing — some are valuable edge cases.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Quality Pipelines', "Automate quality checks as a pre-training pipeline step: dedup → format validation → length filter → language detection → outlier scoring → human review queue. Track per-check rejection rates over time — a sudden increase usually means a data source changed format or started producing low-quality content. Never ship training data that hasn't passed automated quality checks.")
+      <h2>Quality Pipelines</h2>
+<p>Automate quality checks as a pre-training pipeline step: dedup → format validation → length filter → language detection → outlier scoring → human review queue. Track per-check rejection rates over time — a sudden increase usually means a data source changed format or started producing low-quality content. Never ship training data that hasn't passed automated quality checks.</p>
     </div>
   </div>
 

@@ -21,7 +21,7 @@
   "headline": "Batch API | GenAI Mindmap",
   "description": "Asynchronous batch processing APIs offered by model providers that process large volumes of requests at 50% lower cost in exchange for up to 24-hour turnaround time.",
   "url": "https://genai4a11.github.io/concepts/batch-api.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,92 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What Is Batch API?', "Batch APIs accept a file of requests, process them asynchronously when compute is available (typically overnight), and return a results file. In exchange for surrendering latency SLAs, you get 50% cost reduction. Ideal for workloads that aren't user-facing: data labelling, content generation, document processing, embedding computation, eval runs.")
+      <h2>What Is Batch API?</h2>
+<p>Batch APIs accept a file of requests, process them asynchronously when compute is available (typically overnight), and return a results file. In exchange for surrendering latency SLAs, you get 50% cost reduction. Ideal for workloads that aren't user-facing: data labelling, content generation, document processing, embedding computation, eval runs.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('OpenAI Batch API', 'OpenAI\'s batch API accepts JSONL files of chat completion requests with a custom_id field "\n   "for correlating results. Maximum 50,000 requests per batch, 100MB file size.\n\nimport json\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# 1. Prepare batch file\nrequests = []\nfor i, doc in enumerate(documents):\n    requests.append({\n        "custom_id": f"doc-{i}",\n        "method": "POST",\n        "url": "/v1/chat/completions",\n        "body": {\n            "model": "gpt-4o-mini",\n            "messages": [{"role": "user", "content": f"Summarise: {doc[:2000]}"}],\n            "max_tokens": 200,\n        }\n    })\n\n# 2. Upload file\nwith open("batch_input.jsonl", "w") as f:\n    for r in requests:\n        f.write(json.dumps(r) + "\\n")\n\nbatch_file = client.files.create(file=open("batch_input.jsonl", "rb"), purpose="batch")\n\n# 3. Create batch\nbatch = client.batches.create(\n    input_file_id=batch_file.id,\n    endpoint="/v1/chat/completions",\n    completion_window="24h",\n)\nprint(f"Batch ID: {batch.id}")')
+      <h2>OpenAI Batch API</h2>
+<p>OpenAI's batch API accepts JSONL files of chat completion requests with a custom_id field " "for correlating results. Maximum 50,000 requests per batch, 100MB file size.</p>
+<pre><code>import json
+from openai import OpenAI
+client = OpenAI()
+# 1. Prepare batch file
+requests = []
+for i, doc in enumerate(documents):
+    requests.append({
+        "custom_id": f"doc-{i}",
+        "method": "POST",
+        "url": "/v1/chat/completions",
+        "body": {
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": f"Summarise: {doc[:2000]}"}],
+            "max_tokens": 200,
+        }
+    })
+# 2. Upload file
+with open("batch_input.jsonl", "w") as f:
+    for r in requests:
+        f.write(json.dumps(r) + "\n")
+batch_file = client.files.create(file=open("batch_input.jsonl", "rb"), purpose="batch")
+# 3. Create batch
+batch = client.batches.create(
+    input_file_id=batch_file.id,
+    endpoint="/v1/chat/completions",
+    completion_window="24h",
+)
+print(f"Batch ID: {batch.id}")</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Anthropic Message Batches', 'Anthropic offers the same pattern for Claude models with up to 10,000 requests per batch.\n\nimport anthropic, json\n\nclient = anthropic.Anthropic()\n\nrequests = [\n    {\n        "custom_id": f"req-{i}",\n        "params": {\n            "model": "claude-haiku-4-5-20251001",\n            "max_tokens": 200,\n            "messages": [{"role": "user", "content": f"Classify sentiment: {text}"}],\n        }\n    }\n    for i, text in enumerate(texts)\n]\n\nbatch = client.messages.batches.create(requests=requests)\nprint(f"Batch ID: {batch.id}")\n\n# Poll for completion\nimport time\nwhile True:\n    status = client.messages.batches.retrieve(batch.id)\n    if status.processing_status == "ended":\n        break\n    time.sleep(60)\n\n# Download results\nresults = {}\nfor result in client.messages.batches.results(batch.id):\n    results[result.custom_id] = result.result.message.content[0].text')
+      <h2>Anthropic Message Batches</h2>
+<p>Anthropic offers the same pattern for Claude models with up to 10,000 requests per batch.</p>
+<pre><code>import anthropic, json
+client = anthropic.Anthropic()
+requests = [
+    {
+        "custom_id": f"req-{i}",
+        "params": {
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 200,
+            "messages": [{"role": "user", "content": f"Classify sentiment: {text}"}],
+        }
+    }
+    for i, text in enumerate(texts)
+]
+batch = client.messages.batches.create(requests=requests)
+print(f"Batch ID: {batch.id}")
+# Poll for completion
+import time
+while True:
+    status = client.messages.batches.retrieve(batch.id)
+    if status.processing_status == "ended":
+        break
+    time.sleep(60)
+# Download results
+results = {}
+for result in client.messages.batches.results(batch.id):
+    results[result.custom_id] = result.result.message.content[0].text</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('When to Use', 'Ideal: offline enrichment (labelling, summarisation, embedding), nightly eval runs, content generation pipelines without real-time requirements, A/B test data generation. Avoid: user-facing features, anything with <1 minute latency requirement, streaming responses, or workloads requiring retries on individual request failures.')
+      <h2>When to Use</h2>
+<p>Ideal: offline enrichment (labelling, summarisation, embedding), nightly eval runs, content generation pipelines without real-time requirements, A/B test data generation. Avoid: user-facing features, anything with <1 minute latency requirement, streaming responses, or workloads requiring retries on individual request failures.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Implementation Pattern', 'Split work into batches of 1,000–10,000 requests. Submit at end of business day, retrieve next morning. Store custom_id → original record mapping in your DB. Build idempotent re-submission logic: if batch fails, re-submit only failed custom_ids. Use a job queue (Celery, RQ) to orchestrate submission and retrieval.')
+      <h2>Implementation Pattern</h2>
+<p>Split work into batches of 1,000–10,000 requests. Submit at end of business day, retrieve next morning. Store custom_id → original record mapping in your DB. Build idempotent re-submission logic: if batch fails, re-submit only failed custom_ids. Use a job queue (Celery, RQ) to orchestrate submission and retrieval.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Monitoring & Error Handling', 'Track: batch completion rate (some requests may fail individually), total batch cost, average turnaround time, and partial failure rate. Results files include per-request error codes — process errors separately. Set a fallback: if batch fails to complete within 20 hours, re-submit as synchronous requests.')
+      <h2>Monitoring & Error Handling</h2>
+<p>Track: batch completion rate (some requests may fail individually), total batch cost, average turnaround time, and partial failure rate. Results files include per-request error codes — process errors separately. Set a fallback: if batch fails to complete within 20 hours, re-submit as synchronous requests.</p>
     </div>
   </div>
 

@@ -21,7 +21,7 @@
   "headline": "System-Level Eval | GenAI Mindmap",
   "description": "End-to-end evaluation of multi-component AI systems \u2014 measuring pipeline quality, not just individual model outputs \u2014 to catch emergent failure modes that component evals miss.",
   "url": "https://genai4a11.github.io/concepts/system-eval.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,55 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Component vs System Eval', "A retrieval component scoring 90% precision and a generation model scoring 85% quality don't guarantee an 80%+ end-to-end system. Errors compound: bad retrieval feeds bad context to generation; correct generation on wrong context still fails. System eval measures the only thing that matters: does the full pipeline produce the right answer for the user?")
+      <h2>Component vs System Eval</h2>
+<p>A retrieval component scoring 90% precision and a generation model scoring 85% quality don't guarantee an 80%+ end-to-end system. Errors compound: bad retrieval feeds bad context to generation; correct generation on wrong context still fails. System eval measures the only thing that matters: does the full pipeline produce the right answer for the user?</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Designing System Test Cases', 'Use a golden set of 100–500 (query, expected_output) pairs covering your top user intents. Include: adversarial queries, out-of-scope requests, ambiguous inputs, multi-turn dialogues, edge cases from production failures. Score with: exact match (structured outputs), LLM judge (free-form), task completion rate (for agentic systems), and human review (10% random sample).')
+      <h2>Designing System Test Cases</h2>
+<p>Use a golden set of 100–500 (query, expected_output) pairs covering your top user intents. Include: adversarial queries, out-of-scope requests, ambiguous inputs, multi-turn dialogues, edge cases from production failures. Score with: exact match (structured outputs), LLM judge (free-form), task completion rate (for agentic systems), and human review (10% random sample).</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Trace-Based Evaluation', 'Capture full execution traces for every eval run. Each trace records inputs/outputs at each step: "\n   "retriever (query, docs, scores), reranker (input docs, output docs), generator (context, prompt, response). "\n   "Trace evaluation lets you pinpoint where quality broke down — retrieval miss vs generation error.\n\nimport json\nfrom dataclasses import dataclass, field\nfrom typing import Any\n\n@dataclass\nclass EvalTrace:\n    query: str\n    steps: list = field(default_factory=list)\n    final_output: str = ""\n    scores: dict = field(default_factory=dict)\n\n    def add_step(self, name: str, inputs: Any, outputs: Any, latency_ms: float):\n        self.steps.append({\n            "name": name, "inputs": inputs,\n            "outputs": outputs, "latency_ms": latency_ms\n        })\n\n    def to_json(self) -> str:\n        return json.dumps({"query": self.query, "steps": self.steps,\n                           "final_output": self.final_output, "scores": self.scores})')
+      <h2>Trace-Based Evaluation</h2>
+<p>Capture full execution traces for every eval run. Each trace records inputs/outputs at each step: " "retriever (query, docs, scores), reranker (input docs, output docs), generator (context, prompt, response). " "Trace evaluation lets you pinpoint where quality broke down — retrieval miss vs generation error.</p>
+<pre><code>import json
+from dataclasses import dataclass, field
+from typing import Any
+@dataclass
+class EvalTrace:
+    query: str
+    steps: list = field(default_factory=list)
+    final_output: str = ""
+    scores: dict = field(default_factory=dict)
+def add_step(self, name: str, inputs: Any, outputs: Any, latency_ms: float):
+        self.steps.append({
+            "name": name, "inputs": inputs,
+            "outputs": outputs, "latency_ms": latency_ms
+        })
+def to_json(self) -&gt; str:
+        return json.dumps({"query": self.query, "steps": self.steps,
+                           "final_output": self.final_output, "scores": self.scores})</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Failure Mode Taxonomy', 'Categorise failures: (1) Retrieval miss — correct answer not in retrieved docs. (2) Context truncation — answer was retrieved but cut off in prompt. (3) Hallucination — model ignores context and fabricates. (4) Format failure — correct content but wrong structure (expected JSON, got prose). (5) Latency SLA breach — correct answer but too slow. Tagging failures by type guides where to invest improvement effort.')
+      <h2>Failure Mode Taxonomy</h2>
+<p>Categorise failures: (1) Retrieval miss — correct answer not in retrieved docs. (2) Context truncation — answer was retrieved but cut off in prompt. (3) Hallucination — model ignores context and fabricates. (4) Format failure — correct content but wrong structure (expected JSON, got prose). (5) Latency SLA breach — correct answer but too slow. Tagging failures by type guides where to invest improvement effort.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('CI Integration', 'Run system eval as a required CI check: block merges if top-line pass rate drops >2pp, or if any failure category increases >5pp. Use a fast subset (25–50 cases) for PR checks, full suite nightly. Cache model responses when testing non-model changes to speed up runs.')
+      <h2>CI Integration</h2>
+<p>Run system eval as a required CI check: block merges if top-line pass rate drops >2pp, or if any failure category increases >5pp. Use a fast subset (25–50 cases) for PR checks, full suite nightly. Cache model responses when testing non-model changes to speed up runs.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Metrics Pyramid', "Top: business metric (user CSAT, task completion). Middle: system metric (end-to-end accuracy, hallucination rate). Bottom: component metrics (retrieval recall, generator fluency). Optimise bottom metrics only when they correlate with top — otherwise you're measuring the wrong thing.")
+      <h2>Metrics Pyramid</h2>
+<p>Top: business metric (user CSAT, task completion). Middle: system metric (end-to-end accuracy, hallucination rate). Bottom: component metrics (retrieval recall, generator fluency). Optimise bottom metrics only when they correlate with top — otherwise you're measuring the wrong thing.</p>
     </div>
   </div>
 

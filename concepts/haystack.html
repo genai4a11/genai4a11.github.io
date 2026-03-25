@@ -21,7 +21,7 @@
   "headline": "Haystack | GenAI Mindmap",
   "description": "An open-source Python framework for building production-ready LLM pipelines \u2014 RAG systems, agents, and document processing workflows \u2014 with a composable component-based architecture.",
   "url": "https://genai4a11.github.io/concepts/haystack.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,56 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What Is Haystack?', 'Haystack (by deepset) is a framework for building modular LLM applications. Its core abstraction is the Pipeline: a directed acyclic graph of Components that process inputs and pass outputs to downstream components. Components include document converters, text splitters, embedders, retrievers, LLM generators, and output parsers. Pipelines are declaratively defined and can be serialised to YAML.')
+      <h2>What Is Haystack?</h2>
+<p>Haystack (by deepset) is a framework for building modular LLM applications. Its core abstraction is the Pipeline: a directed acyclic graph of Components that process inputs and pass outputs to downstream components. Components include document converters, text splitters, embedders, retrievers, LLM generators, and output parsers. Pipelines are declaratively defined and can be serialised to YAML.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Pipeline Architecture', "Every component has typed inputs and outputs. The pipeline connects them: component A's output named 'documents' feeds into component B's input named 'documents'. Pipelines can branch (route to different components based on conditions) and merge (aggregate outputs from multiple branches). This makes complex workflows like hybrid retrieval + reranking + generation easy to express.")
+      <h2>Pipeline Architecture</h2>
+<p>Every component has typed inputs and outputs. The pipeline connects them: component A's output named 'documents' feeds into component B's input named 'documents'. Pipelines can branch (route to different components based on conditions) and merge (aggregate outputs from multiple branches). This makes complex workflows like hybrid retrieval + reranking + generation easy to express.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Building a RAG Pipeline', 'from haystack import Pipeline\nfrom haystack.components.retrievers.in_memory import InMemoryBM25Retriever\nfrom haystack.components.builders import PromptBuilder\nfrom haystack.components.generators import OpenAIGenerator\nfrom haystack.document_stores.in_memory import InMemoryDocumentStore\n\n# Setup\nstore = InMemoryDocumentStore()\n# Index documents (omitted for brevity)\n\n# Build query pipeline\nrag = Pipeline()\nrag.add_component("retriever", InMemoryBM25Retriever(document_store=store))\nrag.add_component("prompt_builder", PromptBuilder(\n    template="Context: {%for doc in documents%}{{doc.content}}{%endfor%}\\nQuestion: {{question}}\\nAnswer:"\n))\nrag.add_component("llm", OpenAIGenerator(model="gpt-4o-mini"))\n\nrag.connect("retriever", "prompt_builder.documents")\nrag.connect("prompt_builder", "llm")\n\nresult = rag.run({"retriever": {"query": "What is RAG?"}, "prompt_builder": {"question": "What is RAG?"}})\nprint(result["llm"]["replies"][0])')
+      <h2>Building a RAG Pipeline</h2>
+<pre><code>from haystack import Pipeline
+from haystack.components.retrievers.in_memory import InMemoryBM25Retriever
+from haystack.components.builders import PromptBuilder
+from haystack.components.generators import OpenAIGenerator
+from haystack.document_stores.in_memory import InMemoryDocumentStore
+# Setup
+store = InMemoryDocumentStore()
+# Index documents (omitted for brevity)
+# Build query pipeline
+rag = Pipeline()
+rag.add_component("retriever", InMemoryBM25Retriever(document_store=store))
+rag.add_component("prompt_builder", PromptBuilder(
+    template="Context: {%for doc in documents%}{{doc.content}}{%endfor%}\nQuestion: {{question}}\nAnswer:"
+))
+rag.add_component("llm", OpenAIGenerator(model="gpt-4o-mini"))
+rag.connect("retriever", "prompt_builder.documents")
+rag.connect("prompt_builder", "llm")
+result = rag.run({"retriever": {"query": "What is RAG?"}, "prompt_builder": {"question": "What is RAG?"}})
+print(result["llm"]["replies"][0])</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Document Stores', 'Haystack integrates with: InMemory (dev/test), OpenSearch, Elasticsearch, Weaviate, Qdrant, Pinecone, pgvector, and Chroma. Switch backends by swapping the DocumentStore and its paired Retriever — the rest of the pipeline is unchanged. Each store supports both sparse (BM25) and dense (vector) retrieval.')
+      <h2>Document Stores</h2>
+<p>Haystack integrates with: InMemory (dev/test), OpenSearch, Elasticsearch, Weaviate, Qdrant, Pinecone, pgvector, and Chroma. Switch backends by swapping the DocumentStore and its paired Retriever — the rest of the pipeline is unchanged. Each store supports both sparse (BM25) and dense (vector) retrieval.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Agents in Haystack', 'Haystack 2.x supports agents via the Agent component that wraps any LLM with tool-calling capabilities. Tools are defined as Python functions with docstrings describing their parameters. The agent loop runs until no more tool calls are needed. Combine with custom components for specialised tool implementations.')
+      <h2>Agents in Haystack</h2>
+<p>Haystack 2.x supports agents via the Agent component that wraps any LLM with tool-calling capabilities. Tools are defined as Python functions with docstrings describing their parameters. The agent loop runs until no more tool calls are needed. Combine with custom components for specialised tool implementations.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('When to Use Haystack', 'Choose Haystack when: you want a mature, production-tested RAG framework, you need flexible pipeline topologies (branching, merging), or you want YAML-configurable deployable pipelines. Avoid if: you need deep LangChain ecosystem integrations, or your workflow is simple enough that a direct API call suffices.')
+      <h2>When to Use Haystack</h2>
+<p>Choose Haystack when: you want a mature, production-tested RAG framework, you need flexible pipeline topologies (branching, merging), or you want YAML-configurable deployable pipelines. Avoid if: you need deep LangChain ecosystem integrations, or your workflow is simple enough that a direct API call suffices.</p>
     </div>
   </div>
 

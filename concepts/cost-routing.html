@@ -21,7 +21,7 @@
   "headline": "Cost-Aware Routing | GenAI Mindmap",
   "description": "Dynamically routing requests to cheaper models when they are sufficient, and expensive models when quality demands it \u2014 automatically optimising the cost/quality tradeoff at scale.",
   "url": "https://genai4a11.github.io/concepts/cost-routing.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,66 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('The Cost Problem', 'At scale, every unnecessary GPT-4o call is waste. A 7B local model costs 50–200× less per token than GPT-4o. The challenge: not all queries need GPT-4o. Simple factual lookups, classification tasks, and short reformulations can be handled by smaller models. Cost-aware routing captures these savings without degrading quality on hard queries.')
+      <h2>The Cost Problem</h2>
+<p>At scale, every unnecessary GPT-4o call is waste. A 7B local model costs 50–200× less per token than GPT-4o. The challenge: not all queries need GPT-4o. Simple factual lookups, classification tasks, and short reformulations can be handled by smaller models. Cost-aware routing captures these savings without degrading quality on hard queries.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Routing Signals', "Query complexity proxies: token count (long = harder), presence of reasoning keywords ('why', 'explain', 'compare'), detected task type (classification = easy, open-ended = hard), user tier (premium users always get the best model), and historical accuracy of small model on similar queries. Combine multiple signals for a robust routing score.")
+      <h2>Routing Signals</h2>
+<p>Query complexity proxies: token count (long = harder), presence of reasoning keywords ('why', 'explain', 'compare'), detected task type (classification = easy, open-ended = hard), user tier (premium users always get the best model), and historical accuracy of small model on similar queries. Combine multiple signals for a robust routing score.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Classifier-Based Router', 'A lightweight classifier (logistic regression or small BERT) predicts whether the small model "\n   "will produce acceptable quality. Train on labelled examples where human raters compared "\n   "small vs large model outputs.\n\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nimport numpy as np\n\n# Assume labels: 1 = small model sufficient, 0 = needs large model\nvectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2))\nclassifier = LogisticRegression(C=1.0)\n\ndef train_router(queries: list[str], labels: list[int]):\n    X = vectorizer.fit_transform(queries)\n    classifier.fit(X, labels)\n\ndef route(query: str, threshold: float = 0.75) -> str:\n    X = vectorizer.transform([query])\n    prob_small_ok = classifier.predict_proba(X)[0][1]\n    if prob_small_ok >= threshold:\n        return "small"   # e.g. gpt-4o-mini or local 7B\n    return "large"       # e.g. gpt-4o')
+      <h2>Classifier-Based Router</h2>
+<p>A lightweight classifier (logistic regression or small BERT) predicts whether the small model " "will produce acceptable quality. Train on labelled examples where human raters compared " "small vs large model outputs.</p>
+<pre><code>from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+# Assume labels: 1 = small model sufficient, 0 = needs large model
+vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2))
+classifier = LogisticRegression(C=1.0)
+def train_router(queries: list[str], labels: list[int]):
+    X = vectorizer.fit_transform(queries)
+    classifier.fit(X, labels)
+def route(query: str, threshold: float = 0.75) -&gt; str:
+    X = vectorizer.transform([query])
+    prob_small_ok = classifier.predict_proba(X)[0][1]
+    if prob_small_ok &gt;= threshold:
+        return "small"   # e.g. gpt-4o-mini or local 7B
+    return "large"       # e.g. gpt-4o</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Rule-Based Routing', 'Simple rules often capture 80% of the savings with zero training overhead. "\n   "Route to small if: query < 50 tokens, task type is classification/sentiment/extraction, "\n   "or user is on free tier. Always use large for: multi-step reasoning, code generation, "\n   "medical/legal domains, or when the user explicitly requests it.\n\ndef rule_router(query: str, task_type: str, user_tier: str) -> str:\n    # Hard overrides\n    if user_tier == "premium":\n        return "large"\n    if task_type in ("classification", "sentiment", "extraction", "translation"):\n        return "small"\n    # Heuristic complexity\n    if len(query.split()) < 30 and "?" not in query:\n        return "small"\n    keywords = {"explain", "compare", "analyze", "why", "how does", "what would happen"}\n    if any(kw in query.lower() for kw in keywords):\n        return "large"\n    return "small"  # default to cheap')
+      <h2>Rule-Based Routing</h2>
+<p>Simple rules often capture 80% of the savings with zero training overhead. " "Route to small if: query < 50 tokens, task type is classification/sentiment/extraction, " "or user is on free tier. Always use large for: multi-step reasoning, code generation, " "medical/legal domains, or when the user explicitly requests it.</p>
+<pre><code>def rule_router(query: str, task_type: str, user_tier: str) -&gt; str:
+    # Hard overrides
+    if user_tier == "premium":
+        return "large"
+    if task_type in ("classification", "sentiment", "extraction", "translation"):
+        return "small"
+    # Heuristic complexity
+    if len(query.split()) &lt; 30 and "?" not in query:
+        return "small"
+    keywords = {"explain", "compare", "analyze", "why", "how does", "what would happen"}
+    if any(kw in query.lower() for kw in keywords):
+        return "large"
+    return "small"  # default to cheap</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('A/B Testing Routes', 'Before deploying a new routing policy, run a shadow A/B test: route 5% of traffic to the new policy and compare quality scores (LLM judge + user signals). Only cut over if quality delta is within your tolerance (typically <5% CSAT drop). Keep the old policy as a fallback for 2 weeks after cutover.')
+      <h2>A/B Testing Routes</h2>
+<p>Before deploying a new routing policy, run a shadow A/B test: route 5% of traffic to the new policy and compare quality scores (LLM judge + user signals). Only cut over if quality delta is within your tolerance (typically <5% CSAT drop). Keep the old policy as a fallback for 2 weeks after cutover.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Monitoring Costs', 'Track: cost per request by model, routing distribution (% to each model), quality score by routed model, and cost savings vs always-large baseline. Alert if: cost per request increases >20% (routing shifted to large), or quality score for small-routed requests drops >5% (router over-routing).')
+      <h2>Monitoring Costs</h2>
+<p>Track: cost per request by model, routing distribution (% to each model), quality score by routed model, and cost savings vs always-large baseline. Alert if: cost per request increases >20% (routing shifted to large), or quality score for small-routed requests drops >5% (router over-routing).</p>
     </div>
   </div>
 

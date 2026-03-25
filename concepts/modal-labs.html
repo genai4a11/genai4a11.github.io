@@ -21,7 +21,7 @@
   "headline": "Modal Labs | GenAI Mindmap",
   "description": "A serverless cloud platform for AI/ML workloads \u2014 run GPU functions, batch jobs, and model APIs with Python-first infrastructure, sub-second cold starts, and pay-per-second billing.",
   "url": "https://genai4a11.github.io/concepts/modal-labs.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,69 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What Is Modal?', 'Modal is a serverless compute platform designed for ML/AI workloads. You write Python functions decorated with @app.function(); Modal handles containerisation, scheduling, autoscaling, and GPU provisioning. Unlike AWS Lambda, Modal supports GPU instances, long-running jobs, and arbitrary Python dependencies. Sub-second cold starts for CPU; 1–3 second cold starts for GPU instances with pre-cached container images.')
+      <h2>What Is Modal?</h2>
+<p>Modal is a serverless compute platform designed for ML/AI workloads. You write Python functions decorated with @app.function(); Modal handles containerisation, scheduling, autoscaling, and GPU provisioning. Unlike AWS Lambda, Modal supports GPU instances, long-running jobs, and arbitrary Python dependencies. Sub-second cold starts for CPU; 1–3 second cold starts for GPU instances with pre-cached container images.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Functions & Containers', 'Define a Modal app with a container image and annotated functions.\n\nimport modal\n\napp = modal.App("llm-inference")\n\nimage = modal.Image.debian_slim().pip_install(\n    "torch", "transformers", "accelerate"\n)\n\n@app.function(gpu="T4", image=image, timeout=300)\ndef generate_text(prompt: str) -> str:\n    from transformers import pipeline\n    pipe = pipeline("text-generation", model="gpt2", device=0)\n    result = pipe(prompt, max_new_tokens=100)[0]["generated_text"]\n    return result\n\n# Run locally via Modal\nwith app.run():\n    result = generate_text.remote("The future of AI is")\n    print(result)')
+      <h2>Functions & Containers</h2>
+<p>Define a Modal app with a container image and annotated functions.</p>
+<pre><code>import modal
+app = modal.App("llm-inference")
+image = modal.Image.debian_slim().pip_install(
+    "torch", "transformers", "accelerate"
+)
+@app.function(gpu="T4", image=image, timeout=300)
+def generate_text(prompt: str) -&gt; str:
+    from transformers import pipeline
+    pipe = pipeline("text-generation", model="gpt2", device=0)
+    result = pipe(prompt, max_new_tokens=100)[0]["generated_text"]
+    return result
+# Run locally via Modal
+with app.run():
+    result = generate_text.remote("The future of AI is")
+    print(result)</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Running LLM Inference', 'For production LLM serving, use modal serve to keep a warm instance running. "\n   "vLLM on Modal is a common pattern for cheap, scalable LLM APIs.\n\n@app.cls(gpu="A10G", image=image, concurrency_limit=10)\nclass LLMServer:\n    @modal.enter()\n    def load_model(self):\n        from vllm import LLM, SamplingParams\n        self.llm = LLM(model="mistralai/Mistral-7B-Instruct-v0.2")\n\n    @modal.method()\n    def generate(self, prompt: str) -> str:\n        params = SamplingParams(temperature=0.7, max_tokens=512)\n        outputs = self.llm.generate([prompt], params)\n        return outputs[0].outputs[0].text\n\n@app.function()\n@modal.web_endpoint(method="POST")\ndef inference_endpoint(request: dict) -> dict:\n    server = LLMServer()\n    return {"response": server.generate.remote(request["prompt"])}')
+      <h2>Running LLM Inference</h2>
+<p>For production LLM serving, use modal serve to keep a warm instance running. " "vLLM on Modal is a common pattern for cheap, scalable LLM APIs.</p>
+<pre><code>@app.cls(gpu="A10G", image=image, concurrency_limit=10)
+class LLMServer:
+    @modal.enter()
+    def load_model(self):
+        from vllm import LLM, SamplingParams
+        self.llm = LLM(model="mistralai/Mistral-7B-Instruct-v0.2")
+@modal.method()
+    def generate(self, prompt: str) -&gt; str:
+        params = SamplingParams(temperature=0.7, max_tokens=512)
+        outputs = self.llm.generate([prompt], params)
+        return outputs[0].outputs[0].text
+@app.function()
+@modal.web_endpoint(method="POST")
+def inference_endpoint(request: dict) -&gt; dict:
+    server = LLMServer()
+    return {"response": server.generate.remote(request["prompt"])}</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Scheduled Jobs', "Run batch jobs on a schedule with @app.function(schedule=...). Modal.Period(hours=24) runs daily; modal.Cron('0 2 * * *') runs at 2 AM. Ideal for: nightly data processing, scheduled eval runs, dataset refresh pipelines, and periodic report generation.")
+      <h2>Scheduled Jobs</h2>
+<p>Run batch jobs on a schedule with @app.function(schedule=...). Modal.Period(hours=24) runs daily; modal.Cron('0 2 * * *') runs at 2 AM. Ideal for: nightly data processing, scheduled eval runs, dataset refresh pipelines, and periodic report generation.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Secrets & Storage', "Store API keys as Modal Secrets: modal.Secret.from_name('openai-secret'). Secrets are injected as environment variables into function containers. For persistent storage, use modal.Volume (NFS-like) or modal.CloudBucketMount (S3/GCS). modal.Volume persists across function calls and is mounted at a specified path.")
+      <h2>Secrets & Storage</h2>
+<p>Store API keys as Modal Secrets: modal.Secret.from_name('openai-secret'). Secrets are injected as environment variables into function containers. For persistent storage, use modal.Volume (NFS-like) or modal.CloudBucketMount (S3/GCS). modal.Volume persists across function calls and is mounted at a specified path.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Comparison to Lambda/GCP Functions', "AWS Lambda: CPU only, 15-min timeout, 10GB memory. Good for lightweight APIs. Modal: GPU support, 24-hour timeout, arbitrary memory, Python-first. Good for AI workloads. GCP Cloud Run: container-based, GPU support (beta), scales to zero. Modal's key advantage: zero-config GPU provisioning and Python-native infrastructure definition that feels like local code.")
+      <h2>Comparison to Lambda/GCP Functions</h2>
+<p>AWS Lambda: CPU only, 15-min timeout, 10GB memory. Good for lightweight APIs. Modal: GPU support, 24-hour timeout, arbitrary memory, Python-first. Good for AI workloads. GCP Cloud Run: container-based, GPU support (beta), scales to zero. Modal's key advantage: zero-config GPU provisioning and Python-native infrastructure definition that feels like local code.</p>
     </div>
   </div>
 

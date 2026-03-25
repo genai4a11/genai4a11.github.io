@@ -21,7 +21,7 @@
   "headline": "Long Context Impact | GenAI Mindmap",
   "description": "How very long context windows (128K\u20131M tokens) change system architecture, retrieval strategy, cost structure, and quality characteristics in production AI applications.",
   "url": "https://genai4a11.github.io/concepts/long-ctx-impact.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,45 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Long Context vs RAG', "128K+ context windows allow stuffing entire codebases, documents, or conversation histories into a single prompt. This simplifies architecture — no retrieval pipeline, no chunking, no embedding management. But it doesn't eliminate the need for retrieval; it changes the tradeoff: RAG is cheaper and faster for large corpora; long context is simpler and more accurate for moderate corpora.")
+      <h2>Long Context vs RAG</h2>
+<p>128K+ context windows allow stuffing entire codebases, documents, or conversation histories into a single prompt. This simplifies architecture — no retrieval pipeline, no chunking, no embedding management. But it doesn't eliminate the need for retrieval; it changes the tradeoff: RAG is cheaper and faster for large corpora; long context is simpler and more accurate for moderate corpora.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Lost-in-the-Middle', "Research (Liu et al. 2023) shows models perform worse on information placed in the middle of long contexts compared to information at the start or end — the 'lost-in-the-middle' effect. Mitigation: place most important context at the start and end, not the middle. Use a reranker to select the top K most relevant chunks and place them first.")
+      <h2>Lost-in-the-Middle</h2>
+<p>Research (Liu et al. 2023) shows models perform worse on information placed in the middle of long contexts compared to information at the start or end — the 'lost-in-the-middle' effect. Mitigation: place most important context at the start and end, not the middle. Use a reranker to select the top K most relevant chunks and place them first.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Cost & Latency Implications', 'Attention is O(n²) in sequence length; a 128K context is 16× more compute than 32K. API costs scale linearly with input tokens at minimum. At $15/M tokens (GPT-4o), a 128K context call costs ~$2 — fine for one-off analysis, ruinous for high-volume chat. Profile: measure cost per request at your expected context distribution.')
+      <h2>Cost & Latency Implications</h2>
+<p>Attention is O(n²) in sequence length; a 128K context is 16× more compute than 32K. API costs scale linearly with input tokens at minimum. At $15/M tokens (GPT-4o), a 128K context call costs ~$2 — fine for one-off analysis, ruinous for high-volume chat. Profile: measure cost per request at your expected context distribution.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('When to Use Full Context', 'Full-context is a good fit for: document analysis (financial reports, legal contracts), code review (entire codebase in context), long-running conversation with rich history, and tasks requiring global reasoning (summarisation across many sources). Avoid for: high-volume Q&A where only 2–3 chunks are relevant, and cost is a constraint.')
+      <h2>When to Use Full Context</h2>
+<p>Full-context is a good fit for: document analysis (financial reports, legal contracts), code review (entire codebase in context), long-running conversation with rich history, and tasks requiring global reasoning (summarisation across many sources). Avoid for: high-volume Q&A where only 2–3 chunks are relevant, and cost is a constraint.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Hybrid Architectures', 'Combine retrieval for first-pass filtering with long context for deep analysis. "\n   "Step 1: embed and retrieve top 20 chunks (~10K tokens) relevant to the query. "\n   "Step 2: if any chunk scores very high, use only it (cheap). "\n   "Step 3: if confidence is low or task is complex, expand to full document (long context mode).\n\ndef select_context_strategy(query: str, docs: list, confidence: float) -> str:\n    if confidence > 0.85:\n        return "short"    # 1-2 chunks, <4K tokens\n    elif confidence > 0.60:\n        return "medium"   # top-10 chunks, ~10K tokens\n    else:\n        return "long"     # full document, 128K tokens')
+      <h2>Hybrid Architectures</h2>
+<p>Combine retrieval for first-pass filtering with long context for deep analysis. " "Step 1: embed and retrieve top 20 chunks (~10K tokens) relevant to the query. " "Step 2: if any chunk scores very high, use only it (cheap). " "Step 3: if confidence is low or task is complex, expand to full document (long context mode).</p>
+<pre><code>def select_context_strategy(query: str, docs: list, confidence: float) -&gt; str:
+    if confidence &gt; 0.85:
+        return "short"    # 1-2 chunks, &lt;4K tokens
+    elif confidence &gt; 0.60:
+        return "medium"   # top-10 chunks, ~10K tokens
+    else:
+        return "long"     # full document, 128K tokens</code></pre>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Quality Monitoring', 'Monitor: answer relevance as a function of context length (does quality degrade at >64K?), latency percentiles (p50/p99 at each context tier), and cost per request by tier. Set budget alerts at context thresholds. Run monthly evals comparing short-context RAG vs long-context on your specific workload — the optimal strategy shifts as models and prices evolve.')
+      <h2>Quality Monitoring</h2>
+<p>Monitor: answer relevance as a function of context length (does quality degrade at >64K?), latency percentiles (p50/p99 at each context tier), and cost per request by tier. Set budget alerts at context thresholds. Run monthly evals comparing short-context RAG vs long-context on your specific workload — the optimal strategy shifts as models and prices evolve.</p>
     </div>
   </div>
 

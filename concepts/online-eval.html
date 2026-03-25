@@ -21,7 +21,7 @@
   "headline": "Online Evaluation | GenAI Mindmap",
   "description": "Real-time, production evaluation of LLM outputs using lightweight judges, user signals, and automated metrics \u2014 closing the feedback loop without waiting for offline batch runs.",
   "url": "https://genai4a11.github.io/concepts/online-eval.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,77 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Why Online Eval?', "Offline evals catch known failure modes; online eval catches unknown ones in production traffic. Every request is a potential signal: did the user copy the answer? Did they thumbs-up or follow up with 'that's wrong'? Did the latency spike correlate with quality drops? Online eval turns your production system into a continuous evaluation harness.")
+      <h2>Why Online Eval?</h2>
+<p>Offline evals catch known failure modes; online eval catches unknown ones in production traffic. Every request is a potential signal: did the user copy the answer? Did they thumbs-up or follow up with 'that's wrong'? Did the latency spike correlate with quality drops? Online eval turns your production system into a continuous evaluation harness.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Signal Sources', 'Implicit signals come from user behaviour: regeneration clicks, copy-paste actions, session abandonment, "\n   "follow-up corrections (\'actually…\'), and downstream task completion. Explicit signals are thumbs up/down, "\n   "star ratings, or CSAT surveys. Automated signals come from lightweight classifiers run on every response: "\n   "a toxicity filter, a relevance scorer, a hallucination detector. Each signal type has different coverage "\n   "and noise levels; combine them for robust monitoring.\n\nExample implicit signal collector:\nfrom fastapi import Request\nimport time\n\nasync def track_response(request: Request, response_id: str, content: str):\n    # Store response for later correlation with user actions\n    await db.store_response(response_id, {\n        "content": content,\n        "timestamp": time.time(),\n        "session_id": request.headers.get("X-Session-Id"),\n    })\n\nasync def track_user_action(response_id: str, action: str):\n    # action: \'copy\', \'regenerate\', \'thumbs_up\', \'thumbs_down\', \'abandon\'\n    resp = await db.get_response(response_id)\n    score = {"copy": 0.8, "regenerate": -0.5, "thumbs_up": 1.0, "thumbs_down": -1.0, "abandon": -0.3}\n    await db.store_signal(response_id, action, score.get(action, 0))')
+      <h2>Signal Sources</h2>
+<p>Implicit signals come from user behaviour: regeneration clicks, copy-paste actions, session abandonment, " "follow-up corrections ('actually…'), and downstream task completion. Explicit signals are thumbs up/down, " "star ratings, or CSAT surveys. Automated signals come from lightweight classifiers run on every response: " "a toxicity filter, a relevance scorer, a hallucination detector. Each signal type has different coverage " "and noise levels; combine them for robust monitoring.</p>
+<pre><code>Example implicit signal collector:
+from fastapi import Request
+import time
+async def track_response(request: Request, response_id: str, content: str):
+    # Store response for later correlation with user actions
+    await db.store_response(response_id, {
+        "content": content,
+        "timestamp": time.time(),
+        "session_id": request.headers.get("X-Session-Id"),
+    })
+async def track_user_action(response_id: str, action: str):
+    # action: 'copy', 'regenerate', 'thumbs_up', 'thumbs_down', 'abandon'
+    resp = await db.get_response(response_id)
+    score = {"copy": 0.8, "regenerate": -0.5, "thumbs_up": 1.0, "thumbs_down": -1.0, "abandon": -0.3}
+    await db.store_signal(response_id, action, score.get(action, 0))</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Lightweight Judges', 'An LLM-as-judge that runs on every request must be cheap: use a small model (GPT-4o-mini, Haiku) "\n   "with a tight prompt. Score 1–3 on a single axis per call. Run asynchronously so latency isn\'t affected.\n\nfrom openai import AsyncOpenAI\nimport asyncio\n\nclient = AsyncOpenAI()\n\nasync def judge_relevance(query: str, response: str) -> float:\n    result = await client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{\n            "role": "user",\n            "content": (\n                f"Rate relevance of this response to the query on a scale 1-3.\\n"\n                f"Query: {query}\\nResponse: {response[:500]}\\n"\n                f"Reply with just the number."\n            )\n        }],\n        max_tokens=5,\n        temperature=0,\n    )\n    try:\n        return float(result.choices[0].message.content.strip()) / 3.0\n    except ValueError:\n        return 0.5\n\nasync def eval_async(query: str, response: str, response_id: str):\n    score = await judge_relevance(query, response)\n    await db.store_signal(response_id, "judge_relevance", score)')
+      <h2>Lightweight Judges</h2>
+<p>An LLM-as-judge that runs on every request must be cheap: use a small model (GPT-4o-mini, Haiku) " "with a tight prompt. Score 1–3 on a single axis per call. Run asynchronously so latency isn't affected.</p>
+<pre><code>from openai import AsyncOpenAI
+import asyncio
+client = AsyncOpenAI()
+async def judge_relevance(query: str, response: str) -&gt; float:
+    result = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Rate relevance of this response to the query on a scale 1-3.\n"
+                f"Query: {query}\nResponse: {response[:500]}\n"
+                f"Reply with just the number."
+            )
+        }],
+        max_tokens=5,
+        temperature=0,
+    )
+    try:
+        return float(result.choices[0].message.content.strip()) / 3.0
+    except ValueError:
+        return 0.5
+async def eval_async(query: str, response: str, response_id: str):
+    score = await judge_relevance(query, response)
+    await db.store_signal(response_id, "judge_relevance", score)</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Sampling Strategies', "Evaluating every single request with an LLM judge is costly. Use stratified sampling: always evaluate flagged requests (toxicity triggered, very long, low-confidence), randomly sample 5–10% of normal traffic, and oversample new prompt versions or A/B test variants. Reservoir sampling ensures you don't bias toward early-session requests.")
+      <h2>Sampling Strategies</h2>
+<p>Evaluating every single request with an LLM judge is costly. Use stratified sampling: always evaluate flagged requests (toxicity triggered, very long, low-confidence), randomly sample 5–10% of normal traffic, and oversample new prompt versions or A/B test variants. Reservoir sampling ensures you don't bias toward early-session requests.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Alerting & Dashboards', 'Track rolling averages over 1-hour and 24-hour windows. Alert when: judge score drops >10% vs baseline, thumbs-down rate exceeds 15%, or implicit abandon rate spikes. Use a time-series DB (InfluxDB, Prometheus) and a dashboard (Grafana) with separate panels for each signal type. Correlate quality signals with deployment events — a sudden drop after a deploy is a rollback trigger.')
+      <h2>Alerting & Dashboards</h2>
+<p>Track rolling averages over 1-hour and 24-hour windows. Alert when: judge score drops >10% vs baseline, thumbs-down rate exceeds 15%, or implicit abandon rate spikes. Use a time-series DB (InfluxDB, Prometheus) and a dashboard (Grafana) with separate panels for each signal type. Correlate quality signals with deployment events — a sudden drop after a deploy is a rollback trigger.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Practical Patterns', 'Decouple eval from serving: write to a queue (Kafka, SQS), consume asynchronously. Store raw responses for retrospective eval with newer judges. Use shadow mode: run a new judge in parallel without acting on results, validate it matches human labels before trusting it for alerting. Periodically send 1% of production traffic to human reviewers for ground-truth calibration.')
+      <h2>Practical Patterns</h2>
+<p>Decouple eval from serving: write to a queue (Kafka, SQS), consume asynchronously. Store raw responses for retrospective eval with newer judges. Use shadow mode: run a new judge in parallel without acting on results, validate it matches human labels before trusting it for alerting. Periodically send 1% of production traffic to human reviewers for ground-truth calibration.</p>
     </div>
   </div>
 

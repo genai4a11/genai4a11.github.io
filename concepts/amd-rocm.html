@@ -21,7 +21,7 @@
   "headline": "AMD ROCm | GenAI Mindmap",
   "description": "AMD's open-source GPU computing platform (ROCm) for running LLM training and inference on AMD GPUs \u2014 covering hardware tiers, PyTorch compatibility, and practical deployment.",
   "url": "https://genai4a11.github.io/concepts/amd-rocm.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,48 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('ROCm Overview', "ROCm (Radeon Open Compute) is AMD's open-source compute platform for GPU programming. It provides HIP (Heterogeneous-Computing Interface for Portability) — a CUDA-like API that allows porting CUDA code to AMD GPUs. ROCm 6.x (2024) significantly improved stability and PyTorch compatibility, making AMD a viable alternative to NVIDIA for LLM workloads.")
+      <h2>ROCm Overview</h2>
+<p>ROCm (Radeon Open Compute) is AMD's open-source compute platform for GPU programming. It provides HIP (Heterogeneous-Computing Interface for Portability) — a CUDA-like API that allows porting CUDA code to AMD GPUs. ROCm 6.x (2024) significantly improved stability and PyTorch compatibility, making AMD a viable alternative to NVIDIA for LLM workloads.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('AMD GPU Tiers', 'Data centre: MI300X (192GB HBM3, 5.3 TB/s bandwidth) — the strongest GPU for LLM inference due to massive VRAM. Run 70B in FP16 on a single GPU. Available on AMD Instinct cloud instances. MI250X (128GB, 3.2 TB/s) — previous generation, widely available. Workstation: Radeon PRO W7900 (48GB GDDR6) — similar VRAM to L40S but at lower cost. Consumer: RX 7900 XTX (24GB) — same VRAM as RTX 4090 but ROCm support is less mature.')
+      <h2>AMD GPU Tiers</h2>
+<p>Data centre: MI300X (192GB HBM3, 5.3 TB/s bandwidth) — the strongest GPU for LLM inference due to massive VRAM. Run 70B in FP16 on a single GPU. Available on AMD Instinct cloud instances. MI250X (128GB, 3.2 TB/s) — previous generation, widely available. Workstation: Radeon PRO W7900 (48GB GDDR6) — similar VRAM to L40S but at lower cost. Consumer: RX 7900 XTX (24GB) — same VRAM as RTX 4090 but ROCm support is less mature.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('PyTorch on ROCm', 'Install ROCm-enabled PyTorch from the AMD channel. "\n   "Most PyTorch operations work identically on ROCm and CUDA.\n\n# Install ROCm PyTorch (check ROCm version compatibility)\n# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0\n\nimport torch\n\nprint(torch.cuda.is_available())      # True on ROCm (uses CUDA compatibility layer)\nprint(torch.cuda.get_device_name(0))  # e.g. "AMD Instinct MI300X"\nprint(torch.version.hip)              # ROCm HIP version\n\n# Code is identical to CUDA PyTorch\nmodel = model.to("cuda")  # works on ROCm too\nx = torch.randn(1000, 1000).cuda()\nresult = x @ x.T')
+      <h2>PyTorch on ROCm</h2>
+<p>Install ROCm-enabled PyTorch from the AMD channel. " "Most PyTorch operations work identically on ROCm and CUDA.</p>
+<pre><code># Install ROCm PyTorch (check ROCm version compatibility)
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+import torch
+print(torch.cuda.is_available())      # True on ROCm (uses CUDA compatibility layer)
+print(torch.cuda.get_device_name(0))  # e.g. "AMD Instinct MI300X"
+print(torch.version.hip)              # ROCm HIP version
+# Code is identical to CUDA PyTorch
+model = model.to("cuda")  # works on ROCm too
+x = torch.randn(1000, 1000).cuda()
+result = x @ x.T</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('vLLM on ROCm', 'vLLM supports ROCm as a first-class backend since v0.3. Install with: pip install vllm --extra-index-url https://download.pytorch.org/whl/rocm6.0 Usage is identical to CUDA vLLM — same Python API, same OpenAI-compatible server. MI300X with 192GB VRAM can serve 70B models at FP16 without quantisation, with higher throughput than dual A100 80GB due to higher bandwidth.')
+      <h2>vLLM on ROCm</h2>
+<p>vLLM supports ROCm as a first-class backend since v0.3. Install with: pip install vllm --extra-index-url https://download.pytorch.org/whl/rocm6.0 Usage is identical to CUDA vLLM — same Python API, same OpenAI-compatible server. MI300X with 192GB VRAM can serve 70B models at FP16 without quantisation, with higher throughput than dual A100 80GB due to higher bandwidth.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Compatibility Notes', 'Not all CUDA libraries have ROCm equivalents. Flash Attention 2 works on ROCm (FA for ROCm). bitsandbytes (quantisation) requires ROCm-specific builds. Some CUDA kernels (custom ops) may need HIP porting. Triton (used by many optimised kernels) has ROCm support but lags CUDA in maturity. For production use: test your specific model + inference library combination on ROCm before committing.')
+      <h2>Compatibility Notes</h2>
+<p>Not all CUDA libraries have ROCm equivalents. Flash Attention 2 works on ROCm (FA for ROCm). bitsandbytes (quantisation) requires ROCm-specific builds. Some CUDA kernels (custom ops) may need HIP porting. Triton (used by many optimised kernels) has ROCm support but lags CUDA in maturity. For production use: test your specific model + inference library combination on ROCm before committing.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('When to Choose AMD', 'MI300X is compelling for inference at scale: 192GB VRAM eliminates multi-GPU orchestration overhead for 70B models, and 5.3 TB/s bandwidth enables very high decode throughput. Cloud pricing for MI300X instances is often 20–40% cheaper than H100. For training: NVIDIA H100 with NCCL and mature CUDA ecosystem is still preferred. AMD is best for inference-focused deployments where VRAM per GPU is the bottleneck.')
+      <h2>When to Choose AMD</h2>
+<p>MI300X is compelling for inference at scale: 192GB VRAM eliminates multi-GPU orchestration overhead for 70B models, and 5.3 TB/s bandwidth enables very high decode throughput. Cloud pricing for MI300X instances is often 20–40% cheaper than H100. For training: NVIDIA H100 with NCCL and mature CUDA ecosystem is still preferred. AMD is best for inference-focused deployments where VRAM per GPU is the bottleneck.</p>
     </div>
   </div>
 

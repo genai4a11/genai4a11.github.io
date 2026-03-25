@@ -21,7 +21,7 @@
   "headline": "Timeout Budget | GenAI Mindmap",
   "description": "Strategies for setting, propagating, and enforcing time budgets across LLM pipeline stages so that slow model calls never cascade into full user-facing timeouts.",
   "url": "https://genai4a11.github.io/concepts/timeout-budget.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,58 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Why Timeouts Matter', 'Without timeouts, a single slow model call blocks a thread indefinitely, exhausting connection pools and bringing down entire services. LLM latency is highly variable: p50 may be 1 s, p99 may be 30 s. Every stage of your pipeline (retrieval, reranking, generation) needs an independent timeout that fits within the overall user-facing budget.')
+      <h2>Why Timeouts Matter</h2>
+<p>Without timeouts, a single slow model call blocks a thread indefinitely, exhausting connection pools and bringing down entire services. LLM latency is highly variable: p50 may be 1 s, p99 may be 30 s. Every stage of your pipeline (retrieval, reranking, generation) needs an independent timeout that fits within the overall user-facing budget.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Budget Allocation Strategy', 'Start with your end-to-end SLA (e.g. 8 s). Allocate across stages with headroom: retrieval 0.5 s, reranking 0.3 s, generation 5 s, post-processing 0.2 s, network/overhead 2 s. The generation budget should be ~60–70% of the total. Never allocate the full budget to a single stage — you need slack for retries.')
+      <h2>Budget Allocation Strategy</h2>
+<p>Start with your end-to-end SLA (e.g. 8 s). Allocate across stages with headroom: retrieval 0.5 s, reranking 0.3 s, generation 5 s, post-processing 0.2 s, network/overhead 2 s. The generation budget should be ~60–70% of the total. Never allocate the full budget to a single stage — you need slack for retries.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Deadline Propagation', 'Pass a deadline timestamp (not a timeout duration) through the call chain so each component "\n   "knows the absolute deadline and can skip work that won\'t finish in time.\n\nimport time\nfrom dataclasses import dataclass\n\n@dataclass\nclass RequestContext:\n    request_id: str\n    deadline: float  # Unix timestamp\n\n    @property\n    def remaining_ms(self) -> float:\n        return max(0, (self.deadline - time.time()) * 1000)\n\n    def child_ctx(self, fraction: float) -> \'RequestContext\':\n        # Allocate a fraction of remaining budget to a sub-task\n        remaining = self.deadline - time.time()\n        return RequestContext(\n            request_id=self.request_id,\n            deadline=time.time() + remaining * fraction,\n        )\n\nasync def pipeline(query: str, ctx: RequestContext) -> str:\n    docs = await retrieve(query, ctx.child_ctx(0.1))   # 10% budget\n    reranked = await rerank(docs, ctx.child_ctx(0.08)) # 8% budget\n    return await generate(query, reranked, ctx)        # remainder')
+      <h2>Deadline Propagation</h2>
+<p>Pass a deadline timestamp (not a timeout duration) through the call chain so each component " "knows the absolute deadline and can skip work that won't finish in time.</p>
+<pre><code>import time
+from dataclasses import dataclass
+@dataclass
+class RequestContext:
+    request_id: str
+    deadline: float  # Unix timestamp
+@property
+    def remaining_ms(self) -&gt; float:
+        return max(0, (self.deadline - time.time()) * 1000)
+def child_ctx(self, fraction: float) -&gt; 'RequestContext':
+        # Allocate a fraction of remaining budget to a sub-task
+        remaining = self.deadline - time.time()
+        return RequestContext(
+            request_id=self.request_id,
+            deadline=time.time() + remaining * fraction,
+        )
+async def pipeline(query: str, ctx: RequestContext) -&gt; str:
+    docs = await retrieve(query, ctx.child_ctx(0.1))   # 10% budget
+    reranked = await rerank(docs, ctx.child_ctx(0.08)) # 8% budget
+    return await generate(query, reranked, ctx)        # remainder</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Partial-Result Fallbacks', "When generation times out, return what you have rather than an error: truncate the streamed response at the timeout boundary, return a cached best-match, or return a graceful degradation message ('I found relevant information but ran out of time; here are the top sources...'). Partial results keep the user experience intact.")
+      <h2>Partial-Result Fallbacks</h2>
+<p>When generation times out, return what you have rather than an error: truncate the streamed response at the timeout boundary, return a cached best-match, or return a graceful degradation message ('I found relevant information but ran out of time; here are the top sources...'). Partial results keep the user experience intact.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Streaming as Mitigation', "Streaming responses change the user's perception of latency: the first token at 500 ms feels fast even if the full response takes 8 s. Implement streaming with a token-level timeout (abort if no new token arrives in 3 s) rather than an absolute response timeout. This catches hung generations without cutting short fast ones.")
+      <h2>Streaming as Mitigation</h2>
+<p>Streaming responses change the user's perception of latency: the first token at 500 ms feels fast even if the full response takes 8 s. Implement streaming with a token-level timeout (abort if no new token arrives in 3 s) rather than an absolute response timeout. This catches hung generations without cutting short fast ones.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Observability', 'Track: timeout_rate by stage (retrieval/generation/total), p50/p95/p99 latency per stage, and partial_fallback_rate. Alert if timeout_rate exceeds 1% — it usually indicates a provider issue or a prompt change that inflated output length. Correlate timeout spikes with deployment events and model version changes.')
+      <h2>Observability</h2>
+<p>Track: timeout_rate by stage (retrieval/generation/total), p50/p95/p99 latency per stage, and partial_fallback_rate. Alert if timeout_rate exceeds 1% — it usually indicates a provider issue or a prompt change that inflated output length. Correlate timeout spikes with deployment events and model version changes.</p>
     </div>
   </div>
 

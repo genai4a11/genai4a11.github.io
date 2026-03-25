@@ -21,7 +21,7 @@
   "headline": "Budget Guards | GenAI Mindmap",
   "description": "Hard and soft spending limits that prevent runaway LLM costs \u2014 per-user, per-tenant, and per-feature quotas enforced at the API gateway and application layer.",
   "url": "https://genai4a11.github.io/concepts/budget-guards.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,73 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Why Guards Are Essential', 'A single prompt injection or runaway agent loop can generate millions of tokens in minutes. Without budget guards, one misconfigured automation job can burn your entire monthly API budget overnight. Guards enforce predictable costs and prevent a small fraction of bad requests from impacting service for all other users.')
+      <h2>Why Guards Are Essential</h2>
+<p>A single prompt injection or runaway agent loop can generate millions of tokens in minutes. Without budget guards, one misconfigured automation job can burn your entire monthly API budget overnight. Guards enforce predictable costs and prevent a small fraction of bad requests from impacting service for all other users.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Token Counting', 'Count tokens before calling the model to enforce pre-flight limits. "\n   "Use tiktoken (OpenAI) or the tokenizer matching your model. "\n   "Count both input and estimated output tokens against the budget.\n\nimport tiktoken\n\ndef estimate_cost(messages: list[dict], model: str = "gpt-4o") -> float:\n    enc = tiktoken.encoding_for_model(model)\n    input_tokens = sum(len(enc.encode(m["content"])) for m in messages)\n    # Estimate output tokens (assume 500 if unknown)\n    output_tokens = 500\n    # GPT-4o pricing: $5/M input, $15/M output (approximate)\n    input_cost = input_tokens / 1_000_000 * 5.0\n    output_cost = output_tokens / 1_000_000 * 15.0\n    return input_cost + output_cost\n\ndef check_budget(user_id: str, estimated_cost: float) -> bool:\n    spent = redis.hget("budget:daily", user_id) or 0\n    limit = get_user_limit(user_id)  # e.g. $1.00/day\n    return float(spent) + estimated_cost <= limit')
+      <h2>Token Counting</h2>
+<p>Count tokens before calling the model to enforce pre-flight limits. " "Use tiktoken (OpenAI) or the tokenizer matching your model. " "Count both input and estimated output tokens against the budget.</p>
+<pre><code>import tiktoken
+def estimate_cost(messages: list[dict], model: str = "gpt-4o") -&gt; float:
+    enc = tiktoken.encoding_for_model(model)
+    input_tokens = sum(len(enc.encode(m["content"])) for m in messages)
+    # Estimate output tokens (assume 500 if unknown)
+    output_tokens = 500
+    # GPT-4o pricing: $5/M input, $15/M output (approximate)
+    input_cost = input_tokens / 1_000_000 * 5.0
+    output_cost = output_tokens / 1_000_000 * 15.0
+    return input_cost + output_cost
+def check_budget(user_id: str, estimated_cost: float) -&gt; bool:
+    spent = redis.hget("budget:daily", user_id) or 0
+    limit = get_user_limit(user_id)  # e.g. $1.00/day
+    return float(spent) + estimated_cost &lt;= limit</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Per-User Quotas', 'Track daily/monthly spend per user in Redis with TTL-based expiry. Free tier: $0.10/day. Pro tier: $5.00/day. Enterprise: custom. When a user approaches their limit (80%), send a warning. At 100%, return a 429-style response with a helpful message and upgrade prompt.')
+      <h2>Per-User Quotas</h2>
+<p>Track daily/monthly spend per user in Redis with TTL-based expiry. Free tier: $0.10/day. Pro tier: $5.00/day. Enterprise: custom. When a user approaches their limit (80%), send a warning. At 100%, return a 429-style response with a helpful message and upgrade prompt.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Tenant-Level Budgets', "For B2B SaaS, apply hierarchical budgets: global → tenant → user. A tenant's $1,000/month budget is shared across all their users. When the tenant hits 90%, alert the account owner. Use atomic Redis operations (INCRBYFLOAT) to avoid race conditions in concurrent request bursts.")
+      <h2>Tenant-Level Budgets</h2>
+<p>For B2B SaaS, apply hierarchical budgets: global → tenant → user. A tenant's $1,000/month budget is shared across all their users. When the tenant hits 90%, alert the account owner. Use atomic Redis operations (INCRBYFLOAT) to avoid race conditions in concurrent request bursts.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Soft vs Hard Limits', "Soft limit (80%): log a warning, notify user/admin, optionally degrade to cheaper model. Hard limit (100%): block the request immediately, return error with remaining time until reset. Never apply a hard limit without a soft warning first — abrupt blocks frustrate users. Always allow at least one final 'I've reached my limit' response to explain the situation.")
+      <h2>Soft vs Hard Limits</h2>
+<p>Soft limit (80%): log a warning, notify user/admin, optionally degrade to cheaper model. Hard limit (100%): block the request immediately, return error with remaining time until reset. Never apply a hard limit without a soft warning first — abrupt blocks frustrate users. Always allow at least one final 'I've reached my limit' response to explain the situation.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Implementation', 'Enforce at the API gateway (Kong, AWS API Gateway) for maximum reliability, "\n   "and duplicate checks in application code for defence in depth.\n\nimport redis, time\nfrom functools import wraps\n\nr = redis.Redis()\n\ndef budget_guard(daily_limit_usd: float):\n    def decorator(fn):\n        @wraps(fn)\n        async def wrapper(user_id: str, *args, **kwargs):\n            key = f"spend:{user_id}:{time.strftime(\'%Y-%m-%d\')}"\n            current = float(r.get(key) or 0)\n            if current >= daily_limit_usd:\n                raise BudgetExceededError(\n                    f"Daily budget of ${daily_limit_usd} reached. Resets at midnight UTC."\n                )\n            result = await fn(user_id, *args, **kwargs)\n            # Update after call with actual cost\n            actual_cost = result.usage.total_cost\n            r.incrbyfloat(key, actual_cost)\n            r.expire(key, 86400 * 2)  # 2-day TTL for safety\n            return result\n        return wrapper\n    return decorator')
+      <h2>Implementation</h2>
+<p>Enforce at the API gateway (Kong, AWS API Gateway) for maximum reliability, " "and duplicate checks in application code for defence in depth.</p>
+<pre><code>import redis, time
+from functools import wraps
+r = redis.Redis()
+def budget_guard(daily_limit_usd: float):
+    def decorator(fn):
+        @wraps(fn)
+        async def wrapper(user_id: str, *args, **kwargs):
+            key = f"spend:{user_id}:{time.strftime('%Y-%m-%d')}"
+            current = float(r.get(key) or 0)
+            if current &gt;= daily_limit_usd:
+                raise BudgetExceededError(
+                    f"Daily budget of ${daily_limit_usd} reached. Resets at midnight UTC."
+                )
+            result = await fn(user_id, *args, **kwargs)
+            # Update after call with actual cost
+            actual_cost = result.usage.total_cost
+            r.incrbyfloat(key, actual_cost)
+            r.expire(key, 86400 * 2)  # 2-day TTL for safety
+            return result
+        return wrapper
+    return decorator</code></pre>
     </div>
   </div>
 

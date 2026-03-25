@@ -374,7 +374,7 @@
   "headline": "KV Cache Mechanics",
   "description": "How transformers avoid recomputing attention on every token \u2014 and how to tune it for throughput and memory.",
   "url": "https://genai4a11.github.io/concepts/kv-cache.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -415,6 +415,17 @@
   }
 }
 </script>
+
+<style>
+.flow-diagram{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:1.5rem 0;font-size:.9rem;}
+.flow-box{background:var(--bg);border:2px solid var(--accent);border-radius:.5rem;padding:.6rem 1rem;font-weight:600;text-align:center;min-width:100px;}
+.flow-arrow{color:var(--accent);font-size:1.2rem;font-weight:700;}
+.flow-label{font-size:.78rem;color:var(--muted);display:block;font-weight:400;margin-top:.2rem;}
+.lp-step{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.25rem;}
+.lp-num{background:var(--accent);color:white;border-radius:50%;width:2rem;height:2rem;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0;margin-top:.1rem;}
+.lp-body h4{margin:0 0 .25rem;font-size:1rem;}
+.lp-body p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.5;}
+</style>
 </head>
 <body>
 
@@ -828,7 +839,30 @@ Output: 150 tokens
     </ul>
   </div>
 
-  <footer class="page-footer">
+  
+  <div class="section-block" id="learning-path">
+    <div class="section-marker">LEARNING PATH</div>
+    <h2>Learning Path</h2>
+    <p>KV cache is an inference optimisation. Understand it in this order:</p>
+
+    <div class="flow-diagram">
+      <div class="flow-box">Transformer Attn<span class="flow-label">how attention works</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Autoregressive Decode<span class="flow-label">token by token</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">KV Cache<span class="flow-label">cache K/V, skip recompute</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">PagedAttention<span class="flow-label">vLLM memory mgmt</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Prefix Caching<span class="flow-label">reuse across requests</span></div>
+    </div>
+
+    <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Understand autoregressive decoding first</h4><p>In transformer decoding, every new token attends to all previous tokens. Without caching, that's O(n²) work per token. See <a href="transformers.html">Transformers</a> for the attention mechanics.</p></div></div>
+    <div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Understand the memory-bandwidth tradeoff</h4><p>KV cache trades VRAM for speed. At 70B with FP16, the KV cache for a 32K context uses ~32GB. This is why quantised KV cache (FP8 or INT4) matters for long contexts.</p></div></div>
+    <div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Use vLLM — it handles all of this</h4><p>vLLM implements PagedAttention (non-contiguous KV blocks) and prefix caching out of the box. For most teams, "use vLLM" is the entire KV cache strategy.</p></div></div>
+  </div>
+
+<footer class="page-footer">
     <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
     <a id="footer-back" href="../index.html">← Back to mindmap</a>
   </footer>

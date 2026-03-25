@@ -21,7 +21,7 @@
   "headline": "Approval Gates | GenAI Mindmap",
   "description": "Human-in-the-loop checkpoints that pause agentic workflows for review and approval before executing irreversible or high-risk actions.",
   "url": "https://genai4a11.github.io/concepts/approval-gates.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,58 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('When to Gate', "Gate actions that are: irreversible (send email, delete data, execute trade), high-value (transactions over $X, changes to production systems), unusual (first time seen, outside normal operating parameters), or explicitly required by policy (regulated industries). Don't gate every action — approval fatigue leads to rubber-stamping.")
+      <h2>When to Gate</h2>
+<p>Gate actions that are: irreversible (send email, delete data, execute trade), high-value (transactions over $X, changes to production systems), unusual (first time seen, outside normal operating parameters), or explicitly required by policy (regulated industries). Don't gate every action — approval fatigue leads to rubber-stamping.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Gate Design', 'Each gate captures: what the agent proposes to do, why (reasoning chain), what the consequences are, and what happens if rejected. Show the human enough context to make an informed decision in 30 seconds. Offer: Approve, Reject, Modify (allow human to edit the action before approving).')
+      <h2>Gate Design</h2>
+<p>Each gate captures: what the agent proposes to do, why (reasoning chain), what the consequences are, and what happens if rejected. Show the human enough context to make an informed decision in 30 seconds. Offer: Approve, Reject, Modify (allow human to edit the action before approving).</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Async Approval Patterns', 'The agent pauses and stores its proposed action in a queue. "\n   "A human reviewer sees it in a dashboard or receives a notification (Slack, email). "\n   "On approval, the queue releases and the agent continues. On rejection, the agent "\n   "receives the rejection reason and can replan.\n\nimport asyncio\nfrom enum import Enum\n\nclass ApprovalStatus(Enum):\n    PENDING = "pending"\n    APPROVED = "approved"\n    REJECTED = "rejected"\n    MODIFIED = "modified"\n\nasync def request_approval(action: dict, timeout_s: int = 300) -> tuple[ApprovalStatus, dict]:\n    approval_id = store_pending_approval(action)\n    # Notify reviewer (Slack, email, dashboard)\n    await notify_reviewer(approval_id, action)\n    # Poll for decision\n    deadline = asyncio.get_event_loop().time() + timeout_s\n    while asyncio.get_event_loop().time() < deadline:\n        decision = get_approval_decision(approval_id)\n        if decision:\n            return decision.status, decision.modified_action or action\n        await asyncio.sleep(5)\n    # Timeout — escalate\n    return ApprovalStatus.REJECTED, {"reason": "Approval timed out — action blocked"}')
+      <h2>Async Approval Patterns</h2>
+<p>The agent pauses and stores its proposed action in a queue. " "A human reviewer sees it in a dashboard or receives a notification (Slack, email). " "On approval, the queue releases and the agent continues. On rejection, the agent " "receives the rejection reason and can replan.</p>
+<pre><code>import asyncio
+from enum import Enum
+class ApprovalStatus(Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    MODIFIED = "modified"
+async def request_approval(action: dict, timeout_s: int = 300) -&gt; tuple[ApprovalStatus, dict]:
+    approval_id = store_pending_approval(action)
+    # Notify reviewer (Slack, email, dashboard)
+    await notify_reviewer(approval_id, action)
+    # Poll for decision
+    deadline = asyncio.get_event_loop().time() + timeout_s
+    while asyncio.get_event_loop().time() &lt; deadline:
+        decision = get_approval_decision(approval_id)
+        if decision:
+            return decision.status, decision.modified_action or action
+        await asyncio.sleep(5)
+    # Timeout — escalate
+    return ApprovalStatus.REJECTED, {"reason": "Approval timed out — action blocked"}</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Approval UI', 'Build a simple dashboard showing pending approvals with: action description, agent reasoning, risk level, time pending, and approve/reject buttons. Mobile-friendly for on-call approvers. Slack integration: post approval requests to a dedicated #approvals channel with interactive buttons so approvals happen without leaving Slack.')
+      <h2>Approval UI</h2>
+<p>Build a simple dashboard showing pending approvals with: action description, agent reasoning, risk level, time pending, and approve/reject buttons. Mobile-friendly for on-call approvers. Slack integration: post approval requests to a dedicated #approvals channel with interactive buttons so approvals happen without leaving Slack.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Timeout & Escalation', 'Set a timeout on each approval request (e.g. 5 minutes for automated workflows, 24 hours for business-hours tasks). On timeout: (1) block the action (safe default for irreversible actions), (2) auto-approve (only for low-risk actions with explicit policy), (3) escalate to a secondary approver. Always log timeout events.')
+      <h2>Timeout & Escalation</h2>
+<p>Set a timeout on each approval request (e.g. 5 minutes for automated workflows, 24 hours for business-hours tasks). On timeout: (1) block the action (safe default for irreversible actions), (2) auto-approve (only for low-risk actions with explicit policy), (3) escalate to a secondary approver. Always log timeout events.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Partial Automation', 'Use approval gates selectively with a risk scorer: low-risk actions auto-approve, medium-risk send a notification (approve unless rejected within 5 min), high-risk require explicit approval. Over time, use approved/rejected signals to retrain the risk scorer and increase the auto-approve threshold for safe action classes.')
+      <h2>Partial Automation</h2>
+<p>Use approval gates selectively with a risk scorer: low-risk actions auto-approve, medium-risk send a notification (approve unless rejected within 5 min), high-risk require explicit approval. Over time, use approved/rejected signals to retrain the risk scorer and increase the auto-approve threshold for safe action classes.</p>
     </div>
   </div>
 

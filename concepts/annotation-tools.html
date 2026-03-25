@@ -21,7 +21,7 @@
   "headline": "Annotation Tools | GenAI Mindmap",
   "description": "Software platforms and workflows for creating labelled training data \u2014 from crowd-sourced annotation to expert review, with quality control mechanisms and LLM-assisted pre-labelling.",
   "url": "https://genai4a11.github.io/concepts/annotation-tools.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,79 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Annotation Tool Landscape', "Open-source self-hosted: Label Studio (general-purpose), Argilla (NLP/LLM-focused), Prodigy (spaCy team, paid). Managed crowd-sourcing: Scale AI, Surge AI, Toloka (enterprise, expensive but fast). Internal tools: spreadsheets + custom UI (fine for small teams, doesn't scale). For LLM fine-tuning tasks (preference ranking, RLHF), Argilla and Label Studio both have dedicated templates.")
+      <h2>Annotation Tool Landscape</h2>
+<p>Open-source self-hosted: Label Studio (general-purpose), Argilla (NLP/LLM-focused), Prodigy (spaCy team, paid). Managed crowd-sourcing: Scale AI, Surge AI, Toloka (enterprise, expensive but fast). Internal tools: spreadsheets + custom UI (fine for small teams, doesn't scale). For LLM fine-tuning tasks (preference ranking, RLHF), Argilla and Label Studio both have dedicated templates.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Label Studio', 'Label Studio is the most flexible open-source annotation platform. "\n   "Supports text, image, audio, video, and time-series. "\n   "Custom labelling interfaces defined in XML. "\n   "REST API and Python SDK for integration.\n\nimport label_studio_sdk as ls\n\nclient = ls.Client(url="http://localhost:8080", api_key="your-key")\n\n# Create project\nproject = client.create_project(\n    title="Sentiment Classification",\n    label_config=\'\'\'\n    <View>\n      <Text name="text" value="$text"/>\n      <Choices name="sentiment" toName="text">\n        <Choice value="positive"/>\n        <Choice value="negative"/>\n        <Choice value="neutral"/>\n      </Choices>\n    </View>\n    \'\'\'\n)\n\n# Import tasks\ntasks = [{"data": {"text": t}} for t in texts_to_label]\nproject.import_tasks(tasks)')
+      <h2>Label Studio</h2>
+<p>Label Studio is the most flexible open-source annotation platform. " "Supports text, image, audio, video, and time-series. " "Custom labelling interfaces defined in XML. " "REST API and Python SDK for integration.</p>
+<pre><code>import label_studio_sdk as ls
+client = ls.Client(url="http://localhost:8080", api_key="your-key")
+# Create project
+project = client.create_project(
+    title="Sentiment Classification",
+    label_config='''
+    &lt;View&gt;
+      &lt;Text name="text" value="$text"/&gt;
+      &lt;Choices name="sentiment" toName="text"&gt;
+        &lt;Choice value="positive"/&gt;
+        &lt;Choice value="negative"/&gt;
+        &lt;Choice value="neutral"/&gt;
+      &lt;/Choices&gt;
+    &lt;/View&gt;
+    '''
+)
+# Import tasks
+tasks = [{"data": {"text": t}} for t in texts_to_label]
+project.import_tasks(tasks)</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Argilla for NLP/LLM', 'Argilla is purpose-built for NLP and LLM data: text classification, token classification (NER), text generation feedback, and preference ranking for RLHF. It integrates with Hugging Face Hub to push annotated datasets directly. Particularly strong for: SFT data curation, preference pair collection, and reviewing LLM-generated responses before training.')
+      <h2>Argilla for NLP/LLM</h2>
+<p>Argilla is purpose-built for NLP and LLM data: text classification, token classification (NER), text generation feedback, and preference ranking for RLHF. It integrates with Hugging Face Hub to push annotated datasets directly. Particularly strong for: SFT data curation, preference pair collection, and reviewing LLM-generated responses before training.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('LLM-Assisted Pre-Labelling', 'Use an LLM to generate initial labels, then have humans review and correct. "\n   "This \'human-in-the-loop pre-labelling\' reduces annotation time by 60–80%.\n\nfrom openai import OpenAI\nimport json\n\nclient = OpenAI()\n\ndef pre_label(texts: list[str], categories: list[str]) -> list[dict]:\n    results = []\n    for text in texts:\n        resp = client.chat.completions.create(\n            model="gpt-4o-mini",\n            messages=[{\n                "role": "user",\n                "content": (\n                    f"Classify the sentiment of: {text}\\n"\n                    f"Categories: {categories}\\n"\n                    f"Reply with JSON: {{label: str, confidence: float}}"\n                )\n            }],\n            response_format={"type": "json_object"},\n        )\n        pred = json.loads(resp.choices[0].message.content)\n        results.append({"text": text, "predicted_label": pred["label"],\n                         "confidence": pred["confidence"], "reviewed": False})\n    return results')
+      <h2>LLM-Assisted Pre-Labelling</h2>
+<p>Use an LLM to generate initial labels, then have humans review and correct. " "This 'human-in-the-loop pre-labelling' reduces annotation time by 60–80%.</p>
+<pre><code>from openai import OpenAI
+import json
+client = OpenAI()
+def pre_label(texts: list[str], categories: list[str]) -&gt; list[dict]:
+    results = []
+    for text in texts:
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{
+                "role": "user",
+                "content": (
+                    f"Classify the sentiment of: {text}\n"
+                    f"Categories: {categories}\n"
+                    f"Reply with JSON: {{label: str, confidence: float}}"
+                )
+            }],
+            response_format={"type": "json_object"},
+        )
+        pred = json.loads(resp.choices[0].message.content)
+        results.append({"text": text, "predicted_label": pred["label"],
+                         "confidence": pred["confidence"], "reviewed": False})
+    return results</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Annotation Guidelines', "Clear guidelines are the most important factor in annotation quality. Include: definition of each label, positive and negative examples for every label, decision rules for edge cases, and escalation path for ambiguous cases. Run a calibration session: have all annotators label the same 20 examples and discuss disagreements before starting. Target inter-annotator agreement (Cohen's kappa) above 0.7 for reliable labels.")
+      <h2>Annotation Guidelines</h2>
+<p>Clear guidelines are the most important factor in annotation quality. Include: definition of each label, positive and negative examples for every label, decision rules for edge cases, and escalation path for ambiguous cases. Run a calibration session: have all annotators label the same 20 examples and discuss disagreements before starting. Target inter-annotator agreement (Cohen's kappa) above 0.7 for reliable labels.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Quality Control', 'Inject gold-standard examples (known correct answers) into annotation queues. Annotators who fail gold examples below a threshold are removed from the project. Use majority vote for crowdsourced tasks: label each example by 3+ annotators and take the majority label. Track per-annotator accuracy over time — quality typically degrades after 2–3 hours of continuous labelling.')
+      <h2>Quality Control</h2>
+<p>Inject gold-standard examples (known correct answers) into annotation queues. Annotators who fail gold examples below a threshold are removed from the project. Use majority vote for crowdsourced tasks: label each example by 3+ annotators and take the majority label. Track per-annotator accuracy over time — quality typically degrades after 2–3 hours of continuous labelling.</p>
     </div>
   </div>
 

@@ -21,7 +21,7 @@
   "headline": "Audit Trail | GenAI Mindmap",
   "description": "Immutable, append-only logs of every LLM interaction, tool call, and decision in an AI system \u2014 for debugging, compliance, cost attribution, and retroactive evaluation.",
   "url": "https://genai4a11.github.io/concepts/audit-trail.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,60 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What to Log', 'Log everything that affects an LLM decision: full prompt (system + user + history), model response (full text, not truncated), model name and version, temperature and sampling parameters, token counts, latency, cost, tool calls and their results, user ID, session ID, and request ID. Log at millisecond precision for latency analysis.')
+      <h2>What to Log</h2>
+<p>Log everything that affects an LLM decision: full prompt (system + user + history), model response (full text, not truncated), model name and version, temperature and sampling parameters, token counts, latency, cost, tool calls and their results, user ID, session ID, and request ID. Log at millisecond precision for latency analysis.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Immutability Requirements', 'Audit logs must be append-only and tamper-evident. Use write-once storage: S3 with Object Lock, Postgres with row-level security blocking DELETEs, or a dedicated audit log service (Datadog, Splunk). Never modify or delete audit records — retain errors and corrections as new log entries.')
+      <h2>Immutability Requirements</h2>
+<p>Audit logs must be append-only and tamper-evident. Use write-once storage: S3 with Object Lock, Postgres with row-level security blocking DELETEs, or a dedicated audit log service (Datadog, Splunk). Never modify or delete audit records — retain errors and corrections as new log entries.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Storage Schema', 'Store as structured JSON with an event envelope for queryability.\n\nfrom pydantic import BaseModel\nfrom datetime import datetime\nfrom typing import Any\n\nclass AuditEvent(BaseModel):\n    event_id: str          # UUID\n    timestamp: datetime\n    event_type: str        # "llm_request", "tool_call", "decision"\n    request_id: str        # Traces all events for one user request\n    session_id: str\n    user_id: str\n    tenant_id: str\n    # LLM-specific fields\n    model: str = ""\n    prompt_tokens: int = 0\n    completion_tokens: int = 0\n    cost_usd: float = 0.0\n    latency_ms: float = 0.0\n    # Payload (encrypted if sensitive)\n    payload: dict[str, Any] = {}\n    # Metadata\n    app_version: str = ""\n    environment: str = "production"')
+      <h2>Storage Schema</h2>
+<p>Store as structured JSON with an event envelope for queryability.</p>
+<pre><code>from pydantic import BaseModel
+from datetime import datetime
+from typing import Any
+class AuditEvent(BaseModel):
+    event_id: str          # UUID
+    timestamp: datetime
+    event_type: str        # "llm_request", "tool_call", "decision"
+    request_id: str        # Traces all events for one user request
+    session_id: str
+    user_id: str
+    tenant_id: str
+    # LLM-specific fields
+    model: str = ""
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    cost_usd: float = 0.0
+    latency_ms: float = 0.0
+    # Payload (encrypted if sensitive)
+    payload: dict[str, Any] = {}
+    # Metadata
+    app_version: str = ""
+    environment: str = "production"</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Sensitive Data Handling', 'PII in prompts (names, emails, SSNs) requires special handling. Options: (1) redact before storage — use a PII detector (Presidio) to replace PII with tokens. (2) encrypt at rest with customer-managed keys (CMK) — store encrypted, decrypt on authorised access. (3) hash for identity without storing raw values. Never store API keys, passwords, or payment card data in audit logs.')
+      <h2>Sensitive Data Handling</h2>
+<p>PII in prompts (names, emails, SSNs) requires special handling. Options: (1) redact before storage — use a PII detector (Presidio) to replace PII with tokens. (2) encrypt at rest with customer-managed keys (CMK) — store encrypted, decrypt on authorised access. (3) hash for identity without storing raw values. Never store API keys, passwords, or payment card data in audit logs.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Querying & Analysis', "Index on: request_id (trace reconstruction), user_id (per-user cost), timestamp (time-range queries), event_type (filter by type), and cost_usd (top spenders). Use columnar storage (Parquet on S3 + Athena, or ClickHouse) for analytical queries. Example: 'show me all requests from user X in the past 7 days that cost more than $0.10'.")
+      <h2>Querying & Analysis</h2>
+<p>Index on: request_id (trace reconstruction), user_id (per-user cost), timestamp (time-range queries), event_type (filter by type), and cost_usd (top spenders). Use columnar storage (Parquet on S3 + Athena, or ClickHouse) for analytical queries. Example: 'show me all requests from user X in the past 7 days that cost more than $0.10'.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Compliance Use Cases', 'GDPR: audit log proves when data was processed, by which model, for what purpose. SOC 2: audit trail demonstrates access controls and data handling policies. Healthcare (HIPAA): logs of PHI processing must be retained for 6 years. Financial services: full audit trail of AI-assisted decisions is often legally required. Design with compliance requirements in mind from day one — retrofitting is painful.')
+      <h2>Compliance Use Cases</h2>
+<p>GDPR: audit log proves when data was processed, by which model, for what purpose. SOC 2: audit trail demonstrates access controls and data handling policies. Healthcare (HIPAA): logs of PHI processing must be retained for 6 years. Financial services: full audit trail of AI-assisted decisions is often legally required. Design with compliance requirements in mind from day one — retrofitting is painful.</p>
     </div>
   </div>
 

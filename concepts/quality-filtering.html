@@ -21,7 +21,7 @@
   "headline": "Quality Filtering | GenAI Mindmap",
   "description": "Automated pipelines for filtering synthetic and web-scraped datasets to remove low-quality, duplicated, toxic, and off-topic content before training.",
   "url": "https://genai4a11.github.io/concepts/quality-filtering.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,80 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Filter Taxonomy', 'Length filters: too short (< 50 tokens) or too long (> 4096 tokens). Language filters: keep only target language(s) (fastText langdetect). Perplexity filters: very high perplexity suggests garbled/random text. Repetition filters: high token n-gram repetition signals low-quality text. Safety filters: remove toxic, harmful, or NSFW content. Quality scorers: LLM or classifier that rates overall content quality.')
+      <h2>Filter Taxonomy</h2>
+<p>Length filters: too short (< 50 tokens) or too long (> 4096 tokens). Language filters: keep only target language(s) (fastText langdetect). Perplexity filters: very high perplexity suggests garbled/random text. Repetition filters: high token n-gram repetition signals low-quality text. Safety filters: remove toxic, harmful, or NSFW content. Quality scorers: LLM or classifier that rates overall content quality.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Heuristic Filters', 'Fast, cheap filters that catch obvious quality issues before expensive LLM scoring.\n\nimport re\nfrom langdetect import detect\n\ndef heuristic_filter(text: str, target_lang: str = "en") -> tuple[bool, str]:\n    # Length check\n    words = text.split()\n    if len(words) < 20:\n        return False, "too_short"\n    if len(words) > 4000:\n        return False, "too_long"\n    # Language check\n    try:\n        if detect(text[:500]) != target_lang:\n            return False, "wrong_language"\n    except Exception:\n        return False, "lang_detect_failed"\n    # Repetition check\n    tokens = text.lower().split()\n    unique_ratio = len(set(tokens)) / len(tokens)\n    if unique_ratio < 0.2:\n        return False, "high_repetition"\n    # HTML artefacts\n    if re.search(r"<[a-z]+[^>]*>", text):\n        return False, "html_artefacts"\n    return True, "ok"')
+      <h2>Heuristic Filters</h2>
+<p>Fast, cheap filters that catch obvious quality issues before expensive LLM scoring.</p>
+<pre><code>import re
+from langdetect import detect
+def heuristic_filter(text: str, target_lang: str = "en") -&gt; tuple[bool, str]:
+    # Length check
+    words = text.split()
+    if len(words) &lt; 20:
+        return False, "too_short"
+    if len(words) &gt; 4000:
+        return False, "too_long"
+    # Language check
+    try:
+        if detect(text[:500]) != target_lang:
+            return False, "wrong_language"
+    except Exception:
+        return False, "lang_detect_failed"
+    # Repetition check
+    tokens = text.lower().split()
+    unique_ratio = len(set(tokens)) / len(tokens)
+    if unique_ratio &lt; 0.2:
+        return False, "high_repetition"
+    # HTML artefacts
+    if re.search(r"&lt;[a-z]+[^&gt;]*&gt;", text):
+        return False, "html_artefacts"
+    return True, "ok"</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('LLM Quality Scorer', 'Use a small LLM to score quality on a 1–5 scale. "\n   "Train a regression model on LLM scores for 10× cheaper inference.\n\ndef score_quality(text: str) -> float:\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{\n            "role": "user",\n            "content": (\n                "Rate the quality of this text on a scale 1-5:\\n"\n                "1=very poor, 3=acceptable, 5=excellent\\n\\n"\n                f"Text: {text[:500]}\\n\\nReply with just the number."\n            )\n        }],\n        max_tokens=3,\n        temperature=0,\n    )\n    try:\n        return float(resp.choices[0].message.content.strip()) / 5.0\n    except ValueError:\n        return 0.5')
+      <h2>LLM Quality Scorer</h2>
+<p>Use a small LLM to score quality on a 1–5 scale. " "Train a regression model on LLM scores for 10× cheaper inference.</p>
+<pre><code>def score_quality(text: str) -&gt; float:
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{
+            "role": "user",
+            "content": (
+                "Rate the quality of this text on a scale 1-5:\n"
+                "1=very poor, 3=acceptable, 5=excellent\n\n"
+                f"Text: {text[:500]}\n\nReply with just the number."
+            )
+        }],
+        max_tokens=3,
+        temperature=0,
+    )
+    try:
+        return float(resp.choices[0].message.content.strip()) / 5.0
+    except ValueError:
+        return 0.5</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Safety & Toxicity Filters', 'Use dedicated classifiers for toxicity, hate speech, and harmful content: Perspective API (Google), Detoxify (open-source), or OpenAI moderation endpoint. Threshold: remove examples with toxicity score > 0.7. For fine-tuning data, also remove: instructions to deceive, instructions about illegal activities, and PII-containing examples.')
+      <h2>Safety & Toxicity Filters</h2>
+<p>Use dedicated classifiers for toxicity, hate speech, and harmful content: Perspective API (Google), Detoxify (open-source), or OpenAI moderation endpoint. Threshold: remove examples with toxicity score > 0.7. For fine-tuning data, also remove: instructions to deceive, instructions about illegal activities, and PII-containing examples.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Deduplication at Scale', 'For millions of documents, exact hash dedup first (MD5 on normalised text), then MinHash LSH for near-duplicates (threshold 0.85). For web-scale data (100M+ documents), use SimHash or the dedup methodology from the Dolma/RedPajama pipeline (URL dedup → line dedup → document dedup). Dedup before quality scoring to avoid wasting LLM API calls on duplicates.')
+      <h2>Deduplication at Scale</h2>
+<p>For millions of documents, exact hash dedup first (MD5 on normalised text), then MinHash LSH for near-duplicates (threshold 0.85). For web-scale data (100M+ documents), use SimHash or the dedup methodology from the Dolma/RedPajama pipeline (URL dedup → line dedup → document dedup). Dedup before quality scoring to avoid wasting LLM API calls on duplicates.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Filter Pipeline Architecture', 'Stage 1 (cheap): language detect + length filter + hash dedup → drops 30–50%. Stage 2 (medium): MinHash dedup + heuristic quality filters → drops another 20–30%. Stage 3 (expensive): LLM quality scorer → keep top 50–70% by score. Stage 4 (targeted): safety filter → remove toxicity. Log rejection counts at each stage to monitor data source quality over time.')
+      <h2>Filter Pipeline Architecture</h2>
+<p>Stage 1 (cheap): language detect + length filter + hash dedup → drops 30–50%. Stage 2 (medium): MinHash dedup + heuristic quality filters → drops another 20–30%. Stage 3 (expensive): LLM quality scorer → keep top 50–70% by score. Stage 4 (targeted): safety filter → remove toxicity. Log rejection counts at each stage to monitor data source quality over time.</p>
     </div>
   </div>
 

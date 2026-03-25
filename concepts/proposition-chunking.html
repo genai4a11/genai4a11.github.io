@@ -21,7 +21,7 @@
   "headline": "Proposition Chunking | GenAI Mindmap",
   "description": "A retrieval-optimised chunking strategy that splits documents into atomic factual statements (propositions) rather than arbitrary text windows \u2014 improving retrieval precision.",
   "url": "https://genai4a11.github.io/concepts/proposition-chunking.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,61 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What Is Proposition Chunking?', "Proposition chunking (Chen et al. 2023, 'Dense X Retrieval') splits documents into atomic propositions — self-contained factual statements that can be understood without context. Instead of 'The model was introduced in 2023 and uses 70B parameters', you get two propositions: 'The model was introduced in 2023' and 'The model uses 70B parameters'. Each proposition is a retrieval unit, leading to more precise embedding-based retrieval.")
+      <h2>What Is Proposition Chunking?</h2>
+<p>Proposition chunking (Chen et al. 2023, 'Dense X Retrieval') splits documents into atomic propositions — self-contained factual statements that can be understood without context. Instead of 'The model was introduced in 2023 and uses 70B parameters', you get two propositions: 'The model was introduced in 2023' and 'The model uses 70B parameters'. Each proposition is a retrieval unit, leading to more precise embedding-based retrieval.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('How It Works', 'Step 1: Pass each document chunk to an LLM with a proposition extraction prompt. Step 2: The LLM returns a list of atomic statements. Step 3: Each statement is embedded and stored with a back-reference to the original chunk. At retrieval time, the most similar propositions are fetched. Optionally, the retrieved propositions are expanded to their parent chunks for richer context.')
+      <h2>How It Works</h2>
+<p>Step 1: Pass each document chunk to an LLM with a proposition extraction prompt. Step 2: The LLM returns a list of atomic statements. Step 3: Each statement is embedded and stored with a back-reference to the original chunk. At retrieval time, the most similar propositions are fetched. Optionally, the retrieved propositions are expanded to their parent chunks for richer context.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Implementation', 'from openai import OpenAI\nimport json\n\nclient = OpenAI()\n\ndef extract_propositions(text: str) -> list[str]:\n    response = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{\n            "role": "user",\n            "content": (\n                "Convert the following text into a list of atomic propositions. "\n                "Each proposition should be a single, self-contained factual statement. "\n                "Return as JSON array of strings.\\n\\n"\n                f"Text: {text}"\n            )\n        }],\n        response_format={"type": "json_object"},\n    )\n    data = json.loads(response.choices[0].message.content)\n    return data.get("propositions", [])\n\n# Example\ntext = "BERT was introduced by Google in 2018. It uses bidirectional training on the Transformer."\nprops = extract_propositions(text)\n# ["BERT was introduced by Google in 2018.",\n#  "BERT uses bidirectional training on the Transformer architecture."]')
+      <h2>Implementation</h2>
+<pre><code>from openai import OpenAI
+import json
+client = OpenAI()
+def extract_propositions(text: str) -&gt; list[str]:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{
+            "role": "user",
+            "content": (
+                "Convert the following text into a list of atomic propositions. "
+                "Each proposition should be a single, self-contained factual statement. "
+                "Return as JSON array of strings.\n\n"
+                f"Text: {text}"
+            )
+        }],
+        response_format={"type": "json_object"},
+    )
+    data = json.loads(response.choices[0].message.content)
+    return data.get("propositions", [])
+# Example
+text = "BERT was introduced by Google in 2018. It uses bidirectional training on the Transformer."
+props = extract_propositions(text)
+# ["BERT was introduced by Google in 2018.",
+#  "BERT uses bidirectional training on the Transformer architecture."]</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Pros and Cons', "Pros: higher retrieval precision for factoid queries, no context bleed between unrelated facts in the same paragraph, better handling of multi-fact sentences. Cons: LLM extraction adds cost and latency to indexing, propositions can lose context (a proposition about 'it' needs coreference resolved), and the proposition count is unpredictable.")
+      <h2>Pros and Cons</h2>
+<p>Pros: higher retrieval precision for factoid queries, no context bleed between unrelated facts in the same paragraph, better handling of multi-fact sentences. Cons: LLM extraction adds cost and latency to indexing, propositions can lose context (a proposition about 'it' needs coreference resolved), and the proposition count is unpredictable.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('When to Use', 'Use for: knowledge bases with dense factual content, QA systems where retrieval precision matters more than recall, and corpora where the same paragraph contains multiple unrelated facts. Avoid for: narrative content (propositions fragment stories), large corpora where indexing cost is a constraint, or when semantic chunking suffices.')
+      <h2>When to Use</h2>
+<p>Use for: knowledge bases with dense factual content, QA systems where retrieval precision matters more than recall, and corpora where the same paragraph contains multiple unrelated facts. Avoid for: narrative content (propositions fragment stories), large corpora where indexing cost is a constraint, or when semantic chunking suffices.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('vs Other Chunking Strategies', 'Fixed-size chunking: fast, simple, low retrieval precision. Semantic chunking: groups related sentences, good for narrative. Proposition chunking: best retrieval precision, highest indexing cost. A practical hybrid: semantic chunk first, then extract propositions per chunk for domains where precision is critical.')
+      <h2>vs Other Chunking Strategies</h2>
+<p>Fixed-size chunking: fast, simple, low retrieval precision. Semantic chunking: groups related sentences, good for narrative. Proposition chunking: best retrieval precision, highest indexing cost. A practical hybrid: semantic chunk first, then extract propositions per chunk for domains where precision is critical.</p>
     </div>
   </div>
 

@@ -21,7 +21,7 @@
   "headline": "Label Quality Control | GenAI Mindmap",
   "description": "Techniques for detecting and correcting label errors in training datasets \u2014 using disagreement analysis, model confidence, Cleanlab, and inter-annotator agreement metrics.",
   "url": "https://genai4a11.github.io/concepts/label-quality.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,73 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('The Label Noise Problem', 'Research shows 3–10% of labels in widely-used benchmarks (ImageNet, CIFAR, etc.) are incorrect. Label noise degrades model performance, makes loss curves unstable, and causes models to learn the noise patterns. A model trained on clean data with 5% fewer examples consistently outperforms one trained on noisy data with those extra examples.')
+      <h2>The Label Noise Problem</h2>
+<p>Research shows 3–10% of labels in widely-used benchmarks (ImageNet, CIFAR, etc.) are incorrect. Label noise degrades model performance, makes loss curves unstable, and causes models to learn the noise patterns. A model trained on clean data with 5% fewer examples consistently outperforms one trained on noisy data with those extra examples.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Inter-Annotator Agreement', 'Measure agreement before training to quantify label quality. "\n   "Cohen\'s kappa > 0.7 is acceptable; > 0.8 is good; < 0.6 signals annotation problems.\n\nfrom sklearn.metrics import cohen_kappa_score\nimport numpy as np\n\ndef measure_agreement(annotator_a: list, annotator_b: list) -> dict:\n    kappa = cohen_kappa_score(annotator_a, annotator_b)\n    agreement_rate = sum(a == b for a, b in zip(annotator_a, annotator_b)) / len(annotator_a)\n    return {\n        "cohens_kappa": round(kappa, 3),\n        "raw_agreement": round(agreement_rate, 3),\n        "interpretation": "good" if kappa > 0.7 else "acceptable" if kappa > 0.5 else "poor"\n    }\n\n# Find specific disagreement cases\ndef find_disagreements(annotator_a: list, annotator_b: list, texts: list) -> list:\n    return [\n        {"text": t, "label_a": a, "label_b": b}\n        for t, a, b in zip(texts, annotator_a, annotator_b)\n        if a != b\n    ]')
+      <h2>Inter-Annotator Agreement</h2>
+<p>Measure agreement before training to quantify label quality. " "Cohen's kappa > 0.7 is acceptable; > 0.8 is good; < 0.6 signals annotation problems.</p>
+<pre><code>from sklearn.metrics import cohen_kappa_score
+import numpy as np
+def measure_agreement(annotator_a: list, annotator_b: list) -&gt; dict:
+    kappa = cohen_kappa_score(annotator_a, annotator_b)
+    agreement_rate = sum(a == b for a, b in zip(annotator_a, annotator_b)) / len(annotator_a)
+    return {
+        "cohens_kappa": round(kappa, 3),
+        "raw_agreement": round(agreement_rate, 3),
+        "interpretation": "good" if kappa &gt; 0.7 else "acceptable" if kappa &gt; 0.5 else "poor"
+    }
+# Find specific disagreement cases
+def find_disagreements(annotator_a: list, annotator_b: list, texts: list) -&gt; list:
+    return [
+        {"text": t, "label_a": a, "label_b": b}
+        for t, a, b in zip(texts, annotator_a, annotator_b)
+        if a != b
+    ]</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Confident Learning', 'Confident Learning (Northcutt et al. 2021, implemented in Cleanlab) detects label errors by cross-referencing model confidence with assigned labels. A model trained on the dataset assigns low confidence to its own training examples that have incorrect labels — because the label contradicts the pattern the model learned. This self-signal identifies likely label errors without re-annotation.')
+      <h2>Confident Learning</h2>
+<p>Confident Learning (Northcutt et al. 2021, implemented in Cleanlab) detects label errors by cross-referencing model confidence with assigned labels. A model trained on the dataset assigns low confidence to its own training examples that have incorrect labels — because the label contradicts the pattern the model learned. This self-signal identifies likely label errors without re-annotation.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Cleanlab', 'Cleanlab automates confident learning for classification tasks.\n\nimport cleanlab\nfrom cleanlab.classification import CleanLearning\nfrom sklearn.linear_model import LogisticRegression\n\n# Method 1: Find label issues\nfrom cleanlab.filter import find_label_issues\n\n# Get out-of-sample predicted probabilities (cross-validation)\npred_probs = cross_val_predict(LogisticRegression(), X_train, y_train,\n                                cv=5, method="predict_proba")\n\n# Find likely mislabelled examples\nlabel_issues = find_label_issues(\n    labels=y_train,\n    pred_probs=pred_probs,\n    return_indices_ranked_by="self_confidence",\n)\nprint(f"Found {len(label_issues)} potential label errors out of {len(y_train)}")\n\n# Method 2: Auto-fix labels\ncl = CleanLearning(clf=LogisticRegression())\ncl.fit(X_train, y_train)  # Automatically handles label noise during training')
+      <h2>Cleanlab</h2>
+<p>Cleanlab automates confident learning for classification tasks.</p>
+<pre><code>import cleanlab
+from cleanlab.classification import CleanLearning
+from sklearn.linear_model import LogisticRegression
+# Method 1: Find label issues
+from cleanlab.filter import find_label_issues
+# Get out-of-sample predicted probabilities (cross-validation)
+pred_probs = cross_val_predict(LogisticRegression(), X_train, y_train,
+                                cv=5, method="predict_proba")
+# Find likely mislabelled examples
+label_issues = find_label_issues(
+    labels=y_train,
+    pred_probs=pred_probs,
+    return_indices_ranked_by="self_confidence",
+)
+print(f"Found {len(label_issues)} potential label errors out of {len(y_train)}")
+# Method 2: Auto-fix labels
+cl = CleanLearning(clf=LogisticRegression())
+cl.fit(X_train, y_train)  # Automatically handles label noise during training</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Manual Review Workflow', "Don't automatically remove all flagged examples — review them. Sort flagged examples by confidence score (lowest confidence = most likely wrong). Review the top 20% manually: correct the label if clearly wrong, discard if ambiguous. Keep a review log: date, reviewer, original label, corrected label, decision rationale. Re-run Cleanlab after corrections to verify improvement.")
+      <h2>Manual Review Workflow</h2>
+<p>Don't automatically remove all flagged examples — review them. Sort flagged examples by confidence score (lowest confidence = most likely wrong). Review the top 20% manually: correct the label if clearly wrong, discard if ambiguous. Keep a review log: date, reviewer, original label, corrected label, decision rationale. Re-run Cleanlab after corrections to verify improvement.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Iterative Label Improvement', 'Label quality improvement is iterative: (1) Train model on current labels. (2) Identify low-confidence examples with Cleanlab. (3) Review and correct 500–1000 highest-priority examples. (4) Retrain and re-evaluate. Repeat 2–3 cycles. Each cycle typically improves accuracy by 1–3pp with no new data collection — pure quality improvement on existing labels.')
+      <h2>Iterative Label Improvement</h2>
+<p>Label quality improvement is iterative: (1) Train model on current labels. (2) Identify low-confidence examples with Cleanlab. (3) Review and correct 500–1000 highest-priority examples. (4) Retrain and re-evaluate. Repeat 2–3 cycles. Each cycle typically improves accuracy by 1–3pp with no new data collection — pure quality improvement on existing labels.</p>
     </div>
   </div>
 

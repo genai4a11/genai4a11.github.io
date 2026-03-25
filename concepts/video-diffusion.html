@@ -21,7 +21,7 @@
   "headline": "Video Diffusion | GenAI Mindmap",
   "description": "The family of diffusion-based models for video generation \u2014 including architectures, training strategies, and open-source implementations like Stable Video Diffusion, CogVideoX, and AnimateDiff.",
   "url": "https://genai4a11.github.io/concepts/video-diffusion.html",
-  "dateModified": "2026-03-25T01:02:21.987002",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -154,32 +154,55 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Core Concept', 'Video diffusion models extend image diffusion to the temporal dimension. A latent video is denoised frame-by-frame (or jointly) using a U-Net or transformer. The primary challenge is maintaining temporal coherence — ensuring objects, lighting, and motion are consistent across frames — while keeping memory and compute tractable. Approaches vary by how frames are coupled: 3D convolutions, temporal attention, or spacetime patch tokenization.')
+      <h2>Core Concept</h2>
+<p>Video diffusion models extend image diffusion to the temporal dimension. A latent video is denoised frame-by-frame (or jointly) using a U-Net or transformer. The primary challenge is maintaining temporal coherence — ensuring objects, lighting, and motion are consistent across frames — while keeping memory and compute tractable. Approaches vary by how frames are coupled: 3D convolutions, temporal attention, or spacetime patch tokenization.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Architectures', 'Three main architectural families dominate:\n\n1. 3D U-Net — extends image U-Nets with temporal convolutions and attention. Used by Stable Video Diffusion (SVD) and ModelScope. Efficient but limited temporal range.\n\n2. Diffusion Transformer (DiT) over spacetime patches — used by Sora, CogVideoX, Open-Sora. Scales better to long videos and high resolution; heavier compute.\n\n3. Frame-interpolation cascade — generate keyframes with image diffusion, then interpolate. Used by earlier Runway models. Lower coherence but faster.')
+      <h2>Architectures</h2>
+<p>Three main architectural families dominate:</p>
+<p>1. 3D U-Net — extends image U-Nets with temporal convolutions and attention. Used by Stable Video Diffusion (SVD) and ModelScope. Efficient but limited temporal range.</p>
+<p>2. Diffusion Transformer (DiT) over spacetime patches — used by Sora, CogVideoX, Open-Sora. Scales better to long videos and high resolution; heavier compute.</p>
+<p>3. Frame-interpolation cascade — generate keyframes with image diffusion, then interpolate. Used by earlier Runway models. Lower coherence but faster.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Key Open Models', "Stable Video Diffusion (SVD): Stability AI's image-to-video model. Takes an image + motion strength and generates a short clip. Available in img2vid and xt (extended) variants.\n\nCogVideoX: THUDM's open text-to-video model, released 2024. 5B parameter DiT, generates up to ~6s at 480p. Available on HuggingFace.\n\nAnimateDiff: Adds temporal attention modules to Stable Diffusion image models, enabling animation of any SD checkpoint without retraining.\n\nOpen-Sora: Community reproduction of Sora's DiT architecture. Fully open weights and training code; quality below commercial models.")
+      <h2>Key Open Models</h2>
+<p>Stable Video Diffusion (SVD): Stability AI's image-to-video model. Takes an image + motion strength and generates a short clip. Available in img2vid and xt (extended) variants.</p>
+<p>CogVideoX: THUDM's open text-to-video model, released 2024. 5B parameter DiT, generates up to ~6s at 480p. Available on HuggingFace.</p>
+<p>AnimateDiff: Adds temporal attention modules to Stable Diffusion image models, enabling animation of any SD checkpoint without retraining.</p>
+<p>Open-Sora: Community reproduction of Sora's DiT architecture. Fully open weights and training code; quality below commercial models.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Training & Fine-tuning', "Video diffusion models are typically fine-tuned with LoRA or DreamBooth-style approaches to inject specific visual styles, characters, or motion patterns. Training data requirements are high — hours of video at consistent style/domain. Key frameworks: Diffusers (HuggingFace), VideoCrafter, and Open-Sora's training repo.\n\n# Load SVD for image-to-video with Diffusers\nfrom diffusers import StableVideoDiffusionPipeline\nfrom diffusers.utils import load_image\nimport torch\n\npipe = StableVideoDiffusionPipeline.from_pretrained(\n    'stabilityai/stable-video-diffusion-img2vid-xt',\n    torch_dtype=torch.float16, variant='fp16'\n)\npipe.to('cuda')\nimage = load_image('my_scene.jpg')\nframes = pipe(image, num_frames=25, motion_bucket_id=127).frames[0]")
+      <h2>Training & Fine-tuning</h2>
+<p>Video diffusion models are typically fine-tuned with LoRA or DreamBooth-style approaches to inject specific visual styles, characters, or motion patterns. Training data requirements are high — hours of video at consistent style/domain. Key frameworks: Diffusers (HuggingFace), VideoCrafter, and Open-Sora's training repo.</p>
+<pre><code># Load SVD for image-to-video with Diffusers
+from diffusers import StableVideoDiffusionPipeline
+from diffusers.utils import load_image
+import torch
+pipe = StableVideoDiffusionPipeline.from_pretrained(
+    'stabilityai/stable-video-diffusion-img2vid-xt',
+    torch_dtype=torch.float16, variant='fp16'
+)
+pipe.to('cuda')
+image = load_image('my_scene.jpg')
+frames = pipe(image, num_frames=25, motion_bucket_id=127).frames[0]</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Inference Optimization', 'Video inference is memory-intensive. Common techniques: frame chunking (process N frames at a time), fp16/bf16 precision, xformers attention, and CPU offloading for VRAM-constrained setups. For CogVideoX, the Diffusers pipeline supports sequential CPU offload. For real-time applications, consider distilled models (e.g., AnimateLCM) that reduce sampling steps from 25+ to 4–8.')
+      <h2>Inference Optimization</h2>
+<p>Video inference is memory-intensive. Common techniques: frame chunking (process N frames at a time), fp16/bf16 precision, xformers attention, and CPU offloading for VRAM-constrained setups. For CogVideoX, the Diffusers pipeline supports sequential CPU offload. For real-time applications, consider distilled models (e.g., AnimateLCM) that reduce sampling steps from 25+ to 4–8.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Use Cases', 'Video diffusion powers: product visualization, advertising creative, game cinematic generation, social media content, scientific simulation visualization, and AI-assisted filmmaking. Key integration patterns include pairing with image generation pipelines (generate a keyframe, animate it), and using video inpainting to insert generated elements into existing footage.')
+      <h2>Use Cases</h2>
+<p>Video diffusion powers: product visualization, advertising creative, game cinematic generation, social media content, scientific simulation visualization, and AI-assisted filmmaking. Key integration patterns include pairing with image generation pipelines (generate a keyframe, animate it), and using video inpainting to insert generated elements into existing footage.</p>
     </div>
   </div>
 

@@ -21,7 +21,7 @@
   "headline": "Synthetic Generation | GenAI Mindmap",
   "description": "Using LLMs to generate synthetic training data \u2014 instruction-response pairs, preference data, domain-specific examples \u2014 to augment or replace scarce human-annotated datasets.",
   "url": "https://genai4a11.github.io/concepts/synth-generation.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,79 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Why Synthetic Data?', 'Human annotation is expensive, slow, and hard to scale. GPT-4o can generate 10,000 instruction-response pairs in hours at a fraction of human annotation cost. Synthetic data works especially well for: narrow domain fine-tuning, format/style standardisation, capability expansion (teaching the model new tasks), and RLAIF preference pair generation.')
+      <h2>Why Synthetic Data?</h2>
+<p>Human annotation is expensive, slow, and hard to scale. GPT-4o can generate 10,000 instruction-response pairs in hours at a fraction of human annotation cost. Synthetic data works especially well for: narrow domain fine-tuning, format/style standardisation, capability expansion (teaching the model new tasks), and RLAIF preference pair generation.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Seed-Based Generation', 'Start with a small set of seed examples (20–50 high-quality human-written samples). "\n   "Use an LLM to generate variations: paraphrased questions, related questions, "\n   "analogous scenarios. The seed examples anchor quality; the LLM generates diversity.\n\nfrom openai import OpenAI\nimport json, random\n\nclient = OpenAI()\n\ndef generate_variations(seed_examples: list[dict], n_per_seed: int = 10) -> list[dict]:\n    generated = []\n    for seed in seed_examples:\n        prompt = (\n            f"Here is an example Q&A pair:\\n"\n            f"Q: {seed[\'question\']}\\nA: {seed[\'answer\']}\\n\\n"\n            f"Generate {n_per_seed} different questions on the same topic with answers. "\n            f"Return JSON array: [{{question: str, answer: str}}]"\n        )\n        resp = client.chat.completions.create(\n            model="gpt-4o",\n            messages=[{"role": "user", "content": prompt}],\n            response_format={"type": "json_object"},\n        )\n        try:\n            variations = json.loads(resp.choices[0].message.content)\n            generated.extend(variations.get("items", variations) if isinstance(variations, dict) else variations)\n        except Exception:\n            pass\n    return generated')
+      <h2>Seed-Based Generation</h2>
+<p>Start with a small set of seed examples (20–50 high-quality human-written samples). " "Use an LLM to generate variations: paraphrased questions, related questions, " "analogous scenarios. The seed examples anchor quality; the LLM generates diversity.</p>
+<pre><code>from openai import OpenAI
+import json, random
+client = OpenAI()
+def generate_variations(seed_examples: list[dict], n_per_seed: int = 10) -&gt; list[dict]:
+    generated = []
+    for seed in seed_examples:
+        prompt = (
+            f"Here is an example Q&amp;A pair:\n"
+            f"Q: {seed['question']}\nA: {seed['answer']}\n\n"
+            f"Generate {n_per_seed} different questions on the same topic with answers. "
+            f"Return JSON array: [{{question: str, answer: str}}]"
+        )
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+        )
+        try:
+            variations = json.loads(resp.choices[0].message.content)
+            generated.extend(variations.get("items", variations) if isinstance(variations, dict) else variations)
+        except Exception:
+            pass
+    return generated</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Self-Instruct', "Self-Instruct (Wang et al. 2022) bootstraps an instruction dataset from a small seed using only the model itself. The model generates: a new instruction, an input (if applicable), and the output. A filtering step removes near-duplicates and invalid examples. Used to generate Alpaca's 52K instruction dataset from 175 seed examples.")
+      <h2>Self-Instruct</h2>
+<p>Self-Instruct (Wang et al. 2022) bootstraps an instruction dataset from a small seed using only the model itself. The model generates: a new instruction, an input (if applicable), and the output. A filtering step removes near-duplicates and invalid examples. Used to generate Alpaca's 52K instruction dataset from 175 seed examples.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Domain-Specific Synthesis', 'For narrow domains (medical, legal, code), generate domain-specific examples "\n   "with appropriate framing. Provide domain context in the system prompt.\n\ndef generate_domain_data(domain: str, task: str, n: int = 100) -> list[dict]:\n    system_prompt = f"You are an expert in {domain}. Generate realistic {task} examples."\n    examples = []\n    for _ in range(n // 5):  # batch of 5\n        resp = client.chat.completions.create(\n            model="gpt-4o",\n            messages=[\n                {"role": "system", "content": system_prompt},\n                {"role": "user", "content": (\n                    f"Generate 5 {task} examples as JSON array: "\n                    f"[{{instruction: str, response: str}}]"\n                )}\n            ],\n            response_format={"type": "json_object"},\n        )\n        batch = json.loads(resp.choices[0].message.content)\n        examples.extend(batch.get("examples", []))\n    return examples')
+      <h2>Domain-Specific Synthesis</h2>
+<p>For narrow domains (medical, legal, code), generate domain-specific examples " "with appropriate framing. Provide domain context in the system prompt.</p>
+<pre><code>def generate_domain_data(domain: str, task: str, n: int = 100) -&gt; list[dict]:
+    system_prompt = f"You are an expert in {domain}. Generate realistic {task} examples."
+    examples = []
+    for _ in range(n // 5):  # batch of 5
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": (
+                    f"Generate 5 {task} examples as JSON array: "
+                    f"[{{instruction: str, response: str}}]"
+                )}
+            ],
+            response_format={"type": "json_object"},
+        )
+        batch = json.loads(resp.choices[0].message.content)
+        examples.extend(batch.get("examples", []))
+    return examples</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Diversity Techniques', 'Temperature variation: generate at temperature 0.7–1.0 for variety, not 0.0. Persona variation: generate the same task from different expert perspectives. Difficulty scaling: explicitly request easy/medium/hard examples in equal proportion. Format variation: mix Q&A, instruction-following, and multi-turn dialogue formats. Monitor diversity with embedding clustering — if all examples cluster tightly, increase temperature.')
+      <h2>Diversity Techniques</h2>
+<p>Temperature variation: generate at temperature 0.7–1.0 for variety, not 0.0. Persona variation: generate the same task from different expert perspectives. Difficulty scaling: explicitly request easy/medium/hard examples in equal proportion. Format variation: mix Q&A, instruction-following, and multi-turn dialogue formats. Monitor diversity with embedding clustering — if all examples cluster tightly, increase temperature.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Quality vs Quantity', "10,000 high-quality synthetic examples outperform 100,000 low-quality ones. Apply quality filters: minimum response length, no truncation, passes a relevance check ('is this response actually answering the question?'), and no repetition of the instruction in the response. Deduplicate with MinHash after generation — LLMs often produce near-identical examples.")
+      <h2>Quality vs Quantity</h2>
+<p>10,000 high-quality synthetic examples outperform 100,000 low-quality ones. Apply quality filters: minimum response length, no truncation, passes a relevance check ('is this response actually answering the question?'), and no repetition of the instruction in the response. Deduplicate with MinHash after generation — LLMs often produce near-identical examples.</p>
     </div>
   </div>
 

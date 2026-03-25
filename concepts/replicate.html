@@ -21,7 +21,7 @@
   "headline": "Replicate | GenAI Mindmap",
   "description": "A cloud platform for running open-source AI models via API \u2014 one-line access to thousands of models (image gen, LLMs, audio, video) with pay-per-second GPU billing.",
   "url": "https://genai4a11.github.io/concepts/replicate.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,72 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What Is Replicate?', 'Replicate hosts open-source AI models as APIs. Any model on the platform is accessible with a single API call — no GPU setup, no Docker, no model download. Particularly strong for: image generation (SDXL, FLUX, ControlNet), video generation (Stable Video Diffusion), audio models, and specialised vision models. LLMs are also available but most teams use OpenAI/Anthropic directly for those.')
+      <h2>What Is Replicate?</h2>
+<p>Replicate hosts open-source AI models as APIs. Any model on the platform is accessible with a single API call — no GPU setup, no Docker, no model download. Particularly strong for: image generation (SDXL, FLUX, ControlNet), video generation (Stable Video Diffusion), audio models, and specialised vision models. LLMs are also available but most teams use OpenAI/Anthropic directly for those.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Running Models', 'from replicate import Client\n\nclient = Client(api_token="your-token")\n\n# Run FLUX image generation\noutput = client.run(\n    "black-forest-labs/flux-1.1-pro",\n    input={\n        "prompt": "A serene mountain lake at sunset, photorealistic",\n        "width": 1024,\n        "height": 1024,\n        "num_outputs": 1,\n    }\n)\nimage_url = str(output[0])\nprint(image_url)  # HTTPS URL to generated image\n\n# Run a video generation model\nvideo = client.run(\n    "stability-ai/stable-video-diffusion",\n    input={"image": open("input.jpg", "rb")}\n)\nprint(video)')
+      <h2>Running Models</h2>
+<pre><code>from replicate import Client
+client = Client(api_token="your-token")
+# Run FLUX image generation
+output = client.run(
+    "black-forest-labs/flux-1.1-pro",
+    input={
+        "prompt": "A serene mountain lake at sunset, photorealistic",
+        "width": 1024,
+        "height": 1024,
+        "num_outputs": 1,
+    }
+)
+image_url = str(output[0])
+print(image_url)  # HTTPS URL to generated image
+# Run a video generation model
+video = client.run(
+    "stability-ai/stable-video-diffusion",
+    input={"image": open("input.jpg", "rb")}
+)
+print(video)</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Building Your Own Cog Models', "Cog is Replicate's open-source tool for packaging ML models as Docker containers. Define model inputs/outputs in a predict.py file with type annotations; Cog generates the API, Dockerfile, and deployment configuration. Push to Replicate with cog push. Useful for: deploying custom models without writing API code, sharing models with a public URL, or using Replicate's GPU infrastructure for your own models.")
+      <h2>Building Your Own Cog Models</h2>
+<p>Cog is Replicate's open-source tool for packaging ML models as Docker containers. Define model inputs/outputs in a predict.py file with type annotations; Cog generates the API, Dockerfile, and deployment configuration. Push to Replicate with cog push. Useful for: deploying custom models without writing API code, sharing models with a public URL, or using Replicate's GPU infrastructure for your own models.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Streaming & Webhooks', 'Use streaming for token-by-token output from LLMs, or webhooks for async long-running jobs.\n\nimport replicate\n\n# Streaming LLM output\nfor event in replicate.stream(\n    "meta/meta-llama-3-8b-instruct",\n    input={"prompt": "Explain quantum computing", "max_tokens": 500},\n):\n    print(str(event), end="", flush=True)\n\n# Async with webhook (for slow models like video gen)\nprediction = replicate.predictions.create(\n    version="stability-ai/stable-video-diffusion:...",\n    input={"image": "https://example.com/image.jpg"},\n    webhook="https://your-server.com/webhook",\n    webhook_events_filter=["completed"],\n)\nprint(prediction.id)  # poll or wait for webhook')
+      <h2>Streaming & Webhooks</h2>
+<p>Use streaming for token-by-token output from LLMs, or webhooks for async long-running jobs.</p>
+<pre><code>import replicate
+# Streaming LLM output
+for event in replicate.stream(
+    "meta/meta-llama-3-8b-instruct",
+    input={"prompt": "Explain quantum computing", "max_tokens": 500},
+):
+    print(str(event), end="", flush=True)
+# Async with webhook (for slow models like video gen)
+prediction = replicate.predictions.create(
+    version="stability-ai/stable-video-diffusion:...",
+    input={"image": "https://example.com/image.jpg"},
+    webhook="https://your-server.com/webhook",
+    webhook_events_filter=["completed"],
+)
+print(prediction.id)  # poll or wait for webhook</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Pricing', 'Billed per second of GPU time. FLUX Pro image generation: ~$0.05 per image (10–30 s on A100). Llama 3 8B inference: ~$0.10/M input tokens, $0.30/M output tokens. No monthly minimum; pay only for what you use. Free tier: $5 of credit on signup. For high volume, contact for volume pricing.')
+      <h2>Pricing</h2>
+<p>Billed per second of GPU time. FLUX Pro image generation: ~$0.05 per image (10–30 s on A100). Llama 3 8B inference: ~$0.10/M input tokens, $0.30/M output tokens. No monthly minimum; pay only for what you use. Free tier: $5 of credit on signup. For high volume, contact for volume pricing.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('When to Use Replicate', "Use Replicate for: image/video/audio generation (huge library of models), prototyping with models you don't want to self-host, low-volume API access to specialised models. Avoid for: high-volume LLM inference (OpenAI/Anthropic is cheaper at scale), latency-sensitive applications (cold start can be 30–60 s for large models), or when you need SLA guarantees.")
+      <h2>When to Use Replicate</h2>
+<p>Use Replicate for: image/video/audio generation (huge library of models), prototyping with models you don't want to self-host, low-volume API access to specialised models. Avoid for: high-volume LLM inference (OpenAI/Anthropic is cheaper at scale), latency-sensitive applications (cold start can be 30–60 s for large models), or when you need SLA guarantees.</p>
     </div>
   </div>
 

@@ -21,7 +21,7 @@
   "headline": "RLAIF | GenAI Mindmap",
   "description": "Reinforcement Learning from AI Feedback \u2014 using a strong AI model as a preference labeller to generate training signal for RLHF-style fine-tuning without expensive human annotation.",
   "url": "https://genai4a11.github.io/concepts/rlaif.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,67 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('RLAIF vs RLHF', "RLHF requires thousands of human preference labels — expensive and slow. RLAIF replaces human labellers with a strong AI model (GPT-4, Claude) that scores pairs of responses and explains its preference. Anthropic's Constitutional AI (2022) showed this achieves 90–95% of RLHF quality at a fraction of the cost. The trade-off: AI feedback inherits the teacher model's biases.")
+      <h2>RLAIF vs RLHF</h2>
+<p>RLHF requires thousands of human preference labels — expensive and slow. RLAIF replaces human labellers with a strong AI model (GPT-4, Claude) that scores pairs of responses and explains its preference. Anthropic's Constitutional AI (2022) showed this achieves 90–95% of RLHF quality at a fraction of the cost. The trade-off: AI feedback inherits the teacher model's biases.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Constitutional AI', "Constitutional AI (CAI) adds a 'constitution' — a list of principles the AI should follow. In a two-phase process: (1) the model critiques its own outputs against the constitution and revises them (supervised phase). (2) AI feedback on revised outputs trains a preference model (RL phase). The constitution encodes your desired behaviour: helpfulness, harmlessness, honesty.")
+      <h2>Constitutional AI</h2>
+<p>Constitutional AI (CAI) adds a 'constitution' — a list of principles the AI should follow. In a two-phase process: (1) the model critiques its own outputs against the constitution and revises them (supervised phase). (2) AI feedback on revised outputs trains a preference model (RL phase). The constitution encodes your desired behaviour: helpfulness, harmlessness, honesty.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Preference Data Generation', 'Use a strong AI judge to label preference pairs. "\n   "For each query, generate two responses (varying temperature or using different prompts), "\n   "then ask the judge to pick the better one with a reason.\n\nfrom openai import OpenAI\nimport json\n\nclient = OpenAI()\n\ndef generate_preference_pair(query: str) -> dict:\n    # Generate two candidate responses\n    resp_a = client.chat.completions.create(\n        model="gpt-4o-mini", temperature=0.3,\n        messages=[{"role": "user", "content": query}]\n    ).choices[0].message.content\n\n    resp_b = client.chat.completions.create(\n        model="gpt-4o-mini", temperature=0.9,\n        messages=[{"role": "user", "content": query}]\n    ).choices[0].message.content\n\n    # AI judge picks the better response\n    judgment = client.chat.completions.create(\n        model="gpt-4o",\n        messages=[{"role": "user", "content": (\n            f"Which response better answers the query?\\nQuery: {query}\\n"\n            f"A: {resp_a}\\nB: {resp_b}\\n"\n            f"Reply with JSON: {{chosen: \'A\' or \'B\', reason: \'...\'}}\\n"\n        )}],\n        response_format={"type": "json_object"},\n    ).choices[0].message.content\n\n    j = json.loads(judgment)\n    return {\n        "prompt": query,\n        "chosen": resp_a if j["chosen"] == "A" else resp_b,\n        "rejected": resp_b if j["chosen"] == "A" else resp_a,\n    }')
+      <h2>Preference Data Generation</h2>
+<p>Use a strong AI judge to label preference pairs. " "For each query, generate two responses (varying temperature or using different prompts), " "then ask the judge to pick the better one with a reason.</p>
+<pre><code>from openai import OpenAI
+import json
+client = OpenAI()
+def generate_preference_pair(query: str) -&gt; dict:
+    # Generate two candidate responses
+    resp_a = client.chat.completions.create(
+        model="gpt-4o-mini", temperature=0.3,
+        messages=[{"role": "user", "content": query}]
+    ).choices[0].message.content
+resp_b = client.chat.completions.create(
+        model="gpt-4o-mini", temperature=0.9,
+        messages=[{"role": "user", "content": query}]
+    ).choices[0].message.content
+# AI judge picks the better response
+    judgment = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": (
+            f"Which response better answers the query?\nQuery: {query}\n"
+            f"A: {resp_a}\nB: {resp_b}\n"
+            f"Reply with JSON: {{chosen: 'A' or 'B', reason: '...'}}\n"
+        )}],
+        response_format={"type": "json_object"},
+    ).choices[0].message.content
+j = json.loads(judgment)
+    return {
+        "prompt": query,
+        "chosen": resp_a if j["chosen"] == "A" else resp_b,
+        "rejected": resp_b if j["chosen"] == "A" else resp_a,
+    }</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Training the Reward Model', 'Train a reward model (RM) on the preference pairs: the RM scores responses and the training objective maximises the score of chosen over rejected. Use a pretrained LLM as the base (same architecture as the policy model). Add a scalar head (linear layer) on top of the [EOS] token embedding. A 1B–7B RM trained on 50K–200K AI-generated preference pairs works well.')
+      <h2>Training the Reward Model</h2>
+<p>Train a reward model (RM) on the preference pairs: the RM scores responses and the training objective maximises the score of chosen over rejected. Use a pretrained LLM as the base (same architecture as the policy model). Add a scalar head (linear layer) on top of the [EOS] token embedding. A 1B–7B RM trained on 50K–200K AI-generated preference pairs works well.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('PPO Fine-Tuning', "With the RM trained, fine-tune the policy model using PPO (Proximal Policy Optimization). The RM provides the reward signal; a KL penalty against the SFT baseline prevents reward hacking (mode collapse into gibberish that fools the RM). Libraries: TRL's PPOTrainer handles the full setup. Alternatively, use DPO (Direct Preference Optimisation) — simpler, no RL training loop needed.")
+      <h2>PPO Fine-Tuning</h2>
+<p>With the RM trained, fine-tune the policy model using PPO (Proximal Policy Optimization). The RM provides the reward signal; a KL penalty against the SFT baseline prevents reward hacking (mode collapse into gibberish that fools the RM). Libraries: TRL's PPOTrainer handles the full setup. Alternatively, use DPO (Direct Preference Optimisation) — simpler, no RL training loop needed.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Practical Limitations', "AI feedback amplifies existing model biases: if the judge model prefers verbose answers, so will your fine-tuned model. Constitutional diversity helps but doesn't eliminate this. AI judges have blind spots: they can't evaluate factual accuracy for obscure domains or assess creative quality as well as humans. Use RLAIF for style and helpfulness; use human feedback for domain-specific factual correctness.")
+      <h2>Practical Limitations</h2>
+<p>AI feedback amplifies existing model biases: if the judge model prefers verbose answers, so will your fine-tuned model. Constitutional diversity helps but doesn't eliminate this. AI judges have blind spots: they can't evaluate factual accuracy for obscure domains or assess creative quality as well as humans. Use RLAIF for style and helpfulness; use human feedback for domain-specific factual correctness.</p>
     </div>
   </div>
 

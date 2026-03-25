@@ -21,7 +21,7 @@
   "headline": "Data Lineage | GenAI Mindmap",
   "description": "Tracking the full provenance of data from source to model \u2014 where it came from, what transformations it underwent, and which model versions it influenced \u2014 for debugging and compliance.",
   "url": "https://genai4a11.github.io/concepts/data-lineage.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,55 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What Is Data Lineage?', "Data lineage is the graph that shows: for every piece of data, where did it originate, what transformations were applied, who consumed it, and which downstream models or reports depend on it. When model performance drops, lineage lets you answer: 'Did a source table schema change? Was a filter added upstream? Did ingestion fail for 3 hours?'")
+      <h2>What Is Data Lineage?</h2>
+<p>Data lineage is the graph that shows: for every piece of data, where did it originate, what transformations were applied, who consumed it, and which downstream models or reports depend on it. When model performance drops, lineage lets you answer: 'Did a source table schema change? Was a filter added upstream? Did ingestion fail for 3 hours?'</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Column-Level vs Table-Level', "Table-level lineage: dataset A feeds dataset B feeds model C. Sufficient for impact analysis ('if I change table X, what breaks?'). Column-level lineage: field user_id in table A → field customer_id in table B → feature X in model C. Required for GDPR right-to-erasure ('which models use this user's data?') and for debugging feature-level data quality issues.")
+      <h2>Column-Level vs Table-Level</h2>
+<p>Table-level lineage: dataset A feeds dataset B feeds model C. Sufficient for impact analysis ('if I change table X, what breaks?'). Column-level lineage: field user_id in table A → field customer_id in table B → feature X in model C. Required for GDPR right-to-erasure ('which models use this user's data?') and for debugging feature-level data quality issues.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('OpenLineage Standard', 'OpenLineage is an open standard (CNCF) for lineage event emission. Pipelines emit START and COMPLETE events with input/output dataset metadata. Supported by: Apache Airflow, Apache Spark, dbt, Flink, and many others. Events are collected by a backend (Marquez, Atlan, DataHub) that builds the lineage graph.')
+      <h2>OpenLineage Standard</h2>
+<p>OpenLineage is an open standard (CNCF) for lineage event emission. Pipelines emit START and COMPLETE events with input/output dataset metadata. Supported by: Apache Airflow, Apache Spark, dbt, Flink, and many others. Events are collected by a backend (Marquez, Atlan, DataHub) that builds the lineage graph.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Capturing Lineage', 'Emit lineage events at each pipeline step using the OpenLineage client.\n\nfrom openlineage.client import OpenLineageClient, set_producer\nfrom openlineage.client.run import RunEvent, RunState, Run, Job\nfrom openlineage.client.facet import SchemaDatasetFacet, SchemaField\nimport uuid, datetime\n\nclient = OpenLineageClient(url="http://localhost:5000")\n\ndef emit_lineage(job_name: str, input_datasets: list, output_datasets: list):\n    run_id = str(uuid.uuid4())\n    event = RunEvent(\n        eventType=RunState.COMPLETE,\n        eventTime=datetime.datetime.utcnow().isoformat() + "Z",\n        run=Run(runId=run_id),\n        job=Job(namespace="my-pipeline", name=job_name),\n        inputs=input_datasets,\n        outputs=output_datasets,\n        producer="my-etl-pipeline/1.0",\n    )\n    client.emit(event)')
+      <h2>Capturing Lineage</h2>
+<p>Emit lineage events at each pipeline step using the OpenLineage client.</p>
+<pre><code>from openlineage.client import OpenLineageClient, set_producer
+from openlineage.client.run import RunEvent, RunState, Run, Job
+from openlineage.client.facet import SchemaDatasetFacet, SchemaField
+import uuid, datetime
+client = OpenLineageClient(url="http://localhost:5000")
+def emit_lineage(job_name: str, input_datasets: list, output_datasets: list):
+    run_id = str(uuid.uuid4())
+    event = RunEvent(
+        eventType=RunState.COMPLETE,
+        eventTime=datetime.datetime.utcnow().isoformat() + "Z",
+        run=Run(runId=run_id),
+        job=Job(namespace="my-pipeline", name=job_name),
+        inputs=input_datasets,
+        outputs=output_datasets,
+        producer="my-etl-pipeline/1.0",
+    )
+    client.emit(event)</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Impact Analysis', "With lineage, answer 'what breaks if I change X?' before making the change. Downstream impact graph: start from the changed dataset, traverse all edges forward, list all affected downstream datasets and models. Alert owners of affected downstream systems before the change is deployed. This prevents surprise model performance degradations from schema changes.")
+      <h2>Impact Analysis</h2>
+<p>With lineage, answer 'what breaks if I change X?' before making the change. Downstream impact graph: start from the changed dataset, traverse all edges forward, list all affected downstream datasets and models. Alert owners of affected downstream systems before the change is deployed. This prevents surprise model performance degradations from schema changes.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Compliance Use Cases', "GDPR right-to-erasure: given user_id, find all datasets and models that contain that user's data using column-level lineage, then coordinate deletion. AI Act compliance: for a model under audit, trace all training data back to its source to verify data provenance and consent records. Data residency: verify that data originating in the EU never flows to non-EU processing.")
+      <h2>Compliance Use Cases</h2>
+<p>GDPR right-to-erasure: given user_id, find all datasets and models that contain that user's data using column-level lineage, then coordinate deletion. AI Act compliance: for a model under audit, trace all training data back to its source to verify data provenance and consent records. Data residency: verify that data originating in the EU never flows to non-EU processing.</p>
     </div>
   </div>
 

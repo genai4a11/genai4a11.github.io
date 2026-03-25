@@ -21,7 +21,7 @@
   "headline": "ETL for AI | GenAI Mindmap",
   "description": "Extract-transform-load pipelines adapted for AI data: ingesting raw documents and converting them to clean, chunked, embedded, and indexed data ready for LLM retrieval.",
   "url": "https://genai4a11.github.io/concepts/etl-for-ai.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,75 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('AI ETL vs Traditional ETL', 'Traditional ETL moves structured data between databases. AI ETL handles: unstructured documents (PDFs, HTML, code), extraction of text + structure from arbitrary formats, semantic chunking and embedding, and vector index population. The key difference: every transformation step can degrade quality — a poor PDF parser produces garbled text that no LLM can recover from.')
+      <h2>AI ETL vs Traditional ETL</h2>
+<p>Traditional ETL moves structured data between databases. AI ETL handles: unstructured documents (PDFs, HTML, code), extraction of text + structure from arbitrary formats, semantic chunking and embedding, and vector index population. The key difference: every transformation step can degrade quality — a poor PDF parser produces garbled text that no LLM can recover from.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Extraction Layer', 'Parse raw documents into clean text + structure. "\n   "Use specialised parsers: Unstructured.io for PDFs/Office/HTML, "\n   "BeautifulSoup for web pages, tree-sitter for code. "\n   "Extract tables as structured data, images as captions (via vision model), "\n   "and preserve heading hierarchy for context.\n\nfrom unstructured.partition.auto import partition\n\ndef extract_document(file_path: str) -> list[dict]:\n    elements = partition(filename=file_path, strategy="hi_res")\n    chunks = []\n    current_section = ""\n    for elem in elements:\n        if elem.category == "Title":\n            current_section = str(elem)\n        elif elem.category in ("NarrativeText", "ListItem", "Table"):\n            chunks.append({\n                "text": str(elem),\n                "section": current_section,\n                "type": elem.category,\n                "metadata": elem.metadata.to_dict(),\n            })\n    return chunks')
+      <h2>Extraction Layer</h2>
+<p>Parse raw documents into clean text + structure. " "Use specialised parsers: Unstructured.io for PDFs/Office/HTML, " "BeautifulSoup for web pages, tree-sitter for code. " "Extract tables as structured data, images as captions (via vision model), " "and preserve heading hierarchy for context.</p>
+<pre><code>from unstructured.partition.auto import partition
+def extract_document(file_path: str) -&gt; list[dict]:
+    elements = partition(filename=file_path, strategy="hi_res")
+    chunks = []
+    current_section = ""
+    for elem in elements:
+        if elem.category == "Title":
+            current_section = str(elem)
+        elif elem.category in ("NarrativeText", "ListItem", "Table"):
+            chunks.append({
+                "text": str(elem),
+                "section": current_section,
+                "type": elem.category,
+                "metadata": elem.metadata.to_dict(),
+            })
+    return chunks</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Transformation Layer', 'Clean: remove boilerplate headers/footers, fix encoding issues, normalise whitespace. Chunk: split into retrieval-sized pieces (200–800 tokens) with overlap (10–20%). Enrich: add metadata (doc title, section, source URL). Embed: convert text to vectors (OpenAI text-embedding-3-small or local model). Each step should be idempotent and independently testable.')
+      <h2>Transformation Layer</h2>
+<p>Clean: remove boilerplate headers/footers, fix encoding issues, normalise whitespace. Chunk: split into retrieval-sized pieces (200–800 tokens) with overlap (10–20%). Enrich: add metadata (doc title, section, source URL). Embed: convert text to vectors (OpenAI text-embedding-3-small or local model). Each step should be idempotent and independently testable.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Loading & Indexing', 'Batch-upsert to your vector store with document_id + chunk_index as the unique key. "\n   "Upsert (not insert) so re-runs don\'t create duplicates. "\n   "Update the metadata catalogue (Postgres/DynamoDB) with ingestion timestamp.\n\nfrom openai import OpenAI\nfrom qdrant_client import QdrantClient\nfrom qdrant_client.models import PointStruct\nimport uuid\n\noai = OpenAI()\nqdrant = QdrantClient("localhost", port=6333)\n\ndef embed_and_load(chunks: list[dict], collection: str):\n    texts = [c["text"] for c in chunks]\n    embeddings = oai.embeddings.create(\n        model="text-embedding-3-small", input=texts\n    ).data\n    points = [\n        PointStruct(\n            id=str(uuid.uuid4()),\n            vector=emb.embedding,\n            payload=chunks[i],\n        )\n        for i, emb in enumerate(embeddings)\n    ]\n    qdrant.upsert(collection_name=collection, points=points)\n    return len(points)')
+      <h2>Loading & Indexing</h2>
+<p>Batch-upsert to your vector store with document_id + chunk_index as the unique key. " "Upsert (not insert) so re-runs don't create duplicates. " "Update the metadata catalogue (Postgres/DynamoDB) with ingestion timestamp.</p>
+<pre><code>from openai import OpenAI
+from qdrant_client import QdrantClient
+from qdrant_client.models import PointStruct
+import uuid
+oai = OpenAI()
+qdrant = QdrantClient("localhost", port=6333)
+def embed_and_load(chunks: list[dict], collection: str):
+    texts = [c["text"] for c in chunks]
+    embeddings = oai.embeddings.create(
+        model="text-embedding-3-small", input=texts
+    ).data
+    points = [
+        PointStruct(
+            id=str(uuid.uuid4()),
+            vector=emb.embedding,
+            payload=chunks[i],
+        )
+        for i, emb in enumerate(embeddings)
+    ]
+    qdrant.upsert(collection_name=collection, points=points)
+    return len(points)</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Orchestration', 'Use a workflow orchestrator (Airflow, Prefect, Dagster) to schedule and monitor ETL runs. Structure as a DAG: extract → validate → chunk → embed → load → verify. Checkpoint each stage so failed runs resume from the last successful step. Monitor: documents processed/hour, embedding cost, index size, and error rate.')
+      <h2>Orchestration</h2>
+<p>Use a workflow orchestrator (Airflow, Prefect, Dagster) to schedule and monitor ETL runs. Structure as a DAG: extract → validate → chunk → embed → load → verify. Checkpoint each stage so failed runs resume from the last successful step. Monitor: documents processed/hour, embedding cost, index size, and error rate.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Incremental Updates', "Full re-ingestion is expensive. For incremental updates: hash each document on ingest, store in a manifest table. On re-run, skip documents whose hash hasn't changed. Delete + re-embed only changed or new documents. For deleted source documents, implement a soft-delete: mark as inactive in the manifest, purge from the index on next cleanup run.")
+      <h2>Incremental Updates</h2>
+<p>Full re-ingestion is expensive. For incremental updates: hash each document on ingest, store in a manifest table. On re-run, skip documents whose hash hasn't changed. Delete + re-embed only changed or new documents. For deleted source documents, implement a soft-delete: mark as inactive in the manifest, purge from the index on next cleanup run.</p>
     </div>
   </div>
 

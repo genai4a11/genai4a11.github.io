@@ -21,7 +21,7 @@
   "headline": "Constrained Decoding | GenAI Mindmap",
   "description": "Techniques that guide token-level generation to produce structured outputs (JSON, SQL, regex patterns) with 100% format compliance \u2014 eliminating post-processing parse errors.",
   "url": "https://genai4a11.github.io/concepts/constrained-decoding.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,77 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('The Parsing Problem', 'Prompting a model to output JSON works ~90% of the time. The remaining 10% produces invalid JSON, truncated objects, or prose with JSON embedded. At scale, 10% failure means constant retries, error handlers, and dropped requests. Constrained decoding eliminates format errors entirely by controlling which tokens are valid at each generation step.')
+      <h2>The Parsing Problem</h2>
+<p>Prompting a model to output JSON works ~90% of the time. The remaining 10% produces invalid JSON, truncated objects, or prose with JSON embedded. At scale, 10% failure means constant retries, error handlers, and dropped requests. Constrained decoding eliminates format errors entirely by controlling which tokens are valid at each generation step.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('How Constrained Decoding Works', 'At each decoding step, the model produces logits over its entire vocabulary. Constrained decoding applies a mask that zeros out logits for tokens that would violate the current constraint. Only valid tokens can be sampled. The mask is derived from a state machine (FSM) or grammar that tracks where we are in the output structure. No resampling needed — every output is valid by construction.')
+      <h2>How Constrained Decoding Works</h2>
+<p>At each decoding step, the model produces logits over its entire vocabulary. Constrained decoding applies a mask that zeros out logits for tokens that would violate the current constraint. Only valid tokens can be sampled. The mask is derived from a state machine (FSM) or grammar that tracks where we are in the output structure. No resampling needed — every output is valid by construction.</p>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Grammar-Based Constraints', 'Context-free grammars (CFGs) define the full syntax of the output language. "\n   "llama.cpp\'s GBNF grammar format lets you specify any output structure. "\n   "Valid tokens at each step are those consistent with some parse of the grammar from the current state.\n\n# GBNF grammar for a simple JSON object\nGRAMMAR = \'\'\'\nroot   ::= object\nobject ::= "{" ws members ws "}"\nmembers ::= pair ("," ws pair)*\npair   ::= string ":" ws value\nvalue  ::= string | number | "true" | "false" | "null"\nstring ::= "\\"" [^\\"]* "\\""\nnumber ::= [0-9]+\nws     ::= [ \\t\\n]*\n\'\'\'\n\n# With llama.cpp Python bindings:\n# llm(prompt, grammar=LlamaGrammar.from_string(GRAMMAR))')
+      <h2>Grammar-Based Constraints</h2>
+<p>Context-free grammars (CFGs) define the full syntax of the output language. " "llama.cpp's GBNF grammar format lets you specify any output structure. " "Valid tokens at each step are those consistent with some parse of the grammar from the current state.</p>
+<pre><code># GBNF grammar for a simple JSON object
+GRAMMAR = '''
+root   ::= object
+object ::= "{" ws members ws "}"
+members ::= pair ("," ws pair)*
+pair   ::= string ":" ws value
+value  ::= string | number | "true" | "false" | "null"
+string ::= "\"" [^\"]* "\""
+number ::= [0-9]+
+ws     ::= [ \t\n]*
+'''
+# With llama.cpp Python bindings:
+# llm(prompt, grammar=LlamaGrammar.from_string(GRAMMAR))</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('JSON Schema Enforcement', 'The most common use case: enforce a Pydantic model or JSON schema. "\n   "Libraries like Outlines and Guidance make this one-liner simple.\n\nfrom pydantic import BaseModel\nfrom typing import Literal\nimport outlines\n\nclass ProductReview(BaseModel):\n    sentiment: Literal["positive", "negative", "neutral"]\n    score: int  # 1-5\n    summary: str\n    issues: list[str]\n\nmodel = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.2")\ngenerator = outlines.generate.json(model, ProductReview)\n\nreview = generator(\n    "Review: The delivery was fast but the product broke after a week. Rate it."\n)\n# review is guaranteed to be a valid ProductReview instance\nprint(type(review))   # <class \'ProductReview\'>\nprint(review.sentiment)  # \'negative\'')
+      <h2>JSON Schema Enforcement</h2>
+<p>The most common use case: enforce a Pydantic model or JSON schema. " "Libraries like Outlines and Guidance make this one-liner simple.</p>
+<pre><code>from pydantic import BaseModel
+from typing import Literal
+import outlines
+class ProductReview(BaseModel):
+    sentiment: Literal["positive", "negative", "neutral"]
+    score: int  # 1-5
+    summary: str
+    issues: list[str]
+model = outlines.models.transformers("mistralai/Mistral-7B-Instruct-v0.2")
+generator = outlines.generate.json(model, ProductReview)
+review = generator(
+    "Review: The delivery was fast but the product broke after a week. Rate it."
+)
+# review is guaranteed to be a valid ProductReview instance
+print(type(review))   # &lt;class 'ProductReview'&gt;
+print(review.sentiment)  # 'negative'</code></pre>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Regex & CFG Patterns', 'Regex constraints enforce patterns like phone numbers, dates, or structured codes. "\n   "Useful when full schema is overkill.\n\nimport outlines\n\nmodel = outlines.models.transformers("mistralai/Mistral-7B-v0.1")\n\n# Force output to match an ISO date\ndate_generator = outlines.generate.regex(model, r"\\d{4}-\\d{2}-\\d{2}")\ndate = date_generator("When was the French Revolution? Answer with just the year: ")\nprint(date)  # e.g. "1789-07-14"\n\n# Force choice from a fixed set\nchoice_gen = outlines.generate.choice(model, ["Yes", "No", "Maybe"])\nanswer = choice_gen("Is Python a compiled language?")\nprint(answer)  # "No"')
+      <h2>Regex & CFG Patterns</h2>
+<p>Regex constraints enforce patterns like phone numbers, dates, or structured codes. " "Useful when full schema is overkill.</p>
+<pre><code>import outlines
+model = outlines.models.transformers("mistralai/Mistral-7B-v0.1")
+# Force output to match an ISO date
+date_generator = outlines.generate.regex(model, r"\d{4}-\d{2}-\d{2}")
+date = date_generator("When was the French Revolution? Answer with just the year: ")
+print(date)  # e.g. "1789-07-14"
+# Force choice from a fixed set
+choice_gen = outlines.generate.choice(model, ["Yes", "No", "Maybe"])
+answer = choice_gen("Is Python a compiled language?")
+print(answer)  # "No"</code></pre>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Production Libraries', 'Outlines: best for Hugging Face models, supports JSON schema / regex / CFG, very active community. Guidance: Microsoft library, integrates with Azure OpenAI and local models. llama.cpp GBNF: native to llama.cpp, works with any GGUF model, grammar files are portable. OpenAI response_format: not true constrained decoding but guided via fine-tuning; use json_schema mode for structured outputs with 99%+ compliance.')
+      <h2>Production Libraries</h2>
+<p>Outlines: best for Hugging Face models, supports JSON schema / regex / CFG, very active community. Guidance: Microsoft library, integrates with Azure OpenAI and local models. llama.cpp GBNF: native to llama.cpp, works with any GGUF model, grammar files are portable. OpenAI response_format: not true constrained decoding but guided via fine-tuning; use json_schema mode for structured outputs with 99%+ compliance.</p>
     </div>
   </div>
 

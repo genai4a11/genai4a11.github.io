@@ -21,7 +21,7 @@
   "headline": "Override & Escalation | GenAI Mindmap",
   "description": "Mechanisms for human operators to intervene in, override, or escalate AI agent actions in real time \u2014 the emergency stop and manual override layer of production AI systems.",
   "url": "https://genai4a11.github.io/concepts/override-escalation.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,54 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Override Taxonomy', "Pause: halt the agent at its next checkpoint, preserving state for later resumption. Redirect: inject a new instruction into the agent's context, changing its course. Terminate: stop the agent immediately and roll back any uncommitted side effects. Escalate: transfer the task to a human operator with full context. Each type has different urgency and recovery implications.")
+      <h2>Override Taxonomy</h2>
+<p>Pause: halt the agent at its next checkpoint, preserving state for later resumption. Redirect: inject a new instruction into the agent's context, changing its course. Terminate: stop the agent immediately and roll back any uncommitted side effects. Escalate: transfer the task to a human operator with full context. Each type has different urgency and recovery implications.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Kill Switch Implementation', 'A kill switch is a globally-checked flag that any agent loop must respect. "\n   "Implement as a Redis key checked at the start of every agent loop iteration.\n\nimport redis, time\n\nr = redis.Redis()\n\ndef is_killed(task_id: str) -> bool:\n    return r.exists(f"kill:{task_id}") or r.exists("kill:all")\n\ndef kill_task(task_id: str, reason: str):\n    r.set(f"kill:{task_id}", reason, ex=3600)\n    log_override("terminate", task_id, reason)\n\ndef kill_all(reason: str):\n    r.set("kill:all", reason, ex=3600)\n    log_override("terminate_all", "*", reason)\n\nasync def agent_loop(task_id: str, state: dict):\n    while not is_done(state):\n        if is_killed(task_id):\n            raise AgentKilledException(f"Task {task_id} was killed")\n        state = await execute_next_step(state)\n        save_checkpoint(task_id, state)')
+      <h2>Kill Switch Implementation</h2>
+<p>A kill switch is a globally-checked flag that any agent loop must respect. " "Implement as a Redis key checked at the start of every agent loop iteration.</p>
+<pre><code>import redis, time
+r = redis.Redis()
+def is_killed(task_id: str) -&gt; bool:
+    return r.exists(f"kill:{task_id}") or r.exists("kill:all")
+def kill_task(task_id: str, reason: str):
+    r.set(f"kill:{task_id}", reason, ex=3600)
+    log_override("terminate", task_id, reason)
+def kill_all(reason: str):
+    r.set("kill:all", reason, ex=3600)
+    log_override("terminate_all", "*", reason)
+async def agent_loop(task_id: str, state: dict):
+    while not is_done(state):
+        if is_killed(task_id):
+            raise AgentKilledException(f"Task {task_id} was killed")
+        state = await execute_next_step(state)
+        save_checkpoint(task_id, state)</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Mid-Session Intervention', "For interactive agents (chatbots, assistants), allow operators to inject messages into the conversation stream: 'This session has been flagged for review — an agent will assist you shortly.' Use a shared message queue that both the AI and operator can write to. The operator's messages are tagged with a source field so the AI knows they came from a human.")
+      <h2>Mid-Session Intervention</h2>
+<p>For interactive agents (chatbots, assistants), allow operators to inject messages into the conversation stream: 'This session has been flagged for review — an agent will assist you shortly.' Use a shared message queue that both the AI and operator can write to. The operator's messages are tagged with a source field so the AI knows they came from a human.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Escalation Tiers', 'Tier 1 (automated): rule-based triggers escalate to on-call operator within 1 minute. Triggers: cost spike, repeated failures, toxicity detected, out-of-scope task detected. Tier 2 (human review): operator reviews and decides — continue, modify, or terminate. Tier 3 (incident response): task triggers a full incident (PagerDuty, Opsgenie) for situations with potential compliance or safety implications.')
+      <h2>Escalation Tiers</h2>
+<p>Tier 1 (automated): rule-based triggers escalate to on-call operator within 1 minute. Triggers: cost spike, repeated failures, toxicity detected, out-of-scope task detected. Tier 2 (human review): operator reviews and decides — continue, modify, or terminate. Tier 3 (incident response): task triggers a full incident (PagerDuty, Opsgenie) for situations with potential compliance or safety implications.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Override Logging', "Every override must be logged with: who initiated it, when, what type of override, the reason, and the agent's state at the time. This creates an audit trail for post-mortems and for training better safety classifiers. Override events should flow to the same immutable audit log as all other AI system events.")
+      <h2>Override Logging</h2>
+<p>Every override must be logged with: who initiated it, when, what type of override, the reason, and the agent's state at the time. This creates an audit trail for post-mortems and for training better safety classifiers. Override events should flow to the same immutable audit log as all other AI system events.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Recovery After Override', 'After a pause or redirect, the operator must decide whether to: resume (agent continues from checkpoint), restart with modifications (adjust task parameters), or abandon (mark task as failed and notify user). For terminated tasks, notify the user with an explanation and offer alternatives. Never silently drop a task — the user should always know what happened.')
+      <h2>Recovery After Override</h2>
+<p>After a pause or redirect, the operator must decide whether to: resume (agent continues from checkpoint), restart with modifications (adjust task parameters), or abandon (mark task as failed and notify user). For terminated tasks, notify the user with an explanation and offer alternatives. Never silently drop a task — the user should always know what happened.</p>
     </div>
   </div>
 

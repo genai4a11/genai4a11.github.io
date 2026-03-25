@@ -21,7 +21,7 @@
   "headline": "Distillation | GenAI Mindmap",
   "description": "Training a small, fast student model to mimic a large, expensive teacher model \u2014 compressing quality into a deployable model that's 10\u2013100\u00d7 cheaper to run.",
   "url": "https://genai4a11.github.io/concepts/distillation.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,70 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('What Is Distillation?', "Distillation (Hinton 2015) trains a small student model to match the outputs of a large teacher model. For LLMs, the most practical form is behavioural cloning: generate high-quality (query, response) pairs from the teacher, then fine-tune the student on those pairs. The student learns the teacher's reasoning style without having the teacher's scale.")
+      <h2>What Is Distillation?</h2>
+<p>Distillation (Hinton 2015) trains a small student model to match the outputs of a large teacher model. For LLMs, the most practical form is behavioural cloning: generate high-quality (query, response) pairs from the teacher, then fine-tune the student on those pairs. The student learns the teacher's reasoning style without having the teacher's scale.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Teacher Data Generation', 'Use the teacher (GPT-4o, Claude Opus) to generate responses to your task-specific queries. "\n   "Key considerations: diverse query coverage, rejection sampling (keep only teacher responses that pass quality checks), "\n   "and sufficient volume (10K minimum, 100K for strong results).\n\nfrom openai import OpenAI\nimport json, tqdm\n\nclient = OpenAI()\n\ndef generate_teacher_data(queries: list[str], output_file: str):\n    dataset = []\n    for q in tqdm.tqdm(queries):\n        resp = client.chat.completions.create(\n            model="gpt-4o",\n            messages=[{"role": "user", "content": q}],\n            temperature=0.3,\n        )\n        answer = resp.choices[0].message.content\n        if passes_quality_check(answer):  # length, format, coherence\n            dataset.append({"prompt": q, "completion": answer})\n    with open(output_file, "w") as f:\n        for ex in dataset:\n            f.write(json.dumps(ex) + "\\n")\n    print(f"Saved {len(dataset)} examples")')
+      <h2>Teacher Data Generation</h2>
+<p>Use the teacher (GPT-4o, Claude Opus) to generate responses to your task-specific queries. " "Key considerations: diverse query coverage, rejection sampling (keep only teacher responses that pass quality checks), " "and sufficient volume (10K minimum, 100K for strong results).</p>
+<pre><code>from openai import OpenAI
+import json, tqdm
+client = OpenAI()
+def generate_teacher_data(queries: list[str], output_file: str):
+    dataset = []
+    for q in tqdm.tqdm(queries):
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": q}],
+            temperature=0.3,
+        )
+        answer = resp.choices[0].message.content
+        if passes_quality_check(answer):  # length, format, coherence
+            dataset.append({"prompt": q, "completion": answer})
+    with open(output_file, "w") as f:
+        for ex in dataset:
+            f.write(json.dumps(ex) + "\n")
+    print(f"Saved {len(dataset)} examples")</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Training the Student', 'Fine-tune a small model (Llama 3.2 3B, Phi-3 mini) on the teacher data using standard SFT. "\n   "Use LoRA for parameter efficiency. Learning rate 2e-5, 3 epochs, cosine schedule. "\n   "Eval on a held-out 10% of the teacher-generated data + your golden test set.\n\nfrom trl import SFTTrainer\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\nfrom peft import LoraConfig\n\nmodel = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-3B-Instruct")\ntokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-3B-Instruct")\n\nlora_config = LoraConfig(r=16, lora_alpha=32, target_modules=["q_proj","v_proj"])\n\ntrainer = SFTTrainer(\n    model=model,\n    tokenizer=tokenizer,\n    train_dataset=dataset,\n    peft_config=lora_config,\n    max_seq_length=2048,\n)\ntrainer.train()')
+      <h2>Training the Student</h2>
+<p>Fine-tune a small model (Llama 3.2 3B, Phi-3 mini) on the teacher data using standard SFT. " "Use LoRA for parameter efficiency. Learning rate 2e-5, 3 epochs, cosine schedule. " "Eval on a held-out 10% of the teacher-generated data + your golden test set.</p>
+<pre><code>from trl import SFTTrainer
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import LoraConfig
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-3B-Instruct")
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-3B-Instruct")
+lora_config = LoraConfig(r=16, lora_alpha=32, target_modules=["q_proj","v_proj"])
+trainer = SFTTrainer(
+    model=model,
+    tokenizer=tokenizer,
+    train_dataset=dataset,
+    peft_config=lora_config,
+    max_seq_length=2048,
+)
+trainer.train()</code></pre>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Quality vs Cost Tradeoffs', "A distilled 7B model typically reaches 85–90% of a 70B teacher's quality at 10× lower inference cost. For narrow tasks (customer support, code completion in a specific framework), distillation often reaches 95%+ because the domain is well-represented in the training data. General-purpose distillation is harder — use task-specific distillation when possible.")
+      <h2>Quality vs Cost Tradeoffs</h2>
+<p>A distilled 7B model typically reaches 85–90% of a 70B teacher's quality at 10× lower inference cost. For narrow tasks (customer support, code completion in a specific framework), distillation often reaches 95%+ because the domain is well-represented in the training data. General-purpose distillation is harder — use task-specific distillation when possible.</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Speculative Decoding Link', 'Distilled small models are excellent draft models for speculative decoding with the original large teacher. The student generates candidate tokens cheaply; the teacher verifies and accepts/rejects. This gives teacher-quality output at near-student-speed — the best of both worlds.')
+      <h2>Speculative Decoding Link</h2>
+<p>Distilled small models are excellent draft models for speculative decoding with the original large teacher. The student generates candidate tokens cheaply; the teacher verifies and accepts/rejects. This gives teacher-quality output at near-student-speed — the best of both worlds.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Production Recipe', '1. Identify your highest-volume task (e.g. classification, extraction, summarisation). 2. Generate 50K teacher examples with diversity sampling. 3. Fine-tune a 3B–7B student model with LoRA. 4. A/B test student vs teacher on 5% of live traffic. 5. If quality delta < 5%, fully migrate to student. 6. Use teacher as fallback for low-confidence student outputs.')
+      <h2>Production Recipe</h2>
+<p>1. Identify your highest-volume task (e.g. classification, extraction, summarisation). 2. Generate 50K teacher examples with diversity sampling. 3. Fine-tune a 3B–7B student model with LoRA. 4. A/B test student vs teacher on 5% of live traffic. 5. If quality delta < 5%, fully migrate to student. 6. Use teacher as fallback for low-confidence student outputs.</p>
     </div>
   </div>
 

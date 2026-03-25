@@ -21,7 +21,7 @@
   "headline": "Multimodal Native | GenAI Mindmap",
   "description": "Architecting AI systems that treat multiple modalities (text, image, audio, video) as first-class inputs and outputs from the ground up \u2014 not as bolted-on extensions.",
   "url": "https://genai4a11.github.io/concepts/multimodal-native.html",
-  "dateModified": "2026-03-25T00:59:28+00:00",
+  "dateModified": "2026-03-25T01:02:16+00:00",
   "datePublished": "2025-01-01",
   "author": {
     "@type": "Organization",
@@ -153,32 +153,52 @@
 
     <div class="section-block" id="s1">
       <div class="section-marker">SECTION 01</div>
-('Why Multimodal Native?', "Text-only AI misses most of human communication: medical imaging, product photos, audio recordings, instructional videos. Multimodal-native systems don't convert everything to text first — they process each modality in its natural form and reason across modalities jointly. This unlocks use cases: visual QA, audio transcription + reasoning, document understanding with layout.")
+      <h2>Why Multimodal Native?</h2>
+<p>Text-only AI misses most of human communication: medical imaging, product photos, audio recordings, instructional videos. Multimodal-native systems don't convert everything to text first — they process each modality in its natural form and reason across modalities jointly. This unlocks use cases: visual QA, audio transcription + reasoning, document understanding with layout.</p>
     </div>
 
     <div class="section-block" id="s2">
       <div class="section-marker">SECTION 02</div>
-('Input Routing & Preprocessing', 'Route incoming requests by MIME type to the appropriate preprocessor before sending to the model. "\n   "Images: resize, convert to base64 or URL reference. Audio: transcribe (Whisper) or pass raw to audio-capable model. "\n   "Video: extract keyframes (every N seconds) + audio track. Documents: extract text + images with layout preservation.\n\nimport mimetypes\nfrom pathlib import Path\n\ndef preprocess_input(file_path: str) -> dict:\n    mime, _ = mimetypes.guess_type(file_path)\n    if mime and mime.startswith("image/"):\n        return {"type": "image_url", "image_url": {"url": to_data_url(file_path)}}\n    elif mime and mime.startswith("audio/"):\n        transcript = transcribe_audio(file_path)  # Whisper\n        return {"type": "text", "text": f"[Audio transcript]: {transcript}"}\n    elif mime == "application/pdf":\n        pages = extract_pdf_pages(file_path)  # text + images\n        return {"type": "multipart", "pages": pages}\n    else:\n        return {"type": "text", "text": Path(file_path).read_text()}')
+      <h2>Input Routing & Preprocessing</h2>
+<p>Route incoming requests by MIME type to the appropriate preprocessor before sending to the model. " "Images: resize, convert to base64 or URL reference. Audio: transcribe (Whisper) or pass raw to audio-capable model. " "Video: extract keyframes (every N seconds) + audio track. Documents: extract text + images with layout preservation.</p>
+<pre><code>import mimetypes
+from pathlib import Path
+def preprocess_input(file_path: str) -&gt; dict:
+    mime, _ = mimetypes.guess_type(file_path)
+    if mime and mime.startswith("image/"):
+        return {"type": "image_url", "image_url": {"url": to_data_url(file_path)}}
+    elif mime and mime.startswith("audio/"):
+        transcript = transcribe_audio(file_path)  # Whisper
+        return {"type": "text", "text": f"[Audio transcript]: {transcript}"}
+    elif mime == "application/pdf":
+        pages = extract_pdf_pages(file_path)  # text + images
+        return {"type": "multipart", "pages": pages}
+    else:
+        return {"type": "text", "text": Path(file_path).read_text()}</code></pre>
     </div>
 
     <div class="section-block" id="s3">
       <div class="section-marker">SECTION 03</div>
-('Cross-Modal Retrieval', "Standard text embeddings can't retrieve by image similarity. Use CLIP or SigLIP for image-text joint embeddings — the same vector space for queries ('a cat on a chair') and images. Store both image embeddings and text description embeddings in your vector DB. At query time, embed the user's text query and retrieve the nearest images or text chunks jointly.")
+      <h2>Cross-Modal Retrieval</h2>
+<p>Standard text embeddings can't retrieve by image similarity. Use CLIP or SigLIP for image-text joint embeddings — the same vector space for queries ('a cat on a chair') and images. Store both image embeddings and text description embeddings in your vector DB. At query time, embed the user's text query and retrieve the nearest images or text chunks jointly.</p>
     </div>
 
     <div class="section-block" id="s4">
       <div class="section-marker">SECTION 04</div>
-('Output Generation Strategy', 'For multi-modal outputs, chain specialists: text generation (LLM) + image generation (DALL-E, SDXL) + speech synthesis (ElevenLabs, TTS). Coordinate outputs into a coherent response: generate text first, extract image prompts from text, generate images, stitch together. Alternatively, use a native multimodal model that can interleave text and image tokens (Gemini, GPT-4o).')
+      <h2>Output Generation Strategy</h2>
+<p>For multi-modal outputs, chain specialists: text generation (LLM) + image generation (DALL-E, SDXL) + speech synthesis (ElevenLabs, TTS). Coordinate outputs into a coherent response: generate text first, extract image prompts from text, generate images, stitch together. Alternatively, use a native multimodal model that can interleave text and image tokens (Gemini, GPT-4o).</p>
     </div>
 
     <div class="section-block" id="s5">
       <div class="section-marker">SECTION 05</div>
-('Evaluation Challenges', 'Image quality is subjective; use FID, CLIP score, and human eval. Audio accuracy: WER (word error rate) for transcription, MOS (mean opinion score) for synthesis. Cross-modal coherence: does the generated image match the text description? Use a CLIP coherence score. Multi-modal evals require specialised harnesses — start with text accuracy, add modality-specific metrics incrementally.')
+      <h2>Evaluation Challenges</h2>
+<p>Image quality is subjective; use FID, CLIP score, and human eval. Audio accuracy: WER (word error rate) for transcription, MOS (mean opinion score) for synthesis. Cross-modal coherence: does the generated image match the text description? Use a CLIP coherence score. Multi-modal evals require specialised harnesses — start with text accuracy, add modality-specific metrics incrementally.</p>
     </div>
 
     <div class="section-block" id="s6">
       <div class="section-marker">SECTION 06</div>
-('Reference Architecture', 'Ingestion layer: accept any MIME type, route to modality preprocessors. Embedding layer: modality-specific encoders → shared vector space. Retrieval layer: cross-modal vector search + re-ranking. Generation layer: multimodal LLM for reasoning + specialist generators for output modalities. Evaluation layer: per-modality + cross-modal quality checks.')
+      <h2>Reference Architecture</h2>
+<p>Ingestion layer: accept any MIME type, route to modality preprocessors. Embedding layer: modality-specific encoders → shared vector space. Retrieval layer: cross-modal vector search + re-ranking. Generation layer: multimodal LLM for reasoning + specialist generators for output modalities. Evaluation layer: per-modality + cross-modal quality checks.</p>
     </div>
   </div>
 
