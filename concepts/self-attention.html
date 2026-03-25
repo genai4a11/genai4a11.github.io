@@ -327,6 +327,26 @@ print(out.shape)  # (1, 8, 512, 64)
 <p><strong>Attention is not the only operation.</strong> The full transformer block is: LayerNorm → Attention → residual add → LayerNorm → FFN → residual add. The FFN (2 linear layers with activation) typically uses 4× the dimension of attention and accounts for ~67% of parameters. Don't optimise attention in isolation.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Attention Variant Comparison</h2>
+<table>
+<thead><tr><th>Variant</th><th>KV Heads</th><th>Memory</th><th>Quality</th><th>Used In</th></tr></thead>
+<tbody>
+<tr><td>Multi-Head Attention (MHA)</td><td>= query heads</td><td>High</td><td>Highest</td><td>GPT-2, BERT</td></tr>
+<tr><td>Multi-Query Attention (MQA)</td><td>1 shared KV head</td><td>Very low</td><td>Slightly lower</td><td>PaLM, Falcon</td></tr>
+<tr><td>Grouped-Query Attention (GQA)</td><td>H/G groups</td><td>Medium</td><td>Close to MHA</td><td>Llama 2/3, Mistral, Gemma</td></tr>
+<tr><td>Sliding Window Attention</td><td>= query heads (windowed)</td><td>Low at long ctx</td><td>Good for local patterns</td><td>Mistral, Longformer</td></tr>
+</tbody>
+</table>
+<p>Grouped-Query Attention (GQA) has become the dominant choice in modern open-weight models because it achieves near-MHA quality with much lower KV cache memory requirements. For a 7B model with 32 query heads and 8 KV groups, the KV cache is 4x smaller than MHA, directly reducing memory pressure during inference and enabling larger batch sizes or longer context windows at the same VRAM budget. When comparing model architectures for deployment, always check the number of KV heads -- it has a larger impact on serving cost than total parameter count for long-context workloads.</p>
+
+<p>The computational complexity of self-attention — O(n²) in sequence length — was the central bottleneck in scaling transformers to long contexts. Flash Attention addressed this by restructuring the attention computation into SRAM-friendly tiles, dramatically reducing the number of HBM memory reads and writes. The mathematical result is identical to standard attention, but the memory access pattern is far more cache-efficient, enabling both faster execution and reduced peak memory usage.</p>
+
+<p>Relative position encodings (like RoPE and ALiBi) were developed to give self-attention a better inductive bias for position than absolute sinusoidal encodings. RoPE rotates query and key vectors in a position-dependent manner so that the dot product naturally encodes relative distance, allowing models to generalize better to sequence lengths not seen during training. This property has made RoPE the de facto standard in modern open-weight models like Llama and Mistral.</p>
+
+<p>Multi-head attention's practical benefit over single-head attention is that different heads specialize in capturing different types of relationships simultaneously. Empirical studies show that some heads consistently attend to syntactic structure (subject-verb agreement), others to coreference (tracking which "it" refers to), and still others to local phrase patterns. This specialization emerges from training without explicit supervision, and pruning attention heads that have near-zero contribution can reduce model size with minimal quality loss.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -355,6 +355,26 @@ args = SFTConfig(
 <p><strong>DPO with ref_model=None saves <a class="concept-link" href="agent-memory.html">memory</a> but requires care.</strong> When ref_model=None, TRL uses the training model's initial state as the reference. This works but the reference gets stale as the model trains. For high-quality alignment, pass a frozen copy of the SFT model as ref_model — at the cost of 2× memory.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>TRL Trainer Comparison</h2>
+<table>
+<thead><tr><th>Trainer</th><th>Use Case</th><th>Data Format</th><th>Key Config</th></tr></thead>
+<tbody>
+<tr><td>SFTTrainer</td><td>Supervised instruction tuning</td><td>{"prompt": ..., "completion": ...}</td><td>max_seq_length, packing</td></tr>
+<tr><td>DPOTrainer</td><td>Preference alignment without reward model</td><td>{"prompt", "chosen", "rejected"}</td><td>beta (KL penalty), loss_type</td></tr>
+<tr><td>PPOTrainer</td><td>RL with reward model</td><td>{"query": ...} + reward function</td><td>kl_penalty, cliprange</td></tr>
+<tr><td>ORPOTrainer</td><td>Odds-ratio preference (no ref model)</td><td>{"prompt", "chosen", "rejected"}</td><td>lambda (ORPO weight)</td></tr>
+<tr><td>RewardTrainer</td><td>Train scalar reward model</td><td>{"input_ids_chosen", "input_ids_rejected"}</td><td>max_length, num_labels</td></tr>
+</tbody>
+</table>
+<p>TRL integrates tightly with HuggingFace PEFT, so you can combine any Trainer with LoRA by passing a PeftConfig via the model_init_kwargs or by wrapping the base model with get_peft_model before passing it to the Trainer. For memory-constrained setups, set gradient_checkpointing=True and use bf16 precision. On a single A100 80GB GPU, SFTTrainer with a 7B model, LoRA rank=16, and sequence length 2048 typically achieves 2,000-3,000 tokens per second throughput.</p>
+<p>Monitor training health with three key metrics: training loss (should decrease steadily), gradient norm (spikes indicate learning rate too high), and evaluation loss on a held-out set (rising divergence means overfitting). TRL logs all three to Weights and Biases automatically when wandb is installed. Set eval_steps to run evaluation every 10-20% of training to catch overfitting before it becomes severe.</p>
+
+<p>TRL (Transformer Reinforcement Learning) has become the standard library for RLHF-based fine-tuning because it abstracts away the complex reward model training loop, PPO clipping, KL divergence penalties, and reference model management that are otherwise error-prone to implement from scratch. The library integrates seamlessly with HuggingFace Hub, making it easy to push checkpoints during long training runs.</p>
+
+<p>When choosing between SFT and PPO in TRL, consider that SFT is deterministic and reproducible while PPO introduces variance through the reward signal. For production use cases requiring consistent quality, SFT with a well-curated dataset often outperforms RLHF on narrow tasks. PPO shines for open-ended generation tasks where quality is hard to define in advance but easy to judge after the fact.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

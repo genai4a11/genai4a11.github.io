@@ -356,6 +356,26 @@ Calculator result: {result}")
 <p><strong>Count tokens before streaming starts for accurate cost estimates.</strong> Once you start streaming, you can't stop it mid-way without closing the connection — you'll be charged for all tokens generated. For expensive operations, count input tokens with <code>client.messages.count_tokens()</code> before opening the stream, and warn users or require confirmation if the estimated cost exceeds a threshold.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Streaming Architecture Decision Guide</h2>
+<table>
+<thead><tr><th>Scenario</th><th>Recommended Architecture</th><th>Key Consideration</th></tr></thead>
+<tbody>
+<tr><td>Single-turn chat, web browser client</td><td>FastAPI SSE + fetch EventSource</td><td>Simple, works through CDNs</td></tr>
+<tr><td>Multi-turn chat, mobile app</td><td>WebSocket with heartbeat</td><td>Stateful -- route to same server</td></tr>
+<tr><td>High-volume API, B2B</td><td>gRPC server streaming</td><td>Efficient framing, strong typing</td></tr>
+<tr><td>Streaming through a cache layer</td><td>SSE with Redis pub/sub fanout</td><td>Multiple subscribers per stream</td></tr>
+<tr><td>Serverless (AWS Lambda, Vercel)</td><td>Chunked HTTP response</td><td>Function timeout limits apply</td></tr>
+</tbody>
+</table>
+<p>Token-by-token streaming creates a perception of responsiveness that strongly influences user satisfaction scores, even when total latency is identical to buffered responses. The key metric is time-to-first-token (TTFT): getting the first token to the client within 300-500ms makes the response feel immediate. Optimise TTFT first by minimising prompt processing overhead (use prompt caching for static prefixes), then optimise throughput tokens-per-second for long completions.</p>
+<p>Handle mid-stream errors gracefully. If the LLM connection drops after 200 tokens have been streamed, the client has already displayed partial output. Implement a resume protocol: send a unique stream ID at the start, allow clients to reconnect with that ID to receive remaining tokens from a server-side buffer. For most use cases, a simpler approach is to display an error indicator and allow the user to retry from the partial output.</p>
+
+<p>Streaming architectures must handle backpressure carefully. When a downstream consumer processes tokens more slowly than the LLM generates them — for instance, a speech synthesis engine converting text to audio — the system needs a buffer to absorb the speed difference. Unbounded buffers risk memory exhaustion during long generations; bounded buffers with blocking semantics can cause the LLM API connection to time out. Token-based chunking with adaptive buffer sizing is a practical middle ground.</p>
+
+<p>Server-sent events (SSE) remain the dominant streaming transport for web applications because they work over standard HTTP without requiring WebSocket infrastructure. SSE supports automatic reconnection on connection drop, making it resilient to transient network failures. For high-frequency token streams, the overhead of SSE framing is negligible, but for low-latency applications where every millisecond counts, raw WebSocket connections eliminate that overhead entirely.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

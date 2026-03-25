@@ -392,6 +392,29 @@ print(f"{result['model']}: {result['avg_tokens_per_sec']:.1f} tok/s")
 <p><strong>Quantised models have quality differences.</strong> When you run <code>ollama pull llama3.1:8b</code>, you get a Q4_K_M quantised version by default. This is noticeably worse on reasoning-heavy tasks than the FP16 model. For production use cases, benchmark the quantised vs full-precision versions on your specific task.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Ollama Model Comparison</h2>
+<table>
+<thead><tr><th>Model</th><th>Parameters</th><th>VRAM (Q4)</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>llama3.2:1b</td><td>1B</td><td>~1 GB</td><td>Fast classification, simple completions</td></tr>
+<tr><td>llama3.2:3b</td><td>3B</td><td>~2 GB</td><td>Lightweight chat, edge deployment</td></tr>
+<tr><td>llama3.1:8b</td><td>8B</td><td>~5 GB</td><td>General purpose, fits most laptops</td></tr>
+<tr><td>llama3.1:70b</td><td>70B</td><td>~40 GB</td><td>High quality, needs workstation GPU</td></tr>
+<tr><td>mistral:7b</td><td>7B</td><td>~4 GB</td><td>Fast, efficient, good instruction following</td></tr>
+<tr><td>qwen2.5-coder:7b</td><td>7B</td><td>~4 GB</td><td>Code generation and review</td></tr>
+</tbody>
+</table>
+<p>For production deployments with Ollama, run it behind a reverse proxy (nginx or Caddy) rather than exposing port 11434 directly. This allows you to add TLS, authentication headers, and rate limiting that Ollama itself does not provide. Enable the OLLAMA_NUM_PARALLEL environment variable to allow concurrent requests -- by default Ollama processes requests sequentially. Set this to the number of CPU cores divided by 2 as a starting point, and tune based on your latency vs throughput requirements.</p>
+<p>Ollama's Modelfile system allows you to bundle system prompts, stop tokens, and sampling parameters into a named model variant that users can call by name. This is useful for creating domain-specific assistants (a coding assistant, a customer service bot) that always use the right system prompt without requiring callers to pass it with every request.</p>
+
+<p>Ollama's model format (GGUF-based, managed through Modelfiles) provides a portable, self-contained packaging system for local LLMs. A Modelfile specifies the base model, system prompt, template format, and inference parameters in a Dockerfile-like syntax. This abstraction makes it trivial to maintain multiple specialized variants of the same base model — a customer support persona, a coding assistant, a summarization agent — each as a distinct named model that can be pulled and run with a single command.</p>
+
+<p>Memory requirements for local model deployment with Ollama depend primarily on the model's parameter count and quantization level. A 7B model at 4-bit quantization requires approximately 4–5GB of VRAM, fitting comfortably on consumer GPUs. Offloading layers to CPU RAM via the num_gpu parameter allows running models larger than available VRAM, but CPU inference is typically 10–20× slower per token than GPU. For interactive use, partial GPU offloading often provides a better latency/capacity tradeoff than full CPU inference.</p>
+
+<p>Ollama's REST API is intentionally compatible with the OpenAI API surface for chat completions, which means existing code that targets the OpenAI Python SDK can be redirected to a local Ollama instance by changing only the base URL and model name. This drop-in compatibility lowers the barrier to experimenting with local models during development and makes it straightforward to build cost-saving hybrid deployments that route cheaper queries to local models and reserve API calls for tasks requiring frontier-model capability.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

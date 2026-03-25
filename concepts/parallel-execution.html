@@ -332,6 +332,26 @@ async def limited_call(text: str):
 <p><strong>Order is not guaranteed.</strong> <code>asyncio.gather()</code> returns results in the same order as the input coroutines, but <code>as_completed()</code> returns in completion order. Be explicit about which you need — using <code>as_completed</code> when you need ordering will produce subtle bugs.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Parallel Execution Pattern Comparison</h2>
+<table>
+<thead><tr><th>Pattern</th><th>Python Primitive</th><th>Best For</th><th>Failure Handling</th></tr></thead>
+<tbody>
+<tr><td>asyncio.gather</td><td>asyncio</td><td>I/O-bound async tasks (LLM calls)</td><td>First failure cancels all (default)</td></tr>
+<tr><td>asyncio.gather(return_exceptions=True)</td><td>asyncio</td><td>Partial results acceptable</td><td>Returns exception objects, not raises</td></tr>
+<tr><td>ThreadPoolExecutor</td><td>concurrent.futures</td><td>Sync code, CPU-light tasks</td><td>Future.exception() per task</td></tr>
+<tr><td>ProcessPoolExecutor</td><td>concurrent.futures</td><td>CPU-bound tasks (embeddings, tokenisation)</td><td>Future.exception() per task</td></tr>
+<tr><td>LangGraph parallel nodes</td><td>LangGraph</td><td>Agent fan-out with state merging</td><td>Node-level error handlers</td></tr>
+</tbody>
+</table>
+<p>For LLM API fan-outs, always cap concurrency with a semaphore. Without a cap, launching 50 simultaneous LLM calls will likely hit your provider's RPM limit and cause a cascade of 429 errors that retry and compound. A semaphore of 10-20 concurrent calls provides good throughput on most API tier limits without hitting rate limits. Monitor the semaphore queue depth in production to detect when your concurrency cap is throttling throughput and adjust accordingly.</p>
+<p>Collect and log the latency of each parallel branch separately. In production, parallel branches have high variance -- one slow branch (due to a long output or a model timeout) will block the merge step even if all other branches complete quickly. Identify the slow-branch patterns from your logs and either set per-branch timeouts or move slow branches to asynchronous post-processing rather than blocking the main result.</p>
+
+<p>Parallel execution in LLM pipelines requires careful management of shared context. When multiple sub-agents run concurrently, they each consume tokens from the same rate limits, write results to shared memory, and may produce conflicting outputs that need reconciliation. A well-designed parallel orchestrator pre-allocates resources, detects conflicts in output schemas, and implements merge strategies before downstream nodes consume the aggregated results.</p>
+
+<p>Fan-out / fan-in patterns are the most common parallel execution topology. The orchestrator fans out a task to N parallel workers, each solving a sub-problem independently. The fan-in step aggregates results — either by selecting the best output, merging all outputs into a unified answer, or feeding results into a synthesis prompt. The key design decision is whether synthesis happens at the model layer (another LLM call) or at the code layer (deterministic merge logic).</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

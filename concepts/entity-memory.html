@@ -341,6 +341,27 @@ print(memory.kg.get_triples())
 <p><strong>Ambiguous references are hard.</strong> "He said the project is delayed" — who is "he"? Which "project"? Coreference resolution is a hard NLP problem. Either restrict your domain (the agent always knows the current "active entity" from context) or add explicit disambiguation logic.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Entity Memory Architecture Patterns</h2>
+<table>
+<thead><tr><th>Storage Backend</th><th>Query Type</th><th>Best For</th><th>Scale Limit</th></tr></thead>
+<tbody>
+<tr><td>In-memory dict</td><td>Exact key lookup</td><td>Single session, prototype</td><td>~1,000 entities</td></tr>
+<tr><td>Redis</td><td>Exact + prefix scan</td><td>Multi-session, low latency</td><td>~1M entities</td></tr>
+<tr><td>Vector DB (Chroma, Pinecone)</td><td>Semantic similarity</td><td>Fuzzy entity matching, synonyms</td><td>Unlimited</td></tr>
+<tr><td>Knowledge graph (Neo4j)</td><td>Relationship traversal</td><td>Complex entity relationships</td><td>~100M nodes</td></tr>
+</tbody>
+</table>
+<p>Entity memory degrades gracefully when extraction quality is imperfect, but it fails catastrophically when entity names are inconsistent across turns. Implement an entity normalisation step before storage: lowercase names, resolve common abbreviations (e.g. "NYC" to "New York City"), and strip titles (e.g. "Dr. Smith" to "Smith"). A simple fuzzy-match lookup at read time (Levenshtein distance threshold of 2) further reduces the impact of minor spelling variations without requiring perfect extraction.</p>
+<p>For production multi-user systems, scope all entity reads and writes to the current user session or user ID. Entity memory that leaks across users creates a subtle privacy issue where one user's stated preferences or personal details influence another user's session. Use separate Redis key namespaces (user:{id}:entity:{name}) to enforce hard isolation at the data layer rather than relying on application-level filtering.</p>
+
+<p>Entity memory systems face a fundamental tension between recall speed and completeness. Shallow entity stores retrieve quickly but miss contextual relationships; deep graph traversals capture nuance but introduce latency. Production systems often tier this: hot-path entity lookups use a fast key-value store, while background processes maintain a richer graph that gets consulted for complex reasoning chains where latency is acceptable.</p>
+
+<p>One practical challenge with entity memory is entity resolution — determining that "Elon Musk", "Musk", and "the Tesla CEO" all refer to the same entity. Embedding-based similarity helps but requires careful tuning of thresholds; too low causes false merges, too high causes fragmentation. Canonical name normalization during extraction reduces this burden significantly for structured domains.</p>
+
+<p>Decay and forgetting mechanisms in entity memory prevent stale information from polluting agent reasoning. Entities that have not been referenced recently can be demoted to cold storage or have their confidence scores reduced. When contradictory information arrives — a contact changes their role, a project gets renamed — versioned entity records allow the agent to distinguish the current state from historical states rather than overwriting the older information entirely.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

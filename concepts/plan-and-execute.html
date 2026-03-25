@@ -342,6 +342,25 @@ print(result)
 <p><strong>Use a cheap model for execution.</strong> Each step is a small, focused task. Using Claude Sonnet for execution (when Haiku would suffice) wastes money. Reserve the expensive model for <a class="concept-link" href="agent-planning.html">planning</a>, where quality matters most.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Plan-and-Execute vs Alternative Architectures</h2>
+<table>
+<thead><tr><th>Architecture</th><th>Planning</th><th>Execution</th><th>Best For</th><th>Weakness</th></tr></thead>
+<tbody>
+<tr><td>Plan-and-Execute</td><td>Upfront full plan</td><td>Sequential step execution</td><td>Well-defined multi-step tasks</td><td>Poor plan propagates; no mid-plan adaptation</td></tr>
+<tr><td>ReAct</td><td>One step at a time</td><td>Interleaved with reasoning</td><td>Exploratory, unknown state</td><td>Reasoning drift over many steps</td></tr>
+<tr><td>Hierarchical (planner + executor)</td><td>High-level subgoals</td><td>Executor sub-plans each subgoal</td><td>Complex long-horizon tasks</td><td>Coordination overhead</td></tr>
+<tr><td>Reflection loop</td><td>Plan, reflect, replan</td><td>Execute revised plan</td><td>Quality-critical tasks</td><td>High token cost</td></tr>
+</tbody>
+</table>
+<p>The key engineering choice in plan-and-execute is how to represent the plan. A flat ordered list works for simple sequential tasks. For tasks with dependencies and parallelism opportunities, a directed acyclic graph (DAG) representation is superior -- it allows the executor to identify independent steps and run them concurrently. Represent the plan as a JSON object with steps, dependencies, and status fields so it can be serialised for checkpointing and resumed after failures without re-running completed steps.</p>
+<p>Invest in plan quality evaluation as a separate metric from task completion quality. Have an LLM judge rate generated plans on three dimensions: completeness (does the plan cover all necessary steps?), feasibility (can each step realistically be executed with available tools?), and efficiency (does the plan avoid redundant steps?). Plans that score below threshold on any dimension should trigger a replan before execution begins, not after a costly failed execution run.</p>
+
+<p>The plan-and-execute pattern separates reasoning from action, which provides a key debugging advantage: you can inspect the plan before execution begins and catch logical errors early. In multi-step workflows where errors compound — an incorrect intermediate result corrupts all downstream steps — front-loading the planning phase and validating the plan structure before any tools are called dramatically reduces wasted API calls and time.</p>
+
+<p>Dynamic re-planning is the critical enhancement that makes plan-and-execute practical for real-world tasks. A static plan generated upfront cannot anticipate every possible outcome of intermediate steps. When an execution step returns an unexpected result — a tool call fails, an API returns empty data, or a sub-task turns out to be more complex than anticipated — the agent must update the remaining plan to account for the new information. This feedback loop between execution results and plan revision is what distinguishes robust agents from brittle ones.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

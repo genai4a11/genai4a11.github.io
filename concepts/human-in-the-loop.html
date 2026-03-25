@@ -317,6 +317,27 @@ async def agent_with_async_hitl():
 <p><strong>LangGraph state must be serialisable.</strong> When using LangGraph <a class="concept-link" href="checkpointing.html">checkpointing</a>, all state must be JSON-serialisable (no custom objects, no file handles). Design your state schema with serialisation in mind from the start.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>HITL Checkpoint Design Reference</h2>
+<table>
+<thead><tr><th>Checkpoint Type</th><th>When to Use</th><th>Timeout Handling</th><th>UX Pattern</th></tr></thead>
+<tbody>
+<tr><td>Hard gate (blocking)</td><td>Before irreversible actions</td><td>Auto-cancel after TTL</td><td>Approval button in UI</td></tr>
+<tr><td>Soft gate (non-blocking)</td><td>Quality review of draft output</td><td>Auto-approve after TTL</td><td>Editable preview panel</td></tr>
+<tr><td>Asynchronous review</td><td>Low-urgency long-running tasks</td><td>Queue for human review</td><td>Task inbox with accept/reject</td></tr>
+<tr><td>Inline clarification</td><td>Ambiguous inputs mid-task</td><td>Proceed with best-guess after TTL</td><td>Chat message asking question</td></tr>
+</tbody>
+</table>
+<p>Design HITL checkpoints around business risk, not technical uncertainty. Agents should not ask for human approval on every step — that defeats the purpose of automation. Reserve hard gates for actions that are expensive to reverse (sending external communications, writing to production databases, making financial transactions) or that have regulatory requirements for human sign-off. For all other actions, use soft gates or asynchronous review with generous timeouts that allow the pipeline to proceed if the reviewer is unavailable.</p>
+<p>Track checkpoint approval rates in production. If a checkpoint is approved more than 95% of the time without modification, it is likely too conservative and candidates for removal or relaxation. If a checkpoint is modified on more than 30% of reviews, the upstream agent logic needs improvement. Use these metrics to continuously tune your HITL strategy rather than treating the initial design as permanent.</p>
+
+<p>The placement of human checkpoints in an agentic pipeline is as important as their existence. Checkpoints too early in a workflow interrupt frequently on low-stakes decisions; checkpoints too late catch errors only after significant irreversible work has been done. Effective HITL design maps the risk profile of each action — reversible low-stakes actions skip review, irreversible or high-impact actions always pause for confirmation.</p>
+
+<p>Asynchronous HITL patterns use message queues to decouple the agent from the human reviewer. The agent publishes a review request, pauses execution, and resumes when the queue delivers an approval or rejection. This allows the human reviewer to operate at their own pace without blocking the entire system, and supports audit logging of every decision point for compliance purposes.</p>
+
+<p>Escalation policies define what happens when a human reviewer is unavailable or does not respond within a timeout window. Common strategies include: defaulting to the conservative action (do nothing and surface the issue), escalating to a senior reviewer, or allowing the agent to proceed with reduced confidence and flagging the action for post-hoc audit. The choice depends on whether the cost of delay exceeds the cost of the risk incurred by acting without review.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
