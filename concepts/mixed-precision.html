@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mixed Precision Training | GenAI Mindmap</title>
-  <meta name="description" content="Training with bfloat16/float16 precision reduces GPU memory by ~50% and speeds up training 1.5–2× while maintaining model quality via fp32 master weights." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Mixed Precision Training" />
-  <meta property="og:description" content="Training with bfloat16/float16 precision reduces GPU memory by ~50% and speeds up training 1.5–2× while maintaining model quality via fp32 master weights." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/mixed-precision.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/mixed-precision.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mixed Precision Training | GenAI Mindmap</title>
+<meta content="Training with bfloat16/float16 precision reduces GPU memory by ~50% and speeds up training 1.5–2× while maintaining model quality via fp32 master weights." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="Mixed Precision Training" property="og:title"/>
+<meta content="Training with bfloat16/float16 precision reduces GPU memory by ~50% and speeds up training 1.5–2× while maintaining model quality via fp32 master weights." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/mixed-precision.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/mixed-precision.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #2563eb;
       --accent-dark: #1d4ed8;
@@ -120,72 +121,67 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/training-tech.html" class="nav-back">← Training Tech</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Training Tech</span>
-    <h1><em>Mixed Precision Training</em></h1>
-    <p class="hero-sub">Training with bfloat16/float16 precision reduces GPU memory by ~50% and speeds up training 1.5–2× while maintaining model quality via fp32 master weights.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">2×</div><div class="stat-label">Speed Boost</div></div>
-      <div><div class="stat-num">50%</div><div class="stat-label">Memory Savings</div></div>
-      <div><div class="stat-num">bf16</div><div class="stat-label">Recommended</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">Why Mixed Precision?</a></li>
-        <li><a href="#s2" data-num="02">float16 vs bfloat16</a></li>
-        <li><a href="#s3" data-num="03">PyTorch AMP</a></li>
-        <li><a href="#s4" data-num="04">Loss Scaling</a></li>
-        <li><a href="#s5" data-num="05">HuggingFace Integration</a></li>
-        <li><a href="#s6" data-num="06">Common Issues</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>Why Mixed Precision?</h2>
-      <p>Full-precision (float32) uses 4 bytes per value. Half-precision (float16/bfloat16) uses 2 bytes. Halving the memory footprint of activations and gradients lets you: use 2× larger batch sizes, train larger models, or run on smaller GPUs.</p>
-      <ul>
-        <li><strong>Memory:</strong> Activations in fp16 → 2× memory reduction per layer</li>
-        <li><strong>Speed:</strong> Modern GPUs (A100, H100) have dedicated fp16/bf16 tensor cores — 2–4× faster FLOPS</li>
-        <li><strong>Quality:</strong> Maintain fp32 master weights for the optimizer — update in fp32, store weights in fp16 for the forward pass</li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>float16 vs bfloat16</h2>
-      <div class="table-wrap"><table>
-        <thead><tr><th></th><th>float32</th><th>float16</th><th>bfloat16</th></tr></thead>
-        <tbody>
-          <tr><td>Bits</td><td>32</td><td>16</td><td>16</td></tr>
-          <tr><td>Exponent bits</td><td>8</td><td>5</td><td>8</td></tr>
-          <tr><td>Mantissa bits</td><td>23</td><td>10</td><td>7</td></tr>
-          <tr><td>Max value</td><td>3.4e38</td><td>65,504</td><td>3.4e38</td></tr>
-          <tr><td>Overflow risk</td><td>None</td><td>High (gradients often > 65504)</td><td>None</td></tr>
-          <tr><td>Precision</td><td>High</td><td>Medium</td><td>Low</td></tr>
-          <tr><td>Best for</td><td>Optimizer states</td><td>Inference on older GPUs</td><td>Training on A100/H100</td></tr>
-        </tbody>
-      </table></div>
-      <div class="callout blue">
-        <strong>Use bfloat16 for training.</strong> bfloat16 has the same range as float32 so gradients don't overflow. float16 requires loss scaling to prevent overflow. On A100/H100/TPU, always use bfloat16.
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/training-tech.html">← Training Tech</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Training Tech</span>
+<h1><em>Mixed Precision Training</em></h1>
+<p class="hero-sub">Training with bfloat16/float16 precision reduces GPU memory by ~50% and speeds up training 1.5–2× while maintaining model quality via fp32 master weights.</p>
+<div class="hero-stats">
+<div><div class="stat-num">2×</div><div class="stat-label">Speed Boost</div></div>
+<div><div class="stat-num">50%</div><div class="stat-label">Memory Savings</div></div>
+<div><div class="stat-num">bf16</div><div class="stat-label">Recommended</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">Why Mixed Precision?</a></li>
+<li><a data-num="02" href="#s2">float16 vs bfloat16</a></li>
+<li><a data-num="03" href="#s3">PyTorch AMP</a></li>
+<li><a data-num="04" href="#s4">Loss Scaling</a></li>
+<li><a data-num="05" href="#s5">HuggingFace Integration</a></li>
+<li><a data-num="06" href="#s6">Common Issues</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
+<h2>Why Mixed Precision?</h2>
+<p>Full-precision (float32) uses 4 bytes per value. Half-precision (float16/bfloat16) uses 2 bytes. Halving the memory footprint of activations and gradients lets you: use 2× larger batch sizes, train larger models, or run on smaller GPUs.</p>
+<ul>
+<li><strong>Memory:</strong> Activations in fp16 → 2× memory reduction per layer</li>
+<li><strong>Speed:</strong> Modern GPUs (A100, H100) have dedicated fp16/bf16 tensor cores — 2–4× faster FLOPS</li>
+<li><strong>Quality:</strong> Maintain fp32 master weights for the optimizer — update in fp32, store weights in fp16 for the forward pass</li>
+</ul>
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
+<h2>float16 vs bfloat16</h2>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>float32</th><th>float16</th><th>bfloat16</th></tr></thead>
+<tbody>
+<tr><td>Bits</td><td>32</td><td>16</td><td>16</td></tr>
+<tr><td>Exponent bits</td><td>8</td><td>5</td><td>8</td></tr>
+<tr><td>Mantissa bits</td><td>23</td><td>10</td><td>7</td></tr>
+<tr><td>Max value</td><td>3.4e38</td><td>65,504</td><td>3.4e38</td></tr>
+<tr><td>Overflow risk</td><td>None</td><td>High (gradients often &gt; 65504)</td><td>None</td></tr>
+<tr><td>Precision</td><td>High</td><td>Medium</td><td>Low</td></tr>
+<tr><td>Best for</td><td>Optimizer states</td><td>Inference on older GPUs</td><td>Training on A100/H100</td></tr>
+</tbody>
+</table></div>
+<div class="callout blue">
+<strong>Use bfloat16 for training.</strong> bfloat16 has the same range as float32 so gradients don't overflow. float16 requires loss scaling to prevent overflow. On A100/H100/TPU, always use bfloat16.
       </div>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>PyTorch AMP</h2>
-      <div class="example-box">import torch
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
+<h2>PyTorch AMP</h2>
+<div class="example-box">import torch
 from torch.cuda.amp import autocast, GradScaler
 
 device = "cuda"
@@ -216,13 +212,12 @@ for batch in dataloader:
     # torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
     # scaler.step(optimizer)
     # scaler.update()</div>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>Loss Scaling</h2>
-      <p>float16 can't represent gradients smaller than ~6e-5. Small gradients underflow to zero — parameters don't update. Loss scaling fixes this by multiplying the loss before backward, then dividing the gradients after.</p>
-      <div class="example-box">from torch.cuda.amp import GradScaler
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
+<h2>Loss Scaling</h2>
+<p>float16 can't represent gradients smaller than ~6e-5. Small gradients underflow to zero — parameters don't update. Loss scaling fixes this by multiplying the loss before backward, then dividing the gradients after.</p>
+<div class="example-box">from torch.cuda.amp import GradScaler
 
 scaler = GradScaler(
     init_scale=2**16,     # Start with scale factor 65536
@@ -244,13 +239,12 @@ scaler.update()                  # Adjust scale for next iteration
 
 # Monitor scale to detect issues
 print(f"Loss scale: {scaler.get_scale():.0f}")
-# Should stay high (>= 1024). If it keeps dropping → gradient instability</div>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>HuggingFace Integration</h2>
-      <div class="example-box">from transformers import TrainingArguments, Trainer
+# Should stay high (&gt;= 1024). If it keeps dropping → gradient instability</div>
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
+<h2>HuggingFace Integration</h2>
+<div class="example-box">from transformers import TrainingArguments, Trainer
 
 # bf16 training — one flag
 args = TrainingArguments(
@@ -276,15 +270,14 @@ from accelerate import Accelerator
 accelerator = Accelerator(mixed_precision="bf16")
 model, optimizer, dataloader = accelerator.prepare(model, optimizer, dataloader)
 # Now everything is handled automatically</div>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>Common Issues</h2>
-      <div class="example-box">import torch
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
+<h2>Common Issues</h2>
+<div class="example-box">import torch
 
 # Issue 1: NaN loss with float16
-# Cause: gradient overflow (gradients > 65504)
+# Cause: gradient overflow (gradients &gt; 65504)
 # Fix: switch to bfloat16, or increase scaler's init_scale
 
 # Issue 2: NaN loss with bfloat16
@@ -309,11 +302,10 @@ for group in optimizer.param_groups:
 # Issue 4: Out of memory despite using bf16
 # Cause: activation memory still dominated by large batch/seq
 # Fix: gradient checkpointing + smaller batch + grad accumulation</div>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/training-tech.html" style="color:var(--accent)">Training Tech</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/training-tech.html" style="color:var(--accent)">Training Tech</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

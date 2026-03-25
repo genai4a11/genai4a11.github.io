@@ -1,23 +1,24 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LLM Serving & Inference Infrastructure — GenAI Mindmap</title>
-  <meta name="description" content="Throughput, latency, and cost — how to run LLMs at scale in production" />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="LLM Serving &amp; Inference Infrastructure" />
-  <meta property="og:description" content="Throughput, latency, and cost — how to run LLMs at scale in production" />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/serving.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="LLM Serving &amp; Inference Infrastructure" />
-  <meta name="twitter:description" content="Throughput, latency, and cost — how to run LLMs at scale in production" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/serving.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LLM Serving &amp; Inference Infrastructure — GenAI Mindmap</title>
+<meta content="Throughput, latency, and cost — how to run LLMs at scale in production" name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="LLM Serving &amp; Inference Infrastructure" property="og:title"/>
+<meta content="Throughput, latency, and cost — how to run LLMs at scale in production" property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/serving.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<meta content="summary" name="twitter:card"/>
+<meta content="LLM Serving &amp; Inference Infrastructure" name="twitter:title"/>
+<meta content="Throughput, latency, and cost — how to run LLMs at scale in production" name="twitter:description"/>
+<link href="https://genai4a11.github.io/concepts/serving.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -395,7 +396,6 @@
   }
 }
 </script>
-
 <style>
 .flow-diagram{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:1.5rem 0;font-size:.9rem;}
 .flow-box{background:var(--bg);border:2px solid var(--accent);border-radius:.5rem;padding:.6rem 1rem;font-weight:600;text-align:center;min-width:100px;}
@@ -406,12 +406,11 @@
 .lp-body h4{margin:0 0 .25rem;font-size:1rem;}
 .lp-body p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.5;}
 </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-
 <nav>
-  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
-  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+<a class="nav-brand" href="../index.html" id="back-brand"><span class="dot">⬡</span> GenAI Mindmap</a>
+<a class="nav-back" href="../index.html" id="back-link">← Back to mindmap</a>
 </nav>
 <script>
   (function(){
@@ -423,410 +422,354 @@
     }
   })();
 </script>
-
 <!-- ── HERO ── -->
 <div class="hero">
-  <span class="hero-tag">PRODUCTION INFRASTRUCTURE</span>
-  <h1>LLM Serving & <em>Inference</em> Infrastructure</h1>
-  <p class="hero-sub">Throughput, latency, and cost — how to run LLMs at scale in production</p>
-  <div class="hero-stats">
-    <div class="stat">
-      <span class="stat-num">TTFT + TBT</span>
-      <span class="stat-label">the two latency metrics</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">tokens/sec/GPU</span>
-      <span class="stat-label">throughput target</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">batch or stream</span>
-      <span class="stat-label">serving modes</span>
-    </div>
-  </div>
+<span class="hero-tag">PRODUCTION INFRASTRUCTURE</span>
+<h1>LLM Serving &amp; <em>Inference</em> Infrastructure</h1>
+<p class="hero-sub">Throughput, latency, and cost — how to run LLMs at scale in production</p>
+<div class="hero-stats">
+<div class="stat">
+<span class="stat-num">TTFT + TBT</span>
+<span class="stat-label">the two latency metrics</span>
 </div>
-
+<div class="stat">
+<span class="stat-num">tokens/sec/GPU</span>
+<span class="stat-label">throughput target</span>
+</div>
+<div class="stat">
+<span class="stat-num">batch or stream</span>
+<span class="stat-label">serving modes</span>
+</div>
+</div>
+</div>
 <!-- ── BODY ── -->
 <div class="page-wrap">
+<!-- TOC -->
+<div class="toc-card">
+<div class="toc-heading">Contents</div>
+<ol class="toc-list">
+<li><a data-num="1" href="#serving-metrics">The two serving metrics</a></li>
+<li><a data-num="2" href="#continuous-batching">Continuous batching</a></li>
+<li><a data-num="3" href="#paged-attention">PagedAttention &amp; memory</a></li>
+<li><a data-num="4" href="#parallelism">Parallelism strategies</a></li>
+<li><a data-num="5" href="#speculative">Speculative decoding</a></li>
+<li><a data-num="6" href="#routing">Routing &amp; load balancing</a></li>
+<li><a data-num="7" href="#frameworks">Framework comparison</a></li>
+</ol>
+</div>
+<!-- ── 1. THE TWO SERVING METRICS ── -->
+<div class="section-block" id="serving-metrics">
+<div class="section-marker">01 — Core Concepts</div>
+<h2>The Two Serving Metrics</h2>
+<p><strong>TTFT (Time to First Token):</strong> Latency from request arrival to the first output token. This is what the user perceives — how responsive the system feels. A 500ms TTFT is acceptable. A 5-second TTFT feels slow.</p>
+<p><strong>TBT (Time Between Tokens) / ITL (Inter-Token Latency):</strong> Latency between each subsequent token. This drives the streaming experience. If TBT is 50ms, the user sees about 20 tokens per second on screen — a natural reading pace. If TBT is 200ms, the text appears in bursts, feeling sluggish.</p>
+<p><strong>Throughput:</strong> Total tokens generated per second across all concurrent requests. This drives cost efficiency. Generate 500 tokens/sec/GPU and your GPU is fully utilized. Generate 50 tokens/sec/GPU and you're wasting 90% of its potential.</p>
+<p>The fundamental tension: maximizing throughput requires large batches, which delays responses (high TTFT). Minimizing TTFT requires small batches, which wastes GPU utilization. Production systems must balance all three metrics within SLA bounds.</p>
+<div class="example-box">Target SLAs (typical production):
 
-  <!-- TOC -->
-  <div class="toc-card">
-    <div class="toc-heading">Contents</div>
-    <ol class="toc-list">
-      <li><a href="#serving-metrics" data-num="1">The two serving metrics</a></li>
-      <li><a href="#continuous-batching" data-num="2">Continuous batching</a></li>
-      <li><a href="#paged-attention" data-num="3">PagedAttention & memory</a></li>
-      <li><a href="#parallelism" data-num="4">Parallelism strategies</a></li>
-      <li><a href="#speculative" data-num="5">Speculative decoding</a></li>
-      <li><a href="#routing" data-num="6">Routing & load balancing</a></li>
-      <li><a href="#frameworks" data-num="7">Framework comparison</a></li>
-    </ol>
-  </div>
-
-  <!-- ── 1. THE TWO SERVING METRICS ── -->
-  <div class="section-block" id="serving-metrics">
-    <div class="section-marker">01 — Core Concepts</div>
-    <h2>The Two Serving Metrics</h2>
-    <p><strong>TTFT (Time to First Token):</strong> Latency from request arrival to the first output token. This is what the user perceives — how responsive the system feels. A 500ms TTFT is acceptable. A 5-second TTFT feels slow.</p>
-
-    <p><strong>TBT (Time Between Tokens) / ITL (Inter-Token Latency):</strong> Latency between each subsequent token. This drives the streaming experience. If TBT is 50ms, the user sees about 20 tokens per second on screen — a natural reading pace. If TBT is 200ms, the text appears in bursts, feeling sluggish.</p>
-
-    <p><strong>Throughput:</strong> Total tokens generated per second across all concurrent requests. This drives cost efficiency. Generate 500 tokens/sec/GPU and your GPU is fully utilized. Generate 50 tokens/sec/GPU and you're wasting 90% of its potential.</p>
-
-    <p>The fundamental tension: maximizing throughput requires large batches, which delays responses (high TTFT). Minimizing TTFT requires small batches, which wastes GPU utilization. Production systems must balance all three metrics within SLA bounds.</p>
-
-    <div class="example-box">Target SLAs (typical production):
-
-TTFT: < 500ms for chat, < 5s for batch
-TBT:  < 50ms (20+ tokens/sec for readable streaming)
+TTFT: &lt; 500ms for chat, &lt; 5s for batch
+TBT:  &lt; 50ms (20+ tokens/sec for readable streaming)
 Throughput: maximize within SLA bounds    <div class="callout blue">
-      <span class="callout-icon">💡</span>
-      <span><strong>Understand your tradeoff:</strong> A 7B model with 100ms TTFT is better for chat. The same model with 20ms TTFT but half throughput costs twice as much. Choose based on your use case.</span>
-    </div>
-  </div>
-
-  <!-- ── 2. CONTINUOUS BATCHING ── -->
-  <div class="section-block" id="continuous-batching">
-    <div class="section-marker">02 — Core Optimization</div>
-    <h2>Continuous Batching</h2>
-    <p>Naive batching: collect requests until batch is full (say, 32), run inference together, return all results. Problem: the GPU sits idle while waiting for the batch to fill. Throughput suffers.</p>
-
-    <p><strong>Continuous batching (Orca 2022):</strong> Don't wait. Start processing requests immediately. As one request finishes generating a token, remove it from the active batch. As new requests arrive, add them to fill empty slots. The batch is always full, always moving.</p>
-
-    <p>This is deceptively powerful. All major serving frameworks (vLLM, TGI, TRT-LLM, SGLang) implement continuous batching. Without it, you leave 5–10× throughput on the table.</p>
-
-    <p>Key insight: prefill (processing input tokens) is compute-bound. Decode (generating tokens one-by-one) is memory-bandwidth-bound. Modern systems separate them: prefill on one GPU pool, decode on another. Each optimized independently.</p>
-
-    <p><strong>Disaggregated serving</strong> takes this further: run prefill and decode on completely separate GPU clusters. Prefill gets high-end GPUs with large memory for long prompts. Decode gets bandwidth-optimized GPUs for throughput. Route requests through a scheduler.</p>
-
-    <div class="callout green">
-      <span class="callout-icon">💡</span>
-      <span><strong>Continuous batching is the single highest-leverage optimization for throughput.</strong> Enables 5–10× better GPU utilization vs naive batching. If you're running a custom serving system, implement this first.</span>
-    </div>
-  </div>
-
-  <!-- ── 3. PAGEDATTENTION AND MEMORY MANAGEMENT ── -->
-  <div class="section-block" id="paged-attention">
-    <div class="section-marker">03 — Memory Optimization</div>
-    <h2>PagedAttention and Memory Management</h2>
-    <p>The KV cache — stored key and value tensors for each token in the context — is the primary memory consumer during inference. As sequences get longer (and they do — 8K, 32K, 128K contexts are becoming standard), KV cache dominates.</p>
-
-    <p>With fixed-size KV cache pre-allocated per request, varying sequence lengths cause fragmentation. A request with 1K tokens uses 1K of 4K allocated cache — 3K wasted. Multiply across 100 concurrent requests and you've wasted significant memory.</p>
-
-    <p><strong>PagedAttention (vLLM):</strong> Allocate KV cache in fixed-size "pages" (like OS virtual memory). Each token's key and value go into a page. Pages are dynamically allocated. If a sequence needs more pages, allocate more. No internal fragmentation.</p>
-
-    <p>Benefits cascade: <strong>Prefix sharing:</strong> requests with the same prompt prefix share the same pages. System prompt appears in every request — save 90% of system prompt cache by sharing. <strong>Beam search:</strong> explore multiple hypotheses without memory blowup — each hypothesis shares the prefix.</p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Approach</th><th>Fragmentation</th><th>Prefix sharing</th><th>Complexity</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Fixed pre-allocated</td><td>High</td><td>No</td><td>Low</td></tr>
-          <tr><td>Dynamic per-request</td><td>Medium</td><td>No</td><td>Medium</td></tr>
-          <tr><td>PagedAttention</td><td>Minimal</td><td>Yes</td><td>High</td></tr>
-          <tr><td>Chunked prefill</td><td>Low</td><td>Partial</td><td>Medium</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>PagedAttention is non-trivial to implement (fancy indexing into pages), but the memory savings are substantial. vLLM's adoption is partly because they got PagedAttention right.</p>
-  </div>
-
-  <!-- ── 4. PARALLELISM STRATEGIES ── -->
-  <div class="section-block" id="parallelism">
-    <div class="section-marker">04 — Scaling Across GPUs</div>
-    <h2>Parallelism Strategies</h2>
-    <p>Most LLMs don't fit on a single GPU. Must split across multiple. Four strategies, each with tradeoffs.</p>
-
-    <div class="methods-list">
-      <div class="method-card">
-        <div class="method-num">1</div>
-        <div class="method-body">
-          <h3>Tensor Parallelism <em>— split weights</em></h3>
-          <p>Split individual weight matrices across GPUs. Each GPU holds partial weights. All GPUs process the same batch in parallel. After each layer, all-reduce to combine results.</p>
-          <ul>
-            <li>Low latency per token (all-reduce happens in parallel)</li>
-            <li>High communication cost — must transfer intermediate activations</li>
-            <li>Best within a single node (NVLink, very low latency interconnect)</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="method-card">
-        <div class="method-num">2</div>
-        <div class="method-body">
-          <h3>Pipeline Parallelism <em>— split layers</em></h3>
-          <p>Split layers across GPUs. GPU 0 does layer 0, GPU 1 does layer 1, etc. Each GPU processes a micro-batch sequentially. Activations flow through the pipeline.</p>
-          <ul>
-            <li>High throughput (can overlap computation on different GPUs)</li>
-            <li>Pipeline bubble latency — some GPUs idle while waiting for previous stage</li>
-            <li>Works across nodes (lower bandwidth requirements)</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="method-card">
-        <div class="method-num">3</div>
-        <div class="method-body">
-          <h3>Data Parallelism <em>— replicate model</em></h3>
-          <p>Replicate full model on each GPU. Each GPU handles a different request (or batch of requests). No inter-GPU communication during forward pass.</p>
-          <ul>
-            <li>Scales throughput linearly (each GPU independent)</li>
-            <li>Requires model to fit on a single GPU</li>
-            <li>Perfect for multi-request inference (chat, batch scoring)</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="method-card">
-        <div class="method-num">4</div>
-        <div class="method-body">
-          <h3>Expert Parallelism <em>— for MoE</em></h3>
-          <p>For Mixture-of-Experts models: route tokens to expert GPUs. Each GPU holds different expert FFN layers. Sparse activation — each token routes to a few experts, not all.</p>
-          <ul>
-            <li>Enables very large models with conditional compute</li>
-            <li>Load balancing complexity — some experts become bottlenecks</li>
-            <li>Specialized for MoE architectures (Mixtral, DeepSeek-MoE)</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Strategy</th><th>Model fits GPU?</th><th>Comm overhead</th><th>Good for</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>DP</td><td>Yes (per replica)</td><td>Low</td><td>High throughput, multiple replicas</td></tr>
-          <tr><td>TP</td><td>No (splits model)</td><td>High (all-reduce)</td><td>Large models, low latency</td></tr>
-          <tr><td>PP</td><td>No (splits layers)</td><td>Medium</td><td>Very large models</td></tr>
-          <tr><td>TP+PP</td><td>No</td><td>Highest</td><td>Frontier models (175B+)</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>In practice, teams use combinations: tensor parallelism within a node (exploiting NVLink), pipeline parallelism across nodes. Larger models need multiple strategies.</p>
-  </div>
-
-  <!-- ── 5. SPECULATIVE DECODING ── -->
-  <div class="section-block" id="speculative">
-    <div class="section-marker">05 — Inference Speedup</div>
-    <h2>Speculative Decoding</h2>
-    <p>Decoding is memory-bandwidth-bound: GPU loads weights, generates one token, waits for next batch of requests. The bottleneck is weight transfer, not compute.</p>
-
-    <p><strong>Speculative decoding:</strong> Use a small, fast draft model to propose the next k tokens. The target (main) model verifies all k tokens in parallel. If all k are accepted, you get k tokens in one round-trip instead of k round-trips. In theory, k× speedup.</p>
-
-    <p>In practice: 70–85% of proposed tokens are accepted (due to distribution mismatch). With N=4 draft tokens and 75% acceptance rate, you get roughly 2–3× speedup with no quality loss (output distribution is identical).</p>
-
-    <p><strong>Variants:</strong> Small draft model (separate model), Medusa (draft heads on the main model, lower overhead), EAGLE (feature-level drafting, higher acceptance rates), prompt lookup decoding (copy from context, minimal compute).</p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Variant</th><th>Draft source</th><th>Speedup</th><th>Quality loss</th><th>Setup complexity</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Small draft model</td><td>Separate small LLM</td><td>2–3×</td><td>None (exact)</td><td>Medium</td></tr>
-          <tr><td>Medusa</td><td>Extra draft heads</td><td>1.5–2×</td><td>None (exact)</td><td>Low</td></tr>
-          <tr><td>EAGLE</td><td>Feature-level</td><td>3–4×</td><td>None (exact)</td><td>Medium</td></tr>
-          <tr><td>Prompt lookup</td><td>Copies from prompt</td><td>1.5–2.5×</td><td>None (exact)</td><td>Very low</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>Speculative decoding is especially effective for long outputs. Short completions don't benefit as much. Worth measuring on your workload.</p>
-  </div>
-
-  <!-- ── 6. ROUTING AND LOAD BALANCING ── -->
-  <div class="section-block" id="routing">
-    <div class="section-marker">06 — Multi-Replica Systems</div>
-    <h2>Routing and Load Balancing</h2>
-    <p>Production: deploy multiple replicas of your model. Need intelligent routing to maximize cache hit rates and throughput.</p>
-
-    <p><strong>Strategies:</strong> Round-robin (simple, ignores load), least-connections (tracks active requests per replica), <strong>prefix-aware routing</strong> (send requests with same system prompt to same replica — huge cache hit rate improvement).</p>
-
-    <p>For chatbots, prefix-aware routing is critical. System prompt appears in every request. If 100 requests with the same system prompt hit 100 different replicas, each one recomputes the system prompt's KV cache. Route to same replica, compute once, share across 100 requests.</p>
-
-    <p><strong>Autoscaling:</strong> Scale replicas based on queue depth, not CPU/RAM. GPU serving is queue-depth-driven: requests queue up, replicas drain the queue. When queue depth > threshold, scale up. When queue depth < threshold, scale down.</p>
-
-    <p><strong>Model routing by capability:</strong> Easy queries (classification, factual lookup) route to small, fast model. Hard queries (reasoning, analysis) route to large, slow model. A tiny router model classifies difficulty (<100ms), then routes to appropriate model. Maximizes throughput, minimizes cost.</p>
-
-    <div class="callout amber">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>Prefix-aware routing can double KV cache hit rates in production.</strong> Critical optimization for chatbots. Implement a hash of the system prompt, route all requests with same hash to same replica.</span>
-    </div>
-  </div>
-
-  <!-- ── 7. FRAMEWORK COMPARISON ── -->
-  <div class="section-block" id="frameworks">
-    <div class="section-marker">07 — Tools & Selection</div>
-    <h2>Framework Comparison and Selection</h2>
-    <p>Mature open-source and proprietary serving frameworks exist. Each has strengths for different scenarios.</p>
-
-    <div class="tools-grid">
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">vLLM</div>
-        <div class="tool-desc">Most popular OSS serving. PagedAttention, continuous batching, tensor parallelism. Supports GPTQ, AWQ, FP8 quantization.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">SGLang</div>
-        <div class="tool-desc">Structured generation + serving. Native support for tree search, constrained generation, agent loops. FP8, GPTQ quantization.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">TensorRT-LLM</div>
-        <div class="tool-desc">NVIDIA's production framework. FP8, INT8 quantization. Complex to use, powerful performance. For teams with NVIDIA resources.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">TGI (Text Generation Inference)</div>
-        <div class="tool-desc">HuggingFace's framework. Built-in continuous batching. AWQ, GPTQ quantization. Solid default choice.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">Ollama</div>
-        <div class="tool-desc">Local/dev use only. Easy setup, GGUF quantization. Not suitable for production.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">llama.cpp</div>
-        <div class="tool-desc">C++ inference, CPU-optimized. GGUF format. Good for edge and local deployment.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">Triton Inference Server</div>
-        <div class="tool-desc">NVIDIA's orchestration layer. Supports multiple backends. Complex setup, powerful for large deployments.</div>
-      </div>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Framework</th><th>Best for</th><th>Quantization</th><th>Multi-GPU</th><th>Production-ready</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>vLLM</td><td>General OSS serving</td><td>GPTQ, AWQ, FP8</td><td>TP + PP</td><td>Yes</td></tr>
-          <tr><td>SGLang</td><td>Structured outputs, agents</td><td>FP8, GPTQ</td><td>TP</td><td>Yes</td></tr>
-          <tr><td>TRT-LLM</td><td>NVIDIA production</td><td>FP8, INT8</td><td>TP + PP</td><td>Yes (complex)</td></tr>
-          <tr><td>TGI</td><td>HuggingFace models</td><td>AWQ, GPTQ</td><td>TP</td><td>Yes</td></tr>
-          <tr><td>Ollama</td><td>Local/dev use</td><td>GGUF</td><td>Limited</td><td>No (dev only)</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Selection Guide</h3>
-    <p><strong>Starting point:</strong> vLLM. Default choice. Mature, well-documented, supports most models and quantizations.</p>
-
-    <p><strong>Need structured outputs:</strong> SGLang. Native grammar constraints, agents, tree search.</p>
-
-    <p><strong>Maximum performance on NVIDIA:</strong> TensorRT-LLM. Complex, but squeezes every bit of performance.</p>
-
-    <p><strong>Already using HuggingFace pipeline:</strong> TGI. Integrates naturally.</p>
-
-    <p><strong>Local development:</strong> Ollama. Easy setup, not for production.</p>
-  </div>
-
-  <!-- ── REFERENCES ── -->
-  <div class="section-block" id="references">
-    <div class="section-marker">08 — Further Reading</div>
-    <h2>References</h2>
-
-    <div class="ref-group-title">Academic Papers</div>
-    <ul class="refs-list">
-      <li class="ref-item">
-        <span class="ref-badge badge-paper">Paper</span>
+<span class="callout-icon">💡</span>
+<span><strong>Understand your tradeoff:</strong> A 7B model with 100ms TTFT is better for chat. The same model with 20ms TTFT but half throughput costs twice as much. Choose based on your use case.</span>
+</div>
+</div>
+<!-- ── 2. CONTINUOUS BATCHING ── -->
+<div class="section-block" id="continuous-batching">
+<div class="section-marker">02 — Core Optimization</div>
+<h2>Continuous Batching</h2>
+<p>Naive batching: collect requests until batch is full (say, 32), run inference together, return all results. Problem: the GPU sits idle while waiting for the batch to fill. Throughput suffers.</p>
+<p><strong>Continuous batching (Orca 2022):</strong> Don't wait. Start processing requests immediately. As one request finishes generating a token, remove it from the active batch. As new requests arrive, add them to fill empty slots. The batch is always full, always moving.</p>
+<p>This is deceptively powerful. All major serving frameworks (vLLM, TGI, TRT-LLM, SGLang) implement continuous batching. Without it, you leave 5–10× throughput on the table.</p>
+<p>Key insight: prefill (processing input tokens) is compute-bound. Decode (generating tokens one-by-one) is memory-bandwidth-bound. Modern systems separate them: prefill on one GPU pool, decode on another. Each optimized independently.</p>
+<p><strong>Disaggregated serving</strong> takes this further: run prefill and decode on completely separate GPU clusters. Prefill gets high-end GPUs with large memory for long prompts. Decode gets bandwidth-optimized GPUs for throughput. Route requests through a scheduler.</p>
+<div class="callout green">
+<span class="callout-icon">💡</span>
+<span><strong>Continuous batching is the single highest-leverage optimization for throughput.</strong> Enables 5–10× better GPU utilization vs naive batching. If you're running a custom serving system, implement this first.</span>
+</div>
+</div>
+<!-- ── 3. PAGEDATTENTION AND MEMORY MANAGEMENT ── -->
+<div class="section-block" id="paged-attention">
+<div class="section-marker">03 — Memory Optimization</div>
+<h2>PagedAttention and Memory Management</h2>
+<p>The KV cache — stored key and value tensors for each token in the context — is the primary memory consumer during inference. As sequences get longer (and they do — 8K, 32K, 128K contexts are becoming standard), KV cache dominates.</p>
+<p>With fixed-size KV cache pre-allocated per request, varying sequence lengths cause fragmentation. A request with 1K tokens uses 1K of 4K allocated cache — 3K wasted. Multiply across 100 concurrent requests and you've wasted significant memory.</p>
+<p><strong>PagedAttention (vLLM):</strong> Allocate KV cache in fixed-size "pages" (like OS virtual memory). Each token's key and value go into a page. Pages are dynamically allocated. If a sequence needs more pages, allocate more. No internal fragmentation.</p>
+<p>Benefits cascade: <strong>Prefix sharing:</strong> requests with the same prompt prefix share the same pages. System prompt appears in every request — save 90% of system prompt cache by sharing. <strong>Beam search:</strong> explore multiple hypotheses without memory blowup — each hypothesis shares the prefix.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Approach</th><th>Fragmentation</th><th>Prefix sharing</th><th>Complexity</th></tr>
+</thead>
+<tbody>
+<tr><td>Fixed pre-allocated</td><td>High</td><td>No</td><td>Low</td></tr>
+<tr><td>Dynamic per-request</td><td>Medium</td><td>No</td><td>Medium</td></tr>
+<tr><td>PagedAttention</td><td>Minimal</td><td>Yes</td><td>High</td></tr>
+<tr><td>Chunked prefill</td><td>Low</td><td>Partial</td><td>Medium</td></tr>
+</tbody>
+</table>
+</div>
+<p>PagedAttention is non-trivial to implement (fancy indexing into pages), but the memory savings are substantial. vLLM's adoption is partly because they got PagedAttention right.</p>
+</div>
+<!-- ── 4. PARALLELISM STRATEGIES ── -->
+<div class="section-block" id="parallelism">
+<div class="section-marker">04 — Scaling Across GPUs</div>
+<h2>Parallelism Strategies</h2>
+<p>Most LLMs don't fit on a single GPU. Must split across multiple. Four strategies, each with tradeoffs.</p>
+<div class="methods-list">
+<div class="method-card">
+<div class="method-num">1</div>
+<div class="method-body">
+<h3>Tensor Parallelism <em>— split weights</em></h3>
+<p>Split individual weight matrices across GPUs. Each GPU holds partial weights. All GPUs process the same batch in parallel. After each layer, all-reduce to combine results.</p>
+<ul>
+<li>Low latency per token (all-reduce happens in parallel)</li>
+<li>High communication cost — must transfer intermediate activations</li>
+<li>Best within a single node (NVLink, very low latency interconnect)</li>
+</ul>
+</div>
+</div>
+<div class="method-card">
+<div class="method-num">2</div>
+<div class="method-body">
+<h3>Pipeline Parallelism <em>— split layers</em></h3>
+<p>Split layers across GPUs. GPU 0 does layer 0, GPU 1 does layer 1, etc. Each GPU processes a micro-batch sequentially. Activations flow through the pipeline.</p>
+<ul>
+<li>High throughput (can overlap computation on different GPUs)</li>
+<li>Pipeline bubble latency — some GPUs idle while waiting for previous stage</li>
+<li>Works across nodes (lower bandwidth requirements)</li>
+</ul>
+</div>
+</div>
+<div class="method-card">
+<div class="method-num">3</div>
+<div class="method-body">
+<h3>Data Parallelism <em>— replicate model</em></h3>
+<p>Replicate full model on each GPU. Each GPU handles a different request (or batch of requests). No inter-GPU communication during forward pass.</p>
+<ul>
+<li>Scales throughput linearly (each GPU independent)</li>
+<li>Requires model to fit on a single GPU</li>
+<li>Perfect for multi-request inference (chat, batch scoring)</li>
+</ul>
+</div>
+</div>
+<div class="method-card">
+<div class="method-num">4</div>
+<div class="method-body">
+<h3>Expert Parallelism <em>— for MoE</em></h3>
+<p>For Mixture-of-Experts models: route tokens to expert GPUs. Each GPU holds different expert FFN layers. Sparse activation — each token routes to a few experts, not all.</p>
+<ul>
+<li>Enables very large models with conditional compute</li>
+<li>Load balancing complexity — some experts become bottlenecks</li>
+<li>Specialized for MoE architectures (Mixtral, DeepSeek-MoE)</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Strategy</th><th>Model fits GPU?</th><th>Comm overhead</th><th>Good for</th></tr>
+</thead>
+<tbody>
+<tr><td>DP</td><td>Yes (per replica)</td><td>Low</td><td>High throughput, multiple replicas</td></tr>
+<tr><td>TP</td><td>No (splits model)</td><td>High (all-reduce)</td><td>Large models, low latency</td></tr>
+<tr><td>PP</td><td>No (splits layers)</td><td>Medium</td><td>Very large models</td></tr>
+<tr><td>TP+PP</td><td>No</td><td>Highest</td><td>Frontier models (175B+)</td></tr>
+</tbody>
+</table>
+</div>
+<p>In practice, teams use combinations: tensor parallelism within a node (exploiting NVLink), pipeline parallelism across nodes. Larger models need multiple strategies.</p>
+</div>
+<!-- ── 5. SPECULATIVE DECODING ── -->
+<div class="section-block" id="speculative">
+<div class="section-marker">05 — Inference Speedup</div>
+<h2>Speculative Decoding</h2>
+<p>Decoding is memory-bandwidth-bound: GPU loads weights, generates one token, waits for next batch of requests. The bottleneck is weight transfer, not compute.</p>
+<p><strong>Speculative decoding:</strong> Use a small, fast draft model to propose the next k tokens. The target (main) model verifies all k tokens in parallel. If all k are accepted, you get k tokens in one round-trip instead of k round-trips. In theory, k× speedup.</p>
+<p>In practice: 70–85% of proposed tokens are accepted (due to distribution mismatch). With N=4 draft tokens and 75% acceptance rate, you get roughly 2–3× speedup with no quality loss (output distribution is identical).</p>
+<p><strong>Variants:</strong> Small draft model (separate model), Medusa (draft heads on the main model, lower overhead), EAGLE (feature-level drafting, higher acceptance rates), prompt lookup decoding (copy from context, minimal compute).</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Variant</th><th>Draft source</th><th>Speedup</th><th>Quality loss</th><th>Setup complexity</th></tr>
+</thead>
+<tbody>
+<tr><td>Small draft model</td><td>Separate small LLM</td><td>2–3×</td><td>None (exact)</td><td>Medium</td></tr>
+<tr><td>Medusa</td><td>Extra draft heads</td><td>1.5–2×</td><td>None (exact)</td><td>Low</td></tr>
+<tr><td>EAGLE</td><td>Feature-level</td><td>3–4×</td><td>None (exact)</td><td>Medium</td></tr>
+<tr><td>Prompt lookup</td><td>Copies from prompt</td><td>1.5–2.5×</td><td>None (exact)</td><td>Very low</td></tr>
+</tbody>
+</table>
+</div>
+<p>Speculative decoding is especially effective for long outputs. Short completions don't benefit as much. Worth measuring on your workload.</p>
+</div>
+<!-- ── 6. ROUTING AND LOAD BALANCING ── -->
+<div class="section-block" id="routing">
+<div class="section-marker">06 — Multi-Replica Systems</div>
+<h2>Routing and Load Balancing</h2>
+<p>Production: deploy multiple replicas of your model. Need intelligent routing to maximize cache hit rates and throughput.</p>
+<p><strong>Strategies:</strong> Round-robin (simple, ignores load), least-connections (tracks active requests per replica), <strong>prefix-aware routing</strong> (send requests with same system prompt to same replica — huge cache hit rate improvement).</p>
+<p>For chatbots, prefix-aware routing is critical. System prompt appears in every request. If 100 requests with the same system prompt hit 100 different replicas, each one recomputes the system prompt's KV cache. Route to same replica, compute once, share across 100 requests.</p>
+<p><strong>Autoscaling:</strong> Scale replicas based on queue depth, not CPU/RAM. GPU serving is queue-depth-driven: requests queue up, replicas drain the queue. When queue depth &gt; threshold, scale up. When queue depth &lt; threshold, scale down.</p>
+<p><strong>Model routing by capability:</strong> Easy queries (classification, factual lookup) route to small, fast model. Hard queries (reasoning, analysis) route to large, slow model. A tiny router model classifies difficulty (&lt;100ms), then routes to appropriate model. Maximizes throughput, minimizes cost.</p>
+<div class="callout amber">
+<span class="callout-icon">⚠️</span>
+<span><strong>Prefix-aware routing can double KV cache hit rates in production.</strong> Critical optimization for chatbots. Implement a hash of the system prompt, route all requests with same hash to same replica.</span>
+</div>
+</div>
+<!-- ── 7. FRAMEWORK COMPARISON ── -->
+<div class="section-block" id="frameworks">
+<div class="section-marker">07 — Tools &amp; Selection</div>
+<h2>Framework Comparison and Selection</h2>
+<p>Mature open-source and proprietary serving frameworks exist. Each has strengths for different scenarios.</p>
+<div class="tools-grid">
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">vLLM</div>
+<div class="tool-desc">Most popular OSS serving. PagedAttention, continuous batching, tensor parallelism. Supports GPTQ, AWQ, FP8 quantization.</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">SGLang</div>
+<div class="tool-desc">Structured generation + serving. Native support for tree search, constrained generation, agent loops. FP8, GPTQ quantization.</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">TensorRT-LLM</div>
+<div class="tool-desc">NVIDIA's production framework. FP8, INT8 quantization. Complex to use, powerful performance. For teams with NVIDIA resources.</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">TGI (Text Generation Inference)</div>
+<div class="tool-desc">HuggingFace's framework. Built-in continuous batching. AWQ, GPTQ quantization. Solid default choice.</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">Ollama</div>
+<div class="tool-desc">Local/dev use only. Easy setup, GGUF quantization. Not suitable for production.</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">llama.cpp</div>
+<div class="tool-desc">C++ inference, CPU-optimized. GGUF format. Good for edge and local deployment.</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">Triton Inference Server</div>
+<div class="tool-desc">NVIDIA's orchestration layer. Supports multiple backends. Complex setup, powerful for large deployments.</div>
+</div>
+</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Framework</th><th>Best for</th><th>Quantization</th><th>Multi-GPU</th><th>Production-ready</th></tr>
+</thead>
+<tbody>
+<tr><td>vLLM</td><td>General OSS serving</td><td>GPTQ, AWQ, FP8</td><td>TP + PP</td><td>Yes</td></tr>
+<tr><td>SGLang</td><td>Structured outputs, agents</td><td>FP8, GPTQ</td><td>TP</td><td>Yes</td></tr>
+<tr><td>TRT-LLM</td><td>NVIDIA production</td><td>FP8, INT8</td><td>TP + PP</td><td>Yes (complex)</td></tr>
+<tr><td>TGI</td><td>HuggingFace models</td><td>AWQ, GPTQ</td><td>TP</td><td>Yes</td></tr>
+<tr><td>Ollama</td><td>Local/dev use</td><td>GGUF</td><td>Limited</td><td>No (dev only)</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Selection Guide</h3>
+<p><strong>Starting point:</strong> vLLM. Default choice. Mature, well-documented, supports most models and quantizations.</p>
+<p><strong>Need structured outputs:</strong> SGLang. Native grammar constraints, agents, tree search.</p>
+<p><strong>Maximum performance on NVIDIA:</strong> TensorRT-LLM. Complex, but squeezes every bit of performance.</p>
+<p><strong>Already using HuggingFace pipeline:</strong> TGI. Integrates naturally.</p>
+<p><strong>Local development:</strong> Ollama. Easy setup, not for production.</p>
+</div>
+<!-- ── REFERENCES ── -->
+<div class="section-block" id="references">
+<div class="section-marker">08 — Further Reading</div>
+<h2>References</h2>
+<div class="ref-group-title">Academic Papers</div>
+<ul class="refs-list">
+<li class="ref-item">
+<span class="ref-badge badge-paper">Paper</span>
         Lee, J. W. et al. (2022).
         <em>Orca: A Distributed Serving System for Transformer-Based Generative Models.</em>
         arXiv:2306.02212. —
         <a href="https://arxiv.org/abs/2306.02212" target="_blank">arxiv:2306.02212 ↗</a>
-      </li>
-      <li class="ref-item">
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li class="ref-item">
+<span class="ref-badge badge-paper">Paper</span>
         Zhou, W. et al. (2023).
         <em>vLLM: Easy, Fast, and Cheap LLM Serving with PagedAttention.</em>
         arXiv:2309.06180. —
         <a href="https://arxiv.org/abs/2309.06180" target="_blank">arxiv:2309.06180 ↗</a>
-      </li>
-      <li class="ref-item">
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li class="ref-item">
+<span class="ref-badge badge-paper">Paper</span>
         Leviathan, Y. et al. (2022).
         <em>Fast Transformer Decoding: One Write-Head is All You Need.</em>
         Speculative decoding. arXiv:2211.17192. —
         <a href="https://arxiv.org/abs/2211.17192" target="_blank">arxiv:2211.17192 ↗</a>
-      </li>
-      <li class="ref-item">
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li class="ref-item">
+<span class="ref-badge badge-paper">Paper</span>
         Zhang, S. et al. (2024).
         <em>EAGLE: Speculative Sampling Requires Rethinking Feature Prediction.</em>
         arXiv:2401.15077. —
         <a href="https://arxiv.org/abs/2401.15077" target="_blank">arxiv:2401.15077 ↗</a>
-      </li>
-      <li class="ref-item">
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li class="ref-item">
+<span class="ref-badge badge-paper">Paper</span>
         Lian, X. et al. (2023).
         <em>SGLang: Efficient Execution of Structured Language Model Programs.</em>
         arXiv:2312.07104. —
         <a href="https://arxiv.org/abs/2312.07104" target="_blank">arxiv:2312.07104 ↗</a>
-      </li>
-    </ul>
-
-    <div class="ref-group-title">Documentation &amp; Guides</div>
-    <ul class="refs-list">
-      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> vLLM Official Documentation. <a href="https://docs.vllm.ai" target="_blank">docs.vllm.ai ↗</a></li>
-      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> SGLang Documentation. <a href="https://sgl-project.github.io" target="_blank">sgl-project.github.io ↗</a></li>
-      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> TensorRT-LLM. <a href="https://nvidia.github.io/TensorRT-LLM" target="_blank">nvidia.github.io/TensorRT-LLM ↗</a></li>
-      <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> HuggingFace Text Generation Inference. <a href="https://huggingface.co/docs/text-generation-inference" target="_blank">huggingface.co/docs ↗</a></li>
-      <li class="ref-item"><span class="ref-badge badge-guide">Guide</span> NVIDIA Triton Inference Server. <a href="https://developer.nvidia.com/triton-inference-server" target="_blank">developer.nvidia.com ↗</a></li>
-    </ul>
-
-    <div class="ref-group-title">Practitioner Resources</div>
-    <ul class="refs-list">
-      <li class="ref-item">
-        <span class="ref-badge badge-blog">Blog</span>
+</li>
+</ul>
+<div class="ref-group-title">Documentation &amp; Guides</div>
+<ul class="refs-list">
+<li class="ref-item"><span class="ref-badge badge-docs">Docs</span> vLLM Official Documentation. <a href="https://docs.vllm.ai" target="_blank">docs.vllm.ai ↗</a></li>
+<li class="ref-item"><span class="ref-badge badge-docs">Docs</span> SGLang Documentation. <a href="https://sgl-project.github.io" target="_blank">sgl-project.github.io ↗</a></li>
+<li class="ref-item"><span class="ref-badge badge-docs">Docs</span> TensorRT-LLM. <a href="https://nvidia.github.io/TensorRT-LLM" target="_blank">nvidia.github.io/TensorRT-LLM ↗</a></li>
+<li class="ref-item"><span class="ref-badge badge-docs">Docs</span> HuggingFace Text Generation Inference. <a href="https://huggingface.co/docs/text-generation-inference" target="_blank">huggingface.co/docs ↗</a></li>
+<li class="ref-item"><span class="ref-badge badge-guide">Guide</span> NVIDIA Triton Inference Server. <a href="https://developer.nvidia.com/triton-inference-server" target="_blank">developer.nvidia.com ↗</a></li>
+</ul>
+<div class="ref-group-title">Practitioner Resources</div>
+<ul class="refs-list">
+<li class="ref-item">
+<span class="ref-badge badge-blog">Blog</span>
         NVIDIA. (2023). <em>Efficient LLM Inference with vLLM and PagedAttention.</em> —
         <a href="https://nvidia.com/blog" target="_blank">nvidia.com/blog ↗</a>
-      </li>
-      <li class="ref-item">
-        <span class="ref-badge badge-blog">Blog</span>
+</li>
+<li class="ref-item">
+<span class="ref-badge badge-blog">Blog</span>
         Together AI. (2024). <em>LLM Inference Cost and Performance Guide.</em> —
         <a href="https://www.together.ai/blog" target="_blank">together.ai/blog ↗</a>
-      </li>
-    </ul>
-  </div>
-
-  
-  <div class="section-block" id="learning-path">
-    <div class="section-marker">LEARNING PATH</div>
-    <h2>Learning Path</h2>
-    <p>LLM serving is its own engineering discipline. Here's the progression from first deployment to production-grade serving:</p>
-
-    <div class="flow-diagram">
-      <div class="flow-box">API call<span class="flow-label">OpenAI / Anthropic</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">Self-hosted vLLM<span class="flow-label">your own GPU</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">Continuous batching<span class="flow-label">throughput optimisation</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">Quantisation<span class="flow-label">memory + speed</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">Multi-GPU / KV cache<span class="flow-label">scale-out</span></div>
-    </div>
-
-    <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Start with a managed API</h4><p>OpenAI, Anthropic, or Google for your first 6 months in production. The operational overhead of self-hosting is real; validate the use case first.</p></div></div>
-    <div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Move to vLLM when cost justifies it</h4><p>At ~$500+/month on APIs for a specific workload, self-hosting Llama or Mistral on a rented A100 typically breaks even. vLLM is the default choice: continuous batching, PagedAttention, easy setup.</p></div></div>
-    <div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Learn the two serving regimes</h4><p>Prefill-heavy (long prompts, batch jobs): GPU-compute bound. Decode-heavy (interactive, streaming): GPU memory-bandwidth bound. Each has different optimisation levers.</p></div></div>
-    <div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Add speculative decoding for latency</h4><p>A small draft model proposes tokens; the large model verifies in parallel. Typical speedup: 2–3x TTFT with same quality. Supported natively in vLLM.</p></div></div>
-  </div>
-
+</li>
+</ul>
+</div>
+<div class="section-block" id="learning-path">
+<div class="section-marker">LEARNING PATH</div>
+<h2>Learning Path</h2>
+<p>LLM serving is its own engineering discipline. Here's the progression from first deployment to production-grade serving:</p>
+<div class="flow-diagram">
+<div class="flow-box">API call<span class="flow-label">OpenAI / Anthropic</span></div>
+<div class="flow-arrow">→</div>
+<div class="flow-box">Self-hosted vLLM<span class="flow-label">your own GPU</span></div>
+<div class="flow-arrow">→</div>
+<div class="flow-box">Continuous batching<span class="flow-label">throughput optimisation</span></div>
+<div class="flow-arrow">→</div>
+<div class="flow-box">Quantisation<span class="flow-label">memory + speed</span></div>
+<div class="flow-arrow">→</div>
+<div class="flow-box">Multi-GPU / KV cache<span class="flow-label">scale-out</span></div>
+</div>
+<div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Start with a managed API</h4><p>OpenAI, Anthropic, or Google for your first 6 months in production. The operational overhead of self-hosting is real; validate the use case first.</p></div></div>
+<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Move to vLLM when cost justifies it</h4><p>At ~$500+/month on APIs for a specific workload, self-hosting Llama or Mistral on a rented A100 typically breaks even. vLLM is the default choice: continuous batching, PagedAttention, easy setup.</p></div></div>
+<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Learn the two serving regimes</h4><p>Prefill-heavy (long prompts, batch jobs): GPU-compute bound. Decode-heavy (interactive, streaming): GPU memory-bandwidth bound. Each has different optimisation levers.</p></div></div>
+<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Add speculative decoding for latency</h4><p>A small draft model proposes tokens; the large model verifies in parallel. Typical speedup: 2–3x TTFT with same quality. Supported natively in vLLM.</p></div></div>
+</div>
 <footer class="page-footer">
-    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
-    <a id="footer-back" href="../index.html">← Back to mindmap</a>
-  </footer>
-  <script>
+<span>Part of the <a href="../index.html" id="footer-brand">GenAI Mindmap</a> — genai4a11.github.io</span>
+<a href="../index.html" id="footer-back">← Back to mindmap</a>
+</footer>
+<script>
     (function(){
       const from=new URLSearchParams(location.search).get('from');
       if(from){
@@ -838,12 +781,11 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
       }
     })();
   </script>
-
 </div>
 <nav class="concept-nav">
   <a class="concept-nav-prev" href="llm-internals.html">← LLM Internals</a>
   <span class="concept-nav-cat">Inference & Architecture</span>
   <a class="concept-nav-next" href="quantization.html">→ Model Quantization</a>
 </nav>
-</body>
+</div></body>
 </html>

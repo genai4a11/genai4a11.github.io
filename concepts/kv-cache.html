@@ -1,23 +1,24 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KV Cache Mechanics — GenAI Mindmap</title>
-  <meta name="description" content="How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="KV Cache Mechanics" />
-  <meta property="og:description" content="How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/kv-cache.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="KV Cache Mechanics" />
-  <meta name="twitter:description" content="How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory." />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/kv-cache.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KV Cache Mechanics — GenAI Mindmap</title>
+<meta content="How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="KV Cache Mechanics" property="og:title"/>
+<meta content="How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/kv-cache.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<meta content="summary" name="twitter:card"/>
+<meta content="KV Cache Mechanics" name="twitter:title"/>
+<meta content="How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory." name="twitter:description"/>
+<link href="https://genai4a11.github.io/concepts/kv-cache.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -415,7 +416,6 @@
   }
 }
 </script>
-
 <style>
 .flow-diagram{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:1.5rem 0;font-size:.9rem;}
 .flow-box{background:var(--bg);border:2px solid var(--accent);border-radius:.5rem;padding:.6rem 1rem;font-weight:600;text-align:center;min-width:100px;}
@@ -426,12 +426,11 @@
 .lp-body h4{margin:0 0 .25rem;font-size:1rem;}
 .lp-body p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.5;}
 </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-
 <nav>
-  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
-  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+<a class="nav-brand" href="../index.html" id="back-brand"><span class="dot">⬡</span> GenAI Mindmap</a>
+<a class="nav-back" href="../index.html" id="back-link">← Back to mindmap</a>
 </nav>
 <script>
   (function(){
@@ -443,57 +442,49 @@
     }
   })();
 </script>
-
 <!-- ── HERO ── -->
 <div class="hero">
-  <span class="hero-tag">Inference Optimization</span>
-  <h1>KV <em>Cache</em> Mechanics</h1>
-  <p class="hero-sub">How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory.</p>
-  <div class="hero-stats">
-    <div class="stat">
-      <span class="stat-num">O(n²) → O(n)</span>
-      <span class="stat-label">attention complexity</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">tokens saved</span>
-      <span class="stat-label">per token after prefill</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">memory vs speed</span>
-      <span class="stat-label">the core tension</span>
-    </div>
-  </div>
+<span class="hero-tag">Inference Optimization</span>
+<h1>KV <em>Cache</em> Mechanics</h1>
+<p class="hero-sub">How transformers avoid recomputing attention on every token — and how to tune it for throughput and memory.</p>
+<div class="hero-stats">
+<div class="stat">
+<span class="stat-num">O(n²) → O(n)</span>
+<span class="stat-label">attention complexity</span>
 </div>
-
+<div class="stat">
+<span class="stat-num">tokens saved</span>
+<span class="stat-label">per token after prefill</span>
+</div>
+<div class="stat">
+<span class="stat-num">memory vs speed</span>
+<span class="stat-label">the core tension</span>
+</div>
+</div>
+</div>
 <!-- ── BODY ── -->
 <div class="page-wrap">
-
-  <!-- TOC -->
-  <div class="toc-card">
-    <div class="toc-heading">Contents</div>
-    <ol class="toc-list">
-      <li><a href="#what-is-kv" data-num="1">What is the KV cache?</a></li>
-      <li><a href="#cache-growth" data-num="2">Cache growth and memory</a></li>
-      <li><a href="#gqa-mla" data-num="3">GQA and MLA variants</a></li>
-      <li><a href="#eviction" data-num="4">Cache eviction strategies</a></li>
-      <li><a href="#prefix-cache" data-num="5">Prefix caching</a></li>
-      <li><a href="#speculative" data-num="6">Speculative decoding</a></li>
-      <li><a href="#production-knobs" data-num="7">Production knobs</a></li>
-    </ol>
-  </div>
-
-  <!-- ── 1. WHAT IS THE KV CACHE? ── -->
-  <div class="section-block" id="what-is-kv">
-    <div class="section-marker">01 — Definition</div>
-    <h2>What Is the KV Cache?</h2>
-    <p>In transformer attention, every token computes Q (query), K (key), and V (value) matrices. On each decoding step, the model must compute attention over all previous tokens and the current token. Without caching, this means recomputing K and V for every token that has already been processed — O(n²) computation for a sequence of length n.</p>
-
-    <p>The KV cache stores pre-computed K and V matrices from all previous tokens. When a new token arrives, the model only computes its K and V, then attends over the cached KV from all past steps. This reduces the second and subsequent decoding steps from O(n) complexity to O(1) per token, making the amortized cost O(n).</p>
-
-    <p>The cache lives in GPU VRAM and is evicted when the context window fills or memory runs out. It is the primary bottleneck for long-context inference, often consuming more memory than the model weights themselves.</p>
-
-    <div class="example-box"><span class="verdict-dim">## KV Cache in Action</span>
-
+<!-- TOC -->
+<div class="toc-card">
+<div class="toc-heading">Contents</div>
+<ol class="toc-list">
+<li><a data-num="1" href="#what-is-kv">What is the KV cache?</a></li>
+<li><a data-num="2" href="#cache-growth">Cache growth and memory</a></li>
+<li><a data-num="3" href="#gqa-mla">GQA and MLA variants</a></li>
+<li><a data-num="4" href="#eviction">Cache eviction strategies</a></li>
+<li><a data-num="5" href="#prefix-cache">Prefix caching</a></li>
+<li><a data-num="6" href="#speculative">Speculative decoding</a></li>
+<li><a data-num="7" href="#production-knobs">Production knobs</a></li>
+</ol>
+</div>
+<!-- ── 1. WHAT IS THE KV CACHE? ── -->
+<div class="section-block" id="what-is-kv">
+<div class="section-marker">01 — Definition</div>
+<h2>What Is the KV Cache?</h2>
+<p>In transformer attention, every token computes Q (query), K (key), and V (value) matrices. On each decoding step, the model must compute attention over all previous tokens and the current token. Without caching, this means recomputing K and V for every token that has already been processed — O(n²) computation for a sequence of length n.</p>
+<p>The KV cache stores pre-computed K and V matrices from all previous tokens. When a new token arrives, the model only computes its K and V, then attends over the cached KV from all past steps. This reduces the second and subsequent decoding steps from O(n) complexity to O(1) per token, making the amortized cost O(n).</p>
+<p>The cache lives in GPU VRAM and is evicted when the context window fills or memory runs out. It is the primary bottleneck for long-context inference, often consuming more memory than the model weights themselves.</p>
+<div class="example-box"><span class="verdict-dim">## KV Cache in Action</span>
 <span class="verdict-dim">## Prefill phase (all input tokens at once):</span>
 keys   = []
 values = []
@@ -502,371 +493,320 @@ for token in input_tokens:
     keys.append(k)
     values.append(v)
 output = attention(queries, keys, values)  <span class="verdict-pass">← all at once, high throughput</span>
-
 <span class="verdict-dim">## Decoding phase (one token at a time):</span>
 for each new_token:
     k_new, v_new = compute_k_v(new_token)  <span class="verdict-pass">← only for new token</span>
     keys.append(k_new)                    <span class="verdict-pass">← cache grows</span>
     values.append(v_new)
     output = attention(query_new, keys, values)  <span class="verdict-pass">← reuse all cached KV</span></div>
-
-    <div class="callout green">
-      <span class="callout-icon">✓</span>
-      <span><strong>The speedup is enormous:</strong> without KV cache, decoding a 100-token sequence would require ~10,000 forward passes (1 + 2 + 3 + ... + 100). With cache, it's 100 forward passes (one per token). That's 100× faster.</span>
-    </div>
-  </div>
-
-  <!-- ── 2. CACHE GROWTH AND MEMORY BUDGET ── -->
-  <div class="section-block" id="cache-growth">
-    <div class="section-marker">02 — Memory Scaling</div>
-    <h2>Cache Growth and Memory Budget</h2>
-    <p>The KV cache grows linearly with sequence length. The formula for cache memory is:</p>
-
-    <p style="font-family: 'Fira Code', monospace; margin: 1rem 0; padding: 0.8rem; background: #f8fafc; border-left: 3px solid #4f46e5;">cache_bytes = 2 × layers × heads × head_dim × seq_len × 2 (for fp16)</p>
-
-    <p>The 2× factor accounts for both K and V. The final 2 is the byte size of fp16. For a 7B model with 32 layers, 32 heads, and 128-dim heads, caching a 2K-token sequence costs ~0.5 GB. At 128K tokens, it's 32 GB — larger than the model weights.</p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Model</th><th>Seq 2K</th><th>Seq 8K</th><th>Seq 32K</th><th>Seq 128K</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>7B (32L, 32H)</strong></td><td>0.5 GB</td><td>2 GB</td><td>8 GB</td><td>32 GB</td></tr>
-          <tr><td><strong>13B (40L, 40H)</strong></td><td>0.8 GB</td><td>3.2 GB</td><td>12.8 GB</td><td>51 GB</td></tr>
-          <tr><td><strong>70B (80L, 64H)</strong></td><td>3 GB</td><td>12 GB</td><td>48 GB</td><td>192 GB</td></tr>
-          <tr><td><strong>405B (126L, 128H)</strong></td><td>24 GB</td><td>96 GB</td><td>384 GB</td><td>OOM</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>This is why long-context requests are expensive and why serving systems enforce max_batch_tokens. A single batch of 16 requests × 128K-token context for a 70B model requires ~3 TB of GPU VRAM just for cache. Even sharding across multiple GPUs becomes challenging.</p>
-
-    <div class="callout amber">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>Budget VRAM for cache first, model second.</strong> A 70B model in fp16 is ~140 GB. If your GPU cluster has 320 GB total, that leaves only 180 GB for cache across the batch — enough for ~24 2K-token requests, but only 1-2 at 128K tokens.</span>
-    </div>
-  </div>
-
-  <!-- ── 3. GROUPED QUERY ATTENTION AND MLA ── -->
-  <div class="section-block" id="gqa-mla">
-    <div class="section-marker">03 — Attention Compression</div>
-    <h2>Grouped Query Attention and MLA</h2>
-    <p><strong>Grouped Query Attention (GQA)</strong> reduces cache size by sharing K and V heads across multiple Q heads. Instead of one K/V head per Q head (Full Multi-Head Attention), GQA uses one K/V head per group of Q heads — typically a group size of 8. This shrinks cache by 8×.</p>
-
-    <p><strong>Multi-Query Attention (MQA)</strong> is the extreme case: a single K/V head shared by all Q heads. Early models like Falcon and PaLM used MQA and saw modest quality drops but dramatic cache savings.</p>
-
-    <p><strong>MLA (Multi-Head Latent Attention, DeepSeek)</strong> takes compression further by projecting K/V into a low-rank latent space before caching. Only the compressed latent is stored, then decompressed at attention time. This can achieve 2–4× additional cache reduction compared to GQA.</p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Variant</th><th>K/V heads (for 32 Q heads)</th><th>Cache size vs MHA</th><th>Quality vs MHA</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>Full MHA</strong></td><td>32</td><td>100%</td><td>Baseline</td></tr>
-          <tr><td><strong>GQA (g=8)</strong></td><td>4</td><td>12.5%</td><td>≈ same</td></tr>
-          <tr><td><strong>MQA</strong></td><td>1</td><td>3.1%</td><td>Slight drop (≈1%)</td></tr>
-          <tr><td><strong>MLA (DeepSeek)</strong></td><td>1 (compressed)</td><td>5–8%</td><td>No drop (same quality)</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="callout green">
-      <span class="callout-icon">✓</span>
-      <span><strong>Most modern frontier models (Llama 3, Mistral, Gemma) use GQA as default.</strong> It's the sweet spot: cache savings of 8–12× with no measurable quality loss. MQA is rarely used now; MLA is promising but newer.</span>
-    </div>
-  </div>
-
-  <!-- ── 4. CACHE EVICTION STRATEGIES ── -->
-  <div class="section-block" id="eviction">
-    <div class="section-marker">04 — Memory Management</div>
-    <h2>Cache Eviction Strategies</h2>
-    <p>When context exceeds the window or cache fills up, something must be evicted. The strategy matters: drop the wrong tokens and the model loses crucial context (like the system prompt). Drop the right tokens and quality barely changes.</p>
-
-    <div class="methods-list">
-
-      <div class="method-card">
-        <div class="method-num">1</div>
-        <div class="method-body">
-          <h3>FIFO / Sliding Window <em>— oldest out</em></h3>
-          <p>When cache fills, discard the oldest tokens. Simplest to implement: just a circular buffer. But you lose document history and system prompts evaporate quickly.</p>
-          <ul>
-            <li>Pros: Trivial to implement, minimal overhead</li>
-            <li>Cons: Loses system prompt, hurts long-context tasks</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="method-card">
-        <div class="method-num">2</div>
-        <div class="method-body">
-          <h3>Heavy Hitter Oracle (H2O) <em>— attention-aware</em></h3>
-          <p>Track which tokens accumulated the highest cumulative attention scores across all layers. Keep those tokens, discard the rest. Retains "important" tokens automatically.</p>
-          <ul>
-            <li>Pros: Preserves semantically important tokens</li>
-            <li>Cons: Tracking attention scores adds overhead, may miss subtle dependencies</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="method-card">
-        <div class="method-num">3</div>
-        <div class="method-body">
-          <h3>StreamingLLM <em>— anchored window</em></h3>
-          <p>Always keep the first N tokens (system prompt, preamble) plus a sliding window of recent tokens. Combines both preservation of critical context and recent information.</p>
-          <ul>
-            <li>Pros: Preserves system prompt, recent context intact</li>
-            <li>Cons: Requires tuning window size and anchor size</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="method-card">
-        <div class="method-num">4</div>
-        <div class="method-body">
-          <h3>PagedAttention (vLLM) <em>— virtual memory</em></h3>
-          <p>Treat cache as virtual memory, organizing it into logical blocks that map to physical GPU/CPU memory. Supports swapping, sharing between requests, and zero-copy transfers.</p>
-          <ul>
-            <li>Pros: No fragmentation, enables prefix sharing, efficient batch packing</li>
-            <li>Cons: Implementation complexity, requires special software support</li>
-          </ul>
-        </div>
-      </div>
-
-    </div>
-
-    <h3>Eviction Strategy Comparison</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Strategy</th><th>Impl. Complexity</th><th>Memory Efficiency</th><th>Quality Preservation</th><th>Production Use</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>FIFO</strong></td><td>Very low</td><td>Good</td><td>Poor (loses context)</td><td>Legacy systems</td></tr>
-          <tr><td><strong>H2O</strong></td><td>Medium</td><td>Very good</td><td>Good</td><td>Research</td></tr>
-          <tr><td><strong>StreamingLLM</strong></td><td>Low</td><td>Good</td><td>Excellent</td><td>Emerging</td></tr>
-          <tr><td><strong>PagedAttention</strong></td><td>High</td><td>Excellent</td><td>Excellent</td><td>vLLM, state-of-art</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>PagedAttention (vLLM) is now the industry standard. Its virtual memory approach eliminates fragmentation and enables sharing of cache blocks across concurrent requests — crucial for batching efficiency.</p>
-  </div>
-
-  <!-- ── 5. PREFIX CACHING AND PROMPT REUSE ── -->
-  <div class="section-block" id="prefix-cache">
-    <div class="section-marker">05 — Amortization</div>
-    <h2>Prefix Caching and Prompt Reuse</h2>
-    <p>When many requests share an identical prefix (system prompt, few-shot examples, shared document), compute K/V once and reuse it across all requests. This amortizes the prefill cost and can reduce total tokens processed by 50–90% depending on prefix length.</p>
-
-    <p>SGLang, vLLM, and TensorRT-LLM all implement prefix cache (SGLang calls it "radix cache"). At scale, the savings are dramatic: a 100-token system prompt at 1000 requests/sec = 100K free tokens/sec that never need recomputation.</p>
-
-    <div class="example-box"><span class="verdict-dim">## Prefix Cache Hit Example</span>
-
+<div class="callout green">
+<span class="callout-icon">✓</span>
+<span><strong>The speedup is enormous:</strong> without KV cache, decoding a 100-token sequence would require ~10,000 forward passes (1 + 2 + 3 + ... + 100). With cache, it's 100 forward passes (one per token). That's 100× faster.</span>
+</div>
+</div>
+<!-- ── 2. CACHE GROWTH AND MEMORY BUDGET ── -->
+<div class="section-block" id="cache-growth">
+<div class="section-marker">02 — Memory Scaling</div>
+<h2>Cache Growth and Memory Budget</h2>
+<p>The KV cache grows linearly with sequence length. The formula for cache memory is:</p>
+<p style="font-family: 'Fira Code', monospace; margin: 1rem 0; padding: 0.8rem; background: #f8fafc; border-left: 3px solid #4f46e5;">cache_bytes = 2 × layers × heads × head_dim × seq_len × 2 (for fp16)</p>
+<p>The 2× factor accounts for both K and V. The final 2 is the byte size of fp16. For a 7B model with 32 layers, 32 heads, and 128-dim heads, caching a 2K-token sequence costs ~0.5 GB. At 128K tokens, it's 32 GB — larger than the model weights.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Model</th><th>Seq 2K</th><th>Seq 8K</th><th>Seq 32K</th><th>Seq 128K</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>7B (32L, 32H)</strong></td><td>0.5 GB</td><td>2 GB</td><td>8 GB</td><td>32 GB</td></tr>
+<tr><td><strong>13B (40L, 40H)</strong></td><td>0.8 GB</td><td>3.2 GB</td><td>12.8 GB</td><td>51 GB</td></tr>
+<tr><td><strong>70B (80L, 64H)</strong></td><td>3 GB</td><td>12 GB</td><td>48 GB</td><td>192 GB</td></tr>
+<tr><td><strong>405B (126L, 128H)</strong></td><td>24 GB</td><td>96 GB</td><td>384 GB</td><td>OOM</td></tr>
+</tbody>
+</table>
+</div>
+<p>This is why long-context requests are expensive and why serving systems enforce max_batch_tokens. A single batch of 16 requests × 128K-token context for a 70B model requires ~3 TB of GPU VRAM just for cache. Even sharding across multiple GPUs becomes challenging.</p>
+<div class="callout amber">
+<span class="callout-icon">⚠️</span>
+<span><strong>Budget VRAM for cache first, model second.</strong> A 70B model in fp16 is ~140 GB. If your GPU cluster has 320 GB total, that leaves only 180 GB for cache across the batch — enough for ~24 2K-token requests, but only 1-2 at 128K tokens.</span>
+</div>
+</div>
+<!-- ── 3. GROUPED QUERY ATTENTION AND MLA ── -->
+<div class="section-block" id="gqa-mla">
+<div class="section-marker">03 — Attention Compression</div>
+<h2>Grouped Query Attention and MLA</h2>
+<p><strong>Grouped Query Attention (GQA)</strong> reduces cache size by sharing K and V heads across multiple Q heads. Instead of one K/V head per Q head (Full Multi-Head Attention), GQA uses one K/V head per group of Q heads — typically a group size of 8. This shrinks cache by 8×.</p>
+<p><strong>Multi-Query Attention (MQA)</strong> is the extreme case: a single K/V head shared by all Q heads. Early models like Falcon and PaLM used MQA and saw modest quality drops but dramatic cache savings.</p>
+<p><strong>MLA (Multi-Head Latent Attention, DeepSeek)</strong> takes compression further by projecting K/V into a low-rank latent space before caching. Only the compressed latent is stored, then decompressed at attention time. This can achieve 2–4× additional cache reduction compared to GQA.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Variant</th><th>K/V heads (for 32 Q heads)</th><th>Cache size vs MHA</th><th>Quality vs MHA</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Full MHA</strong></td><td>32</td><td>100%</td><td>Baseline</td></tr>
+<tr><td><strong>GQA (g=8)</strong></td><td>4</td><td>12.5%</td><td>≈ same</td></tr>
+<tr><td><strong>MQA</strong></td><td>1</td><td>3.1%</td><td>Slight drop (≈1%)</td></tr>
+<tr><td><strong>MLA (DeepSeek)</strong></td><td>1 (compressed)</td><td>5–8%</td><td>No drop (same quality)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout green">
+<span class="callout-icon">✓</span>
+<span><strong>Most modern frontier models (Llama 3, Mistral, Gemma) use GQA as default.</strong> It's the sweet spot: cache savings of 8–12× with no measurable quality loss. MQA is rarely used now; MLA is promising but newer.</span>
+</div>
+</div>
+<!-- ── 4. CACHE EVICTION STRATEGIES ── -->
+<div class="section-block" id="eviction">
+<div class="section-marker">04 — Memory Management</div>
+<h2>Cache Eviction Strategies</h2>
+<p>When context exceeds the window or cache fills up, something must be evicted. The strategy matters: drop the wrong tokens and the model loses crucial context (like the system prompt). Drop the right tokens and quality barely changes.</p>
+<div class="methods-list">
+<div class="method-card">
+<div class="method-num">1</div>
+<div class="method-body">
+<h3>FIFO / Sliding Window <em>— oldest out</em></h3>
+<p>When cache fills, discard the oldest tokens. Simplest to implement: just a circular buffer. But you lose document history and system prompts evaporate quickly.</p>
+<ul>
+<li>Pros: Trivial to implement, minimal overhead</li>
+<li>Cons: Loses system prompt, hurts long-context tasks</li>
+</ul>
+</div>
+</div>
+<div class="method-card">
+<div class="method-num">2</div>
+<div class="method-body">
+<h3>Heavy Hitter Oracle (H2O) <em>— attention-aware</em></h3>
+<p>Track which tokens accumulated the highest cumulative attention scores across all layers. Keep those tokens, discard the rest. Retains "important" tokens automatically.</p>
+<ul>
+<li>Pros: Preserves semantically important tokens</li>
+<li>Cons: Tracking attention scores adds overhead, may miss subtle dependencies</li>
+</ul>
+</div>
+</div>
+<div class="method-card">
+<div class="method-num">3</div>
+<div class="method-body">
+<h3>StreamingLLM <em>— anchored window</em></h3>
+<p>Always keep the first N tokens (system prompt, preamble) plus a sliding window of recent tokens. Combines both preservation of critical context and recent information.</p>
+<ul>
+<li>Pros: Preserves system prompt, recent context intact</li>
+<li>Cons: Requires tuning window size and anchor size</li>
+</ul>
+</div>
+</div>
+<div class="method-card">
+<div class="method-num">4</div>
+<div class="method-body">
+<h3>PagedAttention (vLLM) <em>— virtual memory</em></h3>
+<p>Treat cache as virtual memory, organizing it into logical blocks that map to physical GPU/CPU memory. Supports swapping, sharing between requests, and zero-copy transfers.</p>
+<ul>
+<li>Pros: No fragmentation, enables prefix sharing, efficient batch packing</li>
+<li>Cons: Implementation complexity, requires special software support</li>
+</ul>
+</div>
+</div>
+</div>
+<h3>Eviction Strategy Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Strategy</th><th>Impl. Complexity</th><th>Memory Efficiency</th><th>Quality Preservation</th><th>Production Use</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>FIFO</strong></td><td>Very low</td><td>Good</td><td>Poor (loses context)</td><td>Legacy systems</td></tr>
+<tr><td><strong>H2O</strong></td><td>Medium</td><td>Very good</td><td>Good</td><td>Research</td></tr>
+<tr><td><strong>StreamingLLM</strong></td><td>Low</td><td>Good</td><td>Excellent</td><td>Emerging</td></tr>
+<tr><td><strong>PagedAttention</strong></td><td>High</td><td>Excellent</td><td>Excellent</td><td>vLLM, state-of-art</td></tr>
+</tbody>
+</table>
+</div>
+<p>PagedAttention (vLLM) is now the industry standard. Its virtual memory approach eliminates fragmentation and enables sharing of cache blocks across concurrent requests — crucial for batching efficiency.</p>
+</div>
+<!-- ── 5. PREFIX CACHING AND PROMPT REUSE ── -->
+<div class="section-block" id="prefix-cache">
+<div class="section-marker">05 — Amortization</div>
+<h2>Prefix Caching and Prompt Reuse</h2>
+<p>When many requests share an identical prefix (system prompt, few-shot examples, shared document), compute K/V once and reuse it across all requests. This amortizes the prefill cost and can reduce total tokens processed by 50–90% depending on prefix length.</p>
+<p>SGLang, vLLM, and TensorRT-LLM all implement prefix cache (SGLang calls it "radix cache"). At scale, the savings are dramatic: a 100-token system prompt at 1000 requests/sec = 100K free tokens/sec that never need recomputation.</p>
+<div class="example-box"><span class="verdict-dim">## Prefix Cache Hit Example</span>
 <span class="verdict-dim">Request 1:</span>
 System prompt (100 tokens) → compute K/V → cache hash
 Few-shot examples (50 tokens) → compute K/V → cache hash
 User query 1 (20 tokens) → compute K/V
 Output: 200 tokens
 <span class="verdict-pass">Total compute: 170 prefill tokens</span>
-
 <span class="verdict-dim">Request 2 (same system + examples, different query):</span>
 System prompt (100 tokens) → CACHE HIT! reuse stored K/V
 Few-shot examples (50 tokens) → CACHE HIT! reuse stored K/V
 User query 2 (15 tokens) → compute K/V
 Output: 150 tokens
 <span class="verdict-pass">Total compute: 15 prefill tokens (89% saved!)</span></div>
-
-    <div class="callout amber">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>Prefix cache hit rate depends on prefix consistency:</strong> vary the suffix (user query), keep the prefix identical. A system prompt that changes per request ruins caching. Design your prompts to maximize reusable prefixes.</span>
-    </div>
-
-    <h3>Prefix Cache Implementation</h3>
-    <p>The cache is keyed by a hash of the token sequence (e.g., SHA256 of concatenated embeddings). When a new prefix arrives, compute the hash; if it matches a prior request, retrieve the cached K/V blocks directly. Prefix caches are stored in a distributed KV store (Redis, Memcached) or local GPU cache depending on scale.</p>
-  </div>
-
-  <!-- ── 6. SPECULATIVE DECODING AND CACHE INTERACTION ── -->
-  <div class="section-block" id="speculative">
-    <div class="section-marker">06 — Latency Reduction</div>
-    <h2>Speculative Decoding and Cache Interaction</h2>
-    <p>Speculative decoding uses a smaller, faster draft model to propose k tokens. The target model then verifies all k+1 tokens (k proposed + 1 from the target) in a single forward pass. Tokens that match the draft are accepted; those that don't are discarded and resampled.</p>
-
-    <p>The KV cache interacts subtly: during the verification pass, the target model processes k+1 tokens in parallel, building cache for all of them. Accepted tokens' cache gets written; rejected tokens' cache is thrown away. This means you compute forward passes on tokens you ultimately discard, but the verification batch processes multiple tokens at once (higher GPU utilization).</p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Metric</th><th>Regular Decoding</th><th>Speculative (k=4)</th><th>Speedup</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Forward passes per output token</td><td>1</td><td>~1.1–1.25</td><td>0.8–0.9×</td></tr>
-          <tr><td>Latency (wall-clock)</td><td>1.0×</td><td>0.7–0.85×</td><td>1.2–1.4×</td></tr>
-          <tr><td>Throughput (tokens/sec)</td><td>1.0×</td><td>1.0–1.1×</td><td>1.0–1.1×</td></tr>
-          <tr><td>KV cache overhead</td><td>Baseline</td><td>+5–10% (temp buffers)</td><td>Acceptable</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p>Speculative decoding trades a small increase in compute (wasted on rejected tokens) for much lower latency. It's effective when the draft model is fast (e.g., a 1B model as draft, 70B as target) and when the acceptance rate is high (>70%, which happens with well-calibrated models). Streaming applications benefit significantly.</p>
-
-    <div class="callout green">
-      <span class="callout-icon">✓</span>
-      <span><strong>Speculative decoding is production-ready in vLLM, SGLang, and LM Studio.</strong> Use it for latency-sensitive workloads (chatbots, real-time APIs) with compatible model pairs (both models must share the same tokenizer).</span>
-    </div>
-  </div>
-
-  <!-- ── 7. PRODUCTION KNOBS ── -->
-  <div class="section-block" id="production-knobs">
-    <div class="section-marker">07 — Practical Tuning</div>
-    <h2>Production Knobs</h2>
-    <p>In production serving systems, KV cache behavior is controlled by a handful of key parameters. Understanding these lets you trade off throughput, latency, and quality for your workload.</p>
-
-    <div class="tools-grid">
-      <div class="tool-card">
-        <div class="tool-name">vLLM</div>
-        <div class="tool-category">Inference</div>
-        <div class="tool-desc">--max-model-len, --gpu-memory-utilization, --enable-prefix-caching, --num-gpu-blocks-override</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">SGLang</div>
-        <div class="tool-category">Inference</div>
-        <div class="tool-desc">mem_fraction, enable_prefix_cache, max_seq_len, disable_flashinfer</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">TensorRT-LLM</div>
-        <div class="tool-category">Inference</div>
-        <div class="tool-desc">--max_batch_size, --builder-opt-level, KV cache quantization</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">llama.cpp</div>
-        <div class="tool-category">Local</div>
-        <div class="tool-desc">-c (context size), --cache-type-k, --cache-type-v</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">MLC LLM</div>
-        <div class="tool-category">Inference</div>
-        <div class="tool-desc">kv_cache_quantization, flashinfer backend</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">Ollama</div>
-        <div class="tool-category">Local</div>
-        <div class="tool-desc">OLLAMA_NUM_GPU (GPU memory allocation)</div>
-      </div>
-    </div>
-
-    <h3>Key Tuning Parameters</h3>
-    <p><strong>--max-model-len:</strong> The maximum sequence length. Larger values allow longer contexts but consume more cache. Set based on your longest expected request + prefill buffer.</p>
-
-    <p><strong>--gpu-memory-utilization:</strong> Fraction of GPU VRAM to allocate to cache (typically 0.8–0.95). Higher = more concurrent requests, but risks OOM on bursts.</p>
-
-    <p><strong>--enable-prefix-caching:</strong> Enable automatic caching and reuse of identical prefixes. Essential for workloads with shared system prompts.</p>
-
-    <p><strong>--num-gpu-blocks-override:</strong> Manually specify cache block count. Useful for tuning to your VRAM constraints.</p>
-
-    <div class="callout rose">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>Increasing max_model_len without reducing batch size causes OOM.</strong> Always budget VRAM for KV cache first. If you want longer contexts, reduce batch size or increase GPU count proportionally. The formula: VRAM_needed = model_weights + (batch_size × seq_len × cache_bytes_per_token).</span>
-    </div>
-
-    <h3>Common Pitfalls</h3>
-    <ul style="padding-left: 1.2rem; margin: 1rem 0;">
-      <li style="margin: 0.5rem 0;">Setting max_model_len to 128K when your GPU has only 80GB VRAM and model is 70B. Result: OOM on first long request.</li>
-      <li style="margin: 0.5rem 0;">Using FIFO eviction (default in some old systems) and losing system prompts in long sessions.</li>
-      <li style="margin: 0.5rem 0;">Not enabling prefix caching when 80% of requests share the same system prompt.</li>
-      <li style="margin: 0.5rem 0;">Batching requests with vastly different sequence lengths (e.g., 100 tokens + 8K tokens). The cache pads to the longest, wasting VRAM on short requests.</li>
-    </ul>
-  </div>
-
-  <!-- ── REFERENCES ── -->
-  <div class="section-block" id="references">
-    <div class="section-marker">08 — Further Reading</div>
-    <h2>References</h2>
-
-    <div class="ref-group-title">Academic Papers</div>
-    <ul class="ref-list">
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+<div class="callout amber">
+<span class="callout-icon">⚠️</span>
+<span><strong>Prefix cache hit rate depends on prefix consistency:</strong> vary the suffix (user query), keep the prefix identical. A system prompt that changes per request ruins caching. Design your prompts to maximize reusable prefixes.</span>
+</div>
+<h3>Prefix Cache Implementation</h3>
+<p>The cache is keyed by a hash of the token sequence (e.g., SHA256 of concatenated embeddings). When a new prefix arrives, compute the hash; if it matches a prior request, retrieve the cached K/V blocks directly. Prefix caches are stored in a distributed KV store (Redis, Memcached) or local GPU cache depending on scale.</p>
+</div>
+<!-- ── 6. SPECULATIVE DECODING AND CACHE INTERACTION ── -->
+<div class="section-block" id="speculative">
+<div class="section-marker">06 — Latency Reduction</div>
+<h2>Speculative Decoding and Cache Interaction</h2>
+<p>Speculative decoding uses a smaller, faster draft model to propose k tokens. The target model then verifies all k+1 tokens (k proposed + 1 from the target) in a single forward pass. Tokens that match the draft are accepted; those that don't are discarded and resampled.</p>
+<p>The KV cache interacts subtly: during the verification pass, the target model processes k+1 tokens in parallel, building cache for all of them. Accepted tokens' cache gets written; rejected tokens' cache is thrown away. This means you compute forward passes on tokens you ultimately discard, but the verification batch processes multiple tokens at once (higher GPU utilization).</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Metric</th><th>Regular Decoding</th><th>Speculative (k=4)</th><th>Speedup</th></tr>
+</thead>
+<tbody>
+<tr><td>Forward passes per output token</td><td>1</td><td>~1.1–1.25</td><td>0.8–0.9×</td></tr>
+<tr><td>Latency (wall-clock)</td><td>1.0×</td><td>0.7–0.85×</td><td>1.2–1.4×</td></tr>
+<tr><td>Throughput (tokens/sec)</td><td>1.0×</td><td>1.0–1.1×</td><td>1.0–1.1×</td></tr>
+<tr><td>KV cache overhead</td><td>Baseline</td><td>+5–10% (temp buffers)</td><td>Acceptable</td></tr>
+</tbody>
+</table>
+</div>
+<p>Speculative decoding trades a small increase in compute (wasted on rejected tokens) for much lower latency. It's effective when the draft model is fast (e.g., a 1B model as draft, 70B as target) and when the acceptance rate is high (&gt;70%, which happens with well-calibrated models). Streaming applications benefit significantly.</p>
+<div class="callout green">
+<span class="callout-icon">✓</span>
+<span><strong>Speculative decoding is production-ready in vLLM, SGLang, and LM Studio.</strong> Use it for latency-sensitive workloads (chatbots, real-time APIs) with compatible model pairs (both models must share the same tokenizer).</span>
+</div>
+</div>
+<!-- ── 7. PRODUCTION KNOBS ── -->
+<div class="section-block" id="production-knobs">
+<div class="section-marker">07 — Practical Tuning</div>
+<h2>Production Knobs</h2>
+<p>In production serving systems, KV cache behavior is controlled by a handful of key parameters. Understanding these lets you trade off throughput, latency, and quality for your workload.</p>
+<div class="tools-grid">
+<div class="tool-card">
+<div class="tool-name">vLLM</div>
+<div class="tool-category">Inference</div>
+<div class="tool-desc">--max-model-len, --gpu-memory-utilization, --enable-prefix-caching, --num-gpu-blocks-override</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">SGLang</div>
+<div class="tool-category">Inference</div>
+<div class="tool-desc">mem_fraction, enable_prefix_cache, max_seq_len, disable_flashinfer</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">TensorRT-LLM</div>
+<div class="tool-category">Inference</div>
+<div class="tool-desc">--max_batch_size, --builder-opt-level, KV cache quantization</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">llama.cpp</div>
+<div class="tool-category">Local</div>
+<div class="tool-desc">-c (context size), --cache-type-k, --cache-type-v</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">MLC LLM</div>
+<div class="tool-category">Inference</div>
+<div class="tool-desc">kv_cache_quantization, flashinfer backend</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">Ollama</div>
+<div class="tool-category">Local</div>
+<div class="tool-desc">OLLAMA_NUM_GPU (GPU memory allocation)</div>
+</div>
+</div>
+<h3>Key Tuning Parameters</h3>
+<p><strong>--max-model-len:</strong> The maximum sequence length. Larger values allow longer contexts but consume more cache. Set based on your longest expected request + prefill buffer.</p>
+<p><strong>--gpu-memory-utilization:</strong> Fraction of GPU VRAM to allocate to cache (typically 0.8–0.95). Higher = more concurrent requests, but risks OOM on bursts.</p>
+<p><strong>--enable-prefix-caching:</strong> Enable automatic caching and reuse of identical prefixes. Essential for workloads with shared system prompts.</p>
+<p><strong>--num-gpu-blocks-override:</strong> Manually specify cache block count. Useful for tuning to your VRAM constraints.</p>
+<div class="callout rose">
+<span class="callout-icon">⚠️</span>
+<span><strong>Increasing max_model_len without reducing batch size causes OOM.</strong> Always budget VRAM for KV cache first. If you want longer contexts, reduce batch size or increase GPU count proportionally. The formula: VRAM_needed = model_weights + (batch_size × seq_len × cache_bytes_per_token).</span>
+</div>
+<h3>Common Pitfalls</h3>
+<ul style="padding-left: 1.2rem; margin: 1rem 0;">
+<li style="margin: 0.5rem 0;">Setting max_model_len to 128K when your GPU has only 80GB VRAM and model is 70B. Result: OOM on first long request.</li>
+<li style="margin: 0.5rem 0;">Using FIFO eviction (default in some old systems) and losing system prompts in long sessions.</li>
+<li style="margin: 0.5rem 0;">Not enabling prefix caching when 80% of requests share the same system prompt.</li>
+<li style="margin: 0.5rem 0;">Batching requests with vastly different sequence lengths (e.g., 100 tokens + 8K tokens). The cache pads to the longest, wasting VRAM on short requests.</li>
+</ul>
+</div>
+<!-- ── REFERENCES ── -->
+<div class="section-block" id="references">
+<div class="section-marker">08 — Further Reading</div>
+<h2>References</h2>
+<div class="ref-group-title">Academic Papers</div>
+<ul class="ref-list">
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Zhou, Y. et al. (2023).
         <em>Efficient Memory Management for Large Language Model Serving with PagedAttention.</em>
         arXiv:2309.06180. —
         <a href="https://arxiv.org/abs/2309.06180" target="_blank">arxiv:2309.06180 ↗</a>
-      </li>
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Dao, T., Fu, D., et al. (2023).
         <em>FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning.</em>
         arXiv:2307.08691. —
         <a href="https://arxiv.org/abs/2307.08691" target="_blank">arxiv:2307.08691 ↗</a>
-      </li>
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Xiao, G., et al. (2024).
         <em>Streaming LLM: Efficient Streaming Language Models with Attention Sinks.</em>
         arXiv:2309.17453. —
         <a href="https://arxiv.org/abs/2309.17453" target="_blank">arxiv:2309.17453 ↗</a>
-      </li>
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Zhang, W., et al. (2024).
         <em>H2O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models.</em>
         arXiv:2306.14048. —
         <a href="https://arxiv.org/abs/2306.14048" target="_blank">arxiv:2306.14048 ↗</a>
-      </li>
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Leviathan, Y., et al. (2023).
         <em>Fast Transformer Decoding: One Write-Head is All You Need.</em>
         arXiv:2211.15297. —
         <a href="https://arxiv.org/abs/2211.15297" target="_blank">arxiv:2211.15297 ↗</a>
-      </li>
-    </ul>
-
-    <div class="ref-group-title">Documentation &amp; Blogs</div>
-    <ul class="ref-list">
-      <li><span class="ref-badge badge-docs">Docs</span> vLLM PagedAttention. <a href="https://docs.vllm.ai/en/latest/models/supported_models.html" target="_blank">vllm.ai ↗</a></li>
-      <li><span class="ref-badge badge-blog">Blog</span> SGLang RadixAttention: Efficient Prefix Caching. <a href="https://lmsys.org/blog/2024-01-17-sglang/" target="_blank">lmsys.org ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Text Generation Inference KV Cache. <a href="https://huggingface.co/docs/text-generation-inference/conceptual/kvcache" target="_blank">huggingface.co ↗</a></li>
-      <li><span class="ref-badge badge-blog">Blog</span> Together AI: KV Cache Quantization for Efficient Serving. <a href="https://www.together.ai/blog/kv-cache-quantization" target="_blank">together.ai ↗</a></li>
-    </ul>
-
-    <div class="ref-group-title">Open Source Tools</div>
-    <ul class="ref-list">
-      <li><span class="ref-badge badge-guide">Guide</span> vLLM GitHub. <a href="https://github.com/vllm-project/vllm" target="_blank">github.com/vllm-project ↗</a></li>
-      <li><span class="ref-badge badge-guide">Guide</span> SGLang GitHub. <a href="https://github.com/hiyouga/LLaMA-Factory" target="_blank">github.com/hiyouga ↗</a></li>
-      <li><span class="ref-badge badge-guide">Guide</span> llama.cpp. <a href="https://github.com/ggerganov/llama.cpp" target="_blank">github.com/ggerganov ↗</a></li>
-    </ul>
-  </div>
-
-  
-  <div class="section-block" id="learning-path">
-    <div class="section-marker">LEARNING PATH</div>
-    <h2>Learning Path</h2>
-    <p>KV cache is an inference optimisation. Understand it in this order:</p>
-
-    <div class="flow-diagram">
-      <div class="flow-box">Transformer Attn<span class="flow-label">how attention works</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">Autoregressive Decode<span class="flow-label">token by token</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">KV Cache<span class="flow-label">cache K/V, skip recompute</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">PagedAttention<span class="flow-label">vLLM memory mgmt</span></div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-box">Prefix Caching<span class="flow-label">reuse across requests</span></div>
-    </div>
-
-    <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Understand autoregressive decoding first</h4><p>In transformer decoding, every new token attends to all previous tokens. Without caching, that's O(n²) work per token. See <a href="transformers.html">Transformers</a> for the attention mechanics.</p></div></div>
-    <div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Understand the memory-bandwidth tradeoff</h4><p>KV cache trades VRAM for speed. At 70B with FP16, the KV cache for a 32K context uses ~32GB. This is why quantised KV cache (FP8 or INT4) matters for long contexts.</p></div></div>
-    <div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Use vLLM — it handles all of this</h4><p>vLLM implements PagedAttention (non-contiguous KV blocks) and prefix caching out of the box. For most teams, "use vLLM" is the entire KV cache strategy.</p></div></div>
-  </div>
-
+</li>
+</ul>
+<div class="ref-group-title">Documentation &amp; Blogs</div>
+<ul class="ref-list">
+<li><span class="ref-badge badge-docs">Docs</span> vLLM PagedAttention. <a href="https://docs.vllm.ai/en/latest/models/supported_models.html" target="_blank">vllm.ai ↗</a></li>
+<li><span class="ref-badge badge-blog">Blog</span> SGLang RadixAttention: Efficient Prefix Caching. <a href="https://lmsys.org/blog/2024-01-17-sglang/" target="_blank">lmsys.org ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> HuggingFace Text Generation Inference KV Cache. <a href="https://huggingface.co/docs/text-generation-inference/conceptual/kvcache" target="_blank">huggingface.co ↗</a></li>
+<li><span class="ref-badge badge-blog">Blog</span> Together AI: KV Cache Quantization for Efficient Serving. <a href="https://www.together.ai/blog/kv-cache-quantization" target="_blank">together.ai ↗</a></li>
+</ul>
+<div class="ref-group-title">Open Source Tools</div>
+<ul class="ref-list">
+<li><span class="ref-badge badge-guide">Guide</span> vLLM GitHub. <a href="https://github.com/vllm-project/vllm" target="_blank">github.com/vllm-project ↗</a></li>
+<li><span class="ref-badge badge-guide">Guide</span> SGLang GitHub. <a href="https://github.com/hiyouga/LLaMA-Factory" target="_blank">github.com/hiyouga ↗</a></li>
+<li><span class="ref-badge badge-guide">Guide</span> llama.cpp. <a href="https://github.com/ggerganov/llama.cpp" target="_blank">github.com/ggerganov ↗</a></li>
+</ul>
+</div>
+<div class="section-block" id="learning-path">
+<div class="section-marker">LEARNING PATH</div>
+<h2>Learning Path</h2>
+<p>KV cache is an inference optimisation. Understand it in this order:</p>
+<div class="flow-diagram">
+<div class="flow-box">Transformer Attn<span class="flow-label">how attention works</span></div>
+<div class="flow-arrow">→</div>
+<div class="flow-box">Autoregressive Decode<span class="flow-label">token by token</span></div>
+<div class="flow-arrow">→</div>
+<div class="flow-box">KV Cache<span class="flow-label">cache K/V, skip recompute</span></div>
+<div class="flow-arrow">→</div>
+<div class="flow-box">PagedAttention<span class="flow-label">vLLM memory mgmt</span></div>
+<div class="flow-arrow">→</div>
+<div class="flow-box">Prefix Caching<span class="flow-label">reuse across requests</span></div>
+</div>
+<div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Understand autoregressive decoding first</h4><p>In transformer decoding, every new token attends to all previous tokens. Without caching, that's O(n²) work per token. See <a href="transformers.html">Transformers</a> for the attention mechanics.</p></div></div>
+<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Understand the memory-bandwidth tradeoff</h4><p>KV cache trades VRAM for speed. At 70B with FP16, the KV cache for a 32K context uses ~32GB. This is why quantised KV cache (FP8 or INT4) matters for long contexts.</p></div></div>
+<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Use vLLM — it handles all of this</h4><p>vLLM implements PagedAttention (non-contiguous KV blocks) and prefix caching out of the box. For most teams, "use vLLM" is the entire KV cache strategy.</p></div></div>
+</div>
 <footer class="page-footer">
-    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
-    <a id="footer-back" href="../index.html">← Back to mindmap</a>
-  </footer>
-  <script>
+<span>Part of the <a href="../index.html" id="footer-brand">GenAI Mindmap</a> — genai4a11.github.io</span>
+<a href="../index.html" id="footer-back">← Back to mindmap</a>
+</footer>
+<script>
     (function(){
       const from=new URLSearchParams(location.search).get('from');
       if(from){
@@ -878,7 +818,6 @@ Output: 150 tokens
       }
     })();
   </script>
-
 </div>
 <nav class="concept-nav">
   <a class="concept-nav-prev" href="attention.html">← Attention Mechanisms</a>

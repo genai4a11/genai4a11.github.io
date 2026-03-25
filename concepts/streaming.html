@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LLM Streaming - GenAI Mindmap</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LLM Streaming - GenAI Mindmap</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
     :root {
       --indigo: #4f46e5;
       --blue: #2563eb;
@@ -339,88 +340,78 @@
       font-weight: 600;
     }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/><link href="https://genai4a11.github.io/concepts/streaming.html" rel="canonical"/><meta content="Deliver LLM responses token-by-token for responsive UIs. SSE, async iterators, and real-time client updates." name="description"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Production & Infra</span>
-    <h1><em>LLM Streaming</em></h1>
-    <p class="hero-sub">Deliver LLM responses token-by-token for responsive UIs. SSE, async iterators, and real-time client updates.</p>
-    <div class="hero-stats">
-      <div>
-        <div class="stat-num">SSE</div>
-        <div class="stat-label">Protocol</div>
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../concepts/index.html">← All Concepts</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Production &amp; Infra</span>
+<h1><em>LLM Streaming</em></h1>
+<p class="hero-sub">Deliver LLM responses token-by-token for responsive UIs. SSE, async iterators, and real-time client updates.</p>
+<div class="hero-stats">
+<div>
+<div class="stat-num">SSE</div>
+<div class="stat-label">Protocol</div>
+</div>
+<div>
+<div class="stat-num">Token-by-Token</div>
+<div class="stat-label">Delivery</div>
+</div>
+<div>
+<div class="stat-num">~10×</div>
+<div class="stat-label">Perceived Latency Improvement</div>
+</div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#section-1">Why Streaming Matters</a></li>
+<li><a data-num="02" href="#section-2">Server-Sent Events (SSE)</a></li>
+<li><a data-num="03" href="#section-3">Streaming with OpenAI SDK</a></li>
+<li><a data-num="04" href="#section-4">Streaming with Anthropic SDK</a></li>
+<li><a data-num="05" href="#section-5">Streaming in FastAPI</a></li>
+<li><a data-num="06" href="#section-6">Tool Call Streaming</a></li>
+<li><a data-num="07" href="#section-7">Client-Side Implementation</a></li>
+</ul>
+</div>
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>Why Streaming Matters</h2>
+<p>LLMs are slow. A typical request takes 2-5 seconds (TTFB) to return the first token, then 30-60+ seconds more to complete a full response. Users hate waiting. Streaming fixes perceived latency by showing progress.</p>
+<p><strong>TTFB vs TTLT vs TTC</strong></p>
+<ul>
+<li><strong>TTFB (Time to First Byte):</strong> Latency until first token arrives. ~2s for GPT-4. Without streaming, user sees blank screen until TTLT completes.</li>
+<li><strong>TTLT (Time to Last Token):</strong> Total time for full response. ~45s for a 500-token response at 11 tokens/sec.</li>
+<li><strong>TTC (Time to Comprehension):</strong> How long until user understands the answer. Streaming dramatically reduces this because users start reading at TTFB, not TTLT.</li>
+</ul>
+<p><strong>With Streaming vs Without</strong></p>
+<ul>
+<li><strong>Without streaming:</strong> Wait 2s (TTFB) → still waiting → 45s (TTLT) → finally see full response</li>
+<li><strong>With streaming:</strong> Wait 2s (TTFB) → see first token → read while tokens arrive → 45s (TTLT)</li>
+</ul>
+<p>Streaming doesn't reduce absolute latency, but it reduces perceived latency by ~10×. Users feel the response immediately.</p>
+<p><strong>When NOT to Stream</strong></p>
+<ul>
+<li>Batch processing (no user watching): Stream adds overhead without benefit</li>
+<li>Very short responses: Streaming overhead &gt; latency saved</li>
+<li>Structured outputs only (JSON): Stream while generating, parse when complete</li>
+<li>Tool calls that need full output: Can't call tools on partial JSON</li>
+</ul>
+<div class="callout blue">
+<strong>Core Insight:</strong> Streaming doesn't make LLMs faster—it makes users feel like they're faster. The moment a user sees tokens appearing, they stop watching the clock and start reading.
       </div>
-      <div>
-        <div class="stat-num">Token-by-Token</div>
-        <div class="stat-label">Delivery</div>
-      </div>
-      <div>
-        <div class="stat-num">~10×</div>
-        <div class="stat-label">Perceived Latency Improvement</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#section-1" data-num="01">Why Streaming Matters</a></li>
-        <li><a href="#section-2" data-num="02">Server-Sent Events (SSE)</a></li>
-        <li><a href="#section-3" data-num="03">Streaming with OpenAI SDK</a></li>
-        <li><a href="#section-4" data-num="04">Streaming with Anthropic SDK</a></li>
-        <li><a href="#section-5" data-num="05">Streaming in FastAPI</a></li>
-        <li><a href="#section-6" data-num="06">Tool Call Streaming</a></li>
-        <li><a href="#section-7" data-num="07">Client-Side Implementation</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="section-1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>Why Streaming Matters</h2>
-      <p>LLMs are slow. A typical request takes 2-5 seconds (TTFB) to return the first token, then 30-60+ seconds more to complete a full response. Users hate waiting. Streaming fixes perceived latency by showing progress.</p>
-
-      <p><strong>TTFB vs TTLT vs TTC</strong></p>
-      <ul>
-        <li><strong>TTFB (Time to First Byte):</strong> Latency until first token arrives. ~2s for GPT-4. Without streaming, user sees blank screen until TTLT completes.</li>
-        <li><strong>TTLT (Time to Last Token):</strong> Total time for full response. ~45s for a 500-token response at 11 tokens/sec.</li>
-        <li><strong>TTC (Time to Comprehension):</strong> How long until user understands the answer. Streaming dramatically reduces this because users start reading at TTFB, not TTLT.</li>
-      </ul>
-
-      <p><strong>With Streaming vs Without</strong></p>
-      <ul>
-        <li><strong>Without streaming:</strong> Wait 2s (TTFB) → still waiting → 45s (TTLT) → finally see full response</li>
-        <li><strong>With streaming:</strong> Wait 2s (TTFB) → see first token → read while tokens arrive → 45s (TTLT)</li>
-      </ul>
-
-      <p>Streaming doesn't reduce absolute latency, but it reduces perceived latency by ~10×. Users feel the response immediately.</p>
-
-      <p><strong>When NOT to Stream</strong></p>
-      <ul>
-        <li>Batch processing (no user watching): Stream adds overhead without benefit</li>
-        <li>Very short responses: Streaming overhead > latency saved</li>
-        <li>Structured outputs only (JSON): Stream while generating, parse when complete</li>
-        <li>Tool calls that need full output: Can't call tools on partial JSON</li>
-      </ul>
-
-      <div class="callout blue">
-        <strong>Core Insight:</strong> Streaming doesn't make LLMs faster—it makes users feel like they're faster. The moment a user sees tokens appearing, they stop watching the clock and start reading.
-      </div>
-    </div>
-
-    <div class="section-block" id="section-2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>Server-Sent Events (SSE)</h2>
-      <p>SSE is the HTTP standard for one-directional server-to-client streams over HTTP/1.1. Simple, no WebSocket complexity, built-in browser support.</p>
-
-      <p><strong>SSE Format</strong></p>
-      <p>Plain HTTP response with newline-delimited JSON objects:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>Server-Sent Events (SSE)</h2>
+<p>SSE is the HTTP standard for one-directional server-to-client streams over HTTP/1.1. Simple, no WebSocket complexity, built-in browser support.</p>
+<p><strong>SSE Format</strong></p>
+<p>Plain HTTP response with newline-delimited JSON objects:</p>
+<div class="example-box">
 HTTP/1.1 200 OK
 Content-Type: text/event-stream
 Cache-Control: no-cache
@@ -431,17 +422,15 @@ data: {"content":" there"}
 data: {"content":"."}
 data: [DONE]
       </div>
-
-      <p><strong>Anatomy of SSE Events</strong></p>
-      <ul>
-        <li><strong>data:</strong> Required. JSON or plain text payload</li>
-        <li><strong>event:</strong> Optional. Event type (default: "message")</li>
-        <li><strong>id:</strong> Optional. Event ID (for resume logic)</li>
-        <li><strong>retry:</strong> Optional. Milliseconds to wait before reconnect</li>
-      </ul>
-
-      <p><strong>OpenAI Streaming Format</strong></p>
-      <div class="example-box">
+<p><strong>Anatomy of SSE Events</strong></p>
+<ul>
+<li><strong>data:</strong> Required. JSON or plain text payload</li>
+<li><strong>event:</strong> Optional. Event type (default: "message")</li>
+<li><strong>id:</strong> Optional. Event ID (for resume logic)</li>
+<li><strong>retry:</strong> Optional. Milliseconds to wait before reconnect</li>
+</ul>
+<p><strong>OpenAI Streaming Format</strong></p>
+<div class="example-box">
 data: {"choices":[{"delta":{"content":"Hello"}}]}
 
 data: {"choices":[{"delta":{"content":" world"}}]}
@@ -453,18 +442,17 @@ data: [DONE]
 # 2. Delta contains only the new content token
 # 3. Last event is [DONE] sentinel (required for client parsers)
       </div>
-
-      <p><strong>Connection Management</strong></p>
-      <p>SSE auto-reconnects on disconnect (browser native):</p>
-      <div class="example-box">
+<p><strong>Connection Management</strong></p>
+<p>SSE auto-reconnects on disconnect (browser native):</p>
+<div class="example-box">
 eventSource = new EventSource("/stream")
 
-eventSource.onmessage = (event) => {
+eventSource.onmessage = (event) =&gt; {
     const data = JSON.parse(event.data)
     console.log(data.content)
 }
 
-eventSource.onerror = () => {
+eventSource.onerror = () =&gt; {
     console.log("Connection lost, retrying...")
     // Browser automatically retries (configurable)
 }
@@ -472,19 +460,16 @@ eventSource.onerror = () => {
 // Manual close
 eventSource.close()
       </div>
-
-      <div class="callout green">
-        <strong>Why SSE for LLMs:</strong> One-way (server → client) is perfect for LLM streams. No bidirectional messaging needed. Browser EventSource API has built-in reconnect. Far simpler than WebSocket.
+<div class="callout green">
+<strong>Why SSE for LLMs:</strong> One-way (server → client) is perfect for LLM streams. No bidirectional messaging needed. Browser EventSource API has built-in reconnect. Far simpler than WebSocket.
       </div>
-    </div>
-
-    <div class="section-block" id="section-3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>Streaming with OpenAI SDK</h2>
-      <p>OpenAI SDK supports streaming with a simple flag and async iterators.</p>
-
-      <p><strong>Synchronous Streaming</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Streaming with OpenAI SDK</h2>
+<p>OpenAI SDK supports streaming with a simple flag and async iterators.</p>
+<p><strong>Synchronous Streaming</strong></p>
+<div class="example-box">
 from openai import OpenAI
 
 client = OpenAI(api_key="sk-...")
@@ -498,9 +483,8 @@ with client.chat.completions.create(
         if chunk.choices[0].delta.content:
             print(chunk.choices[0].delta.content, end="", flush=True)
       </div>
-
-      <p><strong>Async Streaming</strong></p>
-      <div class="example-box">
+<p><strong>Async Streaming</strong></p>
+<div class="example-box">
 import asyncio
 from openai import AsyncOpenAI
 
@@ -519,10 +503,9 @@ async def stream_poem():
 
 asyncio.run(stream_poem())
       </div>
-
-      <p><strong>Getting Full Response While Streaming</strong></p>
-      <p>OpenAI SDK provides a convenience method to accumulate the full response:</p>
-      <div class="example-box">
+<p><strong>Getting Full Response While Streaming</strong></p>
+<p>OpenAI SDK provides a convenience method to accumulate the full response:</p>
+<div class="example-box">
 from openai import OpenAI
 
 client = OpenAI()
@@ -537,9 +520,8 @@ with client.chat.completions.create(
     print(f"Full text: {full_response.choices[0].message.content}")
     print(f"Usage: {full_response.usage}")
       </div>
-
-      <p><strong>With FastAPI Response Streaming</strong></p>
-      <div class="example-box">
+<p><strong>With FastAPI Response Streaming</strong></p>
+<div class="example-box">
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from openai import OpenAI
@@ -562,19 +544,16 @@ async def stream_endpoint(query: str):
     
     return StreamingResponse(generate(), media_type="text/event-stream")
       </div>
-
-      <div class="callout amber">
-        <strong>Chunk Structure:</strong> Each chunk has `.choices[0].delta` which is minimal—only includes the new content token. Use `if chunk.choices[0].delta.content:` to check for actual text (ignores None deltas).
+<div class="callout amber">
+<strong>Chunk Structure:</strong> Each chunk has `.choices[0].delta` which is minimal—only includes the new content token. Use `if chunk.choices[0].delta.content:` to check for actual text (ignores None deltas).
       </div>
-    </div>
-
-    <div class="section-block" id="section-4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>Streaming with Anthropic SDK</h2>
-      <p>Anthropic's streaming uses a context manager pattern and is similarly simple to OpenAI.</p>
-
-      <p><strong>Basic Streaming</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>Streaming with Anthropic SDK</h2>
+<p>Anthropic's streaming uses a context manager pattern and is similarly simple to OpenAI.</p>
+<p><strong>Basic Streaming</strong></p>
+<div class="example-box">
 from anthropic import Anthropic
 
 client = Anthropic(api_key="sk-ant-...")
@@ -589,9 +568,8 @@ with client.messages.stream(
     for text in stream.text_stream:
         print(text, end="", flush=True)
       </div>
-
-      <p><strong>Async Streaming</strong></p>
-      <div class="example-box">
+<p><strong>Async Streaming</strong></p>
+<div class="example-box">
 import asyncio
 from anthropic import AsyncAnthropic
 
@@ -610,9 +588,8 @@ async def stream_with_anthropic():
 
 asyncio.run(stream_with_anthropic())
       </div>
-
-      <p><strong>Accessing Final Message While Streaming</strong></p>
-      <div class="example-box">
+<p><strong>Accessing Final Message While Streaming</strong></p>
+<div class="example-box">
 from anthropic import Anthropic
 
 client = Anthropic()
@@ -628,9 +605,8 @@ with client.messages.stream(
     print(f"Stop reason: {full_message.stop_reason}")
     print(f"Usage: {full_message.usage}")
       </div>
-
-      <p><strong>With FastAPI</strong></p>
-      <div class="example-box">
+<p><strong>With FastAPI</strong></p>
+<div class="example-box">
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from anthropic import Anthropic
@@ -652,19 +628,16 @@ async def stream_endpoint(query: str):
     
     return StreamingResponse(generate(), media_type="text/event-stream")
       </div>
-
-      <div class="callout blue">
-        <strong>Anthropic vs OpenAI API:</strong> Anthropic's `.text_stream` directly yields text chunks (simpler than OpenAI's `.delta.content` extraction). Both are equally valid; pick whichever feels more natural.
+<div class="callout blue">
+<strong>Anthropic vs OpenAI API:</strong> Anthropic's `.text_stream` directly yields text chunks (simpler than OpenAI's `.delta.content` extraction). Both are equally valid; pick whichever feels more natural.
       </div>
-    </div>
-
-    <div class="section-block" id="section-5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>Streaming in FastAPI</h2>
-      <p>FastAPI makes it trivial to serve SSE streams to browsers with StreamingResponse.</p>
-
-      <p><strong>SSE Endpoint Template</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>Streaming in FastAPI</h2>
+<p>FastAPI makes it trivial to serve SSE streams to browsers with StreamingResponse.</p>
+<p><strong>SSE Endpoint Template</strong></p>
+<div class="example-box">
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from openai import OpenAI
@@ -700,9 +673,8 @@ async def stream_chat(query: str):
         }
     )
       </div>
-
-      <p><strong>CORS Headers for Browser Clients</strong></p>
-      <div class="example-box">
+<p><strong>CORS Headers for Browser Clients</strong></p>
+<div class="example-box">
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -720,10 +692,9 @@ app.add_middleware(
 async def stream_chat(query: str):
     # ... streaming logic
       </div>
-
-      <p><strong>JSON-formatted Streams</strong></p>
-      <p>If you want to send structured data alongside text:</p>
-      <div class="example-box">
+<p><strong>JSON-formatted Streams</strong></p>
+<p>If you want to send structured data alongside text:</p>
+<div class="example-box">
 @app.get("/stream-with-meta")
 async def stream_with_metadata(query: str):
     def generate():
@@ -749,22 +720,18 @@ async def stream_with_metadata(query: str):
     
     return StreamingResponse(generate(), media_type="text/event-stream")
       </div>
-
-      <div class="callout green">
-        <strong>Production Tip:</strong> Add `X-Accel-Buffering: no` header to prevent reverse proxies (Nginx, CloudFlare) from buffering SSE streams. Without this, users see large chunks at once instead of smooth token-by-token delivery.
+<div class="callout green">
+<strong>Production Tip:</strong> Add `X-Accel-Buffering: no` header to prevent reverse proxies (Nginx, CloudFlare) from buffering SSE streams. Without this, users see large chunks at once instead of smooth token-by-token delivery.
       </div>
-    </div>
-
-    <div class="section-block" id="section-6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>Tool Call Streaming</h2>
-      <p>LLMs can be interrupted mid-token-generation if they decide to call a tool. Streaming tool calls requires special handling.</p>
-
-      <p><strong>The Challenge</strong></p>
-      <p>When an LLM calls a tool, it returns JSON with tool name and arguments. But during streaming, the JSON arrives incomplete: `{"name": "get_weather"` → `{"name": "get_weather", "arguments": "{"location":"` → `... full JSON`.</p>
-
-      <p><strong>Streaming Agent with Tool Calls</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>Tool Call Streaming</h2>
+<p>LLMs can be interrupted mid-token-generation if they decide to call a tool. Streaming tool calls requires special handling.</p>
+<p><strong>The Challenge</strong></p>
+<p>When an LLM calls a tool, it returns JSON with tool name and arguments. But during streaming, the JSON arrives incomplete: `{"name": "get_weather"` → `{"name": "get_weather", "arguments": "{"location":"` → `... full JSON`.</p>
+<p><strong>Streaming Agent with Tool Calls</strong></p>
+<div class="example-box">
 from openai import OpenAI
 
 client = OpenAI()
@@ -797,10 +764,9 @@ for tool_call in tool_calls:
     arguments = json.loads(tool_call.function.arguments)
     result = execute_tool(tool_name, arguments)
       </div>
-
-      <p><strong>Accumulating Partial JSON Arguments</strong></p>
-      <p>Tool argument streaming arrives in pieces. Accumulate until complete:</p>
-      <div class="example-box">
+<p><strong>Accumulating Partial JSON Arguments</strong></p>
+<p>Tool argument streaming arrives in pieces. Accumulate until complete:</p>
+<div class="example-box">
 import json
 
 tool_call_args = ""
@@ -821,19 +787,16 @@ for chunk in stream:
                 # Still incomplete, wait for more
                 pass
       </div>
-
-      <div class="callout rose">
-        <strong>Tool Streaming Complexity:</strong> Unlike text streaming (where each chunk is instantly readable), tool call streaming requires buffering and JSON parsing. For better UX, consider not streaming tool calls—wait for the full response, then execute. Stream only for text responses.
+<div class="callout rose">
+<strong>Tool Streaming Complexity:</strong> Unlike text streaming (where each chunk is instantly readable), tool call streaming requires buffering and JSON parsing. For better UX, consider not streaming tool calls—wait for the full response, then execute. Stream only for text responses.
       </div>
-    </div>
-
-    <div class="section-block" id="section-7">
-      <div class="section-marker">SECTION 07</div>
-      <h2>Client-Side Implementation</h2>
-      <p>Browser-side JavaScript to consume SSE streams and update UI in real-time.</p>
-
-      <p><strong>Fetch with ReadableStream (Modern Approach)</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-7">
+<div class="section-marker">SECTION 07</div>
+<h2>Client-Side Implementation</h2>
+<p>Browser-side JavaScript to consume SSE streams and update UI in real-time.</p>
+<p><strong>Fetch with ReadableStream (Modern Approach)</strong></p>
+<div class="example-box">
 async function streamResponse(query) {
     const response = await fetch(`/stream-chat?query=${query}`);
     const reader = response.body.getReader();
@@ -863,20 +826,19 @@ async function streamResponse(query) {
 }
 
 // Usage
-document.getElementById("send-btn").addEventListener("click", () => {
+document.getElementById("send-btn").addEventListener("click", () =&gt; {
     const query = document.getElementById("input").value;
     streamResponse(query);
 });
       </div>
-
-      <p><strong>EventSource API (Simpler)</strong></p>
-      <div class="example-box">
+<p><strong>EventSource API (Simpler)</strong></p>
+<div class="example-box">
 function streamWithEventSource(query) {
     const eventSource = new EventSource(`/stream-chat?query=${query}`);
     const element = document.getElementById("response");
     element.textContent = "";
     
-    eventSource.onmessage = (event) => {
+    eventSource.onmessage = (event) =&gt; {
         if (event.data === "[DONE]") {
             eventSource.close();
             return;
@@ -884,20 +846,19 @@ function streamWithEventSource(query) {
         element.textContent += event.data;
     };
     
-    eventSource.onerror = () => {
+    eventSource.onerror = () =&gt; {
         console.error("Stream error");
         eventSource.close();
     };
 }
       </div>
-
-      <p><strong>React Hook for Streaming</strong></p>
-      <div class="example-box">
+<p><strong>React Hook for Streaming</strong></p>
+<div class="example-box">
 function useStreamChat() {
     const [response, setResponse] = useState("");
     const [loading, setLoading] = useState(false);
     
-    const stream = async (query) => {
+    const stream = async (query) =&gt; {
         setLoading(true);
         setResponse("");
         
@@ -905,16 +866,16 @@ function useStreamChat() {
             `/stream-chat?query=${encodeURIComponent(query)}`
         );
         
-        eventSource.onmessage = (event) => {
+        eventSource.onmessage = (event) =&gt; {
             if (event.data === "[DONE]") {
                 eventSource.close();
                 setLoading(false);
                 return;
             }
-            setResponse(prev => prev + event.data);
+            setResponse(prev =&gt; prev + event.data);
         };
         
-        eventSource.onerror = () => {
+        eventSource.onerror = () =&gt; {
             eventSource.close();
             setLoading(false);
         };
@@ -929,24 +890,23 @@ function ChatApp() {
     
     return (
         <div>
-            <button onClick={() => stream("Hello")}>
+<button =="" onclick="{()"> stream("Hello")}&gt;
                 {loading ? "Streaming..." : "Send"}
             </button>
-            <p>{response}</p>
-        </div>
+<p>{response}</p>
+</div>
     );
 }
       </div>
-
-      <p><strong>Error Handling & Reconnect</strong></p>
-      <div class="example-box">
+<p><strong>Error Handling &amp; Reconnect</strong></p>
+<div class="example-box">
 function robustStream(query, maxRetries = 3) {
     let retries = 0;
     
     function connect() {
         const eventSource = new EventSource(`/stream?query=${query}`);
         
-        eventSource.onmessage = (event) => {
+        eventSource.onmessage = (event) =&gt; {
             if (event.data === "[DONE]") {
                 eventSource.close();
                 retries = 0;  // Reset on success
@@ -955,9 +915,9 @@ function robustStream(query, maxRetries = 3) {
             }
         };
         
-        eventSource.onerror = () => {
+        eventSource.onerror = () =&gt; {
             eventSource.close();
-            if (retries < maxRetries) {
+            if (retries &lt; maxRetries) {
                 retries++;
                 console.log(`Retry ${retries}/${maxRetries}`);
                 setTimeout(connect, 1000 * retries);  // Exponential backoff
@@ -970,15 +930,13 @@ function robustStream(query, maxRetries = 3) {
     connect();
 }
       </div>
-
-      <div class="callout green">
-        <strong>EventSource vs Fetch:</strong> EventSource is simpler and has built-in reconnect logic. Use it for basic streaming. Use Fetch with ReadableStream when you need more control (custom headers, request body, binary data).
+<div class="callout green">
+<strong>EventSource vs Fetch:</strong> EventSource is simpler and has built-in reconnect logic. Use it for basic streaming. Use Fetch with ReadableStream when you need more control (custom headers, request body, binary data).
       </div>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap • Concept Index • Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • Concept Index • Last updated March 2026</p>
+</footer>
 </body>
 </html>

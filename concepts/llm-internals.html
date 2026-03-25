@@ -1,23 +1,24 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LLM Internals — GenAI Mindmap</title>
-  <meta name="description" content="Tokenization, context windows, sampling, and the mechanics that explain LLM behavior" />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="LLM Internals" />
-  <meta property="og:description" content="Tokenization, context windows, sampling, and the mechanics that explain LLM behavior" />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/llm-internals.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="LLM Internals" />
-  <meta name="twitter:description" content="Tokenization, context windows, sampling, and the mechanics that explain LLM behavior" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/llm-internals.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LLM Internals — GenAI Mindmap</title>
+<meta content="Tokenization, context windows, sampling, and the mechanics that explain LLM behavior" name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="LLM Internals" property="og:title"/>
+<meta content="Tokenization, context windows, sampling, and the mechanics that explain LLM behavior" property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/llm-internals.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<meta content="summary" name="twitter:card"/>
+<meta content="LLM Internals" name="twitter:title"/>
+<meta content="Tokenization, context windows, sampling, and the mechanics that explain LLM behavior" name="twitter:description"/>
+<link href="https://genai4a11.github.io/concepts/llm-internals.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -359,12 +360,11 @@
   }
 }
 </script>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-
 <nav>
-  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
-  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+<a class="nav-brand" href="../index.html" id="back-brand"><span class="dot">⬡</span> GenAI Mindmap</a>
+<a class="nav-back" href="../index.html" id="back-link">← Back to mindmap</a>
 </nav>
 <script>
   (function(){
@@ -376,63 +376,57 @@
     }
   })();
 </script>
-
 <!-- ── HERO ── -->
 <div class="hero">
-  <span class="hero-tag">HOW LLMS WORK</span>
-  <h1>LLM <em>Internals</em></h1>
-  <p class="hero-sub">Tokenization, context windows, sampling, and the mechanics that explain LLM behavior</p>
-  <div class="hero-stats">
-    <div class="stat">
-      <span class="stat-num">token ≠ word</span>
-      <span class="stat-label">the first thing to internalize</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">context = memory</span>
-      <span class="stat-label">the hard limit</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">temperature controls randomness</span>
-      <span class="stat-label">the key sampling knob</span>
-    </div>
-  </div>
+<span class="hero-tag">HOW LLMS WORK</span>
+<h1>LLM <em>Internals</em></h1>
+<p class="hero-sub">Tokenization, context windows, sampling, and the mechanics that explain LLM behavior</p>
+<div class="hero-stats">
+<div class="stat">
+<span class="stat-num">token ≠ word</span>
+<span class="stat-label">the first thing to internalize</span>
 </div>
-
+<div class="stat">
+<span class="stat-num">context = memory</span>
+<span class="stat-label">the hard limit</span>
+</div>
+<div class="stat">
+<span class="stat-num">temperature controls randomness</span>
+<span class="stat-label">the key sampling knob</span>
+</div>
+</div>
+</div>
 <!-- ── BODY ── -->
 <div class="page-wrap">
-
-  <!-- TOC -->
-  <div class="toc-card">
-    <div class="toc-heading">Contents</div>
-    <ol class="toc-list">
-      <li><a href="#tokenization" data-num="1">Tokenization</a></li>
-      <li><a href="#context-window" data-num="2">Context window</a></li>
-      <li><a href="#next-token" data-num="3">Next-token prediction</a></li>
-      <li><a href="#sampling" data-num="4">Sampling strategies</a></li>
-      <li><a href="#logprobs" data-num="5">Logprobs & calibration</a></li>
-      <li><a href="#system-prompts" data-num="6">System prompts & roles</a></li>
-      <li><a href="#stop-tokens" data-num="7">Stop tokens & limits</a></li>
-    </ol>
-  </div>
-
-  <!-- ── 1. TOKENIZATION ── -->
-  <div class="section-block" id="tokenization">
-    <div class="section-marker">01 — TEXT TO TOKENS</div>
-    <h2>Tokenization: Text to Tokens</h2>
-    <p>LLMs don't see characters or words — they see tokens (subword units from BPE or WordPiece). Understanding tokenization is foundational because it determines how text enters the model, affects cost, and can introduce subtle bugs.</p>
-
-    <h3>Byte-Pair Encoding (BPE)</h3>
-    <p>BPE merges the most frequent adjacent byte pairs until the vocabulary size is reached. Vocabulary typically contains 32K–200K tokens depending on the model. After training on massive text corpora, BPE learns to encode common subwords efficiently:</p>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;">1 token ≈ 0.75 words in English on average</li>
-      <li style="margin: 0.5rem 0;">"tokenization" = 3 tokens</li>
-      <li style="margin: 0.5rem 0;">"hello" = 1 token</li>
-      <li style="margin: 0.5rem 0;">"antidisestablishmentarianism" = 8 tokens</li>
-    </ul>
-    <p>Rare words, non-English text, and code tokenize less efficiently → more tokens → higher cost and longer context usage.</p>
-
-    <h3>Example: Tokenizing with tiktoken</h3>
-    <div class="example-box">import tiktoken
+<!-- TOC -->
+<div class="toc-card">
+<div class="toc-heading">Contents</div>
+<ol class="toc-list">
+<li><a data-num="1" href="#tokenization">Tokenization</a></li>
+<li><a data-num="2" href="#context-window">Context window</a></li>
+<li><a data-num="3" href="#next-token">Next-token prediction</a></li>
+<li><a data-num="4" href="#sampling">Sampling strategies</a></li>
+<li><a data-num="5" href="#logprobs">Logprobs &amp; calibration</a></li>
+<li><a data-num="6" href="#system-prompts">System prompts &amp; roles</a></li>
+<li><a data-num="7" href="#stop-tokens">Stop tokens &amp; limits</a></li>
+</ol>
+</div>
+<!-- ── 1. TOKENIZATION ── -->
+<div class="section-block" id="tokenization">
+<div class="section-marker">01 — TEXT TO TOKENS</div>
+<h2>Tokenization: Text to Tokens</h2>
+<p>LLMs don't see characters or words — they see tokens (subword units from BPE or WordPiece). Understanding tokenization is foundational because it determines how text enters the model, affects cost, and can introduce subtle bugs.</p>
+<h3>Byte-Pair Encoding (BPE)</h3>
+<p>BPE merges the most frequent adjacent byte pairs until the vocabulary size is reached. Vocabulary typically contains 32K–200K tokens depending on the model. After training on massive text corpora, BPE learns to encode common subwords efficiently:</p>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;">1 token ≈ 0.75 words in English on average</li>
+<li style="margin: 0.5rem 0;">"tokenization" = 3 tokens</li>
+<li style="margin: 0.5rem 0;">"hello" = 1 token</li>
+<li style="margin: 0.5rem 0;">"antidisestablishmentarianism" = 8 tokens</li>
+</ul>
+<p>Rare words, non-English text, and code tokenize less efficiently → more tokens → higher cost and longer context usage.</p>
+<h3>Example: Tokenizing with tiktoken</h3>
+<div class="example-box">import tiktoken
 
 enc = tiktoken.encoding_for_model("gpt-4o")
 text = "The quick brown fox jumps over the lazy dog."
@@ -447,63 +441,54 @@ decoded = enc.decode(tokens)
 # Chinese text tokenizes differently
 chinese = "快速的棕色狐狸"
 print(len(enc.encode(chinese)))  # ~7 tokens for 7 chars</div>
-
-    <div class="callout amber">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>Tokenization artifacts cause subtle bugs.</strong> "9.11 > 9.9" is often answered incorrectly because "9", ".", "11" are separate tokens — the model sees numbers as strings, not values.</span>
-    </div>
-  </div>
-
-  <!-- ── 2. CONTEXT WINDOW ── -->
-  <div class="section-block" id="context-window">
-    <div class="section-marker">02 — THE WORKING MEMORY</div>
-    <h2>Context Window: The Working Memory</h2>
-    <p>Context window = total token budget for input + output in a single forward pass. Everything the model "knows" about your task must fit in the context window — there is no other memory during inference.</p>
-
-    <h3>Context Lengths Across Models</h3>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;">GPT-4o: 128K tokens</li>
-      <li style="margin: 0.5rem 0;">Claude 3.5 Sonnet: 200K tokens</li>
-      <li style="margin: 0.5rem 0;">Gemini 1.5 Pro: 1M tokens</li>
-      <li style="margin: 0.5rem 0;">Llama 3.1: 128K tokens</li>
-      <li style="margin: 0.5rem 0;">Mistral Large: 128K tokens</li>
-    </ul>
-
-    <h3>Lost in the Middle Effect</h3>
-    <p>Research by Liu et al. (2023) shows that retrieval accuracy degrades for content in the middle of long contexts. Content at the start and end is remembered better. This has important implications for prompt engineering with long documents.</p>
-
-    <h3>Context Window Comparison Across Use Cases</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Context needed</th><th>Example task</th><th>Suitable models</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>4K–8K</td><td>Single document QA, short chat</td><td>All models</td></tr>
-          <tr><td>32K</td><td>Long document, book chapter</td><td>GPT-4o, Claude, Gemini</td></tr>
-          <tr><td>128K</td><td>Full codebase, long report</td><td>GPT-4o, Claude 3.5, Llama 3.1</td></tr>
-          <tr><td>1M+</td><td>Entire novel, large repo</td><td>Gemini 1.5, Claude 3.5 (200K)</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="callout rose">
-      <span class="callout-icon">💡</span>
-      <span><strong>Long context does not mean infinite memory.</strong> Cost scales linearly with token count. A 1M-token request costs ~$2.50 with Gemini 1.5 Flash. Always compress before expanding context.</span>
-    </div>
-  </div>
-
-  <!-- ── 3. NEXT-TOKEN PREDICTION ── -->
-  <div class="section-block" id="next-token">
-    <div class="section-marker">03 — HOW LLMS GENERATE</div>
-    <h2>Next-Token Prediction: How LLMs Generate</h2>
-    <p>Training objective: predict the next token given all previous tokens. That's it. Generalization, reasoning, and instruction-following all emerge from this simple objective.</p>
-
-    <h3>Autoregressive Generation</h3>
-    <p>The generation process is sequential: generate token 1 → append to context → generate token 2 → ... → stop token or max_tokens reached. Each token is sampled from a probability distribution over the vocabulary (~100K tokens). The sampling strategy determines which token to pick from that distribution.</p>
-
-    <h3>Manual Token-by-Token Generation</h3>
-    <div class="example-box">from openai import OpenAI
+<div class="callout amber">
+<span class="callout-icon">⚠️</span>
+<span><strong>Tokenization artifacts cause subtle bugs.</strong> "9.11 &gt; 9.9" is often answered incorrectly because "9", ".", "11" are separate tokens — the model sees numbers as strings, not values.</span>
+</div>
+</div>
+<!-- ── 2. CONTEXT WINDOW ── -->
+<div class="section-block" id="context-window">
+<div class="section-marker">02 — THE WORKING MEMORY</div>
+<h2>Context Window: The Working Memory</h2>
+<p>Context window = total token budget for input + output in a single forward pass. Everything the model "knows" about your task must fit in the context window — there is no other memory during inference.</p>
+<h3>Context Lengths Across Models</h3>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;">GPT-4o: 128K tokens</li>
+<li style="margin: 0.5rem 0;">Claude 3.5 Sonnet: 200K tokens</li>
+<li style="margin: 0.5rem 0;">Gemini 1.5 Pro: 1M tokens</li>
+<li style="margin: 0.5rem 0;">Llama 3.1: 128K tokens</li>
+<li style="margin: 0.5rem 0;">Mistral Large: 128K tokens</li>
+</ul>
+<h3>Lost in the Middle Effect</h3>
+<p>Research by Liu et al. (2023) shows that retrieval accuracy degrades for content in the middle of long contexts. Content at the start and end is remembered better. This has important implications for prompt engineering with long documents.</p>
+<h3>Context Window Comparison Across Use Cases</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Context needed</th><th>Example task</th><th>Suitable models</th></tr>
+</thead>
+<tbody>
+<tr><td>4K–8K</td><td>Single document QA, short chat</td><td>All models</td></tr>
+<tr><td>32K</td><td>Long document, book chapter</td><td>GPT-4o, Claude, Gemini</td></tr>
+<tr><td>128K</td><td>Full codebase, long report</td><td>GPT-4o, Claude 3.5, Llama 3.1</td></tr>
+<tr><td>1M+</td><td>Entire novel, large repo</td><td>Gemini 1.5, Claude 3.5 (200K)</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout rose">
+<span class="callout-icon">💡</span>
+<span><strong>Long context does not mean infinite memory.</strong> Cost scales linearly with token count. A 1M-token request costs ~$2.50 with Gemini 1.5 Flash. Always compress before expanding context.</span>
+</div>
+</div>
+<!-- ── 3. NEXT-TOKEN PREDICTION ── -->
+<div class="section-block" id="next-token">
+<div class="section-marker">03 — HOW LLMS GENERATE</div>
+<h2>Next-Token Prediction: How LLMs Generate</h2>
+<p>Training objective: predict the next token given all previous tokens. That's it. Generalization, reasoning, and instruction-following all emerge from this simple objective.</p>
+<h3>Autoregressive Generation</h3>
+<p>The generation process is sequential: generate token 1 → append to context → generate token 2 → ... → stop token or max_tokens reached. Each token is sampled from a probability distribution over the vocabulary (~100K tokens). The sampling strategy determines which token to pick from that distribution.</p>
+<h3>Manual Token-by-Token Generation</h3>
+<div class="example-box">from openai import OpenAI
 client = OpenAI()
 
 # Stream tokens as they are generated
@@ -513,40 +498,36 @@ with client.chat.completions.stream(
 ) as stream:
     for text in stream.text_stream:
         print(text, end="", flush=True)</div>
-  </div>
-
-  <!-- ── 4. SAMPLING STRATEGIES ── -->
-  <div class="section-block" id="sampling">
-    <div class="section-marker">04 — CONTROLLING RANDOMNESS</div>
-    <h2>Sampling Strategies</h2>
-    <p>Once the model outputs a probability distribution over tokens, we need to decide which token to pick. Different sampling strategies create different behaviors.</p>
-
-    <h3>Core Sampling Methods</h3>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;"><strong>Temperature:</strong> scales logits before softmax. T=0 → always pick highest-probability token (greedy). T=1 → sample from raw distribution. T>1 → more random.</li>
-      <li style="margin: 0.5rem 0;"><strong>Top-p (nucleus sampling):</strong> sample from smallest set of tokens whose cumulative probability ≥ p. p=0.9 → ignore long tail of low-probability tokens.</li>
-      <li style="margin: 0.5rem 0;"><strong>Top-k:</strong> sample only from top-k highest probability tokens. k=50 is common.</li>
-    </ul>
-
-    <h3>Sampling Strategy Comparison</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Strategy</th><th>Deterministic</th><th>Diversity</th><th>Use case</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Greedy (T=0)</td><td>Yes</td><td>None</td><td>Exact extraction, structured output</td></tr>
-          <tr><td>Temperature only</td><td>No</td><td>Controlled</td><td>General chat, creative</td></tr>
-          <tr><td>Top-p (0.9)</td><td>No</td><td>Controlled</td><td>Standard production default</td></tr>
-          <tr><td>Top-k (50)</td><td>No</td><td>Controlled</td><td>Alternative to top-p</td></tr>
-          <tr><td>T=1, top-p=1</td><td>No</td><td>Max</td><td>Brainstorming, diversity</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Temperature in Action</h3>
-    <p>Same prompt, different temperatures show dramatically different outputs:</p>
-    <div class="example-box">Prompt: "The sky is"
+</div>
+<!-- ── 4. SAMPLING STRATEGIES ── -->
+<div class="section-block" id="sampling">
+<div class="section-marker">04 — CONTROLLING RANDOMNESS</div>
+<h2>Sampling Strategies</h2>
+<p>Once the model outputs a probability distribution over tokens, we need to decide which token to pick. Different sampling strategies create different behaviors.</p>
+<h3>Core Sampling Methods</h3>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;"><strong>Temperature:</strong> scales logits before softmax. T=0 → always pick highest-probability token (greedy). T=1 → sample from raw distribution. T&gt;1 → more random.</li>
+<li style="margin: 0.5rem 0;"><strong>Top-p (nucleus sampling):</strong> sample from smallest set of tokens whose cumulative probability ≥ p. p=0.9 → ignore long tail of low-probability tokens.</li>
+<li style="margin: 0.5rem 0;"><strong>Top-k:</strong> sample only from top-k highest probability tokens. k=50 is common.</li>
+</ul>
+<h3>Sampling Strategy Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Strategy</th><th>Deterministic</th><th>Diversity</th><th>Use case</th></tr>
+</thead>
+<tbody>
+<tr><td>Greedy (T=0)</td><td>Yes</td><td>None</td><td>Exact extraction, structured output</td></tr>
+<tr><td>Temperature only</td><td>No</td><td>Controlled</td><td>General chat, creative</td></tr>
+<tr><td>Top-p (0.9)</td><td>No</td><td>Controlled</td><td>Standard production default</td></tr>
+<tr><td>Top-k (50)</td><td>No</td><td>Controlled</td><td>Alternative to top-p</td></tr>
+<tr><td>T=1, top-p=1</td><td>No</td><td>Max</td><td>Brainstorming, diversity</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Temperature in Action</h3>
+<p>Same prompt, different temperatures show dramatically different outputs:</p>
+<div class="example-box">Prompt: "The sky is"
 
 T=0 (greedy):    "blue"  (always, deterministic)
 T=0.7 (default): "a beautiful shade of blue" or "painted with clouds" or "clear today"
@@ -556,27 +537,22 @@ Usage guide:
   T=0 for: JSON extraction, code generation, classification
   T=0.7 for: default chat, summarization
   T=1.0+ for: creative writing, brainstorming</div>
-
-    <div class="callout green">
-      <span class="callout-icon">✓</span>
-      <span><strong>For structured output (JSON mode, function calling), always use T=0 or near-zero.</strong> Sampling randomness causes JSON parse failures and function call errors.</span>
-    </div>
-  </div>
-
-  <!-- ── 5. LOGPROBS ── -->
-  <div class="section-block" id="logprobs">
-    <div class="section-marker">05 — CONFIDENCE AND UNCERTAINTY</div>
-    <h2>Logprobs and Calibration</h2>
-    <p>Models can expose log-probabilities for each output token. This is useful for: confidence estimation, multiple choice evaluation, re-ranking candidate responses, and detecting when a model is uncertain.</p>
-
-    <h3>What is Calibration?</h3>
-    <p>A well-calibrated model's stated 80% confidence should correspond to 80% actual accuracy. Many LLMs are overconfident — they claim high certainty on tasks they actually fail at.</p>
-
-    <h3>Token Probability for Classification</h3>
-    <p>Instead of asking a model "Is this positive or negative?", feed "Positive" and "Negative" as candidate tokens and compare their logprobs. This is more reliable than asking the model to say one or the other, because it reduces the model's degrees of freedom.</p>
-
-    <h3>Example: Using Logprobs for Classification</h3>
-    <div class="example-box">from openai import OpenAI
+<div class="callout green">
+<span class="callout-icon">✓</span>
+<span><strong>For structured output (JSON mode, function calling), always use T=0 or near-zero.</strong> Sampling randomness causes JSON parse failures and function call errors.</span>
+</div>
+</div>
+<!-- ── 5. LOGPROBS ── -->
+<div class="section-block" id="logprobs">
+<div class="section-marker">05 — CONFIDENCE AND UNCERTAINTY</div>
+<h2>Logprobs and Calibration</h2>
+<p>Models can expose log-probabilities for each output token. This is useful for: confidence estimation, multiple choice evaluation, re-ranking candidate responses, and detecting when a model is uncertain.</p>
+<h3>What is Calibration?</h3>
+<p>A well-calibrated model's stated 80% confidence should correspond to 80% actual accuracy. Many LLMs are overconfident — they claim high certainty on tasks they actually fail at.</p>
+<h3>Token Probability for Classification</h3>
+<p>Instead of asking a model "Is this positive or negative?", feed "Positive" and "Negative" as candidate tokens and compare their logprobs. This is more reliable than asking the model to say one or the other, because it reduces the model's degrees of freedom.</p>
+<h3>Example: Using Logprobs for Classification</h3>
+<div class="example-box">from openai import OpenAI
 import math
 client = OpenAI()
 
@@ -594,142 +570,128 @@ for t in top_tokens:
     print(f"{t.token}: {prob:.3f}")
 # Positive: 0.987
 # Negative: 0.011</div>
-  </div>
-
-  <!-- ── 6. SYSTEM PROMPTS ── -->
-  <div class="section-block" id="system-prompts">
-    <div class="section-marker">06 — ROLES AND CHAT TEMPLATES</div>
-    <h2>System Prompts, Roles, and Chat Templates</h2>
-    <p>Chat models are trained with a specific conversation format: system / user / assistant turns. The system prompt sets context, persona, rules, and output format, and is processed first with higher attention weight during training.</p>
-
-    <h3>Chat Template Importance</h3>
-    <p>The exact formatting tokens the model was trained on matters significantly. Each model family has its own chat template (e.g., Llama 3 uses <|begin_of_text|>, <|start_header_id|>, etc.). Using the wrong template causes silent quality degradation.</p>
-
-    <h3>Llama 3 Chat Template Example</h3>
-    <div class="example-box">&lt;|begin_of_text|&gt;
+</div>
+<!-- ── 6. SYSTEM PROMPTS ── -->
+<div class="section-block" id="system-prompts">
+<div class="section-marker">06 — ROLES AND CHAT TEMPLATES</div>
+<h2>System Prompts, Roles, and Chat Templates</h2>
+<p>Chat models are trained with a specific conversation format: system / user / assistant turns. The system prompt sets context, persona, rules, and output format, and is processed first with higher attention weight during training.</p>
+<h3>Chat Template Importance</h3>
+<p>The exact formatting tokens the model was trained on matters significantly. Each model family has its own chat template (e.g., Llama 3 uses &lt;|begin_of_text|&gt;, &lt;|start_header_id|&gt;, etc.). Using the wrong template causes silent quality degradation.</p>
+<h3>Llama 3 Chat Template Example</h3>
+<div class="example-box">&lt;|begin_of_text|&gt;
 &lt;|start_header_id|&gt;system&lt;|end_header_id|&gt;
 You are a helpful assistant.&lt;|eot_id|&gt;
 &lt;|start_header_id|&gt;user&lt;|end_header_id|&gt;
 What is 2+2?&lt;|eot_id|&gt;
 &lt;|start_header_id|&gt;assistant&lt;|end_header_id|&gt;</div>
-
-    <h3>System Prompt Best Practices</h3>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;">Be explicit about tone, style, and constraints</li>
-      <li style="margin: 0.5rem 0;">Specify output format (JSON, markdown, etc.)</li>
-      <li style="margin: 0.5rem 0;">For critical tasks, include examples of correct/incorrect behavior</li>
-      <li style="margin: 0.5rem 0;">Keep system prompts under 1000 tokens for efficiency</li>
-    </ul>
-
-    <div class="callout rose">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>Using the wrong chat template for a fine-tuned model causes silent quality degradation.</strong> Always check the model card for the expected format and use tokenizer.apply_chat_template().</span>
-    </div>
-  </div>
-
-  <!-- ── 7. STOP TOKENS ── -->
-  <div class="section-block" id="stop-tokens">
-    <div class="section-marker">07 — LIMITS AND BOUNDARIES</div>
-    <h2>Stop Tokens, Max Tokens, and Limits</h2>
-    <p>Controlling where generation stops is critical for structured outputs and cost management. Stop tokens signal end-of-response, and max_tokens enforces hard limits on output length.</p>
-
-    <h3>Key Concepts</h3>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;"><strong>Stop tokens:</strong> special tokens that signal end of response (EOS). Can also specify custom stop sequences like "</answer>".</li>
-      <li style="margin: 0.5rem 0;"><strong>max_tokens / max_completion_tokens:</strong> hard limit on output length. Truncates mid-sentence if hit — always set generously.</li>
-      <li style="margin: 0.5rem 0;"><strong>Token counting for cost:</strong> input_tokens × input_price + output_tokens × output_price</li>
-    </ul>
-
-    <h3>Common LLM API Parameters</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Parameter</th><th>What it controls</th><th>Recommended default</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>temperature</td><td>Randomness</td><td>0 for structured, 0.7 for chat</td></tr>
-          <tr><td>max_tokens</td><td>Output length limit</td><td>2× expected output</td></tr>
-          <tr><td>top_p</td><td>Nucleus sampling</td><td>0.9 (leave temperature unchanged)</td></tr>
-          <tr><td>stop</td><td>Custom stop sequences</td><td>["</answer>"] for structured outputs</td></tr>
-          <tr><td>seed</td><td>Reproducibility</td><td>Set for testing/evals</td></tr>
-          <tr><td>logprobs</td><td>Token probabilities</td><td>true for evals, classification</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Tools for Token Management</h3>
-    <div class="tools-grid">
-      <div class="tool-card">
-        <div class="tool-name">tiktoken</div>
-        <div class="tool-category">OpenAI</div>
-        <div class="tool-desc">Fast token counting for OpenAI models. Essential for cost estimation and validation.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">tokenizers (HF)</div>
-        <div class="tool-category">HuggingFace</div>
-        <div class="tool-desc">Fast BPE tokenizer implementation. Works with any model supporting Hugging Face tokenizers.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">OpenAI API</div>
-        <div class="tool-category">API</div>
-        <div class="tool-desc">Native token counting via API for production workflows.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">Anthropic API</div>
-        <div class="tool-category">API</div>
-        <div class="tool-desc">Token counting for Claude models in API calls.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">vLLM</div>
-        <div class="tool-category">Serving</div>
-        <div class="tool-desc">LLM inference engine with detailed token-level metrics.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">ollama</div>
-        <div class="tool-category">Local</div>
-        <div class="tool-desc">Run local LLMs with full tokenization control.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── REFERENCES ── -->
-  <div class="section-block" id="references">
-    <div class="section-marker">Further Reading</div>
-    <h2>References</h2>
-
-    <div class="ref-group-title">Academic Papers</div>
-    <ul class="ref-list">
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+<h3>System Prompt Best Practices</h3>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;">Be explicit about tone, style, and constraints</li>
+<li style="margin: 0.5rem 0;">Specify output format (JSON, markdown, etc.)</li>
+<li style="margin: 0.5rem 0;">For critical tasks, include examples of correct/incorrect behavior</li>
+<li style="margin: 0.5rem 0;">Keep system prompts under 1000 tokens for efficiency</li>
+</ul>
+<div class="callout rose">
+<span class="callout-icon">⚠️</span>
+<span><strong>Using the wrong chat template for a fine-tuned model causes silent quality degradation.</strong> Always check the model card for the expected format and use tokenizer.apply_chat_template().</span>
+</div>
+</div>
+<!-- ── 7. STOP TOKENS ── -->
+<div class="section-block" id="stop-tokens">
+<div class="section-marker">07 — LIMITS AND BOUNDARIES</div>
+<h2>Stop Tokens, Max Tokens, and Limits</h2>
+<p>Controlling where generation stops is critical for structured outputs and cost management. Stop tokens signal end-of-response, and max_tokens enforces hard limits on output length.</p>
+<h3>Key Concepts</h3>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;"><strong>Stop tokens:</strong> special tokens that signal end of response (EOS). Can also specify custom stop sequences like "".</li>
+<li style="margin: 0.5rem 0;"><strong>max_tokens / max_completion_tokens:</strong> hard limit on output length. Truncates mid-sentence if hit — always set generously.</li>
+<li style="margin: 0.5rem 0;"><strong>Token counting for cost:</strong> input_tokens × input_price + output_tokens × output_price</li>
+</ul>
+<h3>Common LLM API Parameters</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Parameter</th><th>What it controls</th><th>Recommended default</th></tr>
+</thead>
+<tbody>
+<tr><td>temperature</td><td>Randomness</td><td>0 for structured, 0.7 for chat</td></tr>
+<tr><td>max_tokens</td><td>Output length limit</td><td>2× expected output</td></tr>
+<tr><td>top_p</td><td>Nucleus sampling</td><td>0.9 (leave temperature unchanged)</td></tr>
+<tr><td>stop</td><td>Custom stop sequences</td><td>[""] for structured outputs</td></tr>
+<tr><td>seed</td><td>Reproducibility</td><td>Set for testing/evals</td></tr>
+<tr><td>logprobs</td><td>Token probabilities</td><td>true for evals, classification</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Tools for Token Management</h3>
+<div class="tools-grid">
+<div class="tool-card">
+<div class="tool-name">tiktoken</div>
+<div class="tool-category">OpenAI</div>
+<div class="tool-desc">Fast token counting for OpenAI models. Essential for cost estimation and validation.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">tokenizers (HF)</div>
+<div class="tool-category">HuggingFace</div>
+<div class="tool-desc">Fast BPE tokenizer implementation. Works with any model supporting Hugging Face tokenizers.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">OpenAI API</div>
+<div class="tool-category">API</div>
+<div class="tool-desc">Native token counting via API for production workflows.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">Anthropic API</div>
+<div class="tool-category">API</div>
+<div class="tool-desc">Token counting for Claude models in API calls.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">vLLM</div>
+<div class="tool-category">Serving</div>
+<div class="tool-desc">LLM inference engine with detailed token-level metrics.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">ollama</div>
+<div class="tool-category">Local</div>
+<div class="tool-desc">Run local LLMs with full tokenization control.</div>
+</div>
+</div>
+</div>
+<!-- ── REFERENCES ── -->
+<div class="section-block" id="references">
+<div class="section-marker">Further Reading</div>
+<h2>References</h2>
+<div class="ref-group-title">Academic Papers</div>
+<ul class="ref-list">
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Liu, N. F. et al. (2023).
         <em>Lost in the Middle: How Language Models Use Long Contexts.</em>
         arXiv:2307.03172. —
         <a href="https://arxiv.org/abs/2307.03172" target="_blank">arxiv:2307.03172 ↗</a>
-      </li>
-    </ul>
-
-    <div class="ref-group-title">Documentation &amp; Guides</div>
-    <ul class="ref-list">
-      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace — Tokenization explainer. <a href="https://huggingface.co/docs/transformers/tokenizer_summary" target="_blank">huggingface.co/docs ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> OpenAI — Tokenization and token counting. <a href="https://platform.openai.com/docs/guides/tokens" target="_blank">platform.openai.com ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> Anthropic — Token counting for Claude. <a href="https://docs.anthropic.com/en/docs/resources/tokens" target="_blank">docs.anthropic.com ↗</a></li>
-    </ul>
-
-    <div class="ref-group-title">Practitioner Resources</div>
-    <ul class="ref-list">
-      <li>
-        <span class="ref-badge badge-blog">Blog</span>
+</li>
+</ul>
+<div class="ref-group-title">Documentation &amp; Guides</div>
+<ul class="ref-list">
+<li><span class="ref-badge badge-docs">Docs</span> HuggingFace — Tokenization explainer. <a href="https://huggingface.co/docs/transformers/tokenizer_summary" target="_blank">huggingface.co/docs ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> OpenAI — Tokenization and token counting. <a href="https://platform.openai.com/docs/guides/tokens" target="_blank">platform.openai.com ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> Anthropic — Token counting for Claude. <a href="https://docs.anthropic.com/en/docs/resources/tokens" target="_blank">docs.anthropic.com ↗</a></li>
+</ul>
+<div class="ref-group-title">Practitioner Resources</div>
+<ul class="ref-list">
+<li>
+<span class="ref-badge badge-blog">Blog</span>
         OpenAI Cookbook — Token counting and cost estimation. —
         <a href="https://cookbook.openai.com/" target="_blank">cookbook.openai.com ↗</a>
-      </li>
-    </ul>
-  </div>
-
-  <footer class="page-footer">
-    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
-    <a id="footer-back" href="../index.html">← Back to mindmap</a>
-  </footer>
-  <script>
+</li>
+</ul>
+</div>
+<footer class="page-footer">
+<span>Part of the <a href="../index.html" id="footer-brand">GenAI Mindmap</a> — genai4a11.github.io</span>
+<a href="../index.html" id="footer-back">← Back to mindmap</a>
+</footer>
+<script>
     (function(){
       const from=new URLSearchParams(location.search).get('from');
       if(from){
@@ -741,12 +703,11 @@ What is 2+2?&lt;|eot_id|&gt;
       }
     })();
   </script>
-
 </div>
 <nav class="concept-nav">
   <a class="concept-nav-prev" href="kv-cache.html">← KV Cache Mechanics</a>
   <span class="concept-nav-cat">Inference & Architecture</span>
-  <a class="concept-nav-next" href="serving.html">→ LLM Serving & Inference Infrastructure</a>
+  <a class="concept-nav-next" href="serving.html">→ LLM Serving &amp; Inference Infrastructure</a>
 </nav>
 </body>
 </html>

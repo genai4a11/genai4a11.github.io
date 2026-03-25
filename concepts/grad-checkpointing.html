@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gradient Checkpointing | GenAI Mindmap</title>
-  <meta name="description" content="Trade compute for memory by recomputing activations during the backward pass instead of storing them — critical for training on long sequences or large models." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Gradient Checkpointing" />
-  <meta property="og:description" content="Trade compute for memory by recomputing activations during the backward pass instead of storing them — critical for training on long sequences or large models." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/grad-checkpointing.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/grad-checkpointing.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gradient Checkpointing | GenAI Mindmap</title>
+<meta content="Trade compute for memory by recomputing activations during the backward pass instead of storing them — critical for training on long sequences or large models." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="Gradient Checkpointing" property="og:title"/>
+<meta content="Trade compute for memory by recomputing activations during the backward pass instead of storing them — critical for training on long sequences or large models." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/grad-checkpointing.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/grad-checkpointing.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #2563eb;
       --accent-dark: #1d4ed8;
@@ -120,42 +121,39 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/training-tech.html" class="nav-back">← Training Tech</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Training Tech</span>
-    <h1><em>Gradient Checkpointing</em></h1>
-    <p class="hero-sub">Trade compute for memory by recomputing activations during the backward pass instead of storing them — critical for training on long sequences or large models.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">√n</div><div class="stat-label">Memory Cost</div></div>
-      <div><div class="stat-num">33%</div><div class="stat-label">Extra Compute</div></div>
-      <div><div class="stat-num">2×+</div><div class="stat-label">Longer Sequences</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">The Memory Problem</a></li>
-        <li><a href="#s2" data-num="02">How Checkpointing Works</a></li>
-        <li><a href="#s3" data-num="03">PyTorch Implementation</a></li>
-        <li><a href="#s4" data-num="04">HuggingFace Enable</a></li>
-        <li><a href="#s5" data-num="05">Memory vs Compute Trade-off</a></li>
-        <li><a href="#s6" data-num="06">When to Use It</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>The Memory Problem</h2>
-      <p>Standard backpropagation stores ALL intermediate activations from the forward pass — needed to compute gradients during backward. For a 32-layer transformer with seq_len=2048, d_model=4096, batch=8:</p>
-      <div class="example-box"># Memory estimate per layer (rough):
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/training-tech.html">← Training Tech</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Training Tech</span>
+<h1><em>Gradient Checkpointing</em></h1>
+<p class="hero-sub">Trade compute for memory by recomputing activations during the backward pass instead of storing them — critical for training on long sequences or large models.</p>
+<div class="hero-stats">
+<div><div class="stat-num">√n</div><div class="stat-label">Memory Cost</div></div>
+<div><div class="stat-num">33%</div><div class="stat-label">Extra Compute</div></div>
+<div><div class="stat-num">2×+</div><div class="stat-label">Longer Sequences</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">The Memory Problem</a></li>
+<li><a data-num="02" href="#s2">How Checkpointing Works</a></li>
+<li><a data-num="03" href="#s3">PyTorch Implementation</a></li>
+<li><a data-num="04" href="#s4">HuggingFace Enable</a></li>
+<li><a data-num="05" href="#s5">Memory vs Compute Trade-off</a></li>
+<li><a data-num="06" href="#s6">When to Use It</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
+<h2>The Memory Problem</h2>
+<p>Standard backpropagation stores ALL intermediate activations from the forward pass — needed to compute gradients during backward. For a 32-layer transformer with seq_len=2048, d_model=4096, batch=8:</p>
+<div class="example-box"># Memory estimate per layer (rough):
 seq_len = 2048; d_model = 4096; batch = 8
 bytes_per_float = 2  # bfloat16
 
@@ -168,30 +166,28 @@ per_layer_mb = (q_k_v_activations + attn_scores + ffn_activations) / 1e6
 total_activation_gb = 32 * per_layer_mb / 1e3
 print(f"Total activation memory: ~{total_activation_gb:.1f} GB for 32 layers")
 # → ~100 GB! Impossible on a single 80GB A100</div>
-      <div class="callout rose">
-        <strong>Bottleneck:</strong> The attention score matrix is O(seq_len²) — doubling sequence length quadruples this memory. For seq_len=8192, attention scores alone are 8GB per layer.
+<div class="callout rose">
+<strong>Bottleneck:</strong> The attention score matrix is O(seq_len²) — doubling sequence length quadruples this memory. For seq_len=8192, attention scores alone are 8GB per layer.
       </div>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>How Checkpointing Works</h2>
-      <p>Instead of storing all activations, checkpoint at regular intervals (every N layers). During backward, recompute the activations from the nearest checkpoint.</p>
-      <ul>
-        <li><strong>Without checkpointing:</strong> Memory = O(n_layers) — store all activations</li>
-        <li><strong>With checkpointing:</strong> Memory = O(√n_layers) — store only √n checkpoints</li>
-        <li><strong>Cost:</strong> Each segment is recomputed once during backward → ~33% extra forward passes</li>
-        <li><strong>Net effect:</strong> Trade 33% extra compute for 10–20× memory reduction</li>
-      </ul>
-      <div class="callout blue">
-        <strong>Example:</strong> 32-layer model, checkpoint every 4 layers: store 8 checkpoints. During backward, recompute each 4-layer segment (8 × 4-layer forward passes = 1 extra full forward pass = 33% overhead).
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
+<h2>How Checkpointing Works</h2>
+<p>Instead of storing all activations, checkpoint at regular intervals (every N layers). During backward, recompute the activations from the nearest checkpoint.</p>
+<ul>
+<li><strong>Without checkpointing:</strong> Memory = O(n_layers) — store all activations</li>
+<li><strong>With checkpointing:</strong> Memory = O(√n_layers) — store only √n checkpoints</li>
+<li><strong>Cost:</strong> Each segment is recomputed once during backward → ~33% extra forward passes</li>
+<li><strong>Net effect:</strong> Trade 33% extra compute for 10–20× memory reduction</li>
+</ul>
+<div class="callout blue">
+<strong>Example:</strong> 32-layer model, checkpoint every 4 layers: store 8 checkpoints. During backward, recompute each 4-layer segment (8 × 4-layer forward passes = 1 extra full forward pass = 33% overhead).
       </div>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>PyTorch Implementation</h2>
-      <div class="example-box">import torch
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
+<h2>PyTorch Implementation</h2>
+<div class="example-box">import torch
 from torch.utils.checkpoint import checkpoint, checkpoint_sequential
 
 # Manual checkpointing for a custom module
@@ -221,12 +217,11 @@ output = checkpoint_sequential(
 # Modern implementation using saved tensors hook
 # Better compatibility with torch.compile and other features
 # Always use False for new code</div>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>HuggingFace Enable</h2>
-      <div class="example-box">from transformers import AutoModelForCausalLM, TrainingArguments, Trainer
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
+<h2>HuggingFace Enable</h2>
+<div class="example-box">from transformers import AutoModelForCausalLM, TrainingArguments, Trainer
 
 model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
 
@@ -254,31 +249,29 @@ model.config.use_cache = False  # Required with gradient_checkpointing
 from peft import get_peft_model, LoraConfig
 model = get_peft_model(model, lora_config)
 model.enable_input_require_grads()  # Required for PEFT + checkpointing</div>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>Memory vs Compute Trade-off</h2>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Strategy</th><th>Memory</th><th>Speed</th><th>Use When</th></tr></thead>
-        <tbody>
-          <tr><td>No checkpointing</td><td>100%</td><td>Fastest</td><td>Memory allows it</td></tr>
-          <tr><td>Checkpoint every layer</td><td>~20%</td><td>~67% of max</td><td>Very long sequences</td></tr>
-          <tr><td>Checkpoint every N layers</td><td>√n × layer_mem</td><td>~75% of max</td><td>Sweet spot for most cases</td></tr>
-          <tr><td>Gradient checkpointing + AMP</td><td>~10%</td><td>~60% of max</td><td>Maximize sequence length</td></tr>
-        </tbody>
-      </table></div>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>When to Use It</h2>
-      <div class="example-box"># Decision tree for gradient checkpointing:
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
+<h2>Memory vs Compute Trade-off</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Strategy</th><th>Memory</th><th>Speed</th><th>Use When</th></tr></thead>
+<tbody>
+<tr><td>No checkpointing</td><td>100%</td><td>Fastest</td><td>Memory allows it</td></tr>
+<tr><td>Checkpoint every layer</td><td>~20%</td><td>~67% of max</td><td>Very long sequences</td></tr>
+<tr><td>Checkpoint every N layers</td><td>√n × layer_mem</td><td>~75% of max</td><td>Sweet spot for most cases</td></tr>
+<tr><td>Gradient checkpointing + AMP</td><td>~10%</td><td>~60% of max</td><td>Maximize sequence length</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
+<h2>When to Use It</h2>
+<div class="example-box"># Decision tree for gradient checkpointing:
 
 # 1. Are you getting OOM errors during training?
 #    → Enable gradient checkpointing first
 
-# 2. Are you training with very long sequences (>2048 tokens)?
+# 2. Are you training with very long sequences (&gt;2048 tokens)?
 #    → Almost certainly need checkpointing (attention is O(seq^2))
 
 # 3. Are you LoRA fine-tuning on a small GPU?
@@ -302,14 +295,13 @@ args = TrainingArguments(
     bf16=True,
     max_seq_length=4096,
 )</div>
-      <div class="callout green">
-        <strong>Combined strategy:</strong> bf16 + gradient checkpointing + gradient accumulation. This trio lets you fine-tune a 7B model on a single 24GB RTX 4090 with 2048-token sequences.
+<div class="callout green">
+<strong>Combined strategy:</strong> bf16 + gradient checkpointing + gradient accumulation. This trio lets you fine-tune a 7B model on a single 24GB RTX 4090 with 2048-token sequences.
       </div>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/training-tech.html" style="color:var(--accent)">Training Tech</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/training-tech.html" style="color:var(--accent)">Training Tech</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

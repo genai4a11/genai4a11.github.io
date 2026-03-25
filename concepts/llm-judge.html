@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LLM-as-Judge - GenAI Mindmap</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LLM-as-Judge - GenAI Mindmap</title>
+<style>
     :root {
       --indigo: #4f46e5;
       --blue: #2563eb;
@@ -316,86 +317,76 @@
       color: var(--rose);
     }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/><link href="https://genai4a11.github.io/concepts/llm-judge.html" rel="canonical"/><meta content="Using language models to automatically evaluate and score other model outputs, enabling scalable evaluation without human annotation." name="description"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Safety & Evaluation</span>
-    <h1>LLM-as-<em>Judge</em></h1>
-    <p class="hero-sub">Using language models to automatically evaluate and score other model outputs, enabling scalable evaluation without human annotation.</p>
-    <div class="hero-stats">
-      <div>
-        <div class="stat-num">Scalable</div>
-        <div class="stat-label">Key Advantage</div>
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../concepts/index.html">← All Concepts</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Safety &amp; Evaluation</span>
+<h1>LLM-as-<em>Judge</em></h1>
+<p class="hero-sub">Using language models to automatically evaluate and score other model outputs, enabling scalable evaluation without human annotation.</p>
+<div class="hero-stats">
+<div>
+<div class="stat-num">Scalable</div>
+<div class="stat-label">Key Advantage</div>
+</div>
+<div>
+<div class="stat-num">GPT-4</div>
+<div class="stat-label">Common Judge</div>
+</div>
+<div>
+<div class="stat-num">&gt;80%</div>
+<div class="stat-label">Human Correlation</div>
+</div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<div class="toc-grid">
+<a data-num="01" href="#section-1">The Evaluation Bottleneck</a>
+<a data-num="02" href="#section-2">Judging Formats</a>
+<a data-num="03" href="#section-3">Prompt Design for Judges</a>
+<a data-num="04" href="#section-4">Biases in LLM Judges</a>
+<a data-num="05" href="#section-5">MT-Bench &amp; Chatbot Arena</a>
+<a data-num="06" href="#section-6">Building a Custom Judge</a>
+<a data-num="07" href="#section-7">Judge Calibration</a>
+</div>
+</div>
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>The Evaluation Bottleneck</h2>
+<p>Evaluating LLM quality is hard. Manual human annotation is the gold standard but is expensive and slow: hiring annotators, defining rubrics, ensuring consistency across thousands of examples. For most labs, human evaluation costs $5-50 per example depending on task complexity.</p>
+<p>Scale: If you evaluate 10k model outputs annually (a typical baseline for a new model), manual evaluation costs $50k-500k. With budget constraints, you can only evaluate 1-5% of your outputs, missing important failure modes.</p>
+<p><strong>The Solution: LLM-as-Judge</strong></p>
+<p>Use a strong, reliable LLM (GPT-4, Claude) to automatically evaluate outputs from other models (including weaker versions of itself). A single GPT-4 API call costs ~$0.001-0.01 per evaluation, roughly 1000x cheaper than human annotation.</p>
+<p><strong>Why it Works</strong></p>
+<ul>
+<li><strong>Pattern recognition:</strong> LLMs are trained on high-quality text; they learn what "good" looks like</li>
+<li><strong>Consistency:</strong> LLM judges are deterministic (given the same prompt/model seed)</li>
+<li><strong>Multi-dimensional:</strong> Can evaluate along multiple criteria (accuracy, safety, helpfulness, reasoning)</li>
+<li><strong>Explanation:</strong> Judges can provide chain-of-thought reasoning for their scores</li>
+</ul>
+<p><strong>Limitations</strong></p>
+<ul>
+<li><strong>Not perfect:</strong> LLM judges correlate with human judgement ~80-90%, not 100%</li>
+<li><strong>Biased:</strong> Judges have their own biases (preference for longer answers, certain writing styles)</li>
+<li><strong>Domain-specific:</strong> GPT-4 is a generalist; domain experts outperform it in specialized fields</li>
+<li><strong>Cost still adds up:</strong> Evaluating 100k outputs with GPT-4 still costs $1000+</li>
+</ul>
+<div class="callout callout-blue">
+<strong>Key Insight:</strong> LLM judges are not replacements for human evaluation; they're augmenters. Use judges to screen 100% of outputs (cheap), then use humans to spot-check controversial cases (~5%) for ground truth.
       </div>
-      <div>
-        <div class="stat-num">GPT-4</div>
-        <div class="stat-label">Common Judge</div>
-      </div>
-      <div>
-        <div class="stat-num">>80%</div>
-        <div class="stat-label">Human Correlation</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <div class="toc-grid">
-        <a href="#section-1" data-num="01">The Evaluation Bottleneck</a>
-        <a href="#section-2" data-num="02">Judging Formats</a>
-        <a href="#section-3" data-num="03">Prompt Design for Judges</a>
-        <a href="#section-4" data-num="04">Biases in LLM Judges</a>
-        <a href="#section-5" data-num="05">MT-Bench & Chatbot Arena</a>
-        <a href="#section-6" data-num="06">Building a Custom Judge</a>
-        <a href="#section-7" data-num="07">Judge Calibration</a>
-      </div>
-    </div>
-
-    <div class="section-block" id="section-1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>The Evaluation Bottleneck</h2>
-      <p>Evaluating LLM quality is hard. Manual human annotation is the gold standard but is expensive and slow: hiring annotators, defining rubrics, ensuring consistency across thousands of examples. For most labs, human evaluation costs $5-50 per example depending on task complexity.</p>
-
-      <p>Scale: If you evaluate 10k model outputs annually (a typical baseline for a new model), manual evaluation costs $50k-500k. With budget constraints, you can only evaluate 1-5% of your outputs, missing important failure modes.</p>
-
-      <p><strong>The Solution: LLM-as-Judge</strong></p>
-      <p>Use a strong, reliable LLM (GPT-4, Claude) to automatically evaluate outputs from other models (including weaker versions of itself). A single GPT-4 API call costs ~$0.001-0.01 per evaluation, roughly 1000x cheaper than human annotation.</p>
-
-      <p><strong>Why it Works</strong></p>
-      <ul>
-        <li><strong>Pattern recognition:</strong> LLMs are trained on high-quality text; they learn what "good" looks like</li>
-        <li><strong>Consistency:</strong> LLM judges are deterministic (given the same prompt/model seed)</li>
-        <li><strong>Multi-dimensional:</strong> Can evaluate along multiple criteria (accuracy, safety, helpfulness, reasoning)</li>
-        <li><strong>Explanation:</strong> Judges can provide chain-of-thought reasoning for their scores</li>
-      </ul>
-
-      <p><strong>Limitations</strong></p>
-      <ul>
-        <li><strong>Not perfect:</strong> LLM judges correlate with human judgement ~80-90%, not 100%</li>
-        <li><strong>Biased:</strong> Judges have their own biases (preference for longer answers, certain writing styles)</li>
-        <li><strong>Domain-specific:</strong> GPT-4 is a generalist; domain experts outperform it in specialized fields</li>
-        <li><strong>Cost still adds up:</strong> Evaluating 100k outputs with GPT-4 still costs $1000+</li>
-      </ul>
-
-      <div class="callout callout-blue">
-        <strong>Key Insight:</strong> LLM judges are not replacements for human evaluation; they're augmenters. Use judges to screen 100% of outputs (cheap), then use humans to spot-check controversial cases (~5%) for ground truth.
-      </div>
-    </div>
-
-    <div class="section-block" id="section-2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>Judging Formats</h2>
-      <p>There are several ways to structure LLM judgement. Choice depends on your task:</p>
-
-      <p><strong>1. Pointwise Scoring (Absolute)</strong></p>
-      <p>Rate a single output on a rubric, independent of other outputs:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>Judging Formats</h2>
+<p>There are several ways to structure LLM judgement. Choice depends on your task:</p>
+<p><strong>1. Pointwise Scoring (Absolute)</strong></p>
+<p>Rate a single output on a rubric, independent of other outputs:</p>
+<div class="example-box">
 Task: Evaluate this response to "How does photosynthesis work?"
 
 Response: "Photosynthesis is a process where plants convert
@@ -420,20 +411,17 @@ Judge output:
   Minor: could mention chlorophyll role."
 }
       </div>
-
-      <p><strong>2. Pairwise Comparison (Relative)</strong></p>
-      <p>Compare two outputs and decide which is better:</p>
-      <ul>
-        <li>A: Response from Model 1</li>
-        <li>B: Response from Model 2</li>
-        <li>Question: Which is better? (A / B / Tie)</li>
-      </ul>
-
-      <p>Advantage: Easier for judges (binary choice) and robust to judge bias (both A and B get the same bias, so differences stand out). Used by Chatbot Arena.</p>
-
-      <p><strong>3. Reference-Based Evaluation</strong></p>
-      <p>Compare output to a gold standard reference answer:</p>
-      <div class="example-box">
+<p><strong>2. Pairwise Comparison (Relative)</strong></p>
+<p>Compare two outputs and decide which is better:</p>
+<ul>
+<li>A: Response from Model 1</li>
+<li>B: Response from Model 2</li>
+<li>Question: Which is better? (A / B / Tie)</li>
+</ul>
+<p>Advantage: Easier for judges (binary choice) and robust to judge bias (both A and B get the same bias, so differences stand out). Used by Chatbot Arena.</p>
+<p><strong>3. Reference-Based Evaluation</strong></p>
+<p>Compare output to a gold standard reference answer:</p>
+<div class="example-box">
 Question: "What's the capital of France?"
 
 Reference Answer: "Paris"
@@ -444,18 +432,16 @@ city by population in the country."
 Evaluation: Output matches reference (CORRECT) and adds
 helpful context. Score: 10/10.
       </div>
-
-      <p><strong>4. Reference-Free Evaluation</strong></p>
-      <p>Judge output quality without a reference. Relies on rubric and judge knowledge:</p>
-      <ul>
-        <li>No "answer key"</li>
-        <li>Judge evaluates based on quality criteria (coherence, factuality, helpfulness)</li>
-        <li>Harder to standardize but more realistic for open-ended tasks</li>
-      </ul>
-
-      <p><strong>5. G-Eval Framework</strong></p>
-      <p>A structured approach combining form-filling and chain-of-thought:</p>
-      <div class="example-box">
+<p><strong>4. Reference-Free Evaluation</strong></p>
+<p>Judge output quality without a reference. Relies on rubric and judge knowledge:</p>
+<ul>
+<li>No "answer key"</li>
+<li>Judge evaluates based on quality criteria (coherence, factuality, helpfulness)</li>
+<li>Harder to standardize but more realistic for open-ended tasks</li>
+</ul>
+<p><strong>5. G-Eval Framework</strong></p>
+<p>A structured approach combining form-filling and chain-of-thought:</p>
+<div class="example-box">
 G-Eval steps:
 1. Aspect (what to evaluate): Coherence, Relevance, etc.
 2. Evaluation Criteria (rubric): Clear definitions of 1-5 or 1-10
@@ -475,19 +461,16 @@ Example:
   "score": 5
 }
       </div>
-
-      <div class="callout callout-amber">
-        <strong>Format Choice:</strong> Pairwise is easiest for judges (fewer errors). Pointwise gives richer feedback. Reference-based works for factual tasks. G-Eval is best for detailed analysis with reasoning.
+<div class="callout callout-amber">
+<strong>Format Choice:</strong> Pairwise is easiest for judges (fewer errors). Pointwise gives richer feedback. Reference-based works for factual tasks. G-Eval is best for detailed analysis with reasoning.
       </div>
-    </div>
-
-    <div class="section-block" id="section-3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>Prompt Design for Judges</h2>
-      <p>The judge prompt is critical. Poor prompts lead to noisy, biased judgements. Here's how to design good judge prompts:</p>
-
-      <p><strong>1. Clear Rubric</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Prompt Design for Judges</h2>
+<p>The judge prompt is critical. Poor prompts lead to noisy, biased judgements. Here's how to design good judge prompts:</p>
+<p><strong>1. Clear Rubric</strong></p>
+<div class="example-box">
 Bad rubric: "Rate how good this answer is. 1-5 scale."
 Judge: Too vague. What makes something "good"?
 
@@ -499,10 +482,9 @@ Good rubric:
 4 = Correct, complete, well-explained
 5 = Correct, comprehensive, excellent clarity"
       </div>
-
-      <p><strong>2. Chain-of-Thought Reasoning</strong></p>
-      <p>Ask the judge to explain before scoring:</p>
-      <div class="example-box">
+<p><strong>2. Chain-of-Thought Reasoning</strong></p>
+<p>Ask the judge to explain before scoring:</p>
+<div class="example-box">
 Prompt structure:
 "First, analyze the response:
 1. Is the core claim accurate?
@@ -514,10 +496,9 @@ Then, assign a score 1-5."
 Benefit: Judge's reasoning is visible. If you disagree,
 you can see where the judge went wrong.
       </div>
-
-      <p><strong>3. Positive & Negative Examples</strong></p>
-      <p>Provide exemplars to calibrate the judge:</p>
-      <div class="example-box">
+<p><strong>3. Positive &amp; Negative Examples</strong></p>
+<p>Provide exemplars to calibrate the judge:</p>
+<div class="example-box">
 "Here are examples of scores:
 
 Example 1 (Score 5):
@@ -533,10 +514,9 @@ Reason: Oversimplified, missing key mechanisms.
 
 Now evaluate this response: ..."
       </div>
-
-      <p><strong>4. JSON Output Schema</strong></p>
-      <p>Structure the output for programmatic parsing:</p>
-      <div class="example-box">
+<p><strong>4. JSON Output Schema</strong></p>
+<p>Structure the output for programmatic parsing:</p>
+<div class="example-box">
 "Respond with JSON:
 {
   \"analysis\": \"Detailed reasoning\",
@@ -547,110 +527,95 @@ Now evaluate this response: ..."
   \"suggestions\": \"How to improve\"
 }"
       </div>
-
-      <p><strong>5. Avoid Bias Signals</strong></p>
-      <p>Don't include information that biases the judge:</p>
-      <ul>
-        <li><strong>Model names:</strong> Don't mention "GPT-4's answer vs GPT-3.5's" → judge has pre-existing bias</li>
-        <li><strong>Human feedback:</strong> Don't say "this was written by an expert" → judge anchors on authority</li>
-        <li><strong>Formatting:</strong> Make all outputs similar length/style → avoid length bias</li>
-      </ul>
-
-      <div class="callout callout-green">
-        <strong>Prompt Template:</strong> Always use: clear rubric + exemplars + CoT reasoning + JSON output + bias mitigation. This 5-part formula dramatically improves judge consistency.
+<p><strong>5. Avoid Bias Signals</strong></p>
+<p>Don't include information that biases the judge:</p>
+<ul>
+<li><strong>Model names:</strong> Don't mention "GPT-4's answer vs GPT-3.5's" → judge has pre-existing bias</li>
+<li><strong>Human feedback:</strong> Don't say "this was written by an expert" → judge anchors on authority</li>
+<li><strong>Formatting:</strong> Make all outputs similar length/style → avoid length bias</li>
+</ul>
+<div class="callout callout-green">
+<strong>Prompt Template:</strong> Always use: clear rubric + exemplars + CoT reasoning + JSON output + bias mitigation. This 5-part formula dramatically improves judge consistency.
       </div>
-    </div>
-
-    <div class="section-block" id="section-4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>Biases in LLM Judges</h2>
-      <p>LLM judges are not objective. They have systematic biases that skew evaluations:</p>
-
-      <p><strong>1. Verbosity Bias</strong></p>
-      <p>Judges prefer longer responses, even if unnecessary:</p>
-      <ul>
-        <li>Short correct answer: "The capital is Paris" → Score 7/10</li>
-        <li>Long correct answer: "The capital of France is Paris, a city in north-central France..." → Score 9/10</li>
-        <li>Both are correct, but verbose answer scores higher</li>
-      </ul>
-
-      <p><strong>2. Position Bias (A/B Preference)</strong></p>
-      <p>In pairwise comparisons, the first option sometimes scores higher:</p>
-      <ul>
-        <li>A vs B: Judge picks A 55% of the time</li>
-        <li>B vs A: Judge picks B 50% of the time</li>
-        <li>Neutral: 45%</li>
-      </ul>
-
-      <p><strong>3. Self-Enhancement Bias</strong></p>
-      <p>If the judge is GPT-4, it scores GPT-4's outputs higher than competitors:</p>
-      <ul>
-        <li>GPT-4 vs Claude: GPT-4 wins 60% (should be 50% if equal)</li>
-        <li>Use different models as judges to average out this bias</li>
-      </ul>
-
-      <p><strong>4. Sycophancy</strong></p>
-      <p>Judges give higher scores to responses that agree with the judge's trained opinions:</p>
-      <ul>
-        <li>Question: "Is climate change real?"</li>
-        <li>GPT-4 (trained on data with scientific consensus) scores affirmative responses higher</li>
-        <li>This is appropriate for factual questions but problematic for subjective ones</li>
-      </ul>
-
-      <p><strong>5. Coherence Over Correctness</strong></p>
-      <p>Judges reward well-written but wrong answers:</p>
-      <ul>
-        <li>Well-written wrong answer: "The Earth revolves around the Sun in a perfect circle..." → Score 7/10</li>
-        <li>Correct but poorly-written: "earth revolves sun. not perfect circle, ellipse." → Score 4/10</li>
-        <li>Second is more correct, but first scores higher due to writing quality</li>
-      </ul>
-
-      <p><strong>Mitigation Strategies</strong></p>
-      <ul>
-        <li><strong>Multiple judges:</strong> Use 3-5 judges; average their scores. Different models/biases cancel out.</li>
-        <li><strong>Blind evaluations:</strong> Hide model identities so judges don't have pre-existing biases.</li>
-        <li><strong>Explicit rubrics:</strong> Force judges to score on specific criteria, not overall "goodness".</li>
-        <li><strong>Human spot-checks:</strong> Regularly compare judge scores to human scores; recalibrate if diverging.</li>
-        <li><strong>Adversarial examples:</strong> Test judges with known weak/strong examples; verify they score correctly.</li>
-      </ul>
-
-      <div class="callout callout-rose">
-        <strong>Critical:</strong> LLM judges are biased. Never trust a single judge's score. Always use multiple judges and human spot-checks to validate.
+</div>
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>Biases in LLM Judges</h2>
+<p>LLM judges are not objective. They have systematic biases that skew evaluations:</p>
+<p><strong>1. Verbosity Bias</strong></p>
+<p>Judges prefer longer responses, even if unnecessary:</p>
+<ul>
+<li>Short correct answer: "The capital is Paris" → Score 7/10</li>
+<li>Long correct answer: "The capital of France is Paris, a city in north-central France..." → Score 9/10</li>
+<li>Both are correct, but verbose answer scores higher</li>
+</ul>
+<p><strong>2. Position Bias (A/B Preference)</strong></p>
+<p>In pairwise comparisons, the first option sometimes scores higher:</p>
+<ul>
+<li>A vs B: Judge picks A 55% of the time</li>
+<li>B vs A: Judge picks B 50% of the time</li>
+<li>Neutral: 45%</li>
+</ul>
+<p><strong>3. Self-Enhancement Bias</strong></p>
+<p>If the judge is GPT-4, it scores GPT-4's outputs higher than competitors:</p>
+<ul>
+<li>GPT-4 vs Claude: GPT-4 wins 60% (should be 50% if equal)</li>
+<li>Use different models as judges to average out this bias</li>
+</ul>
+<p><strong>4. Sycophancy</strong></p>
+<p>Judges give higher scores to responses that agree with the judge's trained opinions:</p>
+<ul>
+<li>Question: "Is climate change real?"</li>
+<li>GPT-4 (trained on data with scientific consensus) scores affirmative responses higher</li>
+<li>This is appropriate for factual questions but problematic for subjective ones</li>
+</ul>
+<p><strong>5. Coherence Over Correctness</strong></p>
+<p>Judges reward well-written but wrong answers:</p>
+<ul>
+<li>Well-written wrong answer: "The Earth revolves around the Sun in a perfect circle..." → Score 7/10</li>
+<li>Correct but poorly-written: "earth revolves sun. not perfect circle, ellipse." → Score 4/10</li>
+<li>Second is more correct, but first scores higher due to writing quality</li>
+</ul>
+<p><strong>Mitigation Strategies</strong></p>
+<ul>
+<li><strong>Multiple judges:</strong> Use 3-5 judges; average their scores. Different models/biases cancel out.</li>
+<li><strong>Blind evaluations:</strong> Hide model identities so judges don't have pre-existing biases.</li>
+<li><strong>Explicit rubrics:</strong> Force judges to score on specific criteria, not overall "goodness".</li>
+<li><strong>Human spot-checks:</strong> Regularly compare judge scores to human scores; recalibrate if diverging.</li>
+<li><strong>Adversarial examples:</strong> Test judges with known weak/strong examples; verify they score correctly.</li>
+</ul>
+<div class="callout callout-rose">
+<strong>Critical:</strong> LLM judges are biased. Never trust a single judge's score. Always use multiple judges and human spot-checks to validate.
       </div>
-    </div>
-
-    <div class="section-block" id="section-5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>MT-Bench & Chatbot Arena</h2>
-      <p>Two landmark projects demonstrating LLM judging at scale:</p>
-
-      <p><strong>MT-Bench (Multi-Turn Benchmark)</strong></p>
-      <p>A benchmark of multi-turn conversations with GPT-4 as judge. Evaluates models' ability to handle follow-up questions and maintain context.</p>
-      <ul>
-        <li><strong>Dataset:</strong> 80 curated multi-turn questions spanning domains (writing, math, coding, roleplay)</li>
-        <li><strong>Judge:</strong> GPT-4 with detailed rubric</li>
-        <li><strong>Metric:</strong> Pairwise comparison (which model's response is better?)</li>
-        <li><strong>Results:</strong> Strong correlation with human evaluation (>0.85)</li>
-      </ul>
-
-      <p><strong>Chatbot Arena (LMSYS)</strong></p>
-      <p>A crowdsourced competition where users vote on which model gives better responses. GPT-4 judges also used as supplementary ranking.</p>
-      <ul>
-        <li><strong>Scale:</strong> 100k+ crowdsourced comparisons; GPT-4 judges thousands</li>
-        <li><strong>Models:</strong> GPT-4, Claude, Llama, Mistral, etc.</li>
-        <li><strong>Judge format:</strong> Pairwise comparison (blind—users don't see model names)</li>
-        <li><strong>Ranking:</strong> Elo rating system (like chess rankings). Stronger models gain points.</li>
-      </ul>
-
-      <p><strong>Findings</strong></p>
-      <ul>
-        <li>GPT-4 and Claude are consistently top-ranked</li>
-        <li>Open-source models (Llama, Mistral) are catching up</li>
-        <li>Pairwise judge scores correlate well with human votes (r > 0.8)</li>
-        <li>Domain variation is huge: a model strong in coding may be weak in creative writing</li>
-      </ul>
-
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>MT-Bench &amp; Chatbot Arena</h2>
+<p>Two landmark projects demonstrating LLM judging at scale:</p>
+<p><strong>MT-Bench (Multi-Turn Benchmark)</strong></p>
+<p>A benchmark of multi-turn conversations with GPT-4 as judge. Evaluates models' ability to handle follow-up questions and maintain context.</p>
+<ul>
+<li><strong>Dataset:</strong> 80 curated multi-turn questions spanning domains (writing, math, coding, roleplay)</li>
+<li><strong>Judge:</strong> GPT-4 with detailed rubric</li>
+<li><strong>Metric:</strong> Pairwise comparison (which model's response is better?)</li>
+<li><strong>Results:</strong> Strong correlation with human evaluation (&gt;0.85)</li>
+</ul>
+<p><strong>Chatbot Arena (LMSYS)</strong></p>
+<p>A crowdsourced competition where users vote on which model gives better responses. GPT-4 judges also used as supplementary ranking.</p>
+<ul>
+<li><strong>Scale:</strong> 100k+ crowdsourced comparisons; GPT-4 judges thousands</li>
+<li><strong>Models:</strong> GPT-4, Claude, Llama, Mistral, etc.</li>
+<li><strong>Judge format:</strong> Pairwise comparison (blind—users don't see model names)</li>
+<li><strong>Ranking:</strong> Elo rating system (like chess rankings). Stronger models gain points.</li>
+</ul>
+<p><strong>Findings</strong></p>
+<ul>
+<li>GPT-4 and Claude are consistently top-ranked</li>
+<li>Open-source models (Llama, Mistral) are catching up</li>
+<li>Pairwise judge scores correlate well with human votes (r &gt; 0.8)</li>
+<li>Domain variation is huge: a model strong in coding may be weak in creative writing</li>
+</ul>
+<div class="example-box">
 MT-Bench leaderboard (simplified):
 Model                 | GPT-4 Judge Score | Human Eval
 GPT-4-Turbo          | 9.1              | 9.0
@@ -661,18 +626,15 @@ GPT-3.5-Turbo        | 6.9              | 6.8
 
 Judge scores align well with human evaluation.
       </div>
-
-      <div class="callout callout-blue">
-        <strong>Lesson from Arena:</strong> Pairwise evaluation (A vs B) is robust. Blind evaluation (hide model names) improves consistency. Crowdsourcing + judge validation together provide confidence in rankings.
+<div class="callout callout-blue">
+<strong>Lesson from Arena:</strong> Pairwise evaluation (A vs B) is robust. Blind evaluation (hide model names) improves consistency. Crowdsourcing + judge validation together provide confidence in rankings.
       </div>
-    </div>
-
-    <div class="section-block" id="section-6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>Building a Custom Judge</h2>
-      <p>Here's a practical example of building a judge for a specific task (code generation):</p>
-
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>Building a Custom Judge</h2>
+<p>Here's a practical example of building a judge for a specific task (code generation):</p>
+<div class="example-box">
 # Custom Judge for Code Generation
 
 import json
@@ -695,7 +657,7 @@ Respond with JSON:
   "overall": N
 }"""
 
-def judge_code(problem: str, code: str) -> dict:
+def judge_code(problem: str, code: str) -&gt; dict:
     """Judge a code solution."""
     client = anthropic.Anthropic()
     
@@ -717,7 +679,7 @@ Solution:
     except:
         return {"error": "Failed to parse judge response"}
 
-def batch_evaluate(problems_codes: list[tuple]) -> list[dict]:
+def batch_evaluate(problems_codes: list[tuple]) -&gt; list[dict]:
     """Evaluate multiple solutions."""
     results = []
     for problem, code in problems_codes:
@@ -732,7 +694,7 @@ def batch_evaluate(problems_codes: list[tuple]) -> list[dict]:
 # Example
 problems = [
     ("Write a function to check if a number is prime",
-     "def is_prime(n):\n  for i in range(2, int(n**0.5) + 1):\n    if n % i == 0:\n      return False\n  return n > 1"),
+     "def is_prime(n):\n  for i in range(2, int(n**0.5) + 1):\n    if n % i == 0:\n      return False\n  return n &gt; 1"),
     ("Reverse a list in-place",
      "def reverse(arr):\n  arr = arr[::-1]"),  # Bug: doesn't modify in-place
 ]
@@ -744,43 +706,36 @@ for result in results:
     print(f"Reasoning: {result['judgment'].get('reasoning', '')}")
     print()
       </div>
-
-      <p><strong>Building Blocks</strong></p>
-      <ul>
-        <li><strong>Judge Model:</strong> GPT-4 or Claude (stronger = better quality)</li>
-        <li><strong>Rubric:</strong> Clear criteria (correctness, efficiency, etc.)</li>
-        <li><strong>Prompt:</strong> Task description + rubric + output format</li>
-        <li><strong>Error Handling:</strong> Fallback if judge fails to parse or respond</li>
-        <li><strong>Batch Evaluation:</strong> Process many examples; track statistics</li>
-      </ul>
-
-      <p><strong>Optimization Tips</strong></p>
-      <ul>
-        <li><strong>Use cheaper models for coarse filtering:</strong> GPT-3.5 for first pass, GPT-4 only for borderline cases</li>
-        <li><strong>Cache judge prompts:</strong> Reuse rubrics across evaluations</li>
-        <li><strong>Parallelize:</strong> Run multiple judge calls simultaneously</li>
-        <li><strong>Constrain output:</strong> Force JSON format to avoid parsing errors</li>
-      </ul>
-
-      <div class="callout callout-green">
-        <strong>Template Pattern:</strong> 1) Define rubric, 2) Write prompt, 3) Create judge function, 4) Batch evaluate, 5) Analyze results. This pattern is reusable across domains.
+<p><strong>Building Blocks</strong></p>
+<ul>
+<li><strong>Judge Model:</strong> GPT-4 or Claude (stronger = better quality)</li>
+<li><strong>Rubric:</strong> Clear criteria (correctness, efficiency, etc.)</li>
+<li><strong>Prompt:</strong> Task description + rubric + output format</li>
+<li><strong>Error Handling:</strong> Fallback if judge fails to parse or respond</li>
+<li><strong>Batch Evaluation:</strong> Process many examples; track statistics</li>
+</ul>
+<p><strong>Optimization Tips</strong></p>
+<ul>
+<li><strong>Use cheaper models for coarse filtering:</strong> GPT-3.5 for first pass, GPT-4 only for borderline cases</li>
+<li><strong>Cache judge prompts:</strong> Reuse rubrics across evaluations</li>
+<li><strong>Parallelize:</strong> Run multiple judge calls simultaneously</li>
+<li><strong>Constrain output:</strong> Force JSON format to avoid parsing errors</li>
+</ul>
+<div class="callout callout-green">
+<strong>Template Pattern:</strong> 1) Define rubric, 2) Write prompt, 3) Create judge function, 4) Batch evaluate, 5) Analyze results. This pattern is reusable across domains.
       </div>
-    </div>
-
-    <div class="section-block" id="section-7">
-      <div class="section-marker">SECTION 07</div>
-      <h2>Judge Calibration</h2>
-      <p>Before deploying a judge, verify it aligns with human judgement. Calibration is crucial for confidence.</p>
-
-      <p><strong>Validation Process</strong></p>
-      <p><strong>1. Collect Human Labels</strong></p>
-      <p>Sample 50-100 examples. Have humans (2-3 per example) score or compare. This is your ground truth.</p>
-
-      <p><strong>2. Run Judge on Same Examples</strong></p>
-      <p>Get judge scores for the same 50-100 examples.</p>
-
-      <p><strong>3. Compute Correlation</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-7">
+<div class="section-marker">SECTION 07</div>
+<h2>Judge Calibration</h2>
+<p>Before deploying a judge, verify it aligns with human judgement. Calibration is crucial for confidence.</p>
+<p><strong>Validation Process</strong></p>
+<p><strong>1. Collect Human Labels</strong></p>
+<p>Sample 50-100 examples. Have humans (2-3 per example) score or compare. This is your ground truth.</p>
+<p><strong>2. Run Judge on Same Examples</strong></p>
+<p>Get judge scores for the same 50-100 examples.</p>
+<p><strong>3. Compute Correlation</strong></p>
+<div class="example-box">
 from scipy.stats import spearmanr, pearsonr
 
 human_scores = [8, 7, 9, 6, 5, 8, 9, 7, 8, 6, ...]  # Human avg
@@ -794,22 +749,20 @@ print(f"Pearson r: {pearson_r:.3f}")   # Linear correlation
 print(f"Spearman r: {spearman_r:.3f}") # Rank correlation
 
 # Interpretation:
-# r > 0.8: Strong agreement
+# r &gt; 0.8: Strong agreement
 # r = 0.6-0.8: Good agreement
-# r < 0.6: Weak agreement (don't use judge)
+# r &lt; 0.6: Weak agreement (don't use judge)
       </div>
-
-      <p><strong>4. Analyze Disagreements</strong></p>
-      <p>Where does the judge disagree with humans?</p>
-      <ul>
-        <li><strong>Off-by-one errors:</strong> Judge scores 7 when human says 8. Acceptable; both in same ballpark.</li>
-        <li><strong>Systematic bias:</strong> Judge always scores 2 points lower. Recalibrate (adjust judge prompt or use different model).</li>
-        <li><strong>Outliers:</strong> Judge scores 3 when human says 9. Investigate: Is this a human error or judge failure?</li>
-      </ul>
-
-      <p><strong>5. Calibration Plot</strong></p>
-      <p>Visualize judge vs human agreement:</p>
-      <div class="example-box">
+<p><strong>4. Analyze Disagreements</strong></p>
+<p>Where does the judge disagree with humans?</p>
+<ul>
+<li><strong>Off-by-one errors:</strong> Judge scores 7 when human says 8. Acceptable; both in same ballpark.</li>
+<li><strong>Systematic bias:</strong> Judge always scores 2 points lower. Recalibrate (adjust judge prompt or use different model).</li>
+<li><strong>Outliers:</strong> Judge scores 3 when human says 9. Investigate: Is this a human error or judge failure?</li>
+</ul>
+<p><strong>5. Calibration Plot</strong></p>
+<p>Visualize judge vs human agreement:</p>
+<div class="example-box">
 Plot: X-axis = Human score, Y-axis = Judge score
 Points along diagonal y=x: Perfect agreement
 Points above diagonal: Judge over-scores
@@ -820,59 +773,54 @@ Problem pattern: Judge consistently above/below diagonal
 
 Fix: Retune judge prompt or choose different judge model
       </div>
-
-      <p><strong>When to Trust vs Distrust LLM Judges</strong></p>
-      <div class="table-wrap">
-        <table>
-          <tr>
-            <th>Scenario</th>
-            <th>Correlation</th>
-            <th>Decision</th>
-          </tr>
-          <tr>
-            <td>Factual QA (single right answer)</td>
-            <td>> 0.85</td>
-            <td>Use judge confidently; spot-check 5%</td>
-          </tr>
-          <tr>
-            <td>Creative writing, subjective tasks</td>
-            <td>0.70-0.80</td>
-            <td>Use judge with caution; validate 10-20%</td>
-          </tr>
-          <tr>
-            <td>Technical evaluation (code, math)</td>
-            <td>> 0.80</td>
-            <td>Use judge; requires good rubric</td>
-          </tr>
-          <tr>
-            <td>Safety/toxicity detection</td>
-            <td>0.75-0.85</td>
-            <td>Use for screening; humans validate flagged</td>
-          </tr>
-          <tr>
-            <td>Low correlation (< 0.65)</td>
-            <td>< 0.65</td>
-            <td>Don't use; task too subjective or rubric poor</td>
-          </tr>
-        </table>
+<p><strong>When to Trust vs Distrust LLM Judges</strong></p>
+<div class="table-wrap">
+<table>
+<tr>
+<th>Scenario</th>
+<th>Correlation</th>
+<th>Decision</th>
+</tr>
+<tr>
+<td>Factual QA (single right answer)</td>
+<td>&gt; 0.85</td>
+<td>Use judge confidently; spot-check 5%</td>
+</tr>
+<tr>
+<td>Creative writing, subjective tasks</td>
+<td>0.70-0.80</td>
+<td>Use judge with caution; validate 10-20%</td>
+</tr>
+<tr>
+<td>Technical evaluation (code, math)</td>
+<td>&gt; 0.80</td>
+<td>Use judge; requires good rubric</td>
+</tr>
+<tr>
+<td>Safety/toxicity detection</td>
+<td>0.75-0.85</td>
+<td>Use for screening; humans validate flagged</td>
+</tr>
+<tr>
+<td>Low correlation (&lt; 0.65)</td>
+<td>&lt; 0.65</td>
+<td>Don't use; task too subjective or rubric poor</td>
+</tr>
+</table>
+</div>
+<p><strong>Continuous Monitoring</strong></p>
+<p>Even after deployment, monitor judge performance:</p>
+<ul>
+<li>Quarterly: Re-validate on fresh human labels. Has correlation drifted?</li>
+<li>Weekly: Check for outliers. Are there patterns in judge failures?</li>
+<li>Per-update: If you update the judge prompt or model, re-calibrate</li>
+</ul>
+<div class="callout callout-amber">
+<strong>Golden Rule:</strong> Never deploy a judge without calibration. Invest in 50-100 human labels. The cost (100 × $5 = $500) is tiny compared to the cost of wrong decisions based on uncalibrated judges (wrong model selections, missed safety issues).
       </div>
-
-      <p><strong>Continuous Monitoring</strong></p>
-      <p>Even after deployment, monitor judge performance:</p>
-      <ul>
-        <li>Quarterly: Re-validate on fresh human labels. Has correlation drifted?</li>
-        <li>Weekly: Check for outliers. Are there patterns in judge failures?</li>
-        <li>Per-update: If you update the judge prompt or model, re-calibrate</li>
-      </ul>
-
-      <div class="callout callout-amber">
-        <strong>Golden Rule:</strong> Never deploy a judge without calibration. Invest in 50-100 human labels. The cost (100 × $5 = $500) is tiny compared to the cost of wrong decisions based on uncalibrated judges (wrong model selections, missed safety issues).
-      </div>
-    </div>
-
-  </div>
-
-  <footer>
+</div>
+</div>
+<footer>
     © 2026 GenAI Mindmap. All concepts serve learning purposes.
   </footer>
 </body>

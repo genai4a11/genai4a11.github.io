@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QLoRA | GenAI Mindmap</title>
-  <meta name="description" content="4-bit NF4 quantisation + LoRA adapters + double quantisation — fine-tune a 65B model on a single 48GB GPU. The technique that made LLM fine-tuning accessible to researchers without data-centre hardware." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="QLoRA" />
-  <meta property="og:description" content="4-bit NF4 quantisation + LoRA adapters + double quantisation — fine-tune a 65B model on a single 48GB GPU. The technique that made LLM fine-tuning accessible to researchers without data-centre hardware." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/qlora.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/qlora.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>QLoRA | GenAI Mindmap</title>
+<meta content="4-bit NF4 quantisation + LoRA adapters + double quantisation — fine-tune a 65B model on a single 48GB GPU. The technique that made LLM fine-tuning accessible to researchers without data-centre hardware." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="QLoRA" property="og:title"/>
+<meta content="4-bit NF4 quantisation + LoRA adapters + double quantisation — fine-tune a 65B model on a single 48GB GPU. The technique that made LLM fine-tuning accessible to researchers without data-centre hardware." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/qlora.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/qlora.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #d97706;
       --accent-dark: #b45309;
@@ -120,48 +121,44 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/peft-methods.html" class="nav-back">← PEFT Methods</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">PEFT Methods</span>
-    <h1><em>QLoRA</em></h1>
-    <p class="hero-sub">4-bit NF4 quantisation + LoRA adapters + double quantisation — fine-tune a 65B model on a single 48GB GPU. The technique that made LLM fine-tuning accessible to researchers without data-centre hardware.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">4-bit NF4</div><div class="stat-label">Base model</div></div>
-      <div><div class="stat-num"><1%</div><div class="stat-label">Trainable params</div></div>
-      <div><div class="stat-num">65B on 1 GPU</div><div class="stat-label">Accessible</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">QLoRA vs LoRA vs full fine-tuning</a></li>
-        <li><a href="#s2" data-num="02">NF4 quantisation</a></li>
-        <li><a href="#s3" data-num="03">Double quantisation</a></li>
-        <li><a href="#s4" data-num="04">Setting up with bitsandbytes</a></li>
-        <li><a href="#s5" data-num="05">Training with TRL</a></li>
-        <li><a href="#s6" data-num="06">Choosing rank and alpha</a></li>
-        <li><a href="#s7" data-num="07">Gotchas</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/peft-methods.html">← PEFT Methods</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">PEFT Methods</span>
+<h1><em>QLoRA</em></h1>
+<p class="hero-sub">4-bit NF4 quantisation + LoRA adapters + double quantisation — fine-tune a 65B model on a single 48GB GPU. The technique that made LLM fine-tuning accessible to researchers without data-centre hardware.</p>
+<div class="hero-stats">
+<div><div class="stat-num">4-bit NF4</div><div class="stat-label">Base model</div></div>
+<div><div class="stat-num">&lt;1%</div><div class="stat-label">Trainable params</div></div>
+<div><div class="stat-num">65B on 1 GPU</div><div class="stat-label">Accessible</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">QLoRA vs LoRA vs full fine-tuning</a></li>
+<li><a data-num="02" href="#s2">NF4 quantisation</a></li>
+<li><a data-num="03" href="#s3">Double quantisation</a></li>
+<li><a data-num="04" href="#s4">Setting up with bitsandbytes</a></li>
+<li><a data-num="05" href="#s5">Training with TRL</a></li>
+<li><a data-num="06" href="#s6">Choosing rank and alpha</a></li>
+<li><a data-num="07" href="#s7">Gotchas</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
 <h2>QLoRA vs LoRA vs full fine-tuning</h2>
 <p><strong>Full fine-tuning</strong>: update all model weights. Best quality. Requires storing the full model in float16 for training (2 bytes/param), plus gradients and optimiser states (~16 bytes/param total). A 7B model needs ~112GB GPU memory — impractical without multiple A100s.</p>
 <p><strong>LoRA</strong>: freeze all original weights; inject small trainable rank-r matrices into attention layers. Only ~0.1–1% of parameters are trained. Memory: original model (float16) + small adapters + gradients. A 7B model needs ~16GB. Quality: within 1–2% of full fine-tuning for most tasks.</p>
 <p><strong>QLoRA</strong> (Dettmers et al. 2023): quantise the base model to 4-bit NF4 before adding LoRA adapters. This halves the memory of the base model again. A 7B model fits in ~6GB VRAM. A 65B model fits in 48GB. Quality loss from 4-bit quantisation is small when combined with LoRA — the adapters learn to compensate for quantisation error. QLoRA is now the default approach for fine-tuning large open models on limited hardware.</p>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
 <h2>NF4 quantisation</h2>
 <p>NF4 (Normal Float 4) is a 4-bit data type optimised for normally-distributed weights. LLM weights are approximately normally distributed (mean ~0, std ~small), so a quantisation scheme designed for this distribution uses its 16 levels more efficiently than a uniform grid.</p>
 <p>NF4 maps each weight to the nearest of 16 quantisation levels that are spaced to minimise quantisation error for a unit normal distribution. Contrast with INT4 (uniform 4-bit integers) which wastes levels on rare extreme values.</p>
@@ -189,15 +186,14 @@ for name, param in model.named_parameters():
         print(f"{name}: 4-bit ({param.numel() * 0.5 / 1e6:.1f} MB)")
         break
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
 <h2>Double quantisation</h2>
 <p>4-bit quantisation requires storing quantisation constants (one per 64-weight block). These constants are float32 — adding ~0.5 bytes/param overhead. Double quantisation quantises these constants too (to 8-bit), reducing the overhead to ~0.125 bytes/param.</p>
 <p>The net result: a 7B model compressed from ~14GB (float16) to ~4.5GB (NF4 + double quantisation). Memory breakdown:</p>
 <pre><code class="language-python"># Memory calculation for QLoRA fine-tuning
-def qlora_memory_estimate(num_params_B: float, lora_rank: int = 16) -> dict:
+def qlora_memory_estimate(num_params_B: float, lora_rank: int = 16) -&gt; dict:
     # Base model in 4-bit: ~0.5 bytes per param
     base_model_gb = num_params_B * 1e9 * 0.5 / 1e9
     # LoRA adapters in float16 (typically applied to Q, K, V, O projections)
@@ -219,10 +215,9 @@ for size in [7, 13, 34, 70]:
 # 34B: 22.1 GB — needs A100 40GB
 # 70B: 43.0 GB — needs A100 80GB or 2×A100 40GB
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
 <h2>Training with TRL</h2>
 <pre><code class="language-python">from transformers import AutoTokenizer, BitsAndBytesConfig
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
@@ -278,10 +273,9 @@ trainer = SFTTrainer(
 trainer.train()
 trainer.save_model("./qlora-final")
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
 <h2>Choosing rank and alpha</h2>
 <p><strong>Rank (r)</strong>: controls the number of trainable parameters. r=8: minimal (good for simple style adaptation). r=16: standard default. r=64: for complex tasks like code generation or domain adaptation with large distribution shift. Higher rank = more capacity but more memory and risk of overfitting.</p>
 <p><strong>Alpha (lora_alpha)</strong>: scaling factor applied to LoRA outputs before adding to frozen weights. Effective LoRA contribution = (alpha/r) × LoRA_output. Setting alpha=2r keeps the effective scale stable regardless of r. Common choices: r=16/alpha=32, r=64/alpha=64.</p>
@@ -295,10 +289,9 @@ for rank in [8, 16, 32, 64]:
     print(f"r={rank}: {trainable/1e6:.1f}M trainable params")
 # r=8:  6.8M  | r=16: 13.6M | r=32: 27.3M | r=64: 54.5M
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
 <h2>Merging adapters for deployment</h2>
 <pre><code class="language-python">from peft import PeftModel
 from transformers import AutoModelForCausalLM
@@ -321,19 +314,17 @@ merged.save_pretrained("./merged-model")
 # python llama.cpp/convert_hf_to_gguf.py ./merged-model --outtype f16
 # ./llama.cpp/llama-quantize merged-f16.gguf merged-q4km.gguf Q4_K_M
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s7">
-      <div class="section-marker">SECTION 07</div>
+</div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>4-bit models cannot be fine-tuned directly — you need prepare_model_for_kbit_training.</strong> This function casts certain normalisation layers back to float32 (they can't be trained in 4-bit) and enables gradient checkpointing. Skipping this step causes NaN losses or silent failures where gradients don't flow through the base model correctly.</p>
 <p><strong>Gradient checkpointing trades compute for memory.</strong> <code>model.gradient_checkpointing_enable()</code> recomputes activations during the backward pass instead of storing them. This reduces activation memory by ~60% but increases training time by ~20%. Essential for fitting large models in limited VRAM.</p>
 <p><strong>The merged model is larger than the 4-bit base.</strong> Merging adds LoRA weights back into the base weights at full precision — the merged model is back to float16 size. If you need a small model for deployment, quantise the merged model to GGUF/GPTQ after merging, not before.</p>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/peft-methods.html" style="color:var(--accent)">PEFT Methods</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/peft-methods.html" style="color:var(--accent)">PEFT Methods</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Extended Thinking | GenAI Mindmap</title>
-  <meta name="description" content="Give the model a private reasoning space before it commits to an answer — dramatically improves accuracy on hard math, logic, and multi-step problems." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Extended Thinking" />
-  <meta property="og:description" content="Give the model a private reasoning space before it commits to an answer — dramatically improves accuracy on hard math, logic, and multi-step problems." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/extended-thinking.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/extended-thinking.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Extended Thinking | GenAI Mindmap</title>
+<meta content="Give the model a private reasoning space before it commits to an answer — dramatically improves accuracy on hard math, logic, and multi-step problems." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="Extended Thinking" property="og:title"/>
+<meta content="Give the model a private reasoning space before it commits to an answer — dramatically improves accuracy on hard math, logic, and multi-step problems." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/extended-thinking.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/extended-thinking.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #6d28d9;
       --accent-dark: #5b21b6;
@@ -120,69 +121,64 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/advanced-reasoning.html" class="nav-back">← Advanced Reasoning</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Advanced Reasoning</span>
-    <h1><em>Extended Thinking</em></h1>
-    <p class="hero-sub">Give the model a private reasoning space before it commits to an answer — dramatically improves accuracy on hard math, logic, and multi-step problems.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">Private</div><div class="stat-label">Reasoning space</div></div>
-      <div><div class="stat-num">Harder problems</div><div class="stat-label">Best use case</div></div>
-      <div><div class="stat-num">budget_tokens</div><div class="stat-label">Key parameter</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">Scratchpad vs visible CoT</a></li>
-        <li><a href="#s2" data-num="02">How extended thinking works</a></li>
-        <li><a href="#s3" data-num="03">The Anthropic API</a></li>
-        <li><a href="#s4" data-num="04">Controlling reasoning depth</a></li>
-        <li><a href="#s5" data-num="05">When to use it</a></li>
-        <li><a href="#s6" data-num="06">Cost & latency trade-offs</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>Scratchpad vs visible CoT</h2>
-      <p>Standard chain-of-thought asks the model to reason out loud in its response — what you see is what it thought. Extended thinking goes further: the model gets a private scratch space to work through the problem before producing any visible output. The reasoning happens in a separate, hidden layer.</p>
-      <p>Think of it like an exam. Regular CoT is "show your work in the answer." Extended thinking is "take as long as you need in a private rough-work section, then write your final answer." The rough work is discarded; only the final answer is returned — unless you explicitly ask to see the thinking too.</p>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>How extended thinking works</h2>
-      <p>When extended thinking is enabled, the model generates a special "thinking" block that doesn't appear in the response unless you request it. This block can contain exploratory reasoning, rejected hypotheses, backtracking, and re-evaluation — things the model wouldn't include in a polished answer.</p>
-      <ul>
-        <li><strong>The model can be wrong in the thinking block</strong> and correct itself — this is intentional. It's more like actual reasoning than performance.</li>
-        <li><strong>The thinking is not instructable.</strong> You can't directly control what goes into the thinking block via prompt instructions the way you can with the visible response.</li>
-        <li><strong>Budget tokens</strong> control how much the model reasons. More budget = deeper reasoning = slower + more expensive, but more accurate on hard problems.</li>
-      </ul>
-      <div class="callout blue">
-        <strong>When it matters most:</strong> Complex multi-step problems where the first approach often fails — hard math, competitive programming, multi-hop reasoning, strategic planning. For simple tasks, there's no benefit and extra cost.
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/advanced-reasoning.html">← Advanced Reasoning</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Advanced Reasoning</span>
+<h1><em>Extended Thinking</em></h1>
+<p class="hero-sub">Give the model a private reasoning space before it commits to an answer — dramatically improves accuracy on hard math, logic, and multi-step problems.</p>
+<div class="hero-stats">
+<div><div class="stat-num">Private</div><div class="stat-label">Reasoning space</div></div>
+<div><div class="stat-num">Harder problems</div><div class="stat-label">Best use case</div></div>
+<div><div class="stat-num">budget_tokens</div><div class="stat-label">Key parameter</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">Scratchpad vs visible CoT</a></li>
+<li><a data-num="02" href="#s2">How extended thinking works</a></li>
+<li><a data-num="03" href="#s3">The Anthropic API</a></li>
+<li><a data-num="04" href="#s4">Controlling reasoning depth</a></li>
+<li><a data-num="05" href="#s5">When to use it</a></li>
+<li><a data-num="06" href="#s6">Cost &amp; latency trade-offs</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
+<h2>Scratchpad vs visible CoT</h2>
+<p>Standard chain-of-thought asks the model to reason out loud in its response — what you see is what it thought. Extended thinking goes further: the model gets a private scratch space to work through the problem before producing any visible output. The reasoning happens in a separate, hidden layer.</p>
+<p>Think of it like an exam. Regular CoT is "show your work in the answer." Extended thinking is "take as long as you need in a private rough-work section, then write your final answer." The rough work is discarded; only the final answer is returned — unless you explicitly ask to see the thinking too.</p>
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
+<h2>How extended thinking works</h2>
+<p>When extended thinking is enabled, the model generates a special "thinking" block that doesn't appear in the response unless you request it. This block can contain exploratory reasoning, rejected hypotheses, backtracking, and re-evaluation — things the model wouldn't include in a polished answer.</p>
+<ul>
+<li><strong>The model can be wrong in the thinking block</strong> and correct itself — this is intentional. It's more like actual reasoning than performance.</li>
+<li><strong>The thinking is not instructable.</strong> You can't directly control what goes into the thinking block via prompt instructions the way you can with the visible response.</li>
+<li><strong>Budget tokens</strong> control how much the model reasons. More budget = deeper reasoning = slower + more expensive, but more accurate on hard problems.</li>
+</ul>
+<div class="callout blue">
+<strong>When it matters most:</strong> Complex multi-step problems where the first approach often fails — hard math, competitive programming, multi-hop reasoning, strategic planning. For simple tasks, there's no benefit and extra cost.
       </div>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>The Anthropic API</h2>
-      <div class="example-box">import anthropic
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
+<h2>The Anthropic API</h2>
+<div class="example-box">import anthropic
 
 client = anthropic.Anthropic()
 
 # Enable extended thinking with budget_tokens
 response = client.messages.create(
     model="claude-opus-4-6",   # Extended thinking requires Opus 3.5+
-    max_tokens=16000,           # Must be > budget_tokens
+    max_tokens=16000,           # Must be &gt; budget_tokens
     thinking={
         "type": "enabled",
         "budget_tokens": 10000  # Max tokens for the internal reasoning
@@ -207,16 +203,15 @@ for block in response.content:
     elif block.type == "text":
         print("=== ANSWER ===")
         print(block.text)</div>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>Controlling reasoning depth</h2>
-      <div class="example-box">import anthropic
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
+<h2>Controlling reasoning depth</h2>
+<div class="example-box">import anthropic
 
 client = anthropic.Anthropic()
 
-def think_hard(problem: str, budget: int = 8000) -> str:
+def think_hard(problem: str, budget: int = 8000) -&gt; str:
     """Solve a hard problem with extended thinking."""
     response = client.messages.create(
         model="claude-opus-4-6",
@@ -242,27 +237,25 @@ hard = think_hard("""
 Write a Python function that finds the longest palindromic subsequence
 in a string. Optimise for O(n²) time and O(n) space. Explain your approach.
 """, budget=15000)</div>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>When to use it</h2>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Use it for</th><th>Skip it for</th></tr></thead>
-        <tbody>
-          <tr><td>Competition-level math problems</td><td>Simple factual questions</td></tr>
-          <tr><td>Complex logic puzzles (many constraints)</td><td>Creative writing</td></tr>
-          <tr><td>Hard coding challenges (algorithm design)</td><td>Summarisation or extraction</td></tr>
-          <tr><td>Multi-step strategic planning</td><td>Any task where you need fast response</td></tr>
-          <tr><td>Debugging subtle errors in code</td><td>High-volume API calls (cost too high)</td></tr>
-        </tbody>
-      </table></div>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>Cost & latency trade-offs</h2>
-      <div class="example-box"># Pricing model (approximate, Anthropic Claude)
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
+<h2>When to use it</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Use it for</th><th>Skip it for</th></tr></thead>
+<tbody>
+<tr><td>Competition-level math problems</td><td>Simple factual questions</td></tr>
+<tr><td>Complex logic puzzles (many constraints)</td><td>Creative writing</td></tr>
+<tr><td>Hard coding challenges (algorithm design)</td><td>Summarisation or extraction</td></tr>
+<tr><td>Multi-step strategic planning</td><td>Any task where you need fast response</td></tr>
+<tr><td>Debugging subtle errors in code</td><td>High-volume API calls (cost too high)</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
+<h2>Cost &amp; latency trade-offs</h2>
+<div class="example-box"># Pricing model (approximate, Anthropic Claude)
 # Thinking tokens are billed at the same rate as output tokens
 # A 10,000-token thinking budget at claude-opus-4-6 pricing (~$15/M output tokens)
 # = up to $0.15 per call just for thinking
@@ -273,17 +266,16 @@ in a string. Optimise for O(n²) time and O(n) space. Explain your approach.
 # Best for: offline analysis, one-shot hard problems, low-volume high-stakes decisions
 
 # Rule of thumb:
-# budget_tokens < 2,000  → latency ~3-5s    cost ~$0.03
+# budget_tokens &lt; 2,000  → latency ~3-5s    cost ~$0.03
 # budget_tokens ~ 8,000  → latency ~10-20s  cost ~$0.12
 # budget_tokens ~ 20,000 → latency ~30-60s  cost ~$0.30</div>
-      <div class="callout amber">
-        <strong>Practical default:</strong> Start with budget_tokens=8000 for hard problems. If still getting wrong answers, double it. If already correct at lower budget, halve it. There's no benefit to giving more budget than the problem needs.
+<div class="callout amber">
+<strong>Practical default:</strong> Start with budget_tokens=8000 for hard problems. If still getting wrong answers, double it. If already correct at lower budget, halve it. There's no benefit to giving more budget than the problem needs.
       </div>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/advanced-reasoning.html" style="color:var(--accent)">Advanced Reasoning</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/advanced-reasoning.html" style="color:var(--accent)">Advanced Reasoning</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agentic RAG - GenAI Mindmap</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agentic RAG - GenAI Mindmap</title>
+<style>
     :root {
       --indigo: #4f46e5;
       --blue: #2563eb;
@@ -316,78 +317,69 @@
       color: var(--green);
     }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/><link href="https://genai4a11.github.io/concepts/agentic-rag.html" rel="canonical"/><meta content="Multi-step retrieval and reasoning that adapts dynamically, combining the power of agents with retrieval-augmented generation." name="description"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Retrieval & RAG</span>
-    <h1>Agentic <em>RAG</em></h1>
-    <p class="hero-sub">Multi-step retrieval and reasoning that adapts dynamically, combining the power of agents with retrieval-augmented generation.</p>
-    <div class="hero-stats">
-      <div>
-        <div class="stat-num">Multi-Step</div>
-        <div class="stat-label">Retrieval</div>
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../concepts/index.html">← All Concepts</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Retrieval &amp; RAG</span>
+<h1>Agentic <em>RAG</em></h1>
+<p class="hero-sub">Multi-step retrieval and reasoning that adapts dynamically, combining the power of agents with retrieval-augmented generation.</p>
+<div class="hero-stats">
+<div>
+<div class="stat-num">Multi-Step</div>
+<div class="stat-label">Retrieval</div>
+</div>
+<div>
+<div class="stat-num">Planning + Tools</div>
+<div class="stat-label">Architecture</div>
+</div>
+<div>
+<div class="stat-num">Self-Correcting</div>
+<div class="stat-label">Key Property</div>
+</div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<div class="toc-grid">
+<a data-num="01" href="#section-1">Beyond Naive RAG</a>
+<a data-num="02" href="#section-2">Core Patterns</a>
+<a data-num="03" href="#section-3">Query Decomposition</a>
+<a data-num="04" href="#section-4">Corrective RAG (CRAG)</a>
+<a data-num="05" href="#section-5">Self-RAG</a>
+<a data-num="06" href="#section-6">Building with LangGraph</a>
+<a data-num="07" href="#section-7">Evaluation &amp; Tracing</a>
+</div>
+</div>
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>Beyond Naive RAG</h2>
+<p>Traditional RAG (Retrieval-Augmented Generation) is simple: take a user question, retrieve documents, pass documents + question to an LLM, get an answer. This works for straightforward queries but fails on complex questions that require reasoning, multi-hop retrieval, or adaptive strategies.</p>
+<p><strong>Limitations of Naive RAG:</strong></p>
+<ul>
+<li><strong>Single retrieval pass:</strong> If the first retrieval misses relevant docs, the model can't recover. No feedback loop.</li>
+<li><strong>No query understanding:</strong> Complex questions with multiple sub-queries are treated as monolithic. "What are the causes, symptoms, and treatments of diabetes?" is a single retrieval, missing the fact that each part might need different docs.</li>
+<li><strong>No self-correction:</strong> If the model realizes retrieved docs are irrelevant, it can't re-query. It has to work with what it got.</li>
+<li><strong>Context window limits:</strong> Large document collections don't fit in context. Retrieving top-k docs is a bet that top-k is sufficient.</li>
+<li><strong>No tool use:</strong> The model can only read; it can't run calculations, code, or access real-time data dynamically.</li>
+</ul>
+<p>Agentic RAG solves these by adding <strong>planning, tool use, and iterative refinement</strong>. Instead of retrieve-once, agentic RAG decomposes questions, retrieves adaptively, evaluates results, and refines as needed.</p>
+<p><strong>Core Idea:</strong> Treat the LLM as an agent with tools. Tools include retrievers, web searchers, calculators, code executors, etc. The agent decides which tools to use and when, creating multi-step workflows that adapt to the question.</p>
+<div class="callout callout-blue">
+<strong>Why Agentic?</strong> An agent is an LLM that can take actions (use tools), observe outcomes, and decide next steps. Agentic RAG applies this to retrieval: the model doesn't passively read docs; it actively explores, evaluates, and refines.
       </div>
-      <div>
-        <div class="stat-num">Planning + Tools</div>
-        <div class="stat-label">Architecture</div>
-      </div>
-      <div>
-        <div class="stat-num">Self-Correcting</div>
-        <div class="stat-label">Key Property</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <div class="toc-grid">
-        <a href="#section-1" data-num="01">Beyond Naive RAG</a>
-        <a href="#section-2" data-num="02">Core Patterns</a>
-        <a href="#section-3" data-num="03">Query Decomposition</a>
-        <a href="#section-4" data-num="04">Corrective RAG (CRAG)</a>
-        <a href="#section-5" data-num="05">Self-RAG</a>
-        <a href="#section-6" data-num="06">Building with LangGraph</a>
-        <a href="#section-7" data-num="07">Evaluation & Tracing</a>
-      </div>
-    </div>
-
-    <div class="section-block" id="section-1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>Beyond Naive RAG</h2>
-      <p>Traditional RAG (Retrieval-Augmented Generation) is simple: take a user question, retrieve documents, pass documents + question to an LLM, get an answer. This works for straightforward queries but fails on complex questions that require reasoning, multi-hop retrieval, or adaptive strategies.</p>
-
-      <p><strong>Limitations of Naive RAG:</strong></p>
-      <ul>
-        <li><strong>Single retrieval pass:</strong> If the first retrieval misses relevant docs, the model can't recover. No feedback loop.</li>
-        <li><strong>No query understanding:</strong> Complex questions with multiple sub-queries are treated as monolithic. "What are the causes, symptoms, and treatments of diabetes?" is a single retrieval, missing the fact that each part might need different docs.</li>
-        <li><strong>No self-correction:</strong> If the model realizes retrieved docs are irrelevant, it can't re-query. It has to work with what it got.</li>
-        <li><strong>Context window limits:</strong> Large document collections don't fit in context. Retrieving top-k docs is a bet that top-k is sufficient.</li>
-        <li><strong>No tool use:</strong> The model can only read; it can't run calculations, code, or access real-time data dynamically.</li>
-      </ul>
-
-      <p>Agentic RAG solves these by adding <strong>planning, tool use, and iterative refinement</strong>. Instead of retrieve-once, agentic RAG decomposes questions, retrieves adaptively, evaluates results, and refines as needed.</p>
-
-      <p><strong>Core Idea:</strong> Treat the LLM as an agent with tools. Tools include retrievers, web searchers, calculators, code executors, etc. The agent decides which tools to use and when, creating multi-step workflows that adapt to the question.</p>
-
-      <div class="callout callout-blue">
-        <strong>Why Agentic?</strong> An agent is an LLM that can take actions (use tools), observe outcomes, and decide next steps. Agentic RAG applies this to retrieval: the model doesn't passively read docs; it actively explores, evaluates, and refines.
-      </div>
-    </div>
-
-    <div class="section-block" id="section-2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>Core Patterns</h2>
-      <p>Several patterns enable agentic RAG:</p>
-
-      <p><strong>1. Iterative Retrieval</strong></p>
-      <p>After generating an initial answer, the model checks if it's grounded in the retrieved docs. If not, it reformulates the query and retrieves again:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>Core Patterns</h2>
+<p>Several patterns enable agentic RAG:</p>
+<p><strong>1. Iterative Retrieval</strong></p>
+<p>After generating an initial answer, the model checks if it's grounded in the retrieved docs. If not, it reformulates the query and retrieves again:</p>
+<div class="example-box">
 Loop:
 1. User asks: "How does photosynthesis relate to climate?"
 2. Retrieve docs on photosynthesis
@@ -400,45 +392,39 @@ Loop:
 
 Result: Multi-hop reasoning without explicit prompting.
       </div>
-
-      <p><strong>2. Query Decomposition</strong></p>
-      <p>Complex questions are broken into sub-queries, each retrieved independently:</p>
-      <ul>
-        <li>"What is the history, current state, and future of AI?" → 3 sub-queries</li>
-        <li>Retrieve docs for each sub-query</li>
-        <li>Synthesize results into a cohesive answer</li>
-      </ul>
-
-      <p><strong>3. Self-Reflection (FLARE)</strong></p>
-      <p>While generating, the model identifies missing information and retrieves on-demand:</p>
-      <ul>
-        <li>Model generates: "The Renaissance was a period of great innovation..."</li>
-        <li>Model identifies: I need specific examples of Renaissance innovations</li>
-        <li>Triggers retrieval: "Renaissance innovations art science"</li>
-        <li>Continues generation with new context</li>
-      </ul>
-
-      <p><strong>4. Adaptive Retrieval</strong></p>
-      <p>The model decides whether it needs retrieval at all. For factual questions, retrieve; for reasoning, sometimes skip retrieval:</p>
-      <ul>
-        <li>Question: "What's 2+2?" → Skip retrieval, answer directly</li>
-        <li>Question: "Who was the first president of France?" → Retrieve</li>
-        <li>Question: "Why is 2+2=4?" → Mix retrieval (math foundations) with reasoning</li>
-      </ul>
-
-      <div class="callout callout-green">
-        <strong>Pattern Advantage:</strong> These patterns are composable. Use query decomposition + iterative refinement + self-reflection for maximum coverage. Or use just one pattern if the question is simple.
+<p><strong>2. Query Decomposition</strong></p>
+<p>Complex questions are broken into sub-queries, each retrieved independently:</p>
+<ul>
+<li>"What is the history, current state, and future of AI?" → 3 sub-queries</li>
+<li>Retrieve docs for each sub-query</li>
+<li>Synthesize results into a cohesive answer</li>
+</ul>
+<p><strong>3. Self-Reflection (FLARE)</strong></p>
+<p>While generating, the model identifies missing information and retrieves on-demand:</p>
+<ul>
+<li>Model generates: "The Renaissance was a period of great innovation..."</li>
+<li>Model identifies: I need specific examples of Renaissance innovations</li>
+<li>Triggers retrieval: "Renaissance innovations art science"</li>
+<li>Continues generation with new context</li>
+</ul>
+<p><strong>4. Adaptive Retrieval</strong></p>
+<p>The model decides whether it needs retrieval at all. For factual questions, retrieve; for reasoning, sometimes skip retrieval:</p>
+<ul>
+<li>Question: "What's 2+2?" → Skip retrieval, answer directly</li>
+<li>Question: "Who was the first president of France?" → Retrieve</li>
+<li>Question: "Why is 2+2=4?" → Mix retrieval (math foundations) with reasoning</li>
+</ul>
+<div class="callout callout-green">
+<strong>Pattern Advantage:</strong> These patterns are composable. Use query decomposition + iterative refinement + self-reflection for maximum coverage. Or use just one pattern if the question is simple.
       </div>
-    </div>
-
-    <div class="section-block" id="section-3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>Query Decomposition</h2>
-      <p>Breaking a complex question into logical sub-questions improves retrieval coverage.</p>
-
-      <p><strong>Methods</strong></p>
-      <p><strong>1. Explicit Decomposition</strong> — Prompt the model to break down the question:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Query Decomposition</h2>
+<p>Breaking a complex question into logical sub-questions improves retrieval coverage.</p>
+<p><strong>Methods</strong></p>
+<p><strong>1. Explicit Decomposition</strong> — Prompt the model to break down the question:</p>
+<div class="example-box">
 User question: "Compare climate policies in the EU and US"
 
 System prompt: "Break this question into 3-5 sub-questions."
@@ -452,21 +438,19 @@ Model output:
 
 Action: Retrieve on each sub-question separately.
       </div>
-
-      <p><strong>2. Step-Back Prompting</strong> — Ask more abstract questions first to capture broader context:</p>
-      <ul>
-        <li>Original: "What's the impact of federal interest rate decisions on housing prices in California?"</li>
-        <li>Step-back questions:</li>
-        <ul>
-          <li>"How do federal interest rates affect housing markets?"</li>
-          <li>"What economic factors drive California real estate?"</li>
-        </ul>
-        <li>Then retrieve on both abstract and original questions</li>
-      </ul>
-
-      <p><strong>3. HyDE (Hypothetical Document Embeddings)</strong></p>
-      <p>Generate a hypothetical document answering the question, use its embedding to retrieve similar real documents:</p>
-      <div class="example-box">
+<p><strong>2. Step-Back Prompting</strong> — Ask more abstract questions first to capture broader context:</p>
+<ul>
+<li>Original: "What's the impact of federal interest rate decisions on housing prices in California?"</li>
+<li>Step-back questions:</li>
+<ul>
+<li>"How do federal interest rates affect housing markets?"</li>
+<li>"What economic factors drive California real estate?"</li>
+</ul>
+<li>Then retrieve on both abstract and original questions</li>
+</ul>
+<p><strong>3. HyDE (Hypothetical Document Embeddings)</strong></p>
+<p>Generate a hypothetical document answering the question, use its embedding to retrieve similar real documents:</p>
+<div class="example-box">
 Query: "Best practices for distributed training of LLMs"
 
 Step 1: Generate hypothetical document:
@@ -480,12 +464,11 @@ Step 3: Search vector store for docs similar to this embedding
 Step 4: Retrieve real docs that are semantically similar
 Result: Retrieves practice-focused docs, not just theoretical ones.
       </div>
-
-      <p><strong>Implementation Example</strong></p>
-      <div class="example-box">
+<p><strong>Implementation Example</strong></p>
+<div class="example-box">
 from anthropic import Anthropic
 
-def decompose_query(user_question: str, model: str = "claude-3-5-sonnet-20241022") -> list[str]:
+def decompose_query(user_question: str, model: str = "claude-3-5-sonnet-20241022") -&gt; list[str]:
     """Decompose a complex question into sub-queries."""
     client = Anthropic()
     
@@ -510,7 +493,7 @@ Question: {user_question}"""
     ]
     return sub_queries
 
-def retrieve_for_decomposed_query(user_question: str, retriever) -> dict:
+def retrieve_for_decomposed_query(user_question: str, retriever) -&gt; dict:
     """Retrieve for each sub-query and aggregate."""
     sub_queries = decompose_query(user_question)
     all_docs = {}
@@ -524,19 +507,16 @@ def retrieve_for_decomposed_query(user_question: str, retriever) -> dict:
     
     return all_docs
       </div>
-
-      <div class="callout callout-amber">
-        <strong>Tradeoff:</strong> Decomposition increases API calls (one retrieval per sub-query). Use for complex questions. For simple questions, skip decomposition to save cost.
+<div class="callout callout-amber">
+<strong>Tradeoff:</strong> Decomposition increases API calls (one retrieval per sub-query). Use for complex questions. For simple questions, skip decomposition to save cost.
       </div>
-    </div>
-
-    <div class="section-block" id="section-4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>Corrective RAG (CRAG)</h2>
-      <p>Corrective RAG is a structured approach to handle retrieval failures. If retrieved documents don't answer the question, fall back to web search or knowledge expansion.</p>
-
-      <p><strong>CRAG Flow</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>Corrective RAG (CRAG)</h2>
+<p>Corrective RAG is a structured approach to handle retrieval failures. If retrieved documents don't answer the question, fall back to web search or knowledge expansion.</p>
+<p><strong>CRAG Flow</strong></p>
+<div class="example-box">
 1. User question: "Latest breakthroughs in quantum computing 2026"
 2. Retrieve from internal KB
 3. Evaluator judges: Are docs relevant? (binary or scored)
@@ -546,20 +526,18 @@ def retrieve_for_decomposed_query(user_question: str, retriever) -> dict:
 5. Generate answer from best sources
 6. Return with source attribution
       </div>
-
-      <p><strong>Retrieval Evaluation</strong></p>
-      <p>Key: How do we judge if retrieved docs are relevant? Three approaches:</p>
-      <ul>
-        <li><strong>LLM evaluator:</strong> Use Claude/GPT to rate relevance (slow but accurate)</li>
-        <li><strong>Heuristic evaluator:</strong> Check similarity score, keyword overlap, length (fast but brittle)</li>
-        <li><strong>Hybrid:</strong> Use heuristic first; if uncertain, fall back to LLM eval</li>
-      </ul>
-
-      <p><strong>Implementation</strong></p>
-      <div class="example-box">
+<p><strong>Retrieval Evaluation</strong></p>
+<p>Key: How do we judge if retrieved docs are relevant? Three approaches:</p>
+<ul>
+<li><strong>LLM evaluator:</strong> Use Claude/GPT to rate relevance (slow but accurate)</li>
+<li><strong>Heuristic evaluator:</strong> Check similarity score, keyword overlap, length (fast but brittle)</li>
+<li><strong>Hybrid:</strong> Use heuristic first; if uncertain, fall back to LLM eval</li>
+</ul>
+<p><strong>Implementation</strong></p>
+<div class="example-box">
 from anthropic import Anthropic
 
-def evaluate_retrieval(question: str, docs: list[str]) -> dict:
+def evaluate_retrieval(question: str, docs: list[str]) -&gt; dict:
     """Evaluate if docs are relevant to question."""
     client = Anthropic()
     
@@ -617,27 +595,23 @@ def corrective_rag(question: str, retriever, web_searcher):
     
     return response.content[0].text
       </div>
-
-      <div class="callout callout-green">
-        <strong>CRAG Advantage:</strong> Gracefully handles out-of-KB questions by falling back to web search. Prevents "I don't know" when external data could help.
+<div class="callout callout-green">
+<strong>CRAG Advantage:</strong> Gracefully handles out-of-KB questions by falling back to web search. Prevents "I don't know" when external data could help.
       </div>
-    </div>
-
-    <div class="section-block" id="section-5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>Self-RAG</h2>
-      <p>Self-RAG extends the model with special tokens that control when to retrieve, evaluate relevance, and judge output quality. The model learns to use these tokens during fine-tuning.</p>
-
-      <p><strong>Special Tokens in Self-RAG</strong></p>
-      <ul>
-        <li><strong>[Retrieve]:</strong> Signals that retrieval is needed</li>
-        <li><strong>[IsRel]:</strong> Judges if a retrieved doc is relevant (yes/no/irrelevant)</li>
-        <li><strong>[IsSup]:</strong> Checks if generated text is supported by docs (yes/no/partial)</li>
-        <li><strong>[IsUse]:</strong> Evaluates utility (yes/no)</li>
-      </ul>
-
-      <p><strong>Generation with Self-RAG</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>Self-RAG</h2>
+<p>Self-RAG extends the model with special tokens that control when to retrieve, evaluate relevance, and judge output quality. The model learns to use these tokens during fine-tuning.</p>
+<p><strong>Special Tokens in Self-RAG</strong></p>
+<ul>
+<li><strong>[Retrieve]:</strong> Signals that retrieval is needed</li>
+<li><strong>[IsRel]:</strong> Judges if a retrieved doc is relevant (yes/no/irrelevant)</li>
+<li><strong>[IsSup]:</strong> Checks if generated text is supported by docs (yes/no/partial)</li>
+<li><strong>[IsUse]:</strong> Evaluates utility (yes/no)</li>
+</ul>
+<p><strong>Generation with Self-RAG</strong></p>
+<div class="example-box">
 Question: "What's the latest in quantum error correction?"
 
 Model generates:
@@ -657,42 +631,36 @@ Model generates:
 
 Final answer synthesized from generation + retrieval steps.
       </div>
-
-      <p><strong>Advantages Over Naive RAG</strong></p>
-      <ul>
-        <li><strong>Selective retrieval:</strong> Model only retrieves when needed, not always</li>
-        <li><strong>Segment-level granularity:</strong> Can evaluate each sentence's support</li>
-        <li><strong>Beam search:</strong> Top-k candidates considering retrieval quality</li>
-        <li><strong>Interpretable:</strong> Special tokens show reasoning: when to retrieve, if docs are relevant</li>
-      </ul>
-
-      <p><strong>Implementation Note</strong></p>
-      <p>Self-RAG requires fine-tuning to teach the model when to use special tokens. Public models don't support this, but the paper (Asai et al. 2023) provides guidance. For production, you'd need to:</p>
-      <ul>
-        <li>Create training data with [Retrieve], [IsRel], etc. tokens annotated</li>
-        <li>Fine-tune your base model (LLaMA, etc.) with this data</li>
-        <li>Implement custom decoding to interpret special tokens</li>
-      </ul>
-
-      <div class="callout callout-rose">
-        <strong>Complexity Tradeoff:</strong> Self-RAG is powerful but requires fine-tuning. For many use cases, agentic patterns (decomposition, iteration) are sufficient without custom fine-tuning.
+<p><strong>Advantages Over Naive RAG</strong></p>
+<ul>
+<li><strong>Selective retrieval:</strong> Model only retrieves when needed, not always</li>
+<li><strong>Segment-level granularity:</strong> Can evaluate each sentence's support</li>
+<li><strong>Beam search:</strong> Top-k candidates considering retrieval quality</li>
+<li><strong>Interpretable:</strong> Special tokens show reasoning: when to retrieve, if docs are relevant</li>
+</ul>
+<p><strong>Implementation Note</strong></p>
+<p>Self-RAG requires fine-tuning to teach the model when to use special tokens. Public models don't support this, but the paper (Asai et al. 2023) provides guidance. For production, you'd need to:</p>
+<ul>
+<li>Create training data with [Retrieve], [IsRel], etc. tokens annotated</li>
+<li>Fine-tune your base model (LLaMA, etc.) with this data</li>
+<li>Implement custom decoding to interpret special tokens</li>
+</ul>
+<div class="callout callout-rose">
+<strong>Complexity Tradeoff:</strong> Self-RAG is powerful but requires fine-tuning. For many use cases, agentic patterns (decomposition, iteration) are sufficient without custom fine-tuning.
       </div>
-    </div>
-
-    <div class="section-block" id="section-6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>Building Agentic RAG with LangGraph</h2>
-      <p>LangGraph is a framework for building agentic systems. It models workflows as graphs with nodes (compute steps) and edges (transitions). Here's how to build agentic RAG:</p>
-
-      <p><strong>Architecture</strong></p>
-      <ul>
-        <li><strong>Nodes:</strong> Retrieve, Generate, Evaluate, Refine</li>
-        <li><strong>Edges:</strong> Conditional transitions based on evaluation</li>
-        <li><strong>State:</strong> Shared context (question, docs, answer)</li>
-      </ul>
-
-      <p><strong>Implementation Example</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>Building Agentic RAG with LangGraph</h2>
+<p>LangGraph is a framework for building agentic systems. It models workflows as graphs with nodes (compute steps) and edges (transitions). Here's how to build agentic RAG:</p>
+<p><strong>Architecture</strong></p>
+<ul>
+<li><strong>Nodes:</strong> Retrieve, Generate, Evaluate, Refine</li>
+<li><strong>Edges:</strong> Conditional transitions based on evaluation</li>
+<li><strong>State:</strong> Shared context (question, docs, answer)</li>
+</ul>
+<p><strong>Implementation Example</strong></p>
+<div class="example-box">
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, Annotated
 import anthropic
@@ -704,7 +672,7 @@ class RAGState(TypedDict):
     iterations: int
     max_iterations: int
 
-def retrieve_node(state: RAGState) -> RAGState:
+def retrieve_node(state: RAGState) -&gt; RAGState:
     """Retrieve documents based on question."""
     # In real code, use actual vector store
     retriever = VectorStore()  # Placeholder
@@ -712,7 +680,7 @@ def retrieve_node(state: RAGState) -> RAGState:
     state["docs"] = docs
     return state
 
-def generate_node(state: RAGState) -> RAGState:
+def generate_node(state: RAGState) -&gt; RAGState:
     """Generate answer from docs."""
     client = anthropic.Anthropic()
     
@@ -730,7 +698,7 @@ Answer: {state["question"]}"""
     state["answer"] = response.content[0].text
     return state
 
-def evaluate_node(state: RAGState) -> str:
+def evaluate_node(state: RAGState) -&gt; str:
     """Evaluate if answer is grounded."""
     client = anthropic.Anthropic()
     
@@ -752,9 +720,9 @@ Reply: grounded/needs_refinement"""
     else:
         return "refine"
 
-def refine_node(state: RAGState) -> RAGState:
+def refine_node(state: RAGState) -&gt; RAGState:
     """Refine question and re-retrieve."""
-    if state["iterations"] >= state["max_iterations"]:
+    if state["iterations"] &gt;= state["max_iterations"]:
         return state
     
     client = anthropic.Anthropic()
@@ -803,59 +771,54 @@ result = rag_app.invoke({
 
 print(result["answer"])
       </div>
-
-      <p><strong>Graph Execution</strong></p>
-      <p>LangGraph handles the loop: Retrieve → Generate → Evaluate → (Refine or Done). You define nodes and edges; the framework manages execution.</p>
-
-      <div class="callout callout-blue">
-        <strong>LangGraph Advantage:</strong> Explicit control flow. Easy to debug (see which node runs). Integrates with LangChain tools, models, and evaluation. Supports streaming and real-time updates.
+<p><strong>Graph Execution</strong></p>
+<p>LangGraph handles the loop: Retrieve → Generate → Evaluate → (Refine or Done). You define nodes and edges; the framework manages execution.</p>
+<div class="callout callout-blue">
+<strong>LangGraph Advantage:</strong> Explicit control flow. Easy to debug (see which node runs). Integrates with LangChain tools, models, and evaluation. Supports streaming and real-time updates.
       </div>
-    </div>
-
-    <div class="section-block" id="section-7">
-      <div class="section-marker">SECTION 07</div>
-      <h2>Evaluation & Tracing</h2>
-      <p>Evaluating agentic RAG systems is more complex than naive RAG because multi-hop reasoning makes ground truth harder to define.</p>
-
-      <p><strong>RAGAS Metrics (Adapted for Agentic)</strong></p>
-      <div class="table-wrap">
-        <table>
-          <tr>
-            <th>Metric</th>
-            <th>Definition</th>
-            <th>For Agentic RAG</th>
-          </tr>
-          <tr>
-            <td>Retrieval Precision</td>
-            <td>% of retrieved docs that are relevant</td>
-            <td>Measure per retrieval step; agentic may have 3+ steps</td>
-          </tr>
-          <tr>
-            <td>Context Precision</td>
-            <td>Ranking of relevant docs in retrieval list</td>
-            <td>Track across all retrieval iterations</td>
-          </tr>
-          <tr>
-            <td>Faithfulness</td>
-            <td>Answer is supported by retrieved docs</td>
-            <td>Judge on final answer + all intermediate docs</td>
-          </tr>
-          <tr>
-            <td>Answer Relevance</td>
-            <td>Answer is relevant to question</td>
-            <td>Standard metric; agentic decomposition improves this</td>
-          </tr>
-          <tr>
-            <td>Latency</td>
-            <td>Time to generate answer</td>
-            <td>Agentic adds overhead; monitor iterations vs quality</td>
-          </tr>
-        </table>
-      </div>
-
-      <p><strong>Tracing Multi-Hop Reasoning</strong></p>
-      <p>Key: Log each step to understand where errors occur:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-7">
+<div class="section-marker">SECTION 07</div>
+<h2>Evaluation &amp; Tracing</h2>
+<p>Evaluating agentic RAG systems is more complex than naive RAG because multi-hop reasoning makes ground truth harder to define.</p>
+<p><strong>RAGAS Metrics (Adapted for Agentic)</strong></p>
+<div class="table-wrap">
+<table>
+<tr>
+<th>Metric</th>
+<th>Definition</th>
+<th>For Agentic RAG</th>
+</tr>
+<tr>
+<td>Retrieval Precision</td>
+<td>% of retrieved docs that are relevant</td>
+<td>Measure per retrieval step; agentic may have 3+ steps</td>
+</tr>
+<tr>
+<td>Context Precision</td>
+<td>Ranking of relevant docs in retrieval list</td>
+<td>Track across all retrieval iterations</td>
+</tr>
+<tr>
+<td>Faithfulness</td>
+<td>Answer is supported by retrieved docs</td>
+<td>Judge on final answer + all intermediate docs</td>
+</tr>
+<tr>
+<td>Answer Relevance</td>
+<td>Answer is relevant to question</td>
+<td>Standard metric; agentic decomposition improves this</td>
+</tr>
+<tr>
+<td>Latency</td>
+<td>Time to generate answer</td>
+<td>Agentic adds overhead; monitor iterations vs quality</td>
+</tr>
+</table>
+</div>
+<p><strong>Tracing Multi-Hop Reasoning</strong></p>
+<p>Key: Log each step to understand where errors occur:</p>
+<div class="example-box">
 Trace output (structured log):
 {
   "question": "What are the implications of quantum computing on blockchain?",
@@ -892,10 +855,9 @@ Trace output (structured log):
   "latency_ms": 3200
 }
       </div>
-
-      <p><strong>Quality vs Latency Tradeoff</strong></p>
-      <div class="example-box">
-Scenario: Q&A system with agentic RAG
+<p><strong>Quality vs Latency Tradeoff</strong></p>
+<div class="example-box">
+Scenario: Q&amp;A system with agentic RAG
 
 Config 1: No decomposition, 1 retrieval pass
 - Latency: 500ms
@@ -910,23 +872,19 @@ Config 2: Query decomposition, iterative refinement
 Trade-off: 5x slower, 4x more expensive, 16pt accuracy gain.
 For high-stakes (medical, legal): worth it. For customer chat: maybe not.
       </div>
-
-      <p><strong>Debugging Agentic Pipelines</strong></p>
-      <ul>
-        <li><strong>Trace logs:</strong> Which step failed? Was retrieval insufficient? Was generation poor?</li>
-        <li><strong>Human evaluation:</strong> Sample 100 outputs; have humans rate 0-5 (incorrect, partially correct, correct, excellent)</li>
-        <li><strong>Failure analysis:</strong> Group failures by type (retrieval miss, reasoning error, hallucination)</li>
-        <li><strong>A/B tests:</strong> Compare agentic vs naive RAG on same questions</li>
-      </ul>
-
-      <div class="callout callout-green">
-        <strong>Best Practice:</strong> Instrument your agentic RAG with detailed logging. Every retrieval, evaluation, and generation decision should be traceable. Use LangSmith or similar for visualization and debugging.
+<p><strong>Debugging Agentic Pipelines</strong></p>
+<ul>
+<li><strong>Trace logs:</strong> Which step failed? Was retrieval insufficient? Was generation poor?</li>
+<li><strong>Human evaluation:</strong> Sample 100 outputs; have humans rate 0-5 (incorrect, partially correct, correct, excellent)</li>
+<li><strong>Failure analysis:</strong> Group failures by type (retrieval miss, reasoning error, hallucination)</li>
+<li><strong>A/B tests:</strong> Compare agentic vs naive RAG on same questions</li>
+</ul>
+<div class="callout callout-green">
+<strong>Best Practice:</strong> Instrument your agentic RAG with detailed logging. Every retrieval, evaluation, and generation decision should be traceable. Use LangSmith or similar for visualization and debugging.
       </div>
-    </div>
-
-  </div>
-
-  <footer>
+</div>
+</div>
+<footer>
     © 2026 GenAI Mindmap. All concepts serve learning purposes.
   </footer>
 </body>

@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LoRA - GenAI Mindmap</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LoRA - GenAI Mindmap</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
     :root {
       --indigo: #4f46e5;
       --blue: #2563eb;
@@ -339,101 +340,89 @@
       font-weight: 600;
     }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/><link href="https://genai4a11.github.io/concepts/lora.html" rel="canonical"/><meta content="Low-Rank Adaptation. Fine-tune 70B models on consumer GPUs. Only train 1% of parameters, reduce memory by 3×." name="description"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="../concepts/index.html" class="nav-back">← All Concepts</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Fine-tuning</span>
-    <h1><em>LoRA</em></h1>
-    <p class="hero-sub">Low-Rank Adaptation. Fine-tune 70B models on consumer GPUs. Only train 1% of parameters, reduce memory by 3×.</p>
-    <div class="hero-stats">
-      <div>
-        <div class="stat-num">2021</div>
-        <div class="stat-label">Paper</div>
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../concepts/index.html">← All Concepts</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Fine-tuning</span>
+<h1><em>LoRA</em></h1>
+<p class="hero-sub">Low-Rank Adaptation. Fine-tune 70B models on consumer GPUs. Only train 1% of parameters, reduce memory by 3×.</p>
+<div class="hero-stats">
+<div>
+<div class="stat-num">2021</div>
+<div class="stat-label">Paper</div>
+</div>
+<div>
+<div class="stat-num">&lt;1%</div>
+<div class="stat-label">Trainable Params</div>
+</div>
+<div>
+<div class="stat-num">3×</div>
+<div class="stat-label">Memory Reduction</div>
+</div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#section-1">The Fine-tuning Paradox</a></li>
+<li><a data-num="02" href="#section-2">LoRA Math</a></li>
+<li><a data-num="03" href="#section-3">Which Layers to Adapt</a></li>
+<li><a data-num="04" href="#section-4">QLoRA</a></li>
+<li><a data-num="05" href="#section-5">Training with PEFT + TRL</a></li>
+<li><a data-num="06" href="#section-6">LoRA Variants</a></li>
+<li><a data-num="07" href="#section-7">Merging &amp; Deployment</a></li>
+</ul>
+</div>
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>The Fine-tuning Paradox</h2>
+<p>Modern LLMs are massive. A 70B parameter model requires ~140GB of VRAM just to store weights (float16). Training requires gradients (~140GB) + optimizer states (~280GB). Total: ~560GB. Only 8× H100 GPUs (192GB each) or TPv4 pods can handle it.</p>
+<p><strong>The Problem</strong></p>
+<ul>
+<li><strong>GPU requirements:</strong> 8× H100 = ~$160K upfront, or $12K+/month on cloud</li>
+<li><strong>Access:</strong> Most researchers/companies can't afford this</li>
+<li><strong>Iteration speed:</strong> 8-GPU training takes hours. Slow feedback loops.</li>
+<li><strong>Parameter efficiency:</strong> Full fine-tuning updates ALL 70B params. Overkill for most tasks.</li>
+</ul>
+<p><strong>Key Insight</strong> Most of a pre-trained model's knowledge is frozen. You're fine-tuning to adapt to a specific task (e.g., "answer like a doctor" or "write like Shakespeare"). You don't need to update all parameters—just a small adaptor.</p>
+<p><strong>The LoRA Solution</strong> Instead of updating W (70B parameters), train two small matrices A and B such that ΔW = AB^T. If A is (70K × r) and B is (70K × r) where r=8, you train only 1.1M parameters (0.0016% of 70B). Memory drops from 560GB to ~4GB.</p>
+<div class="callout blue">
+<strong>Game Changer:</strong> LoRA brought fine-tuning from PhD-researcher-exclusive to consumer-GPU territory. Now you can fine-tune on a single RTX 4090 (24GB) instead of 8× H100.
       </div>
-      <div>
-        <div class="stat-num">&lt;1%</div>
-        <div class="stat-label">Trainable Params</div>
-      </div>
-      <div>
-        <div class="stat-num">3×</div>
-        <div class="stat-label">Memory Reduction</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#section-1" data-num="01">The Fine-tuning Paradox</a></li>
-        <li><a href="#section-2" data-num="02">LoRA Math</a></li>
-        <li><a href="#section-3" data-num="03">Which Layers to Adapt</a></li>
-        <li><a href="#section-4" data-num="04">QLoRA</a></li>
-        <li><a href="#section-5" data-num="05">Training with PEFT + TRL</a></li>
-        <li><a href="#section-6" data-num="06">LoRA Variants</a></li>
-        <li><a href="#section-7" data-num="07">Merging & Deployment</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="section-1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>The Fine-tuning Paradox</h2>
-      <p>Modern LLMs are massive. A 70B parameter model requires ~140GB of VRAM just to store weights (float16). Training requires gradients (~140GB) + optimizer states (~280GB). Total: ~560GB. Only 8× H100 GPUs (192GB each) or TPv4 pods can handle it.</p>
-
-      <p><strong>The Problem</strong></p>
-      <ul>
-        <li><strong>GPU requirements:</strong> 8× H100 = ~$160K upfront, or $12K+/month on cloud</li>
-        <li><strong>Access:</strong> Most researchers/companies can't afford this</li>
-        <li><strong>Iteration speed:</strong> 8-GPU training takes hours. Slow feedback loops.</li>
-        <li><strong>Parameter efficiency:</strong> Full fine-tuning updates ALL 70B params. Overkill for most tasks.</li>
-      </ul>
-
-      <p><strong>Key Insight</strong> Most of a pre-trained model's knowledge is frozen. You're fine-tuning to adapt to a specific task (e.g., "answer like a doctor" or "write like Shakespeare"). You don't need to update all parameters—just a small adaptor.</p>
-
-      <p><strong>The LoRA Solution</strong> Instead of updating W (70B parameters), train two small matrices A and B such that ΔW = AB^T. If A is (70K × r) and B is (70K × r) where r=8, you train only 1.1M parameters (0.0016% of 70B). Memory drops from 560GB to ~4GB.</p>
-
-      <div class="callout blue">
-        <strong>Game Changer:</strong> LoRA brought fine-tuning from PhD-researcher-exclusive to consumer-GPU territory. Now you can fine-tune on a single RTX 4090 (24GB) instead of 8× H100.
-      </div>
-    </div>
-
-    <div class="section-block" id="section-2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>LoRA Math</h2>
-      <p>The elegance of LoRA is simple linear algebra. No architectural changes—just parameter efficiency.</p>
-
-      <p><strong>Low-Rank Decomposition</strong></p>
-      <p>Instead of updating weight matrix W (d × k dimensions) directly, decompose the update:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>LoRA Math</h2>
+<p>The elegance of LoRA is simple linear algebra. No architectural changes—just parameter efficiency.</p>
+<p><strong>Low-Rank Decomposition</strong></p>
+<p>Instead of updating weight matrix W (d × k dimensions) directly, decompose the update:</p>
+<div class="example-box">
 ΔW = BA^T
 
 Where:
 - B ∈ R^(d × r)  [d = input dim, r = rank (small, e.g., 8)]
 - A ∈ R^(k × r)  [k = output dim]
-- Rank r << min(d, k)
+- Rank r &lt;&lt; min(d, k)
 
 During forward pass:
 output = W @ x + (B @ A^T) @ x
        = W @ x + B @ (A^T @ x)
       </div>
-
-      <p><strong>Parameter Count Comparison</strong></p>
-      <p>Example: Llama 70B, we're adapting attention layers:</p>
-      <ul>
-        <li><strong>Full fine-tuning:</strong> ~70B parameters to train</li>
-        <li><strong>LoRA with rank=8:</strong> Attention layers only (~10B params total), so 2 × (d × r + k × r). For typical sizes, ~1.1M trainable params</li>
-        <li><strong>Savings:</strong> 70B / 1.1M = 64,000× fewer parameters!</li>
-      </ul>
-
-      <p><strong>Why Low-Rank?</strong></p>
-      <p>The paper hypothesizes that weight changes during adaptation are low-rank—the model's behavior shifts lie in a low-dimensional subspace. Empirically, rank 8–16 captures 90%+ of the benefit of full fine-tuning.</p>
-
-      <div class="example-box">
+<p><strong>Parameter Count Comparison</strong></p>
+<p>Example: Llama 70B, we're adapting attention layers:</p>
+<ul>
+<li><strong>Full fine-tuning:</strong> ~70B parameters to train</li>
+<li><strong>LoRA with rank=8:</strong> Attention layers only (~10B params total), so 2 × (d × r + k × r). For typical sizes, ~1.1M trainable params</li>
+<li><strong>Savings:</strong> 70B / 1.1M = 64,000× fewer parameters!</li>
+</ul>
+<p><strong>Why Low-Rank?</strong></p>
+<p>The paper hypothesizes that weight changes during adaptation are low-rank—the model's behavior shifts lie in a low-dimensional subspace. Empirically, rank 8–16 captures 90%+ of the benefit of full fine-tuning.</p>
+<div class="example-box">
 # Intuition: Why low-rank works
 # Pre-trained model: "Knows" language fundamentals
 # Fine-tuning task: "Adjust tone from neutral to sarcastic"
@@ -442,33 +431,28 @@ output = W @ x + (B @ A^T) @ x
 
 # LoRA captures this rotation with ~1M params instead of 70B
       </div>
-
-      <p><strong>Rank Selection</strong></p>
-      <ul>
-        <li><strong>r=8:</strong> Fast training, <1M params, usually sufficient</li>
-        <li><strong>r=16:</strong> Slightly better quality, ~2M params, still fast</li>
-        <li><strong>r=32:</strong> Diminishing returns, ~4M params, slower</li>
-        <li><strong>r=64:</strong> Rarely needed, approaches full fine-tuning</li>
-      </ul>
-
-      <div class="callout green">
-        <strong>Practical Rule:</strong> Start with r=8. If quality isn't good enough, try r=16. Rarely need higher. The paper reports that 8 captures 99% of the benefit of full fine-tuning in most cases.
+<p><strong>Rank Selection</strong></p>
+<ul>
+<li><strong>r=8:</strong> Fast training, &lt;1M params, usually sufficient</li>
+<li><strong>r=16:</strong> Slightly better quality, ~2M params, still fast</li>
+<li><strong>r=32:</strong> Diminishing returns, ~4M params, slower</li>
+<li><strong>r=64:</strong> Rarely needed, approaches full fine-tuning</li>
+</ul>
+<div class="callout green">
+<strong>Practical Rule:</strong> Start with r=8. If quality isn't good enough, try r=16. Rarely need higher. The paper reports that 8 captures 99% of the benefit of full fine-tuning in most cases.
       </div>
-    </div>
-
-    <div class="section-block" id="section-3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>Which Layers to Adapt</h2>
-      <p>You don't need to add LoRA to every layer. Strategic layer selection saves computation and improves results.</p>
-
-      <p><strong>Standard Strategy: Attention Layers Only</strong></p>
-      <ul>
-        <li><strong>Query/Key/Value projections:</strong> These control attention patterns. Most task-specific adaptation happens here.</li>
-        <li><strong>Output projection:</strong> Optional, sometimes helps but adds overhead</li>
-        <li><strong>MLP layers:</strong> Often frozen; they're task-agnostic</li>
-      </ul>
-
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Which Layers to Adapt</h2>
+<p>You don't need to add LoRA to every layer. Strategic layer selection saves computation and improves results.</p>
+<p><strong>Standard Strategy: Attention Layers Only</strong></p>
+<ul>
+<li><strong>Query/Key/Value projections:</strong> These control attention patterns. Most task-specific adaptation happens here.</li>
+<li><strong>Output projection:</strong> Optional, sometimes helps but adds overhead</li>
+<li><strong>MLP layers:</strong> Often frozen; they're task-agnostic</li>
+</ul>
+<div class="example-box">
 # Typical LoRA config: Adapt only Q, K, V in attention
 # 32-layer model × 3 (Q, K, V) = 96 LoRA matrices
 # Per-layer: (4096 × 8) + (4096 × 8) per Q, K, V = ~98K params per layer
@@ -477,44 +461,38 @@ output = W @ x + (B @ A^T) @ x
 # vs full fine-tuning: 70B = 70,000M params
 # 7,400× parameter reduction!
       </div>
-
-      <p><strong>When to Adapt More Layers</strong></p>
-      <ul>
-        <li><strong>Complex domain adaptation:</strong> Fine-tuning to specialized domain (legal, medical). Adapt Q, K, V, output projection, maybe MLP</li>
-        <li><strong>Language generation:</strong> Generate in new style (poetry, technical writing). Attention layers usually sufficient</li>
-        <li><strong>Classification:</strong> Categorize domain-specific content. Q, K, V usually enough</li>
-      </ul>
-
-      <p><strong>Empirical Results</strong></p>
-      <p>Ablation studies show:</p>
-      <ul>
-        <li>LoRA on Q only: ~70% of full fine-tuning quality</li>
-        <li>LoRA on Q, V: ~90% of quality</li>
-        <li>LoRA on Q, K, V: ~95% of quality</li>
-        <li>LoRA on all (Q, K, V, output, MLP): ~99% of quality, but 10× more params</li>
-      </ul>
-
-      <div class="callout amber">
-        <strong>Configuration Recommendation:</strong> For most tasks, adapt Q and V. If quality isn't enough, add K. Rarely need output or MLP. This hits 95% quality with 1/5 the params.
+<p><strong>When to Adapt More Layers</strong></p>
+<ul>
+<li><strong>Complex domain adaptation:</strong> Fine-tuning to specialized domain (legal, medical). Adapt Q, K, V, output projection, maybe MLP</li>
+<li><strong>Language generation:</strong> Generate in new style (poetry, technical writing). Attention layers usually sufficient</li>
+<li><strong>Classification:</strong> Categorize domain-specific content. Q, K, V usually enough</li>
+</ul>
+<p><strong>Empirical Results</strong></p>
+<p>Ablation studies show:</p>
+<ul>
+<li>LoRA on Q only: ~70% of full fine-tuning quality</li>
+<li>LoRA on Q, V: ~90% of quality</li>
+<li>LoRA on Q, K, V: ~95% of quality</li>
+<li>LoRA on all (Q, K, V, output, MLP): ~99% of quality, but 10× more params</li>
+</ul>
+<div class="callout amber">
+<strong>Configuration Recommendation:</strong> For most tasks, adapt Q and V. If quality isn't enough, add K. Rarely need output or MLP. This hits 95% quality with 1/5 the params.
       </div>
-    </div>
-
-    <div class="section-block" id="section-4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>QLoRA</h2>
-      <p>QLoRA (Quantization + LoRA) is a breakthrough: fine-tune 70B models on a single GPU with 4-bit quantization.</p>
-
-      <p><strong>The Technique</strong></p>
-      <ul>
-        <li><strong>Quantize base model to 4-bit NF4:</strong> 70B model → ~14GB (4× compression)</li>
-        <li><strong>Add LoRA adapters in float32:</strong> ~1M params = ~4MB</li>
-        <li><strong>Train using gradient checkpointing:</strong> Save memory during backprop</li>
-        <li><strong>Result:</strong> 70B model training on RTX 4090 (24GB) with room to spare</li>
-      </ul>
-
-      <p><strong>NF4 Quantization</strong></p>
-      <p>Instead of float32 (32-bit per weight), use 4-bit quantization:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>QLoRA</h2>
+<p>QLoRA (Quantization + LoRA) is a breakthrough: fine-tune 70B models on a single GPU with 4-bit quantization.</p>
+<p><strong>The Technique</strong></p>
+<ul>
+<li><strong>Quantize base model to 4-bit NF4:</strong> 70B model → ~14GB (4× compression)</li>
+<li><strong>Add LoRA adapters in float32:</strong> ~1M params = ~4MB</li>
+<li><strong>Train using gradient checkpointing:</strong> Save memory during backprop</li>
+<li><strong>Result:</strong> 70B model training on RTX 4090 (24GB) with room to spare</li>
+</ul>
+<p><strong>NF4 Quantization</strong></p>
+<p>Instead of float32 (32-bit per weight), use 4-bit quantization:</p>
+<div class="example-box">
 # NF4 (Normalized Float 4-bit): Custom quantization for LLMs
 # - 16 possible values per weight (2^4)
 # - Optimized for LLM weight distributions (not uniform)
@@ -525,9 +503,8 @@ output = W @ x + (B @ A^T) @ x
 # NF4: 70B × 0.5 bytes = 35GB
 # (technically 14GB with packing)
       </div>
-
-      <p><strong>QLoRA Recipe</strong></p>
-      <div class="example-box">
+<p><strong>QLoRA Recipe</strong></p>
+<div class="example-box">
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 from peft import LoraConfig, get_peft_model
 
@@ -565,26 +542,22 @@ trainer = SFTTrainer(
 )
 trainer.train()
       </div>
-
-      <p><strong>Memory Usage: Before & After</strong></p>
-      <ul>
-        <li><strong>Full 70B fine-tuning:</strong> 560GB+ (impossible on consumer hardware)</li>
-        <li><strong>LoRA only:</strong> ~80GB (still needs 8× H100)</li>
-        <li><strong>QLoRA:</strong> ~24GB (single RTX 4090!)</li>
-      </ul>
-
-      <div class="callout green">
-        <strong>QLoRA Impact:</strong> Democratized fine-tuning. Before: $10K+ cloud cost. After: $2-5K to buy a GPU. Enabled thousands of custom models.
+<p><strong>Memory Usage: Before &amp; After</strong></p>
+<ul>
+<li><strong>Full 70B fine-tuning:</strong> 560GB+ (impossible on consumer hardware)</li>
+<li><strong>LoRA only:</strong> ~80GB (still needs 8× H100)</li>
+<li><strong>QLoRA:</strong> ~24GB (single RTX 4090!)</li>
+</ul>
+<div class="callout green">
+<strong>QLoRA Impact:</strong> Democratized fine-tuning. Before: $10K+ cloud cost. After: $2-5K to buy a GPU. Enabled thousands of custom models.
       </div>
-    </div>
-
-    <div class="section-block" id="section-5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>Training with PEFT + TRL</h2>
-      <p>Complete end-to-end example using Hugging Face libraries.</p>
-
-      <p><strong>Setup: Load Model + Add LoRA</strong></p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>Training with PEFT + TRL</h2>
+<p>Complete end-to-end example using Hugging Face libraries.</p>
+<p><strong>Setup: Load Model + Add LoRA</strong></p>
+<div class="example-box">
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model
@@ -615,9 +588,8 @@ model.print_trainable_parameters()
 # Output: trainable params: 4,194,304 || all params: 6,738,415,616
 # Only 0.062% trainable!
       </div>
-
-      <p><strong>Training with SFTTrainer</strong></p>
-      <div class="example-box">
+<p><strong>Training with SFTTrainer</strong></p>
+<div class="example-box">
 from trl import SFTTrainer, SFTConfig
 
 # Load your dataset
@@ -650,9 +622,8 @@ trainer = SFTTrainer(
 
 trainer.train()
       </div>
-
-      <p><strong>Inference with LoRA</strong></p>
-      <div class="example-box">
+<p><strong>Inference with LoRA</strong></p>
+<div class="example-box">
 from peft import AutoPeftModelForCausalLM
 
 # Load fine-tuned model
@@ -667,65 +638,61 @@ inputs = tokenizer("What is machine learning?", return_tensors="pt")
 outputs = model.generate(**inputs, max_length=100)
 print(tokenizer.decode(outputs[0]))
       </div>
-
-      <div class="callout blue">
-        <strong>Training Best Practices:</strong> Use gradient_accumulation_steps to simulate larger batch sizes on small GPUs. Use packing=True to fit more data. Monitor with per_device_train_batch_size=4 and gradient_accumulation_steps=4 → effective batch 16.
+<div class="callout blue">
+<strong>Training Best Practices:</strong> Use gradient_accumulation_steps to simulate larger batch sizes on small GPUs. Use packing=True to fit more data. Monitor with per_device_train_batch_size=4 and gradient_accumulation_steps=4 → effective batch 16.
       </div>
-    </div>
-
-    <div class="section-block" id="section-6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>LoRA Variants</h2>
-      <p>Since the original 2021 LoRA paper, variants have improved upon the technique.</p>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Variant</th>
-              <th>Key Innovation</th>
-              <th>Trade-off</th>
-              <th>When to Use</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>LoRA</strong> (Original)</td>
-              <td>BA^T decomposition</td>
-              <td>Baseline</td>
-              <td>Start here; works for 95% of cases</td>
-            </tr>
-            <tr>
-              <td><strong>LoRA+</strong></td>
-              <td>Different learning rates for A vs B</td>
-              <td>Slightly better quality, tuning overhead</td>
-              <td>High-quality fine-tuning, extra care needed</td>
-            </tr>
-            <tr>
-              <td><strong>AdaLoRA</strong></td>
-              <td>Adaptive rank: learn importance of each rank</td>
-              <td>Automatically prune low-value params</td>
-              <td>Parameter-constrained scenarios</td>
-            </tr>
-            <tr>
-              <td><strong>DoRA</strong></td>
-              <td>Decompose into magnitude + direction</td>
-              <td>Better stability, slightly more params</td>
-              <td>When training is unstable</td>
-            </tr>
-            <tr>
-              <td><strong>LoftQ</strong></td>
-              <td>QLoRA + better initialization from quantization</td>
-              <td>Better quality QLoRA, no extra cost</td>
-              <td>4-bit quantization use cases</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p><strong>AdaLoRA: Adaptive Rank</strong></p>
-      <p>Instead of fixed rank r, learn which dimensions matter:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>LoRA Variants</h2>
+<p>Since the original 2021 LoRA paper, variants have improved upon the technique.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Key Innovation</th>
+<th>Trade-off</th>
+<th>When to Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LoRA</strong> (Original)</td>
+<td>BA^T decomposition</td>
+<td>Baseline</td>
+<td>Start here; works for 95% of cases</td>
+</tr>
+<tr>
+<td><strong>LoRA+</strong></td>
+<td>Different learning rates for A vs B</td>
+<td>Slightly better quality, tuning overhead</td>
+<td>High-quality fine-tuning, extra care needed</td>
+</tr>
+<tr>
+<td><strong>AdaLoRA</strong></td>
+<td>Adaptive rank: learn importance of each rank</td>
+<td>Automatically prune low-value params</td>
+<td>Parameter-constrained scenarios</td>
+</tr>
+<tr>
+<td><strong>DoRA</strong></td>
+<td>Decompose into magnitude + direction</td>
+<td>Better stability, slightly more params</td>
+<td>When training is unstable</td>
+</tr>
+<tr>
+<td><strong>LoftQ</strong></td>
+<td>QLoRA + better initialization from quantization</td>
+<td>Better quality QLoRA, no extra cost</td>
+<td>4-bit quantization use cases</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>AdaLoRA: Adaptive Rank</strong></p>
+<p>Instead of fixed rank r, learn which dimensions matter:</p>
+<div class="example-box">
 from peft import AdaLoraConfig, get_peft_model
 
 config = AdaLoraConfig(
@@ -740,9 +707,8 @@ model = get_peft_model(model, config)
 # Training will automatically prune unimportant rank dimensions
 # Result: fewer params with same quality
       </div>
-
-      <p><strong>DoRA: Direction + Magnitude</strong></p>
-      <div class="example-box">
+<p><strong>DoRA: Direction + Magnitude</strong></p>
+<div class="example-box">
 from peft import LoraConfig
 
 # DoRA decomposes ΔW into magnitude (scalar) + direction (low-rank)
@@ -760,20 +726,17 @@ model = get_peft_model(model, config)
 trainer.train()
 # More stable training, especially with large learning rates
       </div>
-
-      <div class="callout amber">
-        <strong>When to Use Variants:</strong> Vanilla LoRA is rock-solid. Use AdaLoRA if you want automatic rank optimization. Use DoRA if training is unstable. Most projects: stick with original LoRA.
+<div class="callout amber">
+<strong>When to Use Variants:</strong> Vanilla LoRA is rock-solid. Use AdaLoRA if you want automatic rank optimization. Use DoRA if training is unstable. Most projects: stick with original LoRA.
       </div>
-    </div>
-
-    <div class="section-block" id="section-7">
-      <div class="section-marker">SECTION 07</div>
-      <h2>Merging & Deployment</h2>
-      <p>After training, you have two choices: deploy LoRA adapters separately, or merge into base model.</p>
-
-      <p><strong>Option 1: Merge and Unload</strong></p>
-      <p>Fuse LoRA weights back into base model. Single file, standard inference:</p>
-      <div class="example-box">
+</div>
+<div class="section-block" id="section-7">
+<div class="section-marker">SECTION 07</div>
+<h2>Merging &amp; Deployment</h2>
+<p>After training, you have two choices: deploy LoRA adapters separately, or merge into base model.</p>
+<p><strong>Option 1: Merge and Unload</strong></p>
+<p>Fuse LoRA weights back into base model. Single file, standard inference:</p>
+<div class="example-box">
 from peft import AutoPeftModelForCausalLM
 
 # Load LoRA model
@@ -794,10 +757,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 model = AutoModelForCausalLM.from_pretrained("./merged-model")
       </div>
-
-      <p><strong>Option 2: Keep LoRA Separate</strong></p>
-      <p>Store base model + small LoRA adapters. Useful for multiple task-specific adapters:</p>
-      <div class="example-box">
+<p><strong>Option 2: Keep LoRA Separate</strong></p>
+<p>Store base model + small LoRA adapters. Useful for multiple task-specific adapters:</p>
+<div class="example-box">
 # Inference with separate LoRA
 from peft import AutoPeftModelForCausalLM
 
@@ -818,10 +780,9 @@ lora2 = PeftModel.from_pretrained(base_model, "./adapter-task2")
 
 # Use lora1, switch to lora2, etc. Same base model
       </div>
-
-      <p><strong>Multi-LoRA Serving</strong></p>
-      <p>Serve multiple task-specific adapters from one base model:</p>
-      <div class="example-box">
+<p><strong>Multi-LoRA Serving</strong></p>
+<p>Serve multiple task-specific adapters from one base model:</p>
+<div class="example-box">
 # vLLM + LoRA support (experimental)
 from vllm import LLM, SamplingParams
 
@@ -841,21 +802,18 @@ response = llm.generate(
     lora_request=LoraRequest("task1")
 )
       </div>
-
-      <p><strong>Comparison: Merge vs Separate</strong></p>
-      <ul>
-        <li><strong>Merge:</strong> Single file, standard inference, slightly slower (~5%), no PEFT dependency</li>
-        <li><strong>Separate:</strong> Smaller files (~40MB per adapter vs 14GB base), multi-adapter support, requires PEFT at inference</li>
-      </ul>
-
-      <div class="callout green">
-        <strong>Deployment Choice:</strong> For single task → merge (simpler). For multiple tasks or rapid iteration → keep separate. Merging is one-line code and removes dependencies.
+<p><strong>Comparison: Merge vs Separate</strong></p>
+<ul>
+<li><strong>Merge:</strong> Single file, standard inference, slightly slower (~5%), no PEFT dependency</li>
+<li><strong>Separate:</strong> Smaller files (~40MB per adapter vs 14GB base), multi-adapter support, requires PEFT at inference</li>
+</ul>
+<div class="callout green">
+<strong>Deployment Choice:</strong> For single task → merge (simpler). For multiple tasks or rapid iteration → keep separate. Merging is one-line code and removes dependencies.
       </div>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap • Concept Index • Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • Concept Index • Last updated March 2026</p>
+</footer>
 </body>
 </html>

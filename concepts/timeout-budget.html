@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Timeout Budget | GenAI Mindmap</title>
-  <meta name="description" content="Strategies for setting, propagating, and enforcing time budgets across LLM pipeline stages so that slow model calls never cascade into full user-facing timeouts." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Timeout Budget" />
-  <meta property="og:description" content="Strategies for setting, propagating, and enforcing time budgets across LLM pipeline stages so that slow model calls never cascade into full user-facing timeouts." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/timeout-budget.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/timeout-budget.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Timeout Budget | GenAI Mindmap</title>
+<meta content="Strategies for setting, propagating, and enforcing time budgets across LLM pipeline stages so that slow model calls never cascade into full user-facing timeouts." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="Timeout Budget" property="og:title"/>
+<meta content="Strategies for setting, propagating, and enforcing time budgets across LLM pipeline stages so that slow model calls never cascade into full user-facing timeouts." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/timeout-budget.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/timeout-budget.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #7c3aed;
       --accent-dark: #6d28d9;
@@ -120,52 +121,47 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/prod-eng.html" class="nav-back">← Production Engineering</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Production Engineering</span>
-    <h1><em>Timeout Budget</em></h1>
-    <p class="hero-sub">Strategies for setting, propagating, and enforcing time budgets across LLM pipeline stages so that slow model calls never cascade into full user-facing timeouts.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">Recommended p99 budget</div><div class="stat-label">5–10 s</div></div>
-      <div><div class="stat-num">Typical LLM p50</div><div class="stat-label">1–3 s</div></div>
-      <div><div class="stat-num">Cascade factor</div><div class="stat-label">3–5×</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">Why Timeouts Matter</a></li>
-        <li><a href="#s2" data-num="02">Budget Allocation Strategy</a></li>
-        <li><a href="#s3" data-num="03">Deadline Propagation</a></li>
-        <li><a href="#s4" data-num="04">Partial-Result Fallbacks</a></li>
-        <li><a href="#s5" data-num="05">Streaming as Mitigation</a></li>
-        <li><a href="#s6" data-num="06">Observability</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>Why Timeouts Matter</h2>
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/prod-eng.html">← Production Engineering</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Production Engineering</span>
+<h1><em>Timeout Budget</em></h1>
+<p class="hero-sub">Strategies for setting, propagating, and enforcing time budgets across LLM pipeline stages so that slow model calls never cascade into full user-facing timeouts.</p>
+<div class="hero-stats">
+<div><div class="stat-num">Recommended p99 budget</div><div class="stat-label">5–10 s</div></div>
+<div><div class="stat-num">Typical LLM p50</div><div class="stat-label">1–3 s</div></div>
+<div><div class="stat-num">Cascade factor</div><div class="stat-label">3–5×</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">Why Timeouts Matter</a></li>
+<li><a data-num="02" href="#s2">Budget Allocation Strategy</a></li>
+<li><a data-num="03" href="#s3">Deadline Propagation</a></li>
+<li><a data-num="04" href="#s4">Partial-Result Fallbacks</a></li>
+<li><a data-num="05" href="#s5">Streaming as Mitigation</a></li>
+<li><a data-num="06" href="#s6">Observability</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
+<h2>Why Timeouts Matter</h2>
 <p>Without timeouts, a single slow model call blocks a thread indefinitely, exhausting connection pools and bringing down entire services. LLM latency is highly variable: p50 may be 1 s, p99 may be 30 s. Every stage of your pipeline (retrieval, reranking, generation) needs an independent timeout that fits within the overall user-facing budget.</p>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>Budget Allocation Strategy</h2>
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
+<h2>Budget Allocation Strategy</h2>
 <p>Start with your end-to-end SLA (e.g. 8 s). Allocate across stages with headroom: retrieval 0.5 s, reranking 0.3 s, generation 5 s, post-processing 0.2 s, network/overhead 2 s. The generation budget should be ~60–70% of the total. Never allocate the full budget to a single stage — you need slack for retries.</p>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>Deadline Propagation</h2>
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
+<h2>Deadline Propagation</h2>
 <p>Pass a deadline timestamp (not a timeout duration) through the call chain so each component " "knows the absolute deadline and can skip work that won't finish in time.</p>
 <pre><code>import time
 from dataclasses import dataclass
@@ -187,29 +183,25 @@ async def pipeline(query: str, ctx: RequestContext) -&gt; str:
     docs = await retrieve(query, ctx.child_ctx(0.1))   # 10% budget
     reranked = await rerank(docs, ctx.child_ctx(0.08)) # 8% budget
     return await generate(query, reranked, ctx)        # remainder</code></pre>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>Partial-Result Fallbacks</h2>
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
+<h2>Partial-Result Fallbacks</h2>
 <p>When generation times out, return what you have rather than an error: truncate the streamed response at the timeout boundary, return a cached best-match, or return a graceful degradation message ('I found relevant information but ran out of time; here are the top sources...'). Partial results keep the user experience intact.</p>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>Streaming as Mitigation</h2>
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
+<h2>Streaming as Mitigation</h2>
 <p>Streaming responses change the user's perception of latency: the first token at 500 ms feels fast even if the full response takes 8 s. Implement streaming with a token-level timeout (abort if no new token arrives in 3 s) rather than an absolute response timeout. This catches hung generations without cutting short fast ones.</p>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>Observability</h2>
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
+<h2>Observability</h2>
 <p>Track: timeout_rate by stage (retrieval/generation/total), p50/p95/p99 latency per stage, and partial_fallback_rate. Alert if timeout_rate exceeds 1% — it usually indicates a provider issue or a prompt change that inflated output length. Correlate timeout spikes with deployment events and model version changes.</p>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/prod-eng.html" style="color:var(--accent)">Production Engineering</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/prod-eng.html" style="color:var(--accent)">Production Engineering</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

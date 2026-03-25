@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DeepSpeed | GenAI Mindmap</title>
-  <meta name="description" content="Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="DeepSpeed" />
-  <meta property="og:description" content="Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/deepspeed.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/deepspeed.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DeepSpeed | GenAI Mindmap</title>
+<meta content="Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="DeepSpeed" property="og:title"/>
+<meta content="Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/deepspeed.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/deepspeed.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #2563eb;
       --accent-dark: #1d4ed8;
@@ -120,56 +121,52 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/training-tech.html" class="nav-back">← Training Tech</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Training Tech</span>
-    <h1><em>DeepSpeed</em></h1>
-    <p class="hero-sub">Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">ZeRO-3</div><div class="stat-label">Full Sharding</div></div>
-      <div><div class="stat-num">10×+</div><div class="stat-label">Larger Models</div></div>
-      <div><div class="stat-num">FSDP</div><div class="stat-label">Alternative</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">Why DeepSpeed?</a></li>
-        <li><a href="#s2" data-num="02">ZeRO Optimizer Stages</a></li>
-        <li><a href="#s3" data-num="03">Config File</a></li>
-        <li><a href="#s4" data-num="04">HuggingFace + DeepSpeed</a></li>
-        <li><a href="#s5" data-num="05">ZeRO-3 Inference</a></li>
-        <li><a href="#s6" data-num="06">Alternatives: FSDP</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>Why DeepSpeed?</h2>
-      <p>Training a 70B model requires ~140GB for weights alone (bfloat16). Optimizer states (Adam) add another 280GB. With gradients, you need ~560GB+ — impossible on a single GPU. DeepSpeed's ZeRO (Zero Redundancy Optimizer) shards all of this across GPUs.</p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>ZeRO Stage</th><th>What's Sharded</th><th>Memory / GPU (70B)</th></tr></thead>
-        <tbody>
-          <tr><td>Stage 0 (none)</td><td>Nothing</td><td>560 GB</td></tr>
-          <tr><td>Stage 1</td><td>Optimizer states</td><td>~400 GB</td></tr>
-          <tr><td>Stage 2</td><td>Optimizer states + gradients</td><td>~200 GB</td></tr>
-          <tr><td>Stage 3</td><td>Everything (params too)</td><td>~10 GB on 8 GPUs</td></tr>
-        </tbody>
-      </table></div>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>ZeRO Optimizer Stages</h2>
-      <div class="example-box"># ZeRO stage comparison for a 7B model across 8 × 80GB A100s:
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/training-tech.html">← Training Tech</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Training Tech</span>
+<h1><em>DeepSpeed</em></h1>
+<p class="hero-sub">Microsoft's distributed training library with ZeRO optimizer stages — enables training 100B+ models across multiple GPUs by sharding optimizer states, gradients, and parameters.</p>
+<div class="hero-stats">
+<div><div class="stat-num">ZeRO-3</div><div class="stat-label">Full Sharding</div></div>
+<div><div class="stat-num">10×+</div><div class="stat-label">Larger Models</div></div>
+<div><div class="stat-num">FSDP</div><div class="stat-label">Alternative</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">Why DeepSpeed?</a></li>
+<li><a data-num="02" href="#s2">ZeRO Optimizer Stages</a></li>
+<li><a data-num="03" href="#s3">Config File</a></li>
+<li><a data-num="04" href="#s4">HuggingFace + DeepSpeed</a></li>
+<li><a data-num="05" href="#s5">ZeRO-3 Inference</a></li>
+<li><a data-num="06" href="#s6">Alternatives: FSDP</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
+<h2>Why DeepSpeed?</h2>
+<p>Training a 70B model requires ~140GB for weights alone (bfloat16). Optimizer states (Adam) add another 280GB. With gradients, you need ~560GB+ — impossible on a single GPU. DeepSpeed's ZeRO (Zero Redundancy Optimizer) shards all of this across GPUs.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>ZeRO Stage</th><th>What's Sharded</th><th>Memory / GPU (70B)</th></tr></thead>
+<tbody>
+<tr><td>Stage 0 (none)</td><td>Nothing</td><td>560 GB</td></tr>
+<tr><td>Stage 1</td><td>Optimizer states</td><td>~400 GB</td></tr>
+<tr><td>Stage 2</td><td>Optimizer states + gradients</td><td>~200 GB</td></tr>
+<tr><td>Stage 3</td><td>Everything (params too)</td><td>~10 GB on 8 GPUs</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
+<h2>ZeRO Optimizer Stages</h2>
+<div class="example-box"># ZeRO stage comparison for a 7B model across 8 × 80GB A100s:
 #
 # Stage 0 (DDP): 8 replicas × 56GB = 448GB total
 #   Each GPU holds full model + optimizer states. Standard DDP.
@@ -188,12 +185,11 @@
 #   Tradeoff: communication overhead (gather params at each layer)
 #
 # Key insight: with 8 × 80GB A100s, even Stage 2 lets you train 65B+ models</div>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>Config File</h2>
-      <div class="example-box"># ds_config.json — DeepSpeed configuration
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
+<h2>Config File</h2>
+<div class="example-box"># ds_config.json — DeepSpeed configuration
 {
   "zero_optimization": {
     "stage": 2,                          // ZeRO Stage 2
@@ -219,12 +215,11 @@
     }
   }
 }</div>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>HuggingFace + DeepSpeed</h2>
-      <div class="example-box">from transformers import TrainingArguments, Trainer
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
+<h2>HuggingFace + DeepSpeed</h2>
+<div class="example-box">from transformers import TrainingArguments, Trainer
 
 # DeepSpeed is a first-class option in HuggingFace Trainer
 args = TrainingArguments(
@@ -250,12 +245,11 @@ trainer.train()
 #   "offload_param": {"device": "cpu"}         // CPU offload parameters
 # }
 # ZeRO-3 + CPU offload: fine-tune 30B on 4× 40GB A6000s</div>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>ZeRO-3 Inference</h2>
-      <div class="example-box">from deepspeed import init_inference
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
+<h2>ZeRO-3 Inference</h2>
+<div class="example-box">from deepspeed import init_inference
 import torch
 
 # Load a model that doesn't fit on one GPU for inference
@@ -277,12 +271,11 @@ outputs = ds_model.generate(**inputs, max_length=100)
 # ZeRO-Inference: shards by parameter → less communication overhead
 # Tensor Parallel: shards by matrix dimension → better GPU utilization
 # Use ZeRO-Inference for large single-request scenarios</div>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>Alternatives: FSDP</h2>
-      <div class="example-box">from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
+<h2>Alternatives: FSDP</h2>
+<div class="example-box">from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 
 # PyTorch's built-in FSDP — equivalent to ZeRO-3
@@ -307,14 +300,13 @@ model = FSDP(
 # DeepSpeed: more features (CPU offload, ZeRO-Infinity), harder to debug
 # FSDP: PyTorch native, simpler, better torch.compile compatibility
 # 2024 recommendation: FSDP for new projects, DeepSpeed if you need CPU offload</div>
-      <div class="callout amber">
-        <strong>Starting point:</strong> For 1-2 GPUs: ZeRO Stage 2 via HuggingFace (just set deepspeed=...). For 4+ GPUs training large models: ZeRO Stage 3 or FSDP. For 65B+ models on limited hardware: ZeRO-3 + CPU offload.
+<div class="callout amber">
+<strong>Starting point:</strong> For 1-2 GPUs: ZeRO Stage 2 via HuggingFace (just set deepspeed=...). For 4+ GPUs training large models: ZeRO Stage 3 or FSDP. For 65B+ models on limited hardware: ZeRO-3 + CPU offload.
       </div>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/training-tech.html" style="color:var(--accent)">Training Tech</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/training-tech.html" style="color:var(--accent)">Training Tech</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

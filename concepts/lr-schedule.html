@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LR Scheduling | GenAI Mindmap</title>
-  <meta name="description" content="Learning rate scheduling — cosine decay, warmup, and cyclical strategies that control training dynamics and final model quality." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="LR Scheduling" />
-  <meta property="og:description" content="Learning rate scheduling — cosine decay, warmup, and cyclical strategies that control training dynamics and final model quality." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/lr-schedule.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/lr-schedule.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LR Scheduling | GenAI Mindmap</title>
+<meta content="Learning rate scheduling — cosine decay, warmup, and cyclical strategies that control training dynamics and final model quality." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="LR Scheduling" property="og:title"/>
+<meta content="Learning rate scheduling — cosine decay, warmup, and cyclical strategies that control training dynamics and final model quality." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/lr-schedule.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/lr-schedule.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #2563eb;
       --accent-dark: #1d4ed8;
@@ -120,52 +121,48 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/optimization.html" class="nav-back">← Optimization</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Optimization</span>
-    <h1><em>LR Scheduling</em></h1>
-    <p class="hero-sub">Learning rate scheduling — cosine decay, warmup, and cyclical strategies that control training dynamics and final model quality.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">Warmup</div><div class="stat-label">First 1-5%</div></div>
-      <div><div class="stat-num">Cosine</div><div class="stat-label">Standard Decay</div></div>
-      <div><div class="stat-num">1-cycle</div><div class="stat-label">Fast Training</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">Why Schedule the LR?</a></li>
-        <li><a href="#s2" data-num="02">Linear Warmup</a></li>
-        <li><a href="#s3" data-num="03">Cosine Annealing</a></li>
-        <li><a href="#s4" data-num="04">HuggingFace Schedulers</a></li>
-        <li><a href="#s5" data-num="05">Finding the Right LR</a></li>
-        <li><a href="#s6" data-num="06">Common Patterns</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
-      <h2>Why Schedule the LR?</h2>
-      <p>A fixed learning rate is almost never optimal. Start too high and training diverges; keep it high and the model oscillates around the minimum but never converges. Scheduling solves this: ramp up carefully, then decay smoothly.</p>
-      <ul>
-        <li><strong>Warmup:</strong> Optimizer states (m, v in Adam) start at zero — initial gradients are unreliable. Warmup ramps LR from near-zero to target LR over the first 100-1000 steps.</li>
-        <li><strong>Cosine decay:</strong> Smoothly reduces LR following a cosine curve. Better convergence than linear decay.</li>
-        <li><strong>Cyclic LR:</strong> Oscillates between min and max LR — can find better optima by escaping local minima.</li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
-      <h2>Linear Warmup</h2>
-      <div class="example-box">import torch
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/optimization.html">← Optimization</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Optimization</span>
+<h1><em>LR Scheduling</em></h1>
+<p class="hero-sub">Learning rate scheduling — cosine decay, warmup, and cyclical strategies that control training dynamics and final model quality.</p>
+<div class="hero-stats">
+<div><div class="stat-num">Warmup</div><div class="stat-label">First 1-5%</div></div>
+<div><div class="stat-num">Cosine</div><div class="stat-label">Standard Decay</div></div>
+<div><div class="stat-num">1-cycle</div><div class="stat-label">Fast Training</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">Why Schedule the LR?</a></li>
+<li><a data-num="02" href="#s2">Linear Warmup</a></li>
+<li><a data-num="03" href="#s3">Cosine Annealing</a></li>
+<li><a data-num="04" href="#s4">HuggingFace Schedulers</a></li>
+<li><a data-num="05" href="#s5">Finding the Right LR</a></li>
+<li><a data-num="06" href="#s6">Common Patterns</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
+<h2>Why Schedule the LR?</h2>
+<p>A fixed learning rate is almost never optimal. Start too high and training diverges; keep it high and the model oscillates around the minimum but never converges. Scheduling solves this: ramp up carefully, then decay smoothly.</p>
+<ul>
+<li><strong>Warmup:</strong> Optimizer states (m, v in Adam) start at zero — initial gradients are unreliable. Warmup ramps LR from near-zero to target LR over the first 100-1000 steps.</li>
+<li><strong>Cosine decay:</strong> Smoothly reduces LR following a cosine curve. Better convergence than linear decay.</li>
+<li><strong>Cyclic LR:</strong> Oscillates between min and max LR — can find better optima by escaping local minima.</li>
+</ul>
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
+<h2>Linear Warmup</h2>
+<div class="example-box">import torch
 from torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR
 
 # Manual warmup + cosine decay
@@ -198,12 +195,11 @@ for step in range(total_steps):
     optimizer.step()
     scheduler.step()  # AFTER optimizer.step()
     print(f"Step {step}: lr = {scheduler.get_last_lr()[0]:.6f}")</div>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
-      <h2>Cosine Annealing</h2>
-      <div class="example-box">import torch
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
+<h2>Cosine Annealing</h2>
+<div class="example-box">import torch
 import numpy as np
 
 # Cosine schedule formula:
@@ -211,7 +207,7 @@ import numpy as np
 # t = current step, T = total steps
 
 def cosine_schedule(step, total_steps, lr_max, lr_min=0, warmup_steps=0):
-    if step < warmup_steps:
+    if step &lt; warmup_steps:
         return lr_max * step / warmup_steps  # Linear warmup
     progress = (step - warmup_steps) / (total_steps - warmup_steps)
     return lr_min + 0.5 * (lr_max - lr_min) * (1 + np.cos(np.pi * progress))
@@ -225,12 +221,11 @@ lrs = [cosine_schedule(s, 10000, 3e-4, lr_min=1e-5, warmup_steps=500) for s in s
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=2000, T_mult=2)
 # T_0: first cycle length; T_mult: each subsequent cycle is T_mult × longer</div>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
-      <h2>HuggingFace Schedulers</h2>
-      <div class="example-box">from transformers import (
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
+<h2>HuggingFace Schedulers</h2>
+<div class="example-box">from transformers import (
     get_cosine_schedule_with_warmup,
     get_linear_schedule_with_warmup,
     get_constant_schedule_with_warmup,
@@ -256,12 +251,11 @@ args = TrainingArguments(
     learning_rate=2e-5,
 )
 # Trainer handles scheduler creation automatically</div>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
-      <h2>Finding the Right LR</h2>
-      <div class="example-box">import torch
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
+<h2>Finding the Right LR</h2>
+<div class="example-box">import torch
 
 # LR Range Test (fast.ai approach)
 # Sweep LR from very small to very large in one pass
@@ -288,29 +282,27 @@ class LRFinder:
 # BERT/RoBERTa: 2e-5 to 5e-5
 # LLaMA/Mistral: 2e-5 to 3e-4 (depends on layers frozen)
 # Full pre-training: 1e-4 to 3e-4</div>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
-      <h2>Common Patterns</h2>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Scenario</th><th>Schedule</th><th>Typical LR</th><th>Warmup</th></tr></thead>
-        <tbody>
-          <tr><td>LLM pre-training</td><td>Cosine + warmup</td><td>3e-4</td><td>2000 steps</td></tr>
-          <tr><td>Supervised fine-tuning</td><td>Cosine + warmup</td><td>2e-5</td><td>100 steps</td></tr>
-          <tr><td>RLHF/DPO</td><td>Constant or cosine</td><td>1e-6 to 5e-6</td><td>50–100 steps</td></tr>
-          <tr><td>LoRA fine-tuning</td><td>Cosine + warmup</td><td>2e-4</td><td>10% of steps</td></tr>
-          <tr><td>Embedding training</td><td>Linear decay</td><td>2e-5</td><td>10%</td></tr>
-        </tbody>
-      </table></div>
-      <div class="callout amber">
-        <strong>If your loss spikes:</strong> Learning rate is too high or warmup is too short. Halve the LR or double warmup steps. If loss plateaus early, increase LR or switch from linear to cosine decay.
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
+<h2>Common Patterns</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Scenario</th><th>Schedule</th><th>Typical LR</th><th>Warmup</th></tr></thead>
+<tbody>
+<tr><td>LLM pre-training</td><td>Cosine + warmup</td><td>3e-4</td><td>2000 steps</td></tr>
+<tr><td>Supervised fine-tuning</td><td>Cosine + warmup</td><td>2e-5</td><td>100 steps</td></tr>
+<tr><td>RLHF/DPO</td><td>Constant or cosine</td><td>1e-6 to 5e-6</td><td>50–100 steps</td></tr>
+<tr><td>LoRA fine-tuning</td><td>Cosine + warmup</td><td>2e-4</td><td>10% of steps</td></tr>
+<tr><td>Embedding training</td><td>Linear decay</td><td>2e-5</td><td>10%</td></tr>
+</tbody>
+</table></div>
+<div class="callout amber">
+<strong>If your loss spikes:</strong> Learning rate is too high or warmup is too short. Halve the LR or double warmup steps. If loss plateaus early, increase LR or switch from linear to cosine decay.
       </div>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/optimization.html" style="color:var(--accent)">Optimization</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/optimization.html" style="color:var(--accent)">Optimization</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

@@ -1,23 +1,24 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Transformer Architecture — GenAI Mindmap</title>
-  <meta name="description" content="Attention, feed-forward layers, positional encoding, and how the pieces create a language model" />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Transformer Architecture" />
-  <meta property="og:description" content="Attention, feed-forward layers, positional encoding, and how the pieces create a language model" />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/transformer-arch.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Transformer Architecture" />
-  <meta name="twitter:description" content="Attention, feed-forward layers, positional encoding, and how the pieces create a language model" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/transformer-arch.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transformer Architecture — GenAI Mindmap</title>
+<meta content="Attention, feed-forward layers, positional encoding, and how the pieces create a language model" name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="Transformer Architecture" property="og:title"/>
+<meta content="Attention, feed-forward layers, positional encoding, and how the pieces create a language model" property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/transformer-arch.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<meta content="summary" name="twitter:card"/>
+<meta content="Transformer Architecture" name="twitter:title"/>
+<meta content="Attention, feed-forward layers, positional encoding, and how the pieces create a language model" name="twitter:description"/>
+<link href="https://genai4a11.github.io/concepts/transformer-arch.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -359,12 +360,11 @@
   }
 }
 </script>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-
 <nav>
-  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
-  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+<a class="nav-brand" href="../index.html" id="back-brand"><span class="dot">⬡</span> GenAI Mindmap</a>
+<a class="nav-back" href="../index.html" id="back-link">← Back to mindmap</a>
 </nav>
 <script>
   (function(){
@@ -376,96 +376,86 @@
     }
   })();
 </script>
-
 <!-- ── HERO ── -->
 <div class="hero">
-  <span class="hero-tag">ARCHITECTURE DEEP DIVE</span>
-  <h1>Transformer <em>Architecture</em></h1>
-  <p class="hero-sub">Attention, feed-forward layers, positional encoding, and how the pieces create a language model</p>
-  <div class="hero-stats">
-    <div class="stat">
-      <span class="stat-num">Q, K, V, O</span>
-      <span class="stat-label">the four weight matrices</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">12–96 layers</span>
-      <span class="stat-label">depth of modern LLMs</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">Attention is O(n²)</span>
-      <span class="stat-label">the scaling bottleneck</span>
-    </div>
-  </div>
+<span class="hero-tag">ARCHITECTURE DEEP DIVE</span>
+<h1>Transformer <em>Architecture</em></h1>
+<p class="hero-sub">Attention, feed-forward layers, positional encoding, and how the pieces create a language model</p>
+<div class="hero-stats">
+<div class="stat">
+<span class="stat-num">Q, K, V, O</span>
+<span class="stat-label">the four weight matrices</span>
 </div>
-
+<div class="stat">
+<span class="stat-num">12–96 layers</span>
+<span class="stat-label">depth of modern LLMs</span>
+</div>
+<div class="stat">
+<span class="stat-num">Attention is O(n²)</span>
+<span class="stat-label">the scaling bottleneck</span>
+</div>
+</div>
+</div>
 <!-- ── BODY ── -->
 <div class="page-wrap">
-
-  <!-- TOC -->
-  <div class="toc-card">
-    <div class="toc-heading">Contents</div>
-    <ol class="toc-list">
-      <li><a href="#big-picture" data-num="1">The big picture</a></li>
-      <li><a href="#self-attention" data-num="2">Self-attention</a></li>
-      <li><a href="#multi-head" data-num="3">Multi-head attention</a></li>
-      <li><a href="#feed-forward" data-num="4">Feed-forward networks</a></li>
-      <li><a href="#positional" data-num="5">Positional encoding</a></li>
-      <li><a href="#training-stability" data-num="6">Training stability</a></li>
-      <li><a href="#architecture-variants" data-num="7">Architecture variants</a></li>
-    </ol>
-  </div>
-
-  <!-- ── 1. BIG PICTURE ── -->
-  <div class="section-block" id="big-picture">
-    <div class="section-marker">01 — THE STACK</div>
-    <h2>The Big Picture</h2>
-    <p>A Transformer is a stack of identical layers. Each layer contains two main sublayers: Multi-Head Attention and Feed-Forward Network. The input is token embeddings (vocabulary → d_model dimensional vector), and the output is a probability distribution over the vocabulary for the next token.</p>
-
-    <h3>Model Hyperparameters</h3>
-    <p>The following hyperparameters define model size and capacity:</p>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;"><strong>d_model:</strong> embedding dimension (width of hidden states)</li>
-      <li style="margin: 0.5rem 0;"><strong>n_layers:</strong> number of stacked blocks (depth)</li>
-      <li style="margin: 0.5rem 0;"><strong>n_heads:</strong> number of attention heads per layer</li>
-      <li style="margin: 0.5rem 0;"><strong>d_ff:</strong> intermediate dimension of feed-forward network, usually 4× d_model</li>
-    </ul>
-
-    <h3>Example Model Configurations</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Model</th><th>d_model</th><th>Layers</th><th>Heads</th><th>d_ff</th><th>Params</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>GPT-2 Small</td><td>768</td><td>12</td><td>12</td><td>3072</td><td>117M</td></tr>
-          <tr><td>Llama 2-7B</td><td>4096</td><td>32</td><td>32</td><td>11008</td><td>7B</td></tr>
-          <tr><td>Llama 3-70B</td><td>8192</td><td>80</td><td>64</td><td>28672</td><td>70B</td></tr>
-          <tr><td>GPT-4 (est)</td><td>12288</td><td>96</td><td>96</td><td>49152</td><td>~1.8T (MoE)</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ── 2. SELF-ATTENTION ── -->
-  <div class="section-block" id="self-attention">
-    <div class="section-marker">02 — THE CORE MECHANISM</div>
-    <h2>Self-Attention: The Core Mechanism</h2>
-    <p>Each token attends to all other tokens in the sequence, asking "which other tokens are relevant to me?" This is the fundamental operation that gives Transformers their power and expressiveness.</p>
-
-    <h3>The Computation</h3>
-    <p>For input X, three learned weight matrices project the input into Query (Q), Key (K), and Value (V) spaces:</p>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;">Q = XW_Q</li>
-      <li style="margin: 0.5rem 0;">K = XW_K</li>
-      <li style="margin: 0.5rem 0;">V = XW_V</li>
-    </ul>
-    <p>Attention score is then: softmax(QK^T / sqrt(d_k)) → weighted sum of V</p>
-
-    <h3>Causal Masking</h3>
-    <p>In decoder-only models (for generation), each token can only attend to previous tokens (causal masking). The upper triangle of the attention matrix is masked to -inf before softmax, preventing the model from looking into the future.</p>
-
-    <h3>Scaled Dot-Product Attention in NumPy</h3>
-    <div class="example-box">import numpy as np
+<!-- TOC -->
+<div class="toc-card">
+<div class="toc-heading">Contents</div>
+<ol class="toc-list">
+<li><a data-num="1" href="#big-picture">The big picture</a></li>
+<li><a data-num="2" href="#self-attention">Self-attention</a></li>
+<li><a data-num="3" href="#multi-head">Multi-head attention</a></li>
+<li><a data-num="4" href="#feed-forward">Feed-forward networks</a></li>
+<li><a data-num="5" href="#positional">Positional encoding</a></li>
+<li><a data-num="6" href="#training-stability">Training stability</a></li>
+<li><a data-num="7" href="#architecture-variants">Architecture variants</a></li>
+</ol>
+</div>
+<!-- ── 1. BIG PICTURE ── -->
+<div class="section-block" id="big-picture">
+<div class="section-marker">01 — THE STACK</div>
+<h2>The Big Picture</h2>
+<p>A Transformer is a stack of identical layers. Each layer contains two main sublayers: Multi-Head Attention and Feed-Forward Network. The input is token embeddings (vocabulary → d_model dimensional vector), and the output is a probability distribution over the vocabulary for the next token.</p>
+<h3>Model Hyperparameters</h3>
+<p>The following hyperparameters define model size and capacity:</p>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;"><strong>d_model:</strong> embedding dimension (width of hidden states)</li>
+<li style="margin: 0.5rem 0;"><strong>n_layers:</strong> number of stacked blocks (depth)</li>
+<li style="margin: 0.5rem 0;"><strong>n_heads:</strong> number of attention heads per layer</li>
+<li style="margin: 0.5rem 0;"><strong>d_ff:</strong> intermediate dimension of feed-forward network, usually 4× d_model</li>
+</ul>
+<h3>Example Model Configurations</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Model</th><th>d_model</th><th>Layers</th><th>Heads</th><th>d_ff</th><th>Params</th></tr>
+</thead>
+<tbody>
+<tr><td>GPT-2 Small</td><td>768</td><td>12</td><td>12</td><td>3072</td><td>117M</td></tr>
+<tr><td>Llama 2-7B</td><td>4096</td><td>32</td><td>32</td><td>11008</td><td>7B</td></tr>
+<tr><td>Llama 3-70B</td><td>8192</td><td>80</td><td>64</td><td>28672</td><td>70B</td></tr>
+<tr><td>GPT-4 (est)</td><td>12288</td><td>96</td><td>96</td><td>49152</td><td>~1.8T (MoE)</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- ── 2. SELF-ATTENTION ── -->
+<div class="section-block" id="self-attention">
+<div class="section-marker">02 — THE CORE MECHANISM</div>
+<h2>Self-Attention: The Core Mechanism</h2>
+<p>Each token attends to all other tokens in the sequence, asking "which other tokens are relevant to me?" This is the fundamental operation that gives Transformers their power and expressiveness.</p>
+<h3>The Computation</h3>
+<p>For input X, three learned weight matrices project the input into Query (Q), Key (K), and Value (V) spaces:</p>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;">Q = XW_Q</li>
+<li style="margin: 0.5rem 0;">K = XW_K</li>
+<li style="margin: 0.5rem 0;">V = XW_V</li>
+</ul>
+<p>Attention score is then: softmax(QK^T / sqrt(d_k)) → weighted sum of V</p>
+<h3>Causal Masking</h3>
+<p>In decoder-only models (for generation), each token can only attend to previous tokens (causal masking). The upper triangle of the attention matrix is masked to -inf before softmax, preventing the model from looking into the future.</p>
+<h3>Scaled Dot-Product Attention in NumPy</h3>
+<div class="example-box">import numpy as np
 
 def attention(Q, K, V, mask=None):
     d_k = Q.shape[-1]
@@ -481,62 +471,52 @@ Q = np.random.randn(seq_len, d_k)
 K = np.random.randn(seq_len, d_k)
 V = np.random.randn(seq_len, d_k)
 
-# Causal mask: token i cannot see token j > i
+# Causal mask: token i cannot see token j &gt; i
 mask = np.triu(np.ones((seq_len, seq_len)), k=1)
 out = attention(Q, K, V, mask)</div>
-
-    <div class="callout amber">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>The sqrt(d_k) scaling prevents dot products from becoming too large,</strong> which would push softmax into saturated regions with near-zero gradients during backprop. This is crucial for training stability.</span>
-    </div>
-  </div>
-
-  <!-- ── 3. MULTI-HEAD ATTENTION ── -->
-  <div class="section-block" id="multi-head">
-    <div class="section-marker">03 — MULTIPLE RELATIONSHIP TYPES</div>
-    <h2>Multi-Head Attention</h2>
-    <p>Run attention H times in parallel, each with different learned W_Q, W_K, W_V projections. Different heads learn different relationship types: one head might focus on syntax, another on coreference, another on positional relationships. This diversity improves representation quality.</p>
-
-    <h3>Head Output Combination</h3>
-    <p>Concatenate all head outputs and project back to d_model with W_O (output projection). This allows the model to combine diverse attention perspectives.</p>
-
-    <h3>GQA: Grouped Query Attention</h3>
-    <p>Modern models use Grouped Query Attention (GQA) instead of full Multi-Head Attention. GQA shares K/V heads across groups of Q heads, reducing KV cache memory by 4-8× with minimal quality loss. This is critical for long-context inference.</p>
-
-    <h3>Attention Head Variants Comparison</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Variant</th><th>K/V heads per Q head</th><th>KV cache size</th><th>Used by</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>MHA (Multi-Head Attention)</td><td>1:1 ratio</td><td>100%</td><td>GPT-2, early BERT</td></tr>
-          <tr><td>GQA (Grouped Query Attention, g=4)</td><td>1:4 ratio</td><td>25%</td><td>Llama 3, Mistral, Gemma</td></tr>
-          <tr><td>MQA (Multi-Query Attention)</td><td>1:all ratio</td><td>1/H</td><td>Falcon, early PaLM</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="callout green">
-      <span class="callout-icon">✓</span>
-      <span><strong>Modern frontier models use GQA as standard.</strong> If benchmarking memory for a model, check whether it uses MHA or GQA — it changes KV cache requirements significantly. This is why newer models have better memory efficiency at scale.</span>
-    </div>
-  </div>
-
-  <!-- ── 4. FEED-FORWARD NETWORK ── -->
-  <div class="section-block" id="feed-forward">
-    <div class="section-marker">04 — KNOWLEDGE STORAGE</div>
-    <h2>Feed-Forward Network (FFN)</h2>
-    <p>After attention, each token representation passes through a 2-layer FFN independently (no cross-token interaction). The FFN acts as a "knowledge store": research shows factual knowledge is stored in FFN weights, while attention routes information.</p>
-
-    <h3>FFN Structure</h3>
-    <p>FFN = Linear(d_model → d_ff) → Activation → Linear(d_ff → d_model). The d_ff is typically 4× d_model, creating a bottleneck-then-expand pattern.</p>
-
-    <h3>SwiGLU Activation</h3>
-    <p>Modern models (Llama, PaLM, Gemini) use SwiGLU activation instead of ReLU or GELU. SwiGLU splits the intermediate into two paths — one through SiLU activation, multiply together. Empirically superior to older activations.</p>
-
-    <h3>SwiGLU FFN in PyTorch</h3>
-    <div class="example-box">import torch
+<div class="callout amber">
+<span class="callout-icon">⚠️</span>
+<span><strong>The sqrt(d_k) scaling prevents dot products from becoming too large,</strong> which would push softmax into saturated regions with near-zero gradients during backprop. This is crucial for training stability.</span>
+</div>
+</div>
+<!-- ── 3. MULTI-HEAD ATTENTION ── -->
+<div class="section-block" id="multi-head">
+<div class="section-marker">03 — MULTIPLE RELATIONSHIP TYPES</div>
+<h2>Multi-Head Attention</h2>
+<p>Run attention H times in parallel, each with different learned W_Q, W_K, W_V projections. Different heads learn different relationship types: one head might focus on syntax, another on coreference, another on positional relationships. This diversity improves representation quality.</p>
+<h3>Head Output Combination</h3>
+<p>Concatenate all head outputs and project back to d_model with W_O (output projection). This allows the model to combine diverse attention perspectives.</p>
+<h3>GQA: Grouped Query Attention</h3>
+<p>Modern models use Grouped Query Attention (GQA) instead of full Multi-Head Attention. GQA shares K/V heads across groups of Q heads, reducing KV cache memory by 4-8× with minimal quality loss. This is critical for long-context inference.</p>
+<h3>Attention Head Variants Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Variant</th><th>K/V heads per Q head</th><th>KV cache size</th><th>Used by</th></tr>
+</thead>
+<tbody>
+<tr><td>MHA (Multi-Head Attention)</td><td>1:1 ratio</td><td>100%</td><td>GPT-2, early BERT</td></tr>
+<tr><td>GQA (Grouped Query Attention, g=4)</td><td>1:4 ratio</td><td>25%</td><td>Llama 3, Mistral, Gemma</td></tr>
+<tr><td>MQA (Multi-Query Attention)</td><td>1:all ratio</td><td>1/H</td><td>Falcon, early PaLM</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout green">
+<span class="callout-icon">✓</span>
+<span><strong>Modern frontier models use GQA as standard.</strong> If benchmarking memory for a model, check whether it uses MHA or GQA — it changes KV cache requirements significantly. This is why newer models have better memory efficiency at scale.</span>
+</div>
+</div>
+<!-- ── 4. FEED-FORWARD NETWORK ── -->
+<div class="section-block" id="feed-forward">
+<div class="section-marker">04 — KNOWLEDGE STORAGE</div>
+<h2>Feed-Forward Network (FFN)</h2>
+<p>After attention, each token representation passes through a 2-layer FFN independently (no cross-token interaction). The FFN acts as a "knowledge store": research shows factual knowledge is stored in FFN weights, while attention routes information.</p>
+<h3>FFN Structure</h3>
+<p>FFN = Linear(d_model → d_ff) → Activation → Linear(d_ff → d_model). The d_ff is typically 4× d_model, creating a bottleneck-then-expand pattern.</p>
+<h3>SwiGLU Activation</h3>
+<p>Modern models (Llama, PaLM, Gemini) use SwiGLU activation instead of ReLU or GELU. SwiGLU splits the intermediate into two paths — one through SiLU activation, multiply together. Empirically superior to older activations.</p>
+<h3>SwiGLU FFN in PyTorch</h3>
+<div class="example-box">import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -549,71 +529,59 @@ class SwiGLUFFN(nn.Module):
     
     def forward(self, x):
         return self.w2(F.silu(self.w1(x)) * self.w3(x))</div>
-
-    <h3>Parameter Distribution</h3>
-    <p>The FFN accounts for roughly 2/3 of a model's parameters. This is where most factual knowledge lives. When fine-tuning, research shows that LoRA targeting FFN layers often outperforms targeting only attention layers for knowledge-intensive tasks.</p>
-
-    <div class="callout green">
-      <span class="callout-icon">✓</span>
-      <span><strong>FFN is where factual knowledge lives.</strong> When implementing low-rank adaptation (LoRA) for fine-tuning, targeting FFN layers often gives better results than attention-only approaches for knowledge-heavy domains.</span>
-    </div>
-  </div>
-
-  <!-- ── 5. POSITIONAL ENCODING ── -->
-  <div class="section-block" id="positional">
-    <div class="section-marker">05 — WORD ORDER</div>
-    <h2>Positional Encoding</h2>
-    <p>Attention is permutation-invariant — without position information, the model has no sense of word order. Positional encoding adds position information to embeddings so the model understands sequence structure.</p>
-
-    <h3>Positional Encoding Methods</h3>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;"><strong>Sinusoidal (original Transformer):</strong> fixed, non-learned position embeddings. Limited extrapolation.</li>
-      <li style="margin: 0.5rem 0;"><strong>Learned absolute:</strong> trainable embeddings. Hard cap at training length.</li>
-      <li style="margin: 0.5rem 0;"><strong>RoPE (Rotary Position Embedding):</strong> encode position as rotation of Q/K vectors. Allows relative positions to emerge naturally. Good extrapolation.</li>
-      <li style="margin: 0.5rem 0;"><strong>ALiBi (Attention with Linear Biases):</strong> add linear bias to attention scores based on distance. Generalizes to longer sequences than trained on.</li>
-    </ul>
-
-    <h3>Positional Encoding Comparison</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Method</th><th>Extrapolation</th><th>Relative positions</th><th>Used by</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Sinusoidal</td><td>Poor</td><td>No</td><td>Original Transformer</td></tr>
-          <tr><td>Learned absolute</td><td>None (hard cap)</td><td>No</td><td>GPT-2, BERT</td></tr>
-          <tr><td>RoPE</td><td>Good (with extension)</td><td>Yes</td><td>Llama, Mistral, Gemini</td></tr>
-          <tr><td>ALiBi</td><td>Good</td><td>Yes</td><td>BLOOM, MPT</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>RoPE Extension for Long Context</h3>
-    <p>RoPE can be extended beyond training context length using "RoPE scaling" techniques like YaRN or dynamic NTK scaling. This is how Llama 3's 8K training context was extended to 128K without major quality loss.</p>
-
-    <div class="callout amber">
-      <span class="callout-icon">⚠️</span>
-      <span><strong>RoPE scaling is critical for long-context LLMs.</strong> When extending context beyond training length, proper positional encoding scaling prevents the model from "losing" position information in the middle of long sequences.</span>
-    </div>
-  </div>
-
-  <!-- ── 6. TRAINING STABILITY ── -->
-  <div class="section-block" id="training-stability">
-    <div class="section-marker">06 — NORMALIZATION AND RESIDUALS</div>
-    <h2>LayerNorm, Residual Connections, and Training Stability</h2>
-    <p>Deep networks require techniques to prevent gradient vanishing and activation explosion. Modern Transformers use residual connections and LayerNorm to maintain stable gradient flow and activation magnitudes throughout training.</p>
-
-    <h3>Residual Connections</h3>
-    <p>Output = x + sublayer(x). Allows gradients to flow directly back to earlier layers without being multiplied by small values, preventing vanishing gradients in deep networks.</p>
-
-    <h3>LayerNorm</h3>
-    <p>Normalize activations across features (not batch) at each sublayer. Prevents activation explosion and keeps training stable.</p>
-
-    <h3>Pre-norm vs Post-norm</h3>
-    <p>Modern models use Pre-LayerNorm: normalize input BEFORE sublayer. This improves training stability compared to the original post-norm design (normalize AFTER).</p>
-
-    <h3>Transformer Block in PyTorch (Pre-norm Architecture)</h3>
-    <div class="example-box">class TransformerBlock(nn.Module):
+<h3>Parameter Distribution</h3>
+<p>The FFN accounts for roughly 2/3 of a model's parameters. This is where most factual knowledge lives. When fine-tuning, research shows that LoRA targeting FFN layers often outperforms targeting only attention layers for knowledge-intensive tasks.</p>
+<div class="callout green">
+<span class="callout-icon">✓</span>
+<span><strong>FFN is where factual knowledge lives.</strong> When implementing low-rank adaptation (LoRA) for fine-tuning, targeting FFN layers often gives better results than attention-only approaches for knowledge-heavy domains.</span>
+</div>
+</div>
+<!-- ── 5. POSITIONAL ENCODING ── -->
+<div class="section-block" id="positional">
+<div class="section-marker">05 — WORD ORDER</div>
+<h2>Positional Encoding</h2>
+<p>Attention is permutation-invariant — without position information, the model has no sense of word order. Positional encoding adds position information to embeddings so the model understands sequence structure.</p>
+<h3>Positional Encoding Methods</h3>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;"><strong>Sinusoidal (original Transformer):</strong> fixed, non-learned position embeddings. Limited extrapolation.</li>
+<li style="margin: 0.5rem 0;"><strong>Learned absolute:</strong> trainable embeddings. Hard cap at training length.</li>
+<li style="margin: 0.5rem 0;"><strong>RoPE (Rotary Position Embedding):</strong> encode position as rotation of Q/K vectors. Allows relative positions to emerge naturally. Good extrapolation.</li>
+<li style="margin: 0.5rem 0;"><strong>ALiBi (Attention with Linear Biases):</strong> add linear bias to attention scores based on distance. Generalizes to longer sequences than trained on.</li>
+</ul>
+<h3>Positional Encoding Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Method</th><th>Extrapolation</th><th>Relative positions</th><th>Used by</th></tr>
+</thead>
+<tbody>
+<tr><td>Sinusoidal</td><td>Poor</td><td>No</td><td>Original Transformer</td></tr>
+<tr><td>Learned absolute</td><td>None (hard cap)</td><td>No</td><td>GPT-2, BERT</td></tr>
+<tr><td>RoPE</td><td>Good (with extension)</td><td>Yes</td><td>Llama, Mistral, Gemini</td></tr>
+<tr><td>ALiBi</td><td>Good</td><td>Yes</td><td>BLOOM, MPT</td></tr>
+</tbody>
+</table>
+</div>
+<h3>RoPE Extension for Long Context</h3>
+<p>RoPE can be extended beyond training context length using "RoPE scaling" techniques like YaRN or dynamic NTK scaling. This is how Llama 3's 8K training context was extended to 128K without major quality loss.</p>
+<div class="callout amber">
+<span class="callout-icon">⚠️</span>
+<span><strong>RoPE scaling is critical for long-context LLMs.</strong> When extending context beyond training length, proper positional encoding scaling prevents the model from "losing" position information in the middle of long sequences.</span>
+</div>
+</div>
+<!-- ── 6. TRAINING STABILITY ── -->
+<div class="section-block" id="training-stability">
+<div class="section-marker">06 — NORMALIZATION AND RESIDUALS</div>
+<h2>LayerNorm, Residual Connections, and Training Stability</h2>
+<p>Deep networks require techniques to prevent gradient vanishing and activation explosion. Modern Transformers use residual connections and LayerNorm to maintain stable gradient flow and activation magnitudes throughout training.</p>
+<h3>Residual Connections</h3>
+<p>Output = x + sublayer(x). Allows gradients to flow directly back to earlier layers without being multiplied by small values, preventing vanishing gradients in deep networks.</p>
+<h3>LayerNorm</h3>
+<p>Normalize activations across features (not batch) at each sublayer. Prevents activation explosion and keeps training stable.</p>
+<h3>Pre-norm vs Post-norm</h3>
+<p>Modern models use Pre-LayerNorm: normalize input BEFORE sublayer. This improves training stability compared to the original post-norm design (normalize AFTER).</p>
+<h3>Transformer Block in PyTorch (Pre-norm Architecture)</h3>
+<div class="example-box">class TransformerBlock(nn.Module):
     def __init__(self, d_model, n_heads, d_ff):
         super().__init__()
         self.attn = MultiHeadAttention(d_model, n_heads)
@@ -626,159 +594,146 @@ class SwiGLUFFN(nn.Module):
         x = x + self.attn(self.norm1(x), mask)  # residual + attn
         x = x + self.ffn(self.norm2(x))          # residual + ffn
         return x</div>
-
-    <h3>RMSNorm</h3>
-    <p>Root Mean Square Norm: simpler than LayerNorm (no mean centering). Used by Llama, Mistral — slightly faster and empirically equivalent.</p>
-  </div>
-
-  <!-- ── 7. ARCHITECTURE VARIANTS ── -->
-  <div class="section-block" id="architecture-variants">
-    <div class="section-marker">07 — ENCODER, DECODER, OR BOTH</div>
-    <h2>Encoder-Only, Decoder-Only, Encoder-Decoder</h2>
-    <p>Different task requirements call for different architectural patterns. Understanding when to use each is essential for model selection and fine-tuning design.</p>
-
-    <h3>Architecture Variants Comparison</h3>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Architecture</th><th>Masking</th><th>KV cache</th><th>Use cases</th><th>Examples</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Encoder-only</td><td>Bidirectional</td><td>No</td><td>Embeddings, classification, NER</td><td>BERT, RoBERTa, DeBERTa</td></tr>
-          <tr><td>Decoder-only</td><td>Causal (left-to-right)</td><td>Yes</td><td>Text generation, chat, coding</td><td>GPT, Llama, Mistral, Claude</td></tr>
-          <tr><td>Encoder-decoder</td><td>Enc: bidir, Dec: causal</td><td>Yes</td><td>Translation, summarization, T2T</td><td>T5, FLAN-T5, mT5, Whisper</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Modern LLM Landscape</h3>
-    <p>Modern LLMs are almost exclusively decoder-only: simpler to scale, KV cache enables fast autoregressive generation, in-context learning works naturally. Encoder-only models (BERT-family) remain dominant for: embedding generation, token classification, and sentence similarity tasks.</p>
-
-    <h3>When to Use Each</h3>
-    <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-      <li style="margin: 0.5rem 0;"><strong>Decoder-only:</strong> For any generation task, chat, coding, question-answering. Default choice for modern LLMs.</li>
-      <li style="margin: 0.5rem 0;"><strong>Encoder-only:</strong> For dense embeddings, classification, token-level tasks without generation.</li>
-      <li style="margin: 0.5rem 0;"><strong>Encoder-decoder:</strong> When you need bidirectional context for understanding AND generation capability (translation, summarization).</li>
-    </ul>
-
-    <h3>Tools for Architecture Implementation</h3>
-    <div class="tools-grid">
-      <div class="tool-card">
-        <div class="tool-name">transformers (HF)</div>
-        <div class="tool-category">Framework</div>
-        <div class="tool-desc">Standard library for all model architectures. Essential reference for training and inference.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">PyTorch</div>
-        <div class="tool-category">Framework</div>
-        <div class="tool-desc">Build custom layers and architectures. Used by all major implementations.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">FlashAttention-2</div>
-        <div class="tool-category">Optimization</div>
-        <div class="tool-desc">Fast attention implementation. Reduces memory and compute for long sequences.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">xformers</div>
-        <div class="tool-category">Optimization</div>
-        <div class="tool-desc">Memory-efficient transformer implementations. Experimental but powerful.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">DeepSpeed</div>
-        <div class="tool-category">Scaling</div>
-        <div class="tool-desc">Distributed training for huge models. ZeRO stages enable billion-parameter training.</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-name">FSDP</div>
-        <div class="tool-category">Scaling</div>
-        <div class="tool-desc">PyTorch's native fully sharded data parallel. Standard for distributed training.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── REFERENCES ── -->
-  <div class="section-block" id="references">
-    <div class="section-marker">Further Reading</div>
-    <h2>References</h2>
-
-    <div class="ref-group-title">Foundational Papers</div>
-    <ul class="ref-list">
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+<h3>RMSNorm</h3>
+<p>Root Mean Square Norm: simpler than LayerNorm (no mean centering). Used by Llama, Mistral — slightly faster and empirically equivalent.</p>
+</div>
+<!-- ── 7. ARCHITECTURE VARIANTS ── -->
+<div class="section-block" id="architecture-variants">
+<div class="section-marker">07 — ENCODER, DECODER, OR BOTH</div>
+<h2>Encoder-Only, Decoder-Only, Encoder-Decoder</h2>
+<p>Different task requirements call for different architectural patterns. Understanding when to use each is essential for model selection and fine-tuning design.</p>
+<h3>Architecture Variants Comparison</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Architecture</th><th>Masking</th><th>KV cache</th><th>Use cases</th><th>Examples</th></tr>
+</thead>
+<tbody>
+<tr><td>Encoder-only</td><td>Bidirectional</td><td>No</td><td>Embeddings, classification, NER</td><td>BERT, RoBERTa, DeBERTa</td></tr>
+<tr><td>Decoder-only</td><td>Causal (left-to-right)</td><td>Yes</td><td>Text generation, chat, coding</td><td>GPT, Llama, Mistral, Claude</td></tr>
+<tr><td>Encoder-decoder</td><td>Enc: bidir, Dec: causal</td><td>Yes</td><td>Translation, summarization, T2T</td><td>T5, FLAN-T5, mT5, Whisper</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Modern LLM Landscape</h3>
+<p>Modern LLMs are almost exclusively decoder-only: simpler to scale, KV cache enables fast autoregressive generation, in-context learning works naturally. Encoder-only models (BERT-family) remain dominant for: embedding generation, token classification, and sentence similarity tasks.</p>
+<h3>When to Use Each</h3>
+<ul style="margin: 1rem 0; padding-left: 1.2rem;">
+<li style="margin: 0.5rem 0;"><strong>Decoder-only:</strong> For any generation task, chat, coding, question-answering. Default choice for modern LLMs.</li>
+<li style="margin: 0.5rem 0;"><strong>Encoder-only:</strong> For dense embeddings, classification, token-level tasks without generation.</li>
+<li style="margin: 0.5rem 0;"><strong>Encoder-decoder:</strong> When you need bidirectional context for understanding AND generation capability (translation, summarization).</li>
+</ul>
+<h3>Tools for Architecture Implementation</h3>
+<div class="tools-grid">
+<div class="tool-card">
+<div class="tool-name">transformers (HF)</div>
+<div class="tool-category">Framework</div>
+<div class="tool-desc">Standard library for all model architectures. Essential reference for training and inference.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">PyTorch</div>
+<div class="tool-category">Framework</div>
+<div class="tool-desc">Build custom layers and architectures. Used by all major implementations.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">FlashAttention-2</div>
+<div class="tool-category">Optimization</div>
+<div class="tool-desc">Fast attention implementation. Reduces memory and compute for long sequences.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">xformers</div>
+<div class="tool-category">Optimization</div>
+<div class="tool-desc">Memory-efficient transformer implementations. Experimental but powerful.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">DeepSpeed</div>
+<div class="tool-category">Scaling</div>
+<div class="tool-desc">Distributed training for huge models. ZeRO stages enable billion-parameter training.</div>
+</div>
+<div class="tool-card">
+<div class="tool-name">FSDP</div>
+<div class="tool-category">Scaling</div>
+<div class="tool-desc">PyTorch's native fully sharded data parallel. Standard for distributed training.</div>
+</div>
+</div>
+</div>
+<!-- ── REFERENCES ── -->
+<div class="section-block" id="references">
+<div class="section-marker">Further Reading</div>
+<h2>References</h2>
+<div class="ref-group-title">Foundational Papers</div>
+<ul class="ref-list">
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Vaswani, A. et al. (2017).
         <em>Attention Is All You Need.</em>
         The original Transformer paper. arXiv:1706.03762. —
         <a href="https://arxiv.org/abs/1706.03762" target="_blank">arxiv:1706.03762 ↗</a>
-      </li>
-    </ul>
-
-    <div class="ref-group-title">Position Encoding & Improvements</div>
-    <ul class="ref-list">
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+</ul>
+<div class="ref-group-title">Position Encoding &amp; Improvements</div>
+<ul class="ref-list">
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Su, J. et al. (2021).
         <em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em>
         arXiv:2104.09864. —
         <a href="https://arxiv.org/abs/2104.09864" target="_blank">arxiv:2104.09864 ↗</a>
-      </li>
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Press, O. et al. (2022).
         <em>ALiBi: Train Short, Test Long.</em>
         Attention with Linear Biases for long-context extrapolation. arXiv:2108.12409. —
         <a href="https://arxiv.org/abs/2108.12409" target="_blank">arxiv:2108.12409 ↗</a>
-      </li>
-    </div>
-
-    <div class="ref-group-title">Optimization & Efficiency</div>
-    <ul class="ref-list">
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+</ul></div>
+<div class="ref-group-title">Optimization &amp; Efficiency</div>
+<ul class="ref-list">
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Ainslie, J. et al. (2023).
         <em>GQA: Training Generalized Multi-Query Transformers.</em>
         Grouped Query Attention. arXiv:2305.13245. —
         <a href="https://arxiv.org/abs/2305.13245" target="_blank">arxiv:2305.13245 ↗</a>
-      </li>
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Shazeer, N. (2019).
         <em>Fast Transformer Decoding: One Write-Head is All You Need.</em>
         Multi-Query Attention. arXiv:1911.02727. —
         <a href="https://arxiv.org/abs/1911.02727" target="_blank">arxiv:1911.02727 ↗</a>
-      </li>
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Dao, T. et al. (2023).
         <em>FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning.</em>
         arXiv:2307.08691. —
         <a href="https://arxiv.org/abs/2307.08691" target="_blank">arxiv:2307.08691 ↗</a>
-      </li>
-    </div>
-
-    <div class="ref-group-title">Activation Functions & Components</div>
-    <ul class="ref-list">
-      <li>
-        <span class="ref-badge badge-paper">Paper</span>
+</li>
+</ul></div>
+<div class="ref-group-title">Activation Functions &amp; Components</div>
+<ul class="ref-list">
+<li>
+<span class="ref-badge badge-paper">Paper</span>
         Shazeer, N. (2020).
         <em>GLU Variants Improve Transformer.</em>
         SwiGLU and gating mechanisms. arXiv:2002.05202. —
         <a href="https://arxiv.org/abs/2002.05202" target="_blank">arxiv:2002.05202 ↗</a>
-      </li>
-    </div>
+</li>
 
-    <div class="ref-group-title">Documentation & Guides</div>
-    <ul class="ref-list">
-      <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Transformers — Architecture documentation. <a href="https://huggingface.co/docs/transformers" target="_blank">huggingface.co/docs ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> PyTorch — Transformer implementation reference. <a href="https://pytorch.org/docs/stable/nn.html" target="_blank">pytorch.org ↗</a></li>
-      <li><span class="ref-badge badge-guide">Guide</span> The Illustrated Transformer — Visual explanations of all components. <a href="http://jalammar.github.io/illustrated-transformer/" target="_blank">jalammar.github.io ↗</a></li>
-    </div>
-  </div>
+<div class="ref-group-title">Documentation &amp; Guides</div>
+<ul class="ref-list">
+<li><span class="ref-badge badge-docs">Docs</span> HuggingFace Transformers — Architecture documentation. <a href="https://huggingface.co/docs/transformers" target="_blank">huggingface.co/docs ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> PyTorch — Transformer implementation reference. <a href="https://pytorch.org/docs/stable/nn.html" target="_blank">pytorch.org ↗</a></li>
+<li><span class="ref-badge badge-guide">Guide</span> The Illustrated Transformer — Visual explanations of all components. <a href="http://jalammar.github.io/illustrated-transformer/" target="_blank">jalammar.github.io ↗</a></li>
 
-  <footer class="page-footer">
-    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
-    <a id="footer-back" href="../index.html">← Back to mindmap</a>
-  </footer>
-  <script>
+
+<footer class="page-footer">
+<span>Part of the <a href="../index.html" id="footer-brand">GenAI Mindmap</a> — genai4a11.github.io</span>
+<a href="../index.html" id="footer-back">← Back to mindmap</a>
+</footer>
+<script>
     (function(){
       const from=new URLSearchParams(location.search).get('from');
       if(from){
@@ -791,11 +746,10 @@ class SwiGLUFFN(nn.Module):
     })();
   </script>
 
-</div>
 <nav class="concept-nav">
   <a class="concept-nav-prev" href="pos-encoding.html">← Positional Encoding in Transformers</a>
   <span class="concept-nav-cat">Inference & Architecture</span>
   <span></span>
 </nav>
-</body>
+</ul></ul></body>
 </html>

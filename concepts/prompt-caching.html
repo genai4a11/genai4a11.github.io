@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Prompt Caching | GenAI Mindmap</title>
-  <meta name="description" content="A technique to cache repeated large prompt prefixes on the provider side, dramatically reducing latency and cost for multi-turn and RAG workloads." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Prompt Caching" />
-  <meta property="og:description" content="A technique to cache repeated large prompt prefixes on the provider side, dramatically reducing latency and cost for multi-turn and RAG workloads." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/prompt-caching.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/prompt-caching.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Prompt Caching | GenAI Mindmap</title>
+<meta content="A technique to cache repeated large prompt prefixes on the provider side, dramatically reducing latency and cost for multi-turn and RAG workloads." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="Prompt Caching" property="og:title"/>
+<meta content="A technique to cache repeated large prompt prefixes on the provider side, dramatically reducing latency and cost for multi-turn and RAG workloads." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/prompt-caching.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/prompt-caching.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #6d28d9;
       --accent-dark: #5b21b6;
@@ -120,55 +121,50 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/prompt-engineering.html" class="nav-back">← Prompt Engineering</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Prompt Engineering</span>
-    <h1><em>Prompt Caching</em></h1>
-    <p class="hero-sub">A technique to cache repeated large prompt prefixes on the provider side, dramatically reducing latency and cost for multi-turn and RAG workloads.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">90%</div><div class="stat-label">Cost reduction (cached tokens)</div></div>
-      <div><div class="stat-num">~85%</div><div class="stat-label">Latency reduction</div></div>
-      <div><div class="stat-num">5-min</div><div class="stat-label">Cache TTL (Anthropic)</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">The repeated-context problem</a></li>
-        <li><a href="#s2" data-num="02">How prompt caching works</a></li>
-        <li><a href="#s3" data-num="03">Anthropic API: cache_control</a></li>
-        <li><a href="#s4" data-num="04">What gets cached and what doesn't</a></li>
-        <li><a href="#s5" data-num="05">Cost and latency numbers</a></li>
-        <li><a href="#s6" data-num="06">Patterns: RAG, multi-turn, tool definitions</a></li>
-        <li><a href="#s7" data-num="07">Gotchas</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/prompt-engineering.html">← Prompt Engineering</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Prompt Engineering</span>
+<h1><em>Prompt Caching</em></h1>
+<p class="hero-sub">A technique to cache repeated large prompt prefixes on the provider side, dramatically reducing latency and cost for multi-turn and RAG workloads.</p>
+<div class="hero-stats">
+<div><div class="stat-num">90%</div><div class="stat-label">Cost reduction (cached tokens)</div></div>
+<div><div class="stat-num">~85%</div><div class="stat-label">Latency reduction</div></div>
+<div><div class="stat-num">5-min</div><div class="stat-label">Cache TTL (Anthropic)</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">The repeated-context problem</a></li>
+<li><a data-num="02" href="#s2">How prompt caching works</a></li>
+<li><a data-num="03" href="#s3">Anthropic API: cache_control</a></li>
+<li><a data-num="04" href="#s4">What gets cached and what doesn't</a></li>
+<li><a data-num="05" href="#s5">Cost and latency numbers</a></li>
+<li><a data-num="06" href="#s6">Patterns: RAG, multi-turn, tool definitions</a></li>
+<li><a data-num="07" href="#s7">Gotchas</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
 <h2>The repeated-context problem</h2>
 <p>Picture a legal-research assistant. Every query starts: "You are a legal analyst. Here are the 200 pages of the contract…" followed by the user's actual question. Without caching, those 200 pages are tokenised, processed through all attention layers, and billed — on every single request. With 100 users sending 10 queries each, you pay for that document 1,000 times.</p>
 <p><strong>Prompt caching</strong> solves this by storing the KV-cache (the internal attention state) for the stable prefix on the provider's servers. Subsequent requests that share the same prefix skip the expensive prefill computation and go straight to generation — faster and cheaper.</p>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
 <h2>How prompt caching works</h2>
 <p>LLM inference has two phases: <strong>prefill</strong> (processing the prompt tokens, building the KV-cache) and <strong>generation</strong> (autoregressively producing the output tokens). Prefill is the expensive part for long contexts.</p>
 <p>When you mark a prompt prefix for caching, the provider saves the KV-cache state at that breakpoint. If the next request's prefix matches exactly up to that breakpoint, prefill is skipped — the saved state is loaded instead. You pay a lower "cache read" price rather than full input-token price.</p>
 <p>The cache is keyed on the exact byte sequence up to the breakpoint. A single character difference = cache miss.</p>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
 <h2>Anthropic API: cache_control</h2>
 <pre><code class="language-python">import anthropic
 
@@ -200,10 +196,9 @@ print(f"Cache read:          {usage.cache_read_input_tokens}")      # subsequent
 </code></pre>
 <p><strong>First call:</strong> <code>cache_creation_input_tokens</code> is non-zero — you paid to build and store the cache (1.25× normal rate).</p>
 <p><strong>Subsequent calls:</strong> <code>cache_read_input_tokens</code> is non-zero — you pay only 10% of the normal rate for those tokens.</p>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
 <h2>What gets cached and what doesn't</h2>
 <p>The cache checkpoint is placed at the <strong>end of the content block marked with <code>cache_control</code></strong>. Everything before and including that block is potentially cached. Everything after is re-processed on every call.</p>
 <pre><code class="language-text">System message (cacheable)
@@ -215,10 +210,9 @@ User turn 2 (NOT cached)
 </code></pre>
 <p><strong>You can place multiple cache breakpoints</strong> (up to 4 on Claude): for example, cache the system prompt at position 1 and a large tools definition block at position 2.</p>
 <p>Cache TTL on Anthropic is 5 minutes for ephemeral caches. If your application has bursts of requests around a stable document, keep the requests coming within 5-minute windows to maximise hit rate.</p>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
 <h2>Cost and latency numbers</h2>
 <table>
 <thead><tr><th>Token type</th><th>Price relative to normal</th></tr></thead>
@@ -231,12 +225,11 @@ User turn 2 (NOT cached)
 </table>
 <p><strong>Break-even:</strong> The cache write costs 25% extra. You break even when you read from cache ≥ 2 times (first read saves 90%, more than covers the 25% write premium).</p>
 <p><strong>Latency:</strong> Cache hits skip the prefill computation for the cached prefix. On a 10,000-token prefix, expect ~80–90% reduction in time-to-first-token.</p>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
 <h2>Patterns: RAG, multi-turn, tool definitions</h2>
-<p><strong>Pattern 1 — Long document Q&A (RAG replacement for stable docs):</strong></p>
+<p><strong>Pattern 1 — Long document Q&amp;A (RAG replacement for stable docs):</strong></p>
 <pre><code class="language-python"># Cache the entire document; only the question changes
 response = client.messages.create(
     model="claude-3-5-sonnet-20241022",
@@ -261,20 +254,18 @@ for user_input in conversation:
     messages.append({"role":"assistant","content": resp.content[0].text})
 </code></pre>
 <p><strong>Pattern 3 — Tool definitions:</strong> If you have 50 tool definitions, cache them as the last block before the conversation. Tool definitions are verbose but rarely change.</p>
-    </div>
-
-    <div class="section-block" id="s7">
-      <div class="section-marker">SECTION 07</div>
+</div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Exact prefix matching.</strong> A single byte difference = full cache miss. Make sure your system prompt template renders identically across calls (watch out for dynamic timestamps, user IDs, or random seeds injected into the "stable" prefix).</p>
 <p><strong>Minimum cacheable length.</strong> Anthropic requires the cacheable content to be at least 1,024 tokens (claude-3-haiku) or 2,048 tokens (larger models). Shorter prefixes are silently not cached — you'll see <code>cache_creation_input_tokens: 0</code>.</p>
 <p><strong>Cache doesn't persist across model upgrades.</strong> Switching from <code>claude-3-5-sonnet-20241022</code> to a newer version invalidates all cached prefixes — plan major model upgrades during low-traffic windows.</p>
 <p><strong>Context window still counts.</strong> Cached tokens still count toward the model's context window limit. Caching reduces cost and latency, not context consumption.</p>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/prompt-engineering.html" style="color:var(--accent)">Prompt Engineering</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/prompt-engineering.html" style="color:var(--accent)">Prompt Engineering</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

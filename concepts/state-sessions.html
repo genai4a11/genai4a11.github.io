@@ -1,23 +1,24 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>State & Session Management for LLM Apps — GenAI Mindmap</title>
-  <meta name="description" content="State management for LLM applications — conversation history strategies, sliding window vs summarisation, Redis session stores, multi-user isolation, and stateful agent patterns." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="State & Session Management for LLM Apps" />
-  <meta property="og:description" content="State management for LLM applications — conversation history strategies, sliding window vs summarisation, Redis session stores, multi-user isolation, and stateful agent patterns." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/state-sessions.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="State & Session Management for LLM Apps" />
-  <meta name="twitter:description" content="State management for LLM applications — conversation history strategies, sliding window vs summarisation, Redis session stores, multi-user isolation, and stateful agent patterns." />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/state-sessions.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>State &amp; Session Management for LLM Apps — GenAI Mindmap</title>
+<meta content="State management for LLM applications — conversation history strategies, sliding window vs summarisation, Redis session stores, multi-user isolation, and stateful agent patterns." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="State &amp; Session Management for LLM Apps" property="og:title"/>
+<meta content="State management for LLM applications — conversation history strategies, sliding window vs summarisation, Redis session stores, multi-user isolation, and stateful agent patterns." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/state-sessions.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<meta content="summary" name="twitter:card"/>
+<meta content="State &amp; Session Management for LLM Apps" name="twitter:title"/>
+<meta content="State management for LLM applications — conversation history strategies, sliding window vs summarisation, Redis session stores, multi-user isolation, and stateful agent patterns." name="twitter:description"/>
+<link href="https://genai4a11.github.io/concepts/state-sessions.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -383,9 +384,9 @@
       .toc-list { grid-template-columns: 1fr; }
     }
   </style>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
-  <script>
+<!-- Google Analytics -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-Y9590EJKQX"></script>
+<script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
@@ -445,12 +446,11 @@
   }
 }
 </script>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-
 <nav>
-  <a class="nav-brand" id="back-brand" href="../index.html"><span class="dot">⬡</span> GenAI Mindmap</a>
-  <a class="nav-back" id="back-link" href="../index.html">← Back to mindmap</a>
+<a class="nav-brand" href="../index.html" id="back-brand"><span class="dot">⬡</span> GenAI Mindmap</a>
+<a class="nav-back" href="../index.html" id="back-link">← Back to mindmap</a>
 </nav>
 <script>
   (function(){
@@ -462,100 +462,85 @@
     }
   })();
 </script>
-
 <!-- ── HERO ── -->
 <div class="hero">
-  <span class="hero-tag">Production · Architecture</span>
-  <h1>State & <em>Session</em> Management</h1>
-  <p class="hero-sub">Managing conversation history, user context, and multi-turn sessions — patterns for stateless and stateful LLM apps</p>
-  <div class="hero-stats">
-    <div class="stat">
-      <span class="stat-num">4</span>
-      <span class="stat-label">patterns</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">6</span>
-      <span class="stat-label">sections</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">Python</span>
-      <span class="stat-label">first</span>
-    </div>
-  </div>
+<span class="hero-tag">Production · Architecture</span>
+<h1>State &amp; <em>Session</em> Management</h1>
+<p class="hero-sub">Managing conversation history, user context, and multi-turn sessions — patterns for stateless and stateful LLM apps</p>
+<div class="hero-stats">
+<div class="stat">
+<span class="stat-num">4</span>
+<span class="stat-label">patterns</span>
 </div>
-
+<div class="stat">
+<span class="stat-num">6</span>
+<span class="stat-label">sections</span>
+</div>
+<div class="stat">
+<span class="stat-num">Python</span>
+<span class="stat-label">first</span>
+</div>
+</div>
+</div>
 <!-- ── BODY ── -->
 <div class="page-wrap">
-
-  <!-- TOC -->
-  <div class="toc-card">
-    <div class="toc-heading">Contents</div>
-    <ol class="toc-list">
-      <li><a href="#why-hard" data-num="1">Why state is hard</a></li>
-      <li><a href="#history-strategies" data-num="2">History strategies</a></li>
-      <li><a href="#implementing-python" data-num="3">Implementing in Python</a></li>
-      <li><a href="#session-storage" data-num="4">Session storage backends</a></li>
-      <li><a href="#multi-user" data-num="5">Multi-user architecture</a></li>
-      <li><a href="#stateful-agents" data-num="6">Stateful agents</a></li>
-      <li><a href="#security" data-num="7">Security & privacy</a></li>
-      <li><a href="#tools" data-num="8">Tools & references</a></li>
-    </ol>
-  </div>
-
-  <!-- ── 1. WHY STATE IS HARD ── -->
-  <div class="section-block" id="why-hard">
-    <div class="section-marker">01 — Foundation</div>
-    <h2>Why State Is Hard</h2>
-    <p>LLMs are stateless by nature. Each API call starts fresh — the model has no built-in memory of previous interactions. Yet users expect continuity. Conversations should remember context, tone, decisions. Managing that gap is the job of application-level state.</p>
-    
-    <p>The core challenge: <strong>Every API call costs tokens.</strong> Sending full conversation history every time gets expensive fast. Context windows aren't infinite — GPT-4 offers 128K tokens, but real-world requests sit in 2K–10K windows. And multi-user apps need isolation: user A's history should never leak into user B's session.</p>
-
-    <div class="callout blue">
-      <span class="callout-icon">💡</span>
-      <span><strong>Every API call starts fresh — state is your responsibility.</strong> The model won't remember, persist, or cost-optimize for you. You design history strategies, storage backends, and expiry policies.</span>
-    </div>
-  </div>
-
-  <!-- ── 2. HISTORY STRATEGIES ── -->
-  <div class="section-block" id="history-strategies">
-    <div class="section-marker">02 — Tradeoffs</div>
-    <h2>History Strategies</h2>
-    <p>Different strategies optimize for cost, quality, or session length. Choose based on your use case.</p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Strategy</th><th>Description</th><th>Cost</th><th>Quality</th><th>Best For</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>Full history</strong></td><td>Send all messages</td><td>High</td><td>Best</td><td>Short sessions</td></tr>
-          <tr><td><strong>Sliding window</strong></td><td>Last N turns</td><td>Medium</td><td>Good</td><td>General chat</td></tr>
-          <tr><td><strong>Summarise + trim</strong></td><td>LLM summary of old turns</td><td>Medium</td><td>Good</td><td>Long sessions</td></tr>
-          <tr><td><strong>Embedding memory</strong></td><td>Retrieve relevant past turns</td><td>Low</td><td>Selective</td><td>Long-term personal</td></tr>
-          <tr><td><strong>Hybrid</strong></td><td>Sliding window + summary</td><td>Medium</td><td>Excellent</td><td>Production default</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Strategy Details</h3>
-    <p><strong>Full history:</strong> Best quality, worst cost. Works for demos and short chat sessions (< 20 turns). Once you exceed your context window, quality drops sharply.</p>
-    
-    <p><strong>Sliding window:</strong> Keep last N messages (e.g., last 10 turns = 20 messages). Simple, predictable cost. Loses distant context but often sufficient for coherent conversations.</p>
-    
-    <p><strong>Summarise + trim:</strong> Periodically ask the LLM to summarize old turns into a condensed summary. Replace old messages with "Summary: ...". Preserves key context while cutting token cost. Adds latency (extra API call).</p>
-    
-    <p><strong>Embedding memory:</strong> Store turn embeddings in a vector DB. On each new message, retrieve the most relevant past turns. Best for long-term, multi-session memory but requires embedding infrastructure.</p>
-    
-    <p><strong>Hybrid (recommended):</strong> Keep last 5 turns in full. Summarize older turns into a rolling summary. Combine both in the context. Best cost/quality tradeoff for production.</p>
-  </div>
-
-  <!-- ── 3. IMPLEMENTING IN PYTHON ── -->
-  <div class="section-block" id="implementing-python">
-    <div class="section-marker">03 — Code</div>
-    <h2>Implementing History in Python</h2>
-    <p>LangChain offers memory utilities for sliding window and summarization. Here's how to use them:</p>
-
-    <div class="example-box">from langchain.memory import ConversationBufferWindowMemory, ConversationSummaryBufferMemory
+<!-- TOC -->
+<div class="toc-card">
+<div class="toc-heading">Contents</div>
+<ol class="toc-list">
+<li><a data-num="1" href="#why-hard">Why state is hard</a></li>
+<li><a data-num="2" href="#history-strategies">History strategies</a></li>
+<li><a data-num="3" href="#implementing-python">Implementing in Python</a></li>
+<li><a data-num="4" href="#session-storage">Session storage backends</a></li>
+<li><a data-num="5" href="#multi-user">Multi-user architecture</a></li>
+<li><a data-num="6" href="#stateful-agents">Stateful agents</a></li>
+<li><a data-num="7" href="#security">Security &amp; privacy</a></li>
+<li><a data-num="8" href="#tools">Tools &amp; references</a></li>
+</ol>
+</div>
+<!-- ── 1. WHY STATE IS HARD ── -->
+<div class="section-block" id="why-hard">
+<div class="section-marker">01 — Foundation</div>
+<h2>Why State Is Hard</h2>
+<p>LLMs are stateless by nature. Each API call starts fresh — the model has no built-in memory of previous interactions. Yet users expect continuity. Conversations should remember context, tone, decisions. Managing that gap is the job of application-level state.</p>
+<p>The core challenge: <strong>Every API call costs tokens.</strong> Sending full conversation history every time gets expensive fast. Context windows aren't infinite — GPT-4 offers 128K tokens, but real-world requests sit in 2K–10K windows. And multi-user apps need isolation: user A's history should never leak into user B's session.</p>
+<div class="callout blue">
+<span class="callout-icon">💡</span>
+<span><strong>Every API call starts fresh — state is your responsibility.</strong> The model won't remember, persist, or cost-optimize for you. You design history strategies, storage backends, and expiry policies.</span>
+</div>
+</div>
+<!-- ── 2. HISTORY STRATEGIES ── -->
+<div class="section-block" id="history-strategies">
+<div class="section-marker">02 — Tradeoffs</div>
+<h2>History Strategies</h2>
+<p>Different strategies optimize for cost, quality, or session length. Choose based on your use case.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Strategy</th><th>Description</th><th>Cost</th><th>Quality</th><th>Best For</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Full history</strong></td><td>Send all messages</td><td>High</td><td>Best</td><td>Short sessions</td></tr>
+<tr><td><strong>Sliding window</strong></td><td>Last N turns</td><td>Medium</td><td>Good</td><td>General chat</td></tr>
+<tr><td><strong>Summarise + trim</strong></td><td>LLM summary of old turns</td><td>Medium</td><td>Good</td><td>Long sessions</td></tr>
+<tr><td><strong>Embedding memory</strong></td><td>Retrieve relevant past turns</td><td>Low</td><td>Selective</td><td>Long-term personal</td></tr>
+<tr><td><strong>Hybrid</strong></td><td>Sliding window + summary</td><td>Medium</td><td>Excellent</td><td>Production default</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Strategy Details</h3>
+<p><strong>Full history:</strong> Best quality, worst cost. Works for demos and short chat sessions (&lt; 20 turns). Once you exceed your context window, quality drops sharply.</p>
+<p><strong>Sliding window:</strong> Keep last N messages (e.g., last 10 turns = 20 messages). Simple, predictable cost. Loses distant context but often sufficient for coherent conversations.</p>
+<p><strong>Summarise + trim:</strong> Periodically ask the LLM to summarize old turns into a condensed summary. Replace old messages with "Summary: ...". Preserves key context while cutting token cost. Adds latency (extra API call).</p>
+<p><strong>Embedding memory:</strong> Store turn embeddings in a vector DB. On each new message, retrieve the most relevant past turns. Best for long-term, multi-session memory but requires embedding infrastructure.</p>
+<p><strong>Hybrid (recommended):</strong> Keep last 5 turns in full. Summarize older turns into a rolling summary. Combine both in the context. Best cost/quality tradeoff for production.</p>
+</div>
+<!-- ── 3. IMPLEMENTING IN PYTHON ── -->
+<div class="section-block" id="implementing-python">
+<div class="section-marker">03 — Code</div>
+<h2>Implementing History in Python</h2>
+<p>LangChain offers memory utilities for sliding window and summarization. Here's how to use them:</p>
+<div class="example-box">from langchain.memory import ConversationBufferWindowMemory, ConversationSummaryBufferMemory
 from langchain_openai import OpenAI
 
 # Sliding window: last 5 turns
@@ -578,11 +563,9 @@ memory.save_context(
 # Get formatted history for next request
 history_str = memory.buffer  # or memory.load_memory_variables({})
 print(history_str)</div>
-
-    <h3>Manual Token Trimming with tiktoken</h3>
-    <p>For fine-grained control, manually trim using token counts:</p>
-
-    <div class="example-box">import tiktoken
+<h3>Manual Token Trimming with tiktoken</h3>
+<p>For fine-grained control, manually trim using token counts:</p>
+<div class="example-box">import tiktoken
 from collections import deque
 
 def trim_messages_to_limit(messages, max_tokens=4000, model="gpt-4"):
@@ -595,7 +578,7 @@ def trim_messages_to_limit(messages, max_tokens=4000, model="gpt-4"):
     # Go backwards; keep recent first
     for msg in reversed(messages):
         msg_tokens = len(enc.encode(msg["content"]))
-        if total + msg_tokens > max_tokens:
+        if total + msg_tokens &gt; max_tokens:
             break
         kept.appendleft(msg)
         total += msg_tokens
@@ -605,32 +588,28 @@ def trim_messages_to_limit(messages, max_tokens=4000, model="gpt-4"):
 # Usage
 messages = [{"role": "user", "content": "..."}, ...]
 trimmed = trim_messages_to_limit(messages, max_tokens=3000)</div>
-  </div>
-
-  <!-- ── 4. SESSION STORAGE BACKENDS ── -->
-  <div class="section-block" id="session-storage">
-    <div class="section-marker">04 — Infrastructure</div>
-    <h2>Session Storage Backends</h2>
-    <p>Where you store conversation state depends on latency, durability, and scale requirements:</p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Backend</th><th>Latency</th><th>Durability</th><th>Scale</th><th>Cost</th></tr>
-        </thead>
-        <tbody>
-          <tr><td><strong>In-memory dict</strong></td><td>&lt;1ms</td><td>No</td><td>Single process</td><td>Free</td></tr>
-          <tr><td><strong>Redis</strong></td><td>1–5ms</td><td>Yes</td><td>Horizontal</td><td>$</td></tr>
-          <tr><td><strong>DynamoDB</strong></td><td>5–20ms</td><td>Yes</td><td>Unlimited</td><td>$$</td></tr>
-          <tr><td><strong>PostgreSQL</strong></td><td>5–30ms</td><td>Yes</td><td>Vertical</td><td>$</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Redis Session Store Example</h3>
-    <p>Redis is the most popular for session storage — fast, reliable, and supports expiry out of the box:</p>
-
-    <div class="example-box">import redis
+</div>
+<!-- ── 4. SESSION STORAGE BACKENDS ── -->
+<div class="section-block" id="session-storage">
+<div class="section-marker">04 — Infrastructure</div>
+<h2>Session Storage Backends</h2>
+<p>Where you store conversation state depends on latency, durability, and scale requirements:</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Backend</th><th>Latency</th><th>Durability</th><th>Scale</th><th>Cost</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>In-memory dict</strong></td><td>&lt;1ms</td><td>No</td><td>Single process</td><td>Free</td></tr>
+<tr><td><strong>Redis</strong></td><td>1–5ms</td><td>Yes</td><td>Horizontal</td><td>$</td></tr>
+<tr><td><strong>DynamoDB</strong></td><td>5–20ms</td><td>Yes</td><td>Unlimited</td><td>$$</td></tr>
+<tr><td><strong>PostgreSQL</strong></td><td>5–30ms</td><td>Yes</td><td>Vertical</td><td>$</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Redis Session Store Example</h3>
+<p>Redis is the most popular for session storage — fast, reliable, and supports expiry out of the box:</p>
+<div class="example-box">import redis
 import json
 from datetime import timedelta
 
@@ -662,11 +641,9 @@ if data:
 # List all sessions for a user (optional: prefix scan)
 pattern = f"user_123_*"
 session_keys = r.keys(pattern)</div>
-
-    <h3>PostgreSQL with pgvector</h3>
-    <p>For embedding-based memory, PostgreSQL + pgvector allows semantic search over past turns:</p>
-
-    <div class="example-box">-- Create session table
+<h3>PostgreSQL with pgvector</h3>
+<p>For embedding-based memory, PostgreSQL + pgvector allows semantic search over past turns:</p>
+<div class="example-box">-- Create session table
 CREATE TABLE sessions (
     session_id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
@@ -691,23 +668,20 @@ CREATE INDEX ON turns USING ivfflat (embedding vector_cosine_ops);
 SELECT content, role
 FROM turns
 WHERE session_id = $1
-ORDER BY embedding <-> $2::vector
+ORDER BY embedding &lt;-&gt; $2::vector
 LIMIT 3;</div>
-  </div>
-
-  <!-- ── 5. MULTI-USER & MULTI-SESSION ARCHITECTURE ── -->
-  <div class="section-block" id="multi-user">
-    <div class="section-marker">05 — Isolation</div>
-    <h2>Multi-User & Multi-Session Architecture</h2>
-    <p>Production apps support multiple users, each with multiple concurrent sessions. Session isolation is critical.</p>
-
-    <h3>Session ID Generation</h3>
-    <p>Use UUID4 for globally unique, unpredictable session identifiers:</p>
-
-    <div class="example-box">import uuid
+</div>
+<!-- ── 5. MULTI-USER & MULTI-SESSION ARCHITECTURE ── -->
+<div class="section-block" id="multi-user">
+<div class="section-marker">05 — Isolation</div>
+<h2>Multi-User &amp; Multi-Session Architecture</h2>
+<p>Production apps support multiple users, each with multiple concurrent sessions. Session isolation is critical.</p>
+<h3>Session ID Generation</h3>
+<p>Use UUID4 for globally unique, unpredictable session identifiers:</p>
+<div class="example-box">import uuid
 from datetime import datetime, timedelta
 
-def create_session(user_id: str) -> dict:
+def create_session(user_id: str) -&gt; dict:
     session_id = str(uuid.uuid4())
     return {
         "session_id": session_id,
@@ -720,40 +694,35 @@ def create_session(user_id: str) -> dict:
 # Store in Redis with key: user_id:session_id
 key = f"{user_id}:{session_id}"
 r.setex(key, timedelta(hours=24), json.dumps(session_data))</div>
-
-    <h3>Key Patterns</h3>
-    <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
-      <li style="margin: 0.4rem 0;"><strong>Session key:</strong> <code style="background: var(--bg); padding: 0.2rem 0.4rem;">user_id:session_id</code> — namespaces sessions by user</li>
-      <li style="margin: 0.4rem 0;"><strong>User key:</strong> <code style="background: var(--bg); padding: 0.2rem 0.4rem;">user_id:sessions</code> — list/set of active session IDs (for UI)</li>
-      <li style="margin: 0.4rem 0;"><strong>Message archive:</strong> <code style="background: var(--bg); padding: 0.2rem 0.4rem;">user_id:session_id:messages</code> — full history in a list</li>
-    </ul>
-
-    <h3>Expiry & TTL</h3>
-    <p>Set Redis TTL on session keys. When expired, sessions auto-delete. Options:</p>
-    
-    <div class="practice-grid">
-      <div class="practice-item">
-        <h3><span class="badge">⏰</span> Fixed expiry</h3>
-        <ul>
-          <li>All sessions expire in 24 hours</li>
-          <li>Simple, predictable</li>
-          <li>May lose active chats</li>
-        </ul>
-      </div>
-      <div class="practice-item">
-        <h3><span class="badge">🔄</span> Sliding expiry</h3>
-        <ul>
-          <li>Reset TTL on each message</li>
-          <li>Sessions live 24h of inactivity</li>
-          <li>More user-friendly</li>
-        </ul>
-      </div>
-    </div>
-
-    <h3>Session Listing for UI</h3>
-    <p>Let users see and switch between their sessions:</p>
-
-    <div class="example-box">def list_user_sessions(user_id: str, r: redis.Redis):
+<h3>Key Patterns</h3>
+<ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+<li style="margin: 0.4rem 0;"><strong>Session key:</strong> <code style="background: var(--bg); padding: 0.2rem 0.4rem;">user_id:session_id</code> — namespaces sessions by user</li>
+<li style="margin: 0.4rem 0;"><strong>User key:</strong> <code style="background: var(--bg); padding: 0.2rem 0.4rem;">user_id:sessions</code> — list/set of active session IDs (for UI)</li>
+<li style="margin: 0.4rem 0;"><strong>Message archive:</strong> <code style="background: var(--bg); padding: 0.2rem 0.4rem;">user_id:session_id:messages</code> — full history in a list</li>
+</ul>
+<h3>Expiry &amp; TTL</h3>
+<p>Set Redis TTL on session keys. When expired, sessions auto-delete. Options:</p>
+<div class="practice-grid">
+<div class="practice-item">
+<h3><span class="badge">⏰</span> Fixed expiry</h3>
+<ul>
+<li>All sessions expire in 24 hours</li>
+<li>Simple, predictable</li>
+<li>May lose active chats</li>
+</ul>
+</div>
+<div class="practice-item">
+<h3><span class="badge">🔄</span> Sliding expiry</h3>
+<ul>
+<li>Reset TTL on each message</li>
+<li>Sessions live 24h of inactivity</li>
+<li>More user-friendly</li>
+</ul>
+</div>
+</div>
+<h3>Session Listing for UI</h3>
+<p>Let users see and switch between their sessions:</p>
+<div class="example-box">def list_user_sessions(user_id: str, r: redis.Redis):
     """Return all active sessions for a user."""
     pattern = f"{user_id}:*"
     session_keys = r.keys(pattern)
@@ -769,18 +738,15 @@ r.setex(key, timedelta(hours=24), json.dumps(session_data))</div>
             })
     
     return sorted(sessions, key=lambda x: x["created_at"], reverse=True)</div>
-  </div>
-
-  <!-- ── 6. STATEFUL AGENTS ── -->
-  <div class="section-block" id="stateful-agents">
-    <div class="section-marker">06 — Persistence</div>
-    <h2>Stateful Agents</h2>
-    <p>Agents are programs that loop: observe state, decide action, execute tool, update state. State persists across steps and sessions.</p>
-
-    <h3>Agent Scratchpad & Tool History</h3>
-    <p>An agent's scratchpad stores its internal reasoning and tool calls. Must be saved between steps:</p>
-
-    <div class="example-box">from langchain.agents import AgentExecutor, initialize_agent
+</div>
+<!-- ── 6. STATEFUL AGENTS ── -->
+<div class="section-block" id="stateful-agents">
+<div class="section-marker">06 — Persistence</div>
+<h2>Stateful Agents</h2>
+<p>Agents are programs that loop: observe state, decide action, execute tool, update state. State persists across steps and sessions.</p>
+<h3>Agent Scratchpad &amp; Tool History</h3>
+<p>An agent's scratchpad stores its internal reasoning and tool calls. Must be saved between steps:</p>
+<div class="example-box">from langchain.agents import AgentExecutor, initialize_agent
 from langchain.memory import ConversationBufferMemory
 
 # Agent with persistent memory
@@ -797,11 +763,9 @@ agent = initialize_agent(
 # Each step adds to memory automatically
 response = agent.run("User query")
 # Agent's reasoning, tool calls, and results are logged</div>
-
-    <h3>Checkpointing with LangGraph</h3>
-    <p>LangGraph provides explicit checkpointing for agent state. Save snapshots after each step:</p>
-
-    <div class="example-box">from langgraph.checkpoint.base import BaseCheckpointStorage
+<h3>Checkpointing with LangGraph</h3>
+<p>LangGraph provides explicit checkpointing for agent state. Save snapshots after each step:</p>
+<div class="example-box">from langgraph.checkpoint.base import BaseCheckpointStorage
 from langgraph.checkpoint.postgres import PostgresCheckpointStorage
 import psycopg
 
@@ -826,11 +790,9 @@ result = app.invoke(
 # Can resume from checkpoint if interrupted
 snapshot = checkpointer.get(config)
 print(snapshot.values)  # Last saved state</div>
-
-    <h3>MemGPT-Style External Memory</h3>
-    <p>MemGPT stores agent memory in a database, partitioning by type:</p>
-
-    <div class="example-box">-- MemGPT memory tables
+<h3>MemGPT-Style External Memory</h3>
+<p>MemGPT stores agent memory in a database, partitioning by type:</p>
+<div class="example-box">-- MemGPT memory tables
 CREATE TABLE agent_core_memory (
     agent_id UUID,
     section VARCHAR(50),  -- 'persona', 'human'
@@ -851,11 +813,9 @@ system_prompt = f"""
 
 [Recall: {recent_turns}]
 """</div>
-
-    <h3>Long-Running Task State</h3>
-    <p>For async tasks that span hours/days, pair asyncio tasks with database records:</p>
-
-    <div class="example-box">import asyncio
+<h3>Long-Running Task State</h3>
+<p>For async tasks that span hours/days, pair asyncio tasks with database records:</p>
+<div class="example-box">import asyncio
 import json
 from datetime import datetime
 
@@ -886,29 +846,25 @@ async def process_task(task_id: str, user_id: str, query: str):
             "UPDATE tasks SET status=%s, error=%s, ended_at=%s WHERE task_id=%s",
             ("failed", str(e), datetime.utcnow(), task_id)
         )</div>
-  </div>
+</div>
+<!-- ── 7. SECURITY & PRIVACY ── -->
+<div class="section-block" id="security">
+<div class="section-marker">07 — Safeguards</div>
+<h2>Security &amp; Privacy</h2>
+<p>Session data may contain sensitive user information. Protect it.</p>
+<h3>Session Hijacking Prevention</h3>
+<ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
+<li style="margin: 0.4rem 0;">Use cryptographically strong session IDs (UUID4, not sequential)</li>
+<li style="margin: 0.4rem 0;">Bind sessions to user + IP (optional, for non-mobile apps)</li>
+<li style="margin: 0.4rem 0;">Use HttpOnly, Secure cookies (browser storage)</li>
+<li style="margin: 0.4rem 0;">Rotate session IDs on login</li>
+<li style="margin: 0.4rem 0;">Implement rate limiting on session endpoints</li>
+</ul>
+<h3>PII Redaction in Stored History</h3>
+<p>Before storing messages in long-term storage, redact sensitive data:</p>
+<div class="example-box">import re
 
-  <!-- ── 7. SECURITY & PRIVACY ── -->
-  <div class="section-block" id="security">
-    <div class="section-marker">07 — Safeguards</div>
-    <h2>Security & Privacy</h2>
-    <p>Session data may contain sensitive user information. Protect it.</p>
-
-    <h3>Session Hijacking Prevention</h3>
-    <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
-      <li style="margin: 0.4rem 0;">Use cryptographically strong session IDs (UUID4, not sequential)</li>
-      <li style="margin: 0.4rem 0;">Bind sessions to user + IP (optional, for non-mobile apps)</li>
-      <li style="margin: 0.4rem 0;">Use HttpOnly, Secure cookies (browser storage)</li>
-      <li style="margin: 0.4rem 0;">Rotate session IDs on login</li>
-      <li style="margin: 0.4rem 0;">Implement rate limiting on session endpoints</li>
-    </ul>
-
-    <h3>PII Redaction in Stored History</h3>
-    <p>Before storing messages in long-term storage, redact sensitive data:</p>
-
-    <div class="example-box">import re
-
-def redact_pii(text: str) -> str:
+def redact_pii(text: str) -&gt; str:
     """Redact email, phone, SSN, credit card."""
     # Email
     text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', 
@@ -928,33 +884,29 @@ r.lpush(f"{session_id}:messages", json.dumps({
     "content": redacted_content,
     "original_hash": hash(user_message)  # For audit
 }))</div>
-
-    <h3>Encryption at Rest</h3>
-    <p>Encrypt session data before storing in Redis or DB:</p>
-
-    <div class="example-box">from cryptography.fernet import Fernet
+<h3>Encryption at Rest</h3>
+<p>Encrypt session data before storing in Redis or DB:</p>
+<div class="example-box">from cryptography.fernet import Fernet
 import os
 
 # Generate key (store in environment, rotate periodically)
 cipher_key = os.getenv("SESSION_CIPHER_KEY")
 cipher = Fernet(cipher_key)
 
-def encrypt_session(data: dict) -> str:
+def encrypt_session(data: dict) -&gt; str:
     plaintext = json.dumps(data).encode()
     return cipher.encrypt(plaintext).decode()
 
-def decrypt_session(ciphertext: str) -> dict:
+def decrypt_session(ciphertext: str) -&gt; dict:
     plaintext = cipher.decrypt(ciphertext.encode())
     return json.loads(plaintext)
 
 # Store encrypted
 encrypted = encrypt_session(session_data)
 r.setex(session_id, timedelta(hours=24), encrypted)</div>
-
-    <h3>GDPR Right to Erasure</h3>
-    <p>Implement account deletion that removes all session data:</p>
-
-    <div class="example-box">async def delete_user_data(user_id: str, r: redis.Redis, db):
+<h3>GDPR Right to Erasure</h3>
+<p>Implement account deletion that removes all session data:</p>
+<div class="example-box">async def delete_user_data(user_id: str, r: redis.Redis, db):
     """Cascade delete all user sessions and messages."""
     # Redis: delete all sessions
     keys = r.keys(f"{user_id}:*")
@@ -970,11 +922,9 @@ r.setex(session_id, timedelta(hours=24), encrypted)</div>
         "INSERT INTO audit_log (user_id, action, timestamp) VALUES (%s, %s, %s)",
         (user_id, "account_deleted", datetime.utcnow())
     )</div>
-
-    <h3>Audit Logging</h3>
-    <p>Log sensitive operations for compliance and debugging:</p>
-
-    <div class="example-box">async def log_audit(user_id: str, action: str, details: dict, db):
+<h3>Audit Logging</h3>
+<p>Log sensitive operations for compliance and debugging:</p>
+<div class="example-box">async def log_audit(user_id: str, action: str, details: dict, db):
     """Record audit event."""
     await db.execute(
         """INSERT INTO audit_log 
@@ -988,82 +938,76 @@ r.setex(session_id, timedelta(hours=24), encrypted)</div>
 await log_audit(user_id, "session_created", {"session_id": sid}, db)
 await log_audit(user_id, "session_deleted", {"session_id": sid}, db)
 await log_audit(user_id, "data_exported", {"count": 50}, db)</div>
-  </div>
-
-  <!-- ── 8. TOOLS & REFERENCES ── -->
-  <div class="section-block" id="tools">
-    <div class="section-marker">08 — Ecosystem</div>
-    <h2>Tools & Resources</h2>
-
-    <h3>Memory & State Management</h3>
-    <div class="tools-grid">
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">LangChain Memory</div>
-        <div class="tool-desc">ConversationBufferMemory, ConversationSummaryBufferMemory, built-in integrations with Redis, PostgreSQL</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Framework</div>
-        <div class="tool-name">LangGraph Checkpoints</div>
-        <div class="tool-desc">Persistent state snapshots for agent workflows; PostgreSQL, SQLite backends</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Library</div>
-        <div class="tool-name">MemGPT/MemOS</div>
-        <div class="tool-desc">External memory system for long-context agents; partitioned core/recall memory</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Service</div>
-        <div class="tool-name">Mem0</div>
-        <div class="tool-desc">Managed memory-as-a-service; embedding + retrieval; API-first</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Service</div>
-        <div class="tool-name">Zep</div>
-        <div class="tool-desc">Conversation history API; auto-summarization, semantic search, long-term memory</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Database</div>
-        <div class="tool-name">Upstash Redis</div>
-        <div class="tool-desc">Serverless Redis; pay-per-request; ideal for variable-load session stores</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Database</div>
-        <div class="tool-name">Redis</div>
-        <div class="tool-desc">In-memory session store; fast, durable, TTL support; standard choice</div>
-      </div>
-      <div class="tool-card">
-        <div class="tool-category">Database</div>
-        <div class="tool-name">DynamoDB</div>
-        <div class="tool-desc">Serverless NoSQL; automatic scaling; good for unpredictable traffic</div>
-      </div>
-    </div>
-
-    <div class="ref-group-title">Documentation</div>
-    <ul class="ref-list">
-      <li><span class="ref-badge badge-docs">Docs</span> LangChain Memory — <a href="https://python.langchain.com/docs/modules/memory/" target="_blank">python.langchain.com/docs/modules/memory/ ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> LangGraph Checkpoints — <a href="https://langchain-ai.github.io/langgraph/" target="_blank">langchain-ai.github.io/langgraph ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> Zep — <a href="https://docs.getzep.com/" target="_blank">docs.getzep.com ↗</a></li>
-      <li><span class="ref-badge badge-docs">Docs</span> Redis session patterns — <a href="https://redis.io/docs/manual/client-side-caching/" target="_blank">redis.io/docs ↗</a></li>
-    </ul>
-
-    <div class="ref-group-title">Papers & Research</div>
-    <ul class="ref-list">
-      <li><span class="ref-badge badge-paper">Paper</span> MemGPT — <a href="https://arxiv.org/abs/2310.08560" target="_blank">arxiv.org/abs/2310.08560 ↗</a></li>
-      <li><span class="ref-badge badge-paper">Paper</span> Zep — <a href="https://arxiv.org/abs/2403.07737" target="_blank">arxiv.org/abs/2403.07737 ↗</a></li>
-    </ul>
-
-    <div class="ref-group-title">Guides & Blogs</div>
-    <ul class="ref-list">
-      <li><span class="ref-badge badge-blog">Blog</span> Building Stateful LLM Apps — <a href="https://www.anthropic.com/research" target="_blank">anthropic.com/research ↗</a></li>
-    </ul>
-  </div>
-
-  <footer class="page-footer">
-    <span>Part of the <a id="footer-brand" href="../index.html">GenAI Mindmap</a> — genai4a11.github.io</span>
-    <a id="footer-back" href="../index.html">← Back to mindmap</a>
-  </footer>
-  <script>
+</div>
+<!-- ── 8. TOOLS & REFERENCES ── -->
+<div class="section-block" id="tools">
+<div class="section-marker">08 — Ecosystem</div>
+<h2>Tools &amp; Resources</h2>
+<h3>Memory &amp; State Management</h3>
+<div class="tools-grid">
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">LangChain Memory</div>
+<div class="tool-desc">ConversationBufferMemory, ConversationSummaryBufferMemory, built-in integrations with Redis, PostgreSQL</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Framework</div>
+<div class="tool-name">LangGraph Checkpoints</div>
+<div class="tool-desc">Persistent state snapshots for agent workflows; PostgreSQL, SQLite backends</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Library</div>
+<div class="tool-name">MemGPT/MemOS</div>
+<div class="tool-desc">External memory system for long-context agents; partitioned core/recall memory</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Service</div>
+<div class="tool-name">Mem0</div>
+<div class="tool-desc">Managed memory-as-a-service; embedding + retrieval; API-first</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Service</div>
+<div class="tool-name">Zep</div>
+<div class="tool-desc">Conversation history API; auto-summarization, semantic search, long-term memory</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Database</div>
+<div class="tool-name">Upstash Redis</div>
+<div class="tool-desc">Serverless Redis; pay-per-request; ideal for variable-load session stores</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Database</div>
+<div class="tool-name">Redis</div>
+<div class="tool-desc">In-memory session store; fast, durable, TTL support; standard choice</div>
+</div>
+<div class="tool-card">
+<div class="tool-category">Database</div>
+<div class="tool-name">DynamoDB</div>
+<div class="tool-desc">Serverless NoSQL; automatic scaling; good for unpredictable traffic</div>
+</div>
+</div>
+<div class="ref-group-title">Documentation</div>
+<ul class="ref-list">
+<li><span class="ref-badge badge-docs">Docs</span> LangChain Memory — <a href="https://python.langchain.com/docs/modules/memory/" target="_blank">python.langchain.com/docs/modules/memory/ ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> LangGraph Checkpoints — <a href="https://langchain-ai.github.io/langgraph/" target="_blank">langchain-ai.github.io/langgraph ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> Zep — <a href="https://docs.getzep.com/" target="_blank">docs.getzep.com ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> Redis session patterns — <a href="https://redis.io/docs/manual/client-side-caching/" target="_blank">redis.io/docs ↗</a></li>
+</ul>
+<div class="ref-group-title">Papers &amp; Research</div>
+<ul class="ref-list">
+<li><span class="ref-badge badge-paper">Paper</span> MemGPT — <a href="https://arxiv.org/abs/2310.08560" target="_blank">arxiv.org/abs/2310.08560 ↗</a></li>
+<li><span class="ref-badge badge-paper">Paper</span> Zep — <a href="https://arxiv.org/abs/2403.07737" target="_blank">arxiv.org/abs/2403.07737 ↗</a></li>
+</ul>
+<div class="ref-group-title">Guides &amp; Blogs</div>
+<ul class="ref-list">
+<li><span class="ref-badge badge-blog">Blog</span> Building Stateful LLM Apps — <a href="https://www.anthropic.com/research" target="_blank">anthropic.com/research ↗</a></li>
+</ul>
+</div>
+<footer class="page-footer">
+<span>Part of the <a href="../index.html" id="footer-brand">GenAI Mindmap</a> — genai4a11.github.io</span>
+<a href="../index.html" id="footer-back">← Back to mindmap</a>
+</footer>
+<script>
     (function(){
       const from=new URLSearchParams(location.search).get('from');
       if(from){
@@ -1075,7 +1019,6 @@ await log_audit(user_id, "data_exported", {"count": 50}, db)</div>
       }
     })();
   </script>
-
 </div>
 <nav class="concept-nav">
   <a class="concept-nav-prev" href="multi-agent.html">← Multi-Agent Systems | GenAI Mindmap</a>

@@ -1,20 +1,21 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rate Limiting | GenAI Mindmap</title>
-  <meta name="description" content="Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users." />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Rate Limiting" />
-  <meta property="og:description" content="Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users." />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/rate-limiting.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/rate-limiting.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <script type="application/ld+json">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Rate Limiting | GenAI Mindmap</title>
+<meta content="Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users." name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="Rate Limiting" property="og:title"/>
+<meta content="Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users." property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/rate-limiting.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<link href="https://genai4a11.github.io/concepts/rate-limiting.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -62,7 +63,7 @@
   }
 }
 </script>
-  <style>
+<style>
     :root {
       --accent: #0f766e;
       --accent-dark: #0d9488;
@@ -120,50 +121,46 @@
     strong { color:var(--accent); font-weight:600; }
     footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
   </style>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="summary_large_image" name="twitter:card"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-  <nav>
-    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
-    <a href="/concepts/traffic-cost.html" class="nav-back">← Traffic & Cost</a>
-  </nav>
-
-  <div class="hero">
-    <span class="hero-tag">Traffic & Cost</span>
-    <h1><em>Rate Limiting</em></h1>
-    <p class="hero-sub">Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users.</p>
-    <div class="hero-stats">
-      <div><div class="stat-num">Token bucket</div><div class="stat-label">Algorithm</div></div>
-      <div><div class="stat-num">Per-tenant</div><div class="stat-label">Enforcement</div></div>
-      <div><div class="stat-num">Redis</div><div class="stat-label">State store</div></div>
-    </div>
-  </div>
-
-  <div class="page-wrap">
-    <div class="toc-card">
-      <h3>Table of Contents</h3>
-      <ul class="toc-list">
-        <li><a href="#s1" data-num="01">Why LLM apps need rate limiting</a></li>
-        <li><a href="#s2" data-num="02">Token bucket algorithm</a></li>
-        <li><a href="#s3" data-num="03">Sliding window counter</a></li>
-        <li><a href="#s4" data-num="04">Redis-backed implementation</a></li>
-        <li><a href="#s5" data-num="05">FastAPI middleware</a></li>
-        <li><a href="#s6" data-num="06">Tiered limits by plan</a></li>
-        <li><a href="#s7" data-num="07">Gotchas</a></li>
-      </ul>
-    </div>
-
-    <div class="section-block" id="s1">
-      <div class="section-marker">SECTION 01</div>
+<nav>
+<a class="nav-brand" href="/index.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="/concepts/traffic-cost.html">← Traffic &amp; Cost</a>
+</nav>
+<div class="hero">
+<span class="hero-tag">Traffic &amp; Cost</span>
+<h1><em>Rate Limiting</em></h1>
+<p class="hero-sub">Token bucket and sliding window algorithms for per-user and per-tenant quota enforcement — protecting upstream LLM APIs from overuse and distributing limited TPM/RPM capacity fairly across your users.</p>
+<div class="hero-stats">
+<div><div class="stat-num">Token bucket</div><div class="stat-label">Algorithm</div></div>
+<div><div class="stat-num">Per-tenant</div><div class="stat-label">Enforcement</div></div>
+<div><div class="stat-num">Redis</div><div class="stat-label">State store</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<ul class="toc-list">
+<li><a data-num="01" href="#s1">Why LLM apps need rate limiting</a></li>
+<li><a data-num="02" href="#s2">Token bucket algorithm</a></li>
+<li><a data-num="03" href="#s3">Sliding window counter</a></li>
+<li><a data-num="04" href="#s4">Redis-backed implementation</a></li>
+<li><a data-num="05" href="#s5">FastAPI middleware</a></li>
+<li><a data-num="06" href="#s6">Tiered limits by plan</a></li>
+<li><a data-num="07" href="#s7">Gotchas</a></li>
+</ul>
+</div>
+<div class="section-block" id="s1">
+<div class="section-marker">SECTION 01</div>
 <h2>Why LLM apps need rate limiting</h2>
 <p>LLM APIs enforce per-account rate limits (tokens-per-minute and requests-per-minute). Without your own rate limiting, a single heavy user can exhaust your entire quota, causing 429 errors for all other users. At scale, rate limiting also controls costs — a user who submits 1000 requests in a loop could burn through your monthly budget in minutes.</p>
 <p>Three levels of rate limiting for LLM applications:</p>
 <p><strong>Per-user rate limiting</strong>: each user gets their own quota (e.g., 100 requests/hour). Prevents individual abuse. Implemented in your API layer.</p>
 <p><strong>Per-tenant rate limiting</strong>: for B2B SaaS, each customer organisation gets a quota. Usually tied to their subscription tier (starter: 1000 req/day, pro: 10,000, enterprise: unlimited). More coarse-grained than per-user.</p>
 <p><strong>Global budget guards</strong>: a hard ceiling on total spend across all users. Implemented as a daily/monthly token counter — when the budget is hit, all requests are blocked until the next period. Prevents runaway costs from bugs or attacks.</p>
-    </div>
-
-    <div class="section-block" id="s2">
-      <div class="section-marker">SECTION 02</div>
+</div>
+<div class="section-block" id="s2">
+<div class="section-marker">SECTION 02</div>
 <h2>Token bucket algorithm</h2>
 <pre><code class="language-python">import time
 import threading
@@ -185,10 +182,10 @@ class TokenBucket:
         self.tokens = min(self.capacity, self.tokens + added)
         self.last_refill = now
 
-    def consume(self, tokens: int = 1) -> bool:
+    def consume(self, tokens: int = 1) -&gt; bool:
         with self._lock:
             self._refill()
-            if self.tokens >= tokens:
+            if self.tokens &gt;= tokens:
                 self.tokens -= tokens
                 return True   # allowed
             return False      # rate limited
@@ -202,10 +199,9 @@ for i in range(60):
     time.sleep(0.05)   # 20 req/s — twice the refill rate; burst consumed after 2.5s
 </code></pre>
 <p>Token bucket naturally handles bursts — a user who was idle accumulates tokens and can then burst briefly above the sustained rate. Good for interactive applications where users may send a few quick follow-up messages.</p>
-    </div>
-
-    <div class="section-block" id="s3">
-      <div class="section-marker">SECTION 03</div>
+</div>
+<div class="section-block" id="s3">
+<div class="section-marker">SECTION 03</div>
 <h2>Sliding window counter</h2>
 <pre><code class="language-python">from collections import deque
 import time
@@ -218,22 +214,22 @@ class SlidingWindowCounter:
         self.requests = deque()    # timestamps of recent requests
         self._lock = __import__('threading').Lock()
 
-    def is_allowed(self) -> bool:
+    def is_allowed(self) -&gt; bool:
         with self._lock:
             now = time.time()
             cutoff = now - self.window
 
             # Remove expired timestamps
-            while self.requests and self.requests[0] < cutoff:
+            while self.requests and self.requests[0] &lt; cutoff:
                 self.requests.popleft()
 
-            if len(self.requests) < self.limit:
+            if len(self.requests) &lt; self.limit:
                 self.requests.append(now)
                 return True
             return False
 
     @property
-    def retry_after(self) -> float:
+    def retry_after(self) -&gt; float:
         # How long until the oldest request expires
         if not self.requests:
             return 0.0
@@ -249,17 +245,16 @@ for i in range(105):
     else:
         print(f"Request {i}: RATE LIMITED (retry after {sw.retry_after:.1f}s)")
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s4">
-      <div class="section-marker">SECTION 04</div>
+</div>
+<div class="section-block" id="s4">
+<div class="section-marker">SECTION 04</div>
 <h2>Redis-backed implementation</h2>
 <pre><code class="language-python">import redis
 import time
 
 r = redis.Redis(host="localhost", port=6379, db=0)
 
-def check_rate_limit(user_id: str, limit: int, window: int) -> dict:
+def check_rate_limit(user_id: str, limit: int, window: int) -&gt; dict:
     # Sliding window using Redis sorted sets
     # Key: rate_limit:{user_id}
     # Members: request timestamps (as floats)
@@ -279,7 +274,7 @@ def check_rate_limit(user_id: str, limit: int, window: int) -> dict:
     results = pipe.execute()
 
     current_count = results[1]
-    allowed = current_count < limit
+    allowed = current_count &lt; limit
 
     if not allowed:
         # Rollback the zadd — remove the request we just added
@@ -300,10 +295,9 @@ result = check_rate_limit("user_123", limit=100, window=3600)
 if not result["allowed"]:
     print(f"Rate limited. Retry in {result['retry_after']:.0f}s")
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s5">
-      <div class="section-marker">SECTION 05</div>
+</div>
+<div class="section-block" id="s5">
+<div class="section-marker">SECTION 05</div>
 <h2>FastAPI middleware</h2>
 <pre><code class="language-python">from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -340,10 +334,9 @@ async def rate_limit_middleware(request: Request, call_next):
     response.headers["X-RateLimit-Remaining"] = str(result["limit"] - result["count"] - 1)
     return response
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s6">
-      <div class="section-marker">SECTION 06</div>
+</div>
+<div class="section-block" id="s6">
+<div class="section-marker">SECTION 06</div>
 <h2>Tiered limits by plan</h2>
 <pre><code class="language-python">from enum import Enum
 from dataclasses import dataclass
@@ -368,12 +361,12 @@ TIERS = {
     Plan.ENTERPRISE: RateLimitTier(3000, 100_000, 2_000_000, 200_000),
 }
 
-def enforce_limits(user_id: str, plan: Plan, token_count: int) -> bool:
+def enforce_limits(user_id: str, plan: Plan, token_count: int) -&gt; bool:
     tier = TIERS[plan]
 
     # Check token count against context limit
-    if token_count > tier.max_context_tokens:
-        raise ValueError(f"Prompt too long: {token_count} > {tier.max_context_tokens}")
+    if token_count &gt; tier.max_context_tokens:
+        raise ValueError(f"Prompt too long: {token_count} &gt; {tier.max_context_tokens}")
 
     # Check RPM
     rpm_result = check_rate_limit(f"{user_id}:rpm", tier.requests_per_minute, 60)
@@ -388,19 +381,17 @@ def enforce_limits(user_id: str, plan: Plan, token_count: int) -> bool:
                                    tier.tokens_per_minute, 60)
     return tpm_result["allowed"]
 </code></pre>
-    </div>
-
-    <div class="section-block" id="s7">
-      <div class="section-marker">SECTION 07</div>
+</div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Rate limiting by IP is easy to bypass and unfair.</strong> Behind a corporate NAT or shared WiFi, hundreds of users share one IP. Limiting by IP either over-limits legitimate users or provides too easy a bypass (just switch networks). Always rate limit by authenticated user ID or API key once users are logged in.</p>
 <p><strong>Sliding window is more accurate than fixed window but uses more memory.</strong> Fixed window counters (just increment a counter each minute, reset on the minute) allow double the limit at window boundaries (burst at the end of minute 1 + start of minute 2). Sliding window is more accurate but stores timestamps for every request. For most applications, sliding window with Redis TTL-based cleanup is the right choice.</p>
 <p><strong>Count tokens, not just requests, for LLM rate limiting.</strong> A single request with a 100K-token prompt uses 1000× the upstream API quota of a 100-token request. Counting requests equally is unfair and ineffective at protecting your budget. Track token usage per user alongside request counts, especially if you expose long-context capabilities.</p>
-    </div>
-  </div>
-
-  <footer>
-    <p>GenAI Mindmap &bull; <a href="/concepts/traffic-cost.html" style="color:var(--accent)">Traffic & Cost</a> &bull; Last updated March 2026</p>
-  </footer>
+</div>
+</div>
+<footer>
+<p>GenAI Mindmap • <a href="/concepts/traffic-cost.html" style="color:var(--accent)">Traffic &amp; Cost</a> • Last updated March 2026</p>
+</footer>
 </body>
 </html>

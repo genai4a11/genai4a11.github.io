@@ -1,22 +1,23 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dense Retrieval — GenAI Mindmap</title>
-  <meta name="description" content="Dense Retrieval — GenAI Mindmap" />
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="Dense Retrieval" />
-  <meta property="og:description" content="Dense Retrieval — GenAI Mindmap" />
-  <meta property="og:url" content="https://genai4a11.github.io/concepts/dense_retrieval.html" />
-  <meta property="og:site_name" content="GenAI Mindmap" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Dense Retrieval" />
-  <meta name="twitter:description" content="Dense Retrieval — GenAI Mindmap" />
-  <link rel="canonical" href="https://genai4a11.github.io/concepts/dense_retrieval.html" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dense Retrieval — GenAI Mindmap</title>
+<meta content="Dense Retrieval — GenAI Mindmap" name="description"/>
+<meta content="article" property="og:type"/>
+<meta content="Dense Retrieval" property="og:title"/>
+<meta content="Dense Retrieval — GenAI Mindmap" property="og:description"/>
+<meta content="https://genai4a11.github.io/concepts/dense_retrieval.html" property="og:url"/>
+<meta content="GenAI Mindmap" property="og:site_name"/>
+<meta content="summary" name="twitter:card"/>
+<meta content="Dense Retrieval" name="twitter:title"/>
+<meta content="Dense Retrieval — GenAI Mindmap" name="twitter:description"/>
+<link href="https://genai4a11.github.io/concepts/dense_retrieval.html" rel="canonical"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Fira+Code:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg:       #0f1117;
@@ -223,92 +224,86 @@
   }
 }
 </script>
-</head>
+<meta content="https://genai4a11.github.io/assets/og-default.png" property="og:image"/><meta content="https://genai4a11.github.io/assets/og-default.png" name="twitter:image"/></head>
 <body>
-
 <nav>
-  <a href="../index.html" class="nav-brand">
-    <span class="dot">🧠</span> GenAI Mindmap
+<a class="nav-brand" href="../index.html">
+<span class="dot">🧠</span> GenAI Mindmap
   </a>
-  <a href="../index.html" class="nav-back">← Back to Mindmap</a>
+<a class="nav-back" href="../index.html">← Back to Mindmap</a>
 </nav>
-
 <div class="hero">
-  <div class="hero-tag">RAG · Retrieval Techniques</div>
-  <h1>Dense Retrieval</h1>
-  <p>ANN search over embeddings — DPR, bi-encoders, FAISS</p>
+<div class="hero-tag">RAG · Retrieval Techniques</div>
+<h1>Dense Retrieval</h1>
+<p>ANN search over embeddings — DPR, bi-encoders, FAISS</p>
 </div>
-
 <div class="container">
-
-  <!-- ── WHAT IT IS ─────────────────────────────────────────── -->
-  <section>
-    <h2><span class="icon">📖</span> What It Is</h2>
-    <p>
-      <strong>Dense retrieval</strong> is a neural approach to finding relevant documents by encoding
+<!-- ── WHAT IT IS ─────────────────────────────────────────── -->
+<section>
+<h2><span class="icon">📖</span> What It Is</h2>
+<p>
+<strong>Dense retrieval</strong> is a neural approach to finding relevant documents by encoding
       both queries and documents into dense vector representations (embeddings) and performing
       <strong>Approximate Nearest Neighbour (ANN)</strong> search in that vector space. Unlike sparse
       retrieval methods like BM25, which rely on exact term overlap, dense retrieval captures
       <em>semantic similarity</em> — "heart attack" matches "myocardial infarction" even though
       the words are completely different.
     </p>
-    <p>
+<p>
       The technique was popularised by Facebook's <strong>Dense Passage Retrieval (DPR)</strong>
       paper (Karpukhin et al., 2020), which showed that a <em>bi-encoder</em> architecture —
       separate BERT encoders for query and passage — outperformed BM25 on open-domain QA tasks
       like Natural Questions and TriviaQA. The key insight: a shared embedding space lets you
       compare a short question against millions of long documents in milliseconds.
     </p>
-    <p>
+<p>
       Modern dense retrievers use lightweight, efficient bi-encoder models such as
       <strong>BGE</strong> (BAAI General Embeddings), <strong>E5</strong> (Microsoft),
       <strong>GTE</strong> (Alibaba), and commercial options like Cohere Embed and
       OpenAI text-embedding-3. These models are trained with contrastive learning (InfoNCE loss),
       pushing similar pairs together and dissimilar pairs apart in the embedding space.
     </p>
-    <p>
+<p>
       At inference time, the <strong>corpus is embedded once and indexed</strong> — usually with
       FAISS (Facebook AI Similarity Search), HNSW, or a purpose-built vector database (Pinecone,
       Qdrant, Weaviate). Each query is encoded at runtime and an ANN lookup returns the top-k
       most similar documents in sub-millisecond to low-millisecond latency, even over
       billion-scale corpora.
     </p>
-  </section>
-
-  <!-- ── WHEN TO USE ────────────────────────────────────────── -->
-  <section>
-    <h2><span class="icon">🎯</span> When to Use It</h2>
-    <table>
-      <tr><th>Use Dense Retrieval when…</th><th>Skip it (prefer BM25) when…</th></tr>
-      <tr>
-        <td>Queries use different vocabulary than the documents</td>
-        <td>Users search for exact product codes, SKUs, or IDs</td>
-      </tr>
-      <tr>
-        <td>You need semantic / intent matching (Q&amp;A, support)</td>
-        <td>Your corpus has very rare technical terms or acronyms</td>
-      </tr>
-      <tr>
-        <td>Documents are in a domain with rich paraphrase variation</td>
-        <td>You have no GPU budget for embedding your corpus</td>
-      </tr>
-      <tr>
-        <td>Multilingual retrieval (use multilingual models like mE5)</td>
-        <td>Corpus changes every minute — re-indexing is too slow</td>
-      </tr>
-    </table>
-    <div class="callout tip">
-      <div class="callout-label">💡 Production Advice</div>
-      <p>In practice, use <strong>Hybrid Search</strong> (dense + BM25 fused via Reciprocal Rank Fusion)
+</section>
+<!-- ── WHEN TO USE ────────────────────────────────────────── -->
+<section>
+<h2><span class="icon">🎯</span> When to Use It</h2>
+<table>
+<tr><th>Use Dense Retrieval when…</th><th>Skip it (prefer BM25) when…</th></tr>
+<tr>
+<td>Queries use different vocabulary than the documents</td>
+<td>Users search for exact product codes, SKUs, or IDs</td>
+</tr>
+<tr>
+<td>You need semantic / intent matching (Q&amp;A, support)</td>
+<td>Your corpus has very rare technical terms or acronyms</td>
+</tr>
+<tr>
+<td>Documents are in a domain with rich paraphrase variation</td>
+<td>You have no GPU budget for embedding your corpus</td>
+</tr>
+<tr>
+<td>Multilingual retrieval (use multilingual models like mE5)</td>
+<td>Corpus changes every minute — re-indexing is too slow</td>
+</tr>
+</table>
+<div class="callout tip">
+<div class="callout-label">💡 Production Advice</div>
+<p>In practice, use <strong>Hybrid Search</strong> (dense + BM25 fused via Reciprocal Rank Fusion)
       by default — you get the best of both worlds. Pure dense retrieval can miss exact matches
       that BM25 would have caught.</p>
-    </div>
-  </section>
-
-  <!-- ── ARCHITECTURE ───────────────────────────────────────── -->
-  <section>
-    <h2><span class="icon">🏗️</span> Architecture</h2>
-    <div class="diagram">
+</div>
+</section>
+<!-- ── ARCHITECTURE ───────────────────────────────────────── -->
+<section>
+<h2><span class="icon">🏗️</span> Architecture</h2>
+<div class="diagram">
   ┌──────────────┐       ┌──────────────────────────────────┐
   │  Document    │       │         OFFLINE INDEXING          │
   │  Corpus      │──────▶│  Bi-encoder (e.g. BGE-small)     │
@@ -328,19 +323,18 @@
                          │  (RAG generation step)            │
                          └──────────────────────────────────┘
     </div>
-    <p>
+<p>
       The bi-encoder produces two independent embeddings — one for the query, one per document chunk.
       This is different from a <em>cross-encoder</em> (which concatenates query + document and is
       more accurate but cannot pre-compute document representations). The bi-encoder trade-off
       is speed vs. accuracy: fast ANN lookup, but slightly less precise ranking than a cross-encoder reranker.
     </p>
-  </section>
-
-  <!-- ── CODE EXAMPLE ──────────────────────────────────────── -->
-  <section>
-    <h2><span class="icon">💻</span> Code Example</h2>
-    <p>End-to-end dense retrieval with <code>sentence-transformers</code> + FAISS:</p>
-    <pre><code># pip install sentence-transformers faiss-cpu numpy
+</section>
+<!-- ── CODE EXAMPLE ──────────────────────────────────────── -->
+<section>
+<h2><span class="icon">💻</span> Code Example</h2>
+<p>End-to-end dense retrieval with <code>sentence-transformers</code> + FAISS:</p>
+<pre><code># pip install sentence-transformers faiss-cpu numpy
 from sentence_transformers import SentenceTransformer
 import faiss, numpy as np
 
@@ -373,130 +367,118 @@ for score, idx in zip(scores[0], ids[0]):
 # Expected output (approx):
 # 0.823  FAISS enables billion-scale approximate nearest neighbour lookup.
 # 0.761  Dense retrieval uses bi-encoders for semantic search.</code></pre>
-
-    <h3>Scaling to production</h3>
-    <pre><code># Replace IndexFlatIP with an IVF index for billion-scale ANN:
+<h3>Scaling to production</h3>
+<pre><code># Replace IndexFlatIP with an IVF index for billion-scale ANN:
 nlist = 256  # number of Voronoi cells
 quantizer = faiss.IndexFlatIP(dim)
 index = faiss.IndexIVFFlat(quantizer, dim, nlist, faiss.METRIC_INNER_PRODUCT)
 index.train(embs)          # must train on representative sample
 index.nprobe = 32          # probe 32 cells at query time (speed/recall tradeoff)
 index.add(embs)</code></pre>
-  </section>
-
-  <!-- ── VARIANTS / ALTERNATIVES ───────────────────────────── -->
-  <section>
-    <h2><span class="icon">🔀</span> Key Variants &amp; Alternatives</h2>
-    <ul>
-      <li>
-        <strong>Sparse retrieval (BM25)</strong> — Term-frequency keyword search.
+</section>
+<!-- ── VARIANTS / ALTERNATIVES ───────────────────────────── -->
+<section>
+<h2><span class="icon">🔀</span> Key Variants &amp; Alternatives</h2>
+<ul>
+<li>
+<strong>Sparse retrieval (BM25)</strong> — Term-frequency keyword search.
         No embedding needed, lightning fast, great for exact matches. Use as baseline
         and combine via hybrid search.
       </li>
-      <li>
-        <strong>Hybrid Search (Dense + BM25)</strong> — Fuse dense scores and BM25 scores
+<li>
+<strong>Hybrid Search (Dense + BM25)</strong> — Fuse dense scores and BM25 scores
         with Reciprocal Rank Fusion (RRF). Best recall in production; should be your default.
       </li>
-      <li>
-        <strong>Cross-encoder reranking</strong> — After dense retrieval returns top-50,
+<li>
+<strong>Cross-encoder reranking</strong> — After dense retrieval returns top-50,
         run a cross-encoder on each (query, doc) pair for precise reranking.
         Adds ~100ms latency but significantly boosts nDCG.
       </li>
-      <li>
-        <strong>HyDE (Hypothetical Document Embeddings)</strong> — Generate a hypothetical
+<li>
+<strong>HyDE (Hypothetical Document Embeddings)</strong> — Generate a hypothetical
         answer with an LLM, embed that, then search. Boosts recall for difficult queries.
       </li>
-      <li>
-        <strong>ColBERT / Late Interaction</strong> — Retains token-level embeddings instead
+<li>
+<strong>ColBERT / Late Interaction</strong> — Retains token-level embeddings instead
         of a single CLS vector. Higher accuracy than bi-encoders, more storage cost.
       </li>
-      <li>
-        <strong>SPLADE / Sparse-Dense hybrids</strong> — Learn sparse representations that
+<li>
+<strong>SPLADE / Sparse-Dense hybrids</strong> — Learn sparse representations that
         can be indexed with inverted indices but retain semantic awareness.
       </li>
-    </ul>
-  </section>
-
-  <!-- ── GOTCHAS ───────────────────────────────────────────── -->
-  <section>
-    <h2><span class="icon">⚠️</span> Common Gotchas</h2>
-
-    <div class="callout warn">
-      <div class="callout-label">⚠️ Gotcha 1 — Forget to normalise</div>
-      <p>Using <code>IndexFlatIP</code> without normalising embeddings gives <em>dot-product</em>
+</ul>
+</section>
+<!-- ── GOTCHAS ───────────────────────────────────────────── -->
+<section>
+<h2><span class="icon">⚠️</span> Common Gotchas</h2>
+<div class="callout warn">
+<div class="callout-label">⚠️ Gotcha 1 — Forget to normalise</div>
+<p>Using <code>IndexFlatIP</code> without normalising embeddings gives <em>dot-product</em>
       distance, not cosine similarity. Vectors with large norms dominate results regardless of
       direction. Always pass <code>normalize_embeddings=True</code> or call
       <code>faiss.normalize_L2(embs)</code> before indexing.</p>
-    </div>
-
-    <div class="callout warn">
-      <div class="callout-label">⚠️ Gotcha 2 — Re-embedding corpus at query time</div>
-      <p>Never embed the entire corpus on each request. Embed offline, persist the FAISS index
+</div>
+<div class="callout warn">
+<div class="callout-label">⚠️ Gotcha 2 — Re-embedding corpus at query time</div>
+<p>Never embed the entire corpus on each request. Embed offline, persist the FAISS index
       to disk with <code>faiss.write_index()</code>, and load it once at startup.
       For dynamic corpora, use incremental indexing or a vector DB like Qdrant/Weaviate.</p>
-    </div>
-
-    <div class="callout warn">
-      <div class="callout-label">⚠️ Gotcha 3 — Wrong chunk size</div>
-      <p>Most bi-encoder models have a <strong>512-token max context</strong>.
+</div>
+<div class="callout warn">
+<div class="callout-label">⚠️ Gotcha 3 — Wrong chunk size</div>
+<p>Most bi-encoder models have a <strong>512-token max context</strong>.
       Chunks longer than the context window are silently truncated — the tail of long
       documents is lost. Use 256-384 token chunks with 10-20% overlap as a starting point,
       then tune by measuring recall@k on your eval set.</p>
-    </div>
-
-    <div class="callout warn">
-      <div class="callout-label">⚠️ Gotcha 4 — Model mismatch at query vs. index time</div>
-      <p>If you re-embed queries with a different model than you used to build the index
+</div>
+<div class="callout warn">
+<div class="callout-label">⚠️ Gotcha 4 — Model mismatch at query vs. index time</div>
+<p>If you re-embed queries with a different model than you used to build the index
       (e.g., after a model upgrade), all scores are meaningless — the embedding spaces
       are incompatible. Version your index alongside your model checkpoint.</p>
-    </div>
-
-    <div class="callout warn">
-      <div class="callout-label">⚠️ Gotcha 5 — Using a general model for a specialised domain</div>
-      <p>Off-the-shelf models (BGE, E5) are trained on general web data. For narrow domains
+</div>
+<div class="callout warn">
+<div class="callout-label">⚠️ Gotcha 5 — Using a general model for a specialised domain</div>
+<p>Off-the-shelf models (BGE, E5) are trained on general web data. For narrow domains
       (legal, medical, code), retrieval quality can be poor. Fine-tune on in-domain
       query-passage pairs with contrastive loss, or use domain-specific models.</p>
-    </div>
-  </section>
-
-  <!-- ── REFERENCES ────────────────────────────────────────── -->
-  <section>
-    <h2><span class="icon">📚</span> References</h2>
-    <ul class="refs">
-      <li>
-        <a href="https://arxiv.org/abs/2004.04906" target="_blank" rel="noopener">
+</div>
+</section>
+<!-- ── REFERENCES ────────────────────────────────────────── -->
+<section>
+<h2><span class="icon">📚</span> References</h2>
+<ul class="refs">
+<li>
+<a href="https://arxiv.org/abs/2004.04906" rel="noopener" target="_blank">
           📄 DPR Paper — Karpukhin et al. (2020), "Dense Passage Retrieval for Open-Domain QA"
         </a>
-      </li>
-      <li>
-        <a href="https://faiss.ai" target="_blank" rel="noopener">
+</li>
+<li>
+<a href="https://faiss.ai" rel="noopener" target="_blank">
           🔧 FAISS Official Docs — Facebook AI Similarity Search
         </a>
-      </li>
-      <li>
-        <a href="https://huggingface.co/BAAI/bge-small-en-v1.5" target="_blank" rel="noopener">
+</li>
+<li>
+<a href="https://huggingface.co/BAAI/bge-small-en-v1.5" rel="noopener" target="_blank">
           🤗 BGE-small-en-v1.5 — Fast, high-quality open bi-encoder on HuggingFace
         </a>
-      </li>
-      <li>
-        <a href="https://www.sbert.net/docs/sentence_transformer/pretrained_models.html" target="_blank" rel="noopener">
+</li>
+<li>
+<a href="https://www.sbert.net/docs/sentence_transformer/pretrained_models.html" rel="noopener" target="_blank">
           📖 Sentence Transformers Pretrained Models — sbert.net
         </a>
-      </li>
-      <li>
-        <a href="https://github.com/facebookresearch/faiss/wiki/Getting-started" target="_blank" rel="noopener">
+</li>
+<li>
+<a href="https://github.com/facebookresearch/faiss/wiki/Getting-started" rel="noopener" target="_blank">
           🚀 FAISS Getting Started Guide — GitHub Wiki
         </a>
-      </li>
-    </ul>
-  </section>
-
+</li>
+</ul>
+</section>
 </div>
-
 <footer>
-  <p>Part of the <a href="../index.html" style="color:var(--accent-lt);text-decoration:none;">GenAI Mindmap</a>
+<p>Part of the <a href="../index.html" style="color:var(--accent-lt);text-decoration:none;">GenAI Mindmap</a>
   · Generated 2026-03-21</p>
 </footer>
-
 </body>
 </html>
