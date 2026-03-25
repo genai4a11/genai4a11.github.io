@@ -856,6 +856,38 @@ ollama run llama2:70b
 # Best for: Testing, research, demos
         </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Production Observability</h2>
+<p>Running vLLM in production requires visibility into four key metrics: GPU memory utilisation (target 85–90% to leave headroom for KV cache spikes), request queue depth (leading indicator of throughput saturation), prefill vs decode latency split (long prefill = large prompts; long decode = high output token count), and cache hit rate (measures prefix-caching effectiveness for repeated system prompts).</p>
+<div class="example-box">
+<pre><code class="language-python">from prometheus_client import start_http_server, Gauge
+import requests, time
+
+VLLM_BASE = "http://localhost:8000"
+
+gpu_mem = Gauge("vllm_gpu_mem_pct", "GPU KV cache utilisation %")
+queue   = Gauge("vllm_queue_depth", "Pending requests in queue")
+cache_hit = Gauge("vllm_prefix_cache_hit_rate", "Prefix cache hit rate")
+
+def scrape_vllm_metrics():
+    r = requests.get(f"{VLLM_BASE}/metrics", timeout=2)
+    for line in r.text.splitlines():
+        if "vllm:gpu_cache_usage_perc" in line and not line.startswith("#"):
+            gpu_mem.set(float(line.split()[-1]) * 100)
+        if "vllm:num_requests_waiting" in line and not line.startswith("#"):
+            queue.set(float(line.split()[-1]))
+        if "vllm:cpu_prefix_cache_hit_rate" in line and not line.startswith("#"):
+            cache_hit.set(float(line.split()[-1]))
+
+start_http_server(9090)   # expose to Prometheus
+while True:
+    scrape_vllm_metrics()
+    time.sleep(15)
+</code></pre>
+</div>
+<p>Set alerts on queue depth &gt; 50 (scale-out trigger) and GPU memory &gt; 95% (OOM risk). For high-concurrency deployments, run multiple vLLM processes behind a load balancer and route by session ID to maximise prefix-cache hits — sending the same user's requests to the same vLLM instance avoids cold-cache penalties on repeated system prompts.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

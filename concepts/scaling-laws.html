@@ -595,6 +595,21 @@ is more efficient than a larger model.
             </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2><em>Scaling Laws</em> Quick Reference</h2>
+<p>Scaling laws compress decades of empirical ML intuition into a handful of power-law equations. The table below summarises the key results every practitioner should know, with practical implications for model selection and training budget allocation.</p>
+<table>
+<thead><tr><th>Finding</th><th>Source</th><th>Key Equation / Rule</th><th>Practical Implication</th></tr></thead>
+<tbody>
+<tr><td>Loss scales as power law in N, D, C</td><td>Kaplan 2020</td><td>L ∝ N^-0.076, L ∝ D^-0.095</td><td>Doubling params beats doubling data (at fixed C)</td></tr>
+<tr><td>Compute-optimal: N and D should scale equally</td><td>Chinchilla 2022</td><td>N_opt ∝ C^0.5, D_opt ∝ C^0.5</td><td>Most 2020–2022 models were undertrained on data</td></tr>
+<tr><td>Inference-adjusted: over-train for cheaper serving</td><td>Llama/Mistral practice</td><td>Train 5–10× Chinchilla-optimal tokens</td><td>Smaller, overtrained models &gt; larger undertrained at same inference cost</td></tr>
+<tr><td>Test-time compute: more thinking → better answers</td><td>OpenAI o1, DeepSeek R1</td><td>Accuracy ∝ log(inference FLOPs)</td><td>Chain-of-thought and search scale separately from pretraining</td></tr>
+</tbody>
+</table>
+<p>The practical takeaway for most engineering teams: fit a compute budget first, then use Chinchilla to set model size and token count, then adjust toward the over-trained regime if you expect high query volume. At production scale, inference cost per token dominates pretraining cost within 3–6 months — so err on the side of smaller, better-trained models.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

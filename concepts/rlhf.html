@@ -694,6 +694,13 @@ ppo_trainer.save_model("./final_model")
             </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2><em>RLHF</em> in Practice: Key Decisions</h2>
+<p>Successful RLHF deployments share a common set of careful choices that rarely appear in papers. Annotator selection matters enormously: annotators with domain expertise (e.g. medical professionals for medical RLHF) produce reward models that generalise better than crowdworkers whose preferences are noisier. Budget 20–30% of total annotation cost on annotator calibration — showing agreed examples and measuring inter-annotator agreement before starting the main labelling run.</p>
+<p>Reward model architecture should mirror the policy model in scale. A reward model that is two size classes smaller than the policy will underfit to subtle quality differences the policy exploits. Train the reward model with a held-out "golden set" of 200–500 examples judged by senior annotators; use this set as a calibration probe at the end of each RM training run to detect over-fitting before it propagates to PPO.</p>
+<p>For PPO, clip the KL penalty coefficient (beta) between 0.01 and 0.1. Lower beta allows more deviation from the SFT policy, which can improve helpfulness but risks reward hacking. Monitor the KL divergence metric directly during training; if it exceeds 20 nats, the policy is drifting too far and should be pulled back. A simple proxy for reward hacking: if the reward model score is rising but human preference ratings on a live sample are flat or declining, the policy has found a shortcut the reward model rewards but humans dislike.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

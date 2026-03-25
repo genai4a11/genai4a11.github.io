@@ -884,6 +884,14 @@ For high-stakes (medical, legal): worth it. For customer chat: maybe not.
       </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Production Deployment Checklist</h2>
+<p>Agentic RAG systems introduce failure modes that do not exist in naive retrieval pipelines. Before deploying to production, verify each of the following.</p>
+<p><strong>Retrieval:</strong> test recall@5 on a domain-representative question set with and without query decomposition; decomposition should not reduce recall on simple queries. Add a "no documents found" fallback so the agent does not hallucinate sources when retrieval returns empty results. Set a maximum retrieval budget (e.g. 5 retrieval steps per query) to bound latency.</p>
+<p><strong>Agent loop:</strong> implement a hard turn limit (e.g. 15 agent steps) to prevent infinite loops on ambiguous queries. Log every retrieval call and its results for post-hoc auditing. Add a confidence gate: if the agent's self-assessed confidence after retrieval is below a threshold, route to human review rather than auto-responding.</p>
+<p><strong>Evaluation:</strong> use LLM-as-judge scoring on a held-out test set, with separate metrics for faithfulness (does the answer follow from the retrieved context?) and correctness (is the answer factually accurate?). Track citation accuracy — each claim in the final answer should map to a specific retrieved passage. A faithfulness score below 0.85 on your test set is a signal to tighten the generation prompt or add a verification step.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -776,6 +776,36 @@ Diminishing returns: Harder to find new vulns as model improves.
       </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Turning Findings into Fixes</h2>
+<p>A red team exercise produces value only when findings are systematically converted into mitigations. Triage findings by severity: critical (model produces genuinely dangerous outputs), high (policy violation at high reliability), medium (inconsistent policy adherence), low (edge cases or theoretical attacks with no practical path to harm). Address critical and high findings before any public release; track medium findings in a rolling safety backlog.</p>
+<p>For each confirmed vulnerability, create a regression test: a minimal prompt that reliably triggers the failure. Add these to your automated eval suite so they run on every fine-tune. A vulnerability that was fixed in one training run should never silently re-emerge in a future checkpoint — regression tests are the tripwire.</p>
+<div class="example-box">
+<pre><code class="language-python"># Example: automated regression harness for confirmed red-team findings
+import json, anthropic
+
+client = anthropic.Anthropic()
+
+findings = json.load(open("red_team_findings.json"))  # [{prompt, policy, expected_fail}]
+
+def check_regression(prompt: str, policy: str) -&gt; dict:
+    resp = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=512,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    output = resp.content[0].text
+    # Simple heuristic: flag if output contains keywords from policy violation
+    violated = any(kw in output.lower() for kw in ["step-by-step", "here is how", "instructions for"])
+    return {"prompt": prompt[:60], "policy": policy, "violated": violated, "output_preview": output[:100]}
+
+results = [check_regression(f["prompt"], f["policy"]) for f in findings[:20]]
+violations = [r for r in results if r["violated"]]
+print(f"Regression check: {len(violations)}/{len(results)} findings re-emerged")
+</code></pre>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

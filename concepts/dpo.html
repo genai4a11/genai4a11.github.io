@@ -708,6 +708,13 @@ print(f"Ties: {ties / len(results):.1%}")
             </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2><em>DPO</em> Practical Reference</h2>
+<p>DPO is sensitive to dataset quality in ways that RLHF is not. Because there is no separate reward model to absorb label noise, every preference pair in the dataset directly shapes the policy gradient. Pairs where the "chosen" and "rejected" responses are nearly identical in quality cause the loss to oscillate without learning anything useful. Filter your dataset: keep only pairs where the average annotator agreement is at least 70%, and where the chosen response is at least 1.5× preferred over rejected in your rating scale.</p>
+<p>The beta hyperparameter (KL regularisation strength, typically 0.1–0.5) governs the explore/exploit trade-off. Higher beta stays closer to the SFT reference policy and reduces risk of over-fitting to the preference dataset; lower beta allows the policy to drift further toward the preferred distribution. Sweep beta in {0.05, 0.1, 0.2, 0.5} and evaluate with a held-out preference set plus a regression suite of SFT capabilities — helpfulness improvements should not come at the cost of significant capability degradation on coding, math, or instruction-following benchmarks.</p>
+<p>After DPO training, run your model against the original SFT baseline on MT-Bench and AlpacaEval 2. Expect 2–5 point improvements on instruction-following categories. If you see regressions on reasoning tasks, add chain-of-thought examples to your preference dataset — DPO can inadvertently penalise verbose, step-by-step reasoning if the annotators preferred shorter responses in the training pairs.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

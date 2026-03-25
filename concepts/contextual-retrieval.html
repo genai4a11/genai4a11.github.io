@@ -976,6 +976,14 @@ ROI calculation:
 - ROI: 1250x per 100 queries
         </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Production Checklist</h2>
+<p>Contextual retrieval adds a preprocessing step that runs once at index time, making it unusually cheap relative to per-query techniques. The following checklist covers the decisions that determine whether the gains hold in production.</p>
+<p><strong>Context generation:</strong> use the same model family you plan for generation (Claude Haiku for speed, Sonnet if context quality matters). Cache generated contexts — they never change for a given chunk. Batch context requests in groups of 100+ to maximise prompt caching savings. Monitor context generation cost; for 1 M chunks at ~200 tokens each the one-time cost is roughly $30–50 with Haiku.</p>
+<p><strong>Retrieval pipeline:</strong> run BM25 and embedding retrieval in parallel, then merge with reciprocal rank fusion (RRF). Add a cross-encoder reranker as a final step if latency budget allows — reranking the top-20 to top-5 typically adds 50–150 ms and measurably improves precision. Store chunk IDs in both indices to allow exact deduplication before the context window is filled.</p>
+<p><strong>Evaluation:</strong> measure recall@5 and recall@20 on a held-out question set before and after enabling contextual retrieval. Expect 30–50% relative improvement in recall@5 for long-document corpora. Track retrieval latency p95 separately — the added BM25 path should add less than 20 ms for indices under 10 M chunks.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

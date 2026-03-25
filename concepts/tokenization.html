@@ -857,6 +857,30 @@ Optimization: Batch messages, minimize chat wrapper overhead.
       </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Tokenizer Selection Guide</h2>
+<p>When building a system that uses multiple models, tokenizer incompatibilities are a common source of subtle bugs. Tokenizers are model-specific: a string tokenised by GPT-4 produces different tokens — and a different count — than the same string tokenised by Claude or Llama. Never use one model's tokenizer to estimate token counts for a different model; always use the exact tokenizer shipped with the model.</p>
+<p>For cost estimation, the most common error is applying a global "4 characters per token" rule of thumb to non-English text. Asian languages (Chinese, Japanese, Korean) average 1–2 characters per token; code with long identifiers may average 5–6 characters per token. Use the actual tokenizer for accurate billing projections, and build a per-language token-to-character ratio table from a representative sample of your real traffic.</p>
+<div class="example-box">
+<pre><code class="language-python"># Count tokens accurately with tiktoken (OpenAI models) or transformers tokenizers
+import tiktoken
+from transformers import AutoTokenizer
+
+def count_tokens_openai(text: str, model: str = "gpt-4o") -&gt; int:
+    enc = tiktoken.encoding_for_model(model)
+    return len(enc.encode(text))
+
+def count_tokens_hf(text: str, model_id: str = "meta-llama/Llama-3.1-8B") -&gt; int:
+    tok = AutoTokenizer.from_pretrained(model_id)
+    return len(tok.encode(text, add_special_tokens=False))
+
+sample = "Explain transformer attention in three sentences."
+print(f"GPT-4o:    {count_tokens_openai(sample)} tokens")
+print(f"Llama-3.1: {count_tokens_hf(sample)} tokens")
+</code></pre>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -744,6 +744,13 @@ Use Dense if:
   ✓ You want predictable scaling behavior</div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>When to Deploy MoE Models</h2>
+<p>MoE models offer more total parameters — and hence capacity — for the same inference FLOP budget, making them attractive when you need broad capability coverage and have sufficient serving infrastructure. But their benefits are not unconditional: they require more GPU memory for weight storage, and routing inconsistency can surface as subtle quality degradation on narrow, specialised tasks.</p>
+<p>Choose an MoE model when your workload is diverse (coding, analysis, translation, summarisation all handled by the same endpoint), your serving cluster has enough VRAM to hold all expert weights, and you are optimising for throughput over consistent per-token latency. Choose a dense model when memory is the primary constraint, when your task distribution is narrow (e.g. only SQL generation), or when you need deterministic expert routing for compliance auditing.</p>
+<p>For serving, use tensor parallelism across GPUs to distribute expert weights — Mixtral 8x7B fits in two 80 GB A100s with tensor parallelism=2. Expert parallelism (splitting experts across nodes) further scales to larger MoE variants but introduces cross-node communication latency. Profile your specific traffic mix: if most tokens activate the same two experts, you can pre-load those onto faster memory tiers.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
