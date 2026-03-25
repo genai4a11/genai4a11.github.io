@@ -323,6 +323,30 @@ scaler.update()</div>
       </div>
 </div>
 </div>
+<div class="section-block">
+<h2>Autograd and gradient computation</h2>
+<p>PyTorch's autograd engine builds a dynamic computational graph as operations are performed on tensors with requires_grad=True. When loss.backward() is called, the engine traverses this graph in reverse order (backpropagation) to compute gradients for all leaf tensors. The .grad attribute stores the accumulated gradient after backward(). Multiple backward() calls accumulate gradients — calling optimizer.zero_grad() before each training step is necessary to clear accumulated gradients from the previous step and prevent incorrect parameter updates.</p>
+
+<h2>GPU memory management patterns</h2>
+<p>Managing GPU memory correctly is one of the most practically important PyTorch skills. Tensors created with .cuda() or moved with .to("cuda") consume GPU memory until they are deleted or go out of scope. The garbage collector does not immediately free GPU memory when Python objects are deleted — torch.cuda.empty_cache() releases cached but unused GPU memory back to the OS. For large models, using torch.no_grad() context managers in inference code prevents autograd from storing intermediate activations needed for gradients, halving peak memory usage.</p>
+<table>
+<thead><tr><th>Operation</th><th>Memory impact</th><th>When to use</th></tr></thead>
+<tbody>
+<tr><td>torch.no_grad()</td><td>No activation storage</td><td>Inference, validation loops</td></tr>
+<tr><td>model.half() / bfloat16</td><td>2x reduction</td><td>Training on A100/H100</td></tr>
+<tr><td>gradient checkpointing</td><td>Sqrt reduction</td><td>Very deep models, limited VRAM</td></tr>
+<tr><td>torch.cuda.empty_cache()</td><td>Frees cached blocks</td><td>After large allocations</td></tr>
+</tbody>
+</table>
+
+<div class="section-block"><h2>Memory-efficient tensor operations</h2><p>PyTorch tensors maintain a view-based memory model where many operations don't allocate new memory but create alternative interpretations of the same underlying data. Operations like transpose, reshape, and narrowing can return views without copying when the data is contiguous in memory. This property enables writing efficient code: a reshape(B*T, D) on a (B, T, D) tensor for feeding into a linear layer costs nearly zero memory if the tensor is C-contiguous. Understanding when operations return views versus copies is crucial for managing CUDA memory in large-scale training. The `.is_contiguous()` method reveals whether reshaping will be a copy operation, and `.contiguous()` forces a copy when necessary. In production pipelines, this distinction becomes the difference between fitting 8 GPUs' worth of data through a single GPU or running out-of-memory errors on the same hardware.</p></div>
+
+<div class="section-block"><h2>Automatic differentiation and tensor graphs</h2><p>Every PyTorch tensor carries metadata: a `.grad_fn` attribute that stores the operation that created it and its backward function. When a tensor is the product of operations (matmul, addition, activation), its grad_fn points to the computation that produced it. During backpropagation, PyTorch traverses this graph in reverse, calling each function's backward method to compute gradients. This dynamic graph construction—built fresh on every forward pass—is PyTorch's defining feature versus static graph frameworks like TensorFlow 1.x. The cost is flexibility and debuggability; the benefit is that control flow (if-statements, loops) within the forward pass is fully supported. For practitioners, understanding grad_fn reveals whether a tensor is differentiable and helps debug why `.backward()` fails. Detaching tensors with `.detach()` breaks the grad_fn chain, enabling scenarios like sampling from a distribution during forward pass while computing gradients through the log-probability, not the sample itself.</p></div>
+
+<div class="section-block"><h2>Broadcasting and numerical stability</h2><p>PyTorch's broadcasting rules extend NumPy's conventions to higher-dimensional tensors: dimensions of size 1 expand to match other operands, and missing dimensions are treated as size 1. This enables powerful element-wise operations without explicit expansion, but misunderstanding broadcasting is a common source of shape errors and numerical issues. For instance, subtracting a per-token bias (shape [T, 1]) from logits (shape [B, T, V]) silently broadcasts the bias across batch and vocabulary dimensions—correct behavior, but easy to accidentally reverse. Beyond correctness, broadcasting interacts with numerical stability: some operations like log-softmax have numerically unstable implementations without proper broadcasting (log-sum-exp requires subtracting the maximum per example to prevent overflow). PyTorch provides numerically-stable variants like `F.log_softmax()` and `F.cross_entropy()` that internally manage broadcasting and numerical precision, making them safer defaults than manual implementations.</p></div>
+
+<div class="section-block"><h2>Memory-efficient tensor operations</h2><p>PyTorch tensors maintain a view-based memory model where many operations don't allocate new memory but create alternative interpretations of the same underlying data. Operations like transpose, reshape, and narrowing can return views without copying when the data is contiguous in memory. This property enables writing efficient code: a reshape(B*T, D) on a (B, T, D) tensor for feeding into a linear layer costs nearly zero memory if the tensor is C-contiguous. Understanding when operations return views versus copies is crucial for managing CUDA memory in large-scale training. The `.is_contiguous()` method reveals whether reshaping will be a copy operation, and `.contiguous()` forces a copy when necessary. In production pipelines, this distinction becomes the difference between fitting 8 GPUs' worth of data through a single GPU or running out-of-memory errors on the same hardware.</p></div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

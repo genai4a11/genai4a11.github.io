@@ -258,6 +258,54 @@ print(f"pass@1 estimate: {correct / 10:.1%}")
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>HumanEval benchmark interpretation</h2>
+<p>HumanEval scores are not directly comparable between models evaluated with different sampling parameters. Pass@1 with temperature 0 (greedy decoding) is consistently lower than pass@1 with temperature 0.8 and n=10 samples due to the greedy decoding's inability to explore diverse solution strategies. Most published scores use pass@1 with temperature sampling and multiple samples, then estimate the probability that at least one sample passes all tests. Comparing a model's greedy pass@1 against another model's sampled pass@1 understates the greedy model's true capability.</p>
+<table>
+<thead><tr><th>Model tier</th><th>HumanEval pass@1</th><th>Typical capability</th></tr></thead>
+<tbody>
+<tr><td>State of the art</td><td>&gt;85%</td><td>GPT-4, Claude 3.5, Gemini 1.5 Pro</td></tr>
+<tr><td>Strong</td><td>70–85%</td><td>GPT-3.5-turbo, Codestral</td></tr>
+<tr><td>Capable</td><td>50–70%</td><td>CodeLlama-34B, DeepSeek-Coder</td></tr>
+<tr><td>Limited</td><td>&lt;50%</td><td>Small base models, no code tuning</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code>from datasets import load_dataset
+from human_eval.evaluation import evaluate_functional_correctness
+
+# Load HumanEval dataset
+dataset = load_dataset("openai_humaneval")["test"]
+
+# Generate completions for each problem
+def generate_completion(prompt: str) -> str:
+    # Replace with your model call
+    from openai import OpenAI
+    client = OpenAI()
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": f"Complete this Python function:
+{prompt}"}],
+        temperature=0.2
+    )
+    return response.choices[0].message.content
+
+# Save completions in HumanEval format
+samples = [{"task_id": ex["task_id"],
+            "completion": generate_completion(ex["prompt"])}
+           for ex in dataset]
+
+# Evaluate pass@1
+results = evaluate_functional_correctness(samples)
+print(f"pass@1: {results['pass@1']:.3f}")</code></pre>
+</div>
+
+<div class="section-block"><h2>Evaluating code generation quality</h2><p>HumanEval's 164 problems span algorithmic tasks (list reversal, prime checking, Fibonacci), string manipulation, and mathematics, intentionally avoiding problems requiring external libraries. This scope tests fundamental programming ability but misses practical challenges: handling edge cases in real APIs, writing production-grade error handling, or integrating with complex data structures. Extensions like HumanEval+ (longer, more complex versions) and custom domain-specific benchmarks fill gaps. When evaluating code models in production, teams construct supplementary benchmarks aligned with their use cases: if the model will write SQL, benchmark SQL generation explicitly; if it will write test cases, include a benchmark of test quality (coverage, mutation killing). The pass@k metric—whether any of k independent generations solves the problem—reveals the variance in code quality: a model might generate correct solutions 30% of the time pass@1 but 90% of the time pass@10, suggesting sampling diversity but low initial quality. Understanding this distribution informs deployment decisions: should the application return a single generation or multiple samples for human review?</p></div>
+
+<div class="section-block"><h2>Code execution sandboxing and timeout management</h2><p>HumanEval evaluation requires executing generated Python code—inherently dangerous if code contains bugs or infinite loops. The standard evaluation harness uses subprocess isolation with strict timeout limits (5 seconds typical) to prevent runaway processes. For production deployments evaluating user-generated or model-generated code, sandboxing becomes critical: an attacker could craft inputs that cause exponential-time algorithms to consume all system resources. Solutions include: lightweight containers (Docker) for stronger isolation, restrictive syscall filters (seccomp) preventing file/network access, and resource limits (cgroups) capping CPU and memory per execution. Even with these measures, carefully-crafted denial-of-service inputs can consume timeouts. Advanced evaluation systems employ fuzzing-style approaches: generating diverse inputs to code submissions automatically, watching for crashes, timeouts, or incorrect answers. This catches bugs that single test cases miss and reveals performance characteristics (does this algorithm degrade on large inputs?).</p></div>
+
+<div class="section-block"><h2>Measuring progress in code generation</h2><p>HumanEval pass rate correlates imperfectly with real-world code quality: passing HumanEval requires correct logic but doesn't guarantee readable, maintainable, or efficient code. Production systems measure additional signals: code length (correct solutions tend toward reasonable concision, unlike naive solutions), cyclomatic complexity (simpler control flow correlates with correctness), and compliance with style guides. Some teams augment HumanEval with rubrics: code reviewers manually grade a random sample of generated solutions on criteria like clarity, efficiency, and adherence to requirements. These rubrics identify failure modes that automated metrics miss (e.g., correct algorithm but variable names so cryptic that the code is unmaintainable). Tools like Codex evaluation papers publish correlation matrices showing which metrics predict human preference, revealing that a combination of pass rate (correctness), code length, and human review captures code quality better than any single metric. This multi-signal approach enables confident model selection without manual review of every output.</p></div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
