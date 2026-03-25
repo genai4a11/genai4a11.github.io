@@ -7667,7 +7667,7 @@ loss = loss_fn(y_pred, y_true)
 loss.backward()
 optimizer.step()
 optimizer.zero_grad()
-print('AdamW with weight_decay=0.01 applied')`,tip:'AdamW decouples weight decay from the gradient update—more effective than L2 in the loss.\n\nWeight decay 0.01-0.1 is typical; too high suppresses learning, too low has no effect.\n\nUse AdamW, not SGD+L2, for modern deep learning.',refs:[{label:'AdamW paper (Decoupled Weight Decay)',url:'https://arxiv.org/abs/1711.05101'},{label:'PyTorch AdamW',url:'https://pytorch.org/docs/stable/generated/torch.optim.AdamW.html'},{label:'Regularization and optimization',url:'https://cs231n.github.io/neural-networks-2/#update'}]},
+print('AdamW with weight_decay=0.01 applied')`,tip:'AdamW decouples weight decay from the gradient update—more effective than L2 in the loss.\n\nWeight decay 0.01-0.1 is typical; too high suppresses learning, too low has no effect.\n\nUse AdamW, not SGD+L2, for modern deep learning.',refs:[{label:'AdamW paper',url:'https://arxiv.org/abs/1711.05101'}]},
 multihead_attn:{use:'Multi-head attention splits the key/query/value into parallel heads attending to different subspaces—core to transformer expressiveness.',diag:`
   Multi-head vs single-head attention:
 
@@ -7709,8 +7709,8 @@ output = torch.matmul(attn, V)
 # Reshape and project back
 output = output.transpose(1, 2).contiguous().view(batch_size, seq_len, dim)
 output = nn.Linear(dim, dim)(output)
-print(f'Multi-head output shape: {output.shape}')`,tip:'Each head learns to attend to different aspects: syntax, semantics, positional patterns.\n\n8 heads of 64-dim each is typical; bigger models use 12-40 heads.\n\nHeads are computed in parallel—no sequential dependency—making attention fast.',refs:[{label:'Attention is All You Need',url:'https://arxiv.org/abs/1706.03762'},{label:'PyTorch MultiheadAttention',url:'https://pytorch.org/docs/stable/generated/torch.nn.MultiheadAttention.html'},{label:'Transformer explained visually',url:'https://jalammar.github.io/illustrated-transformer/'}]},
-cross_attn:{use:'Cross-attention attends encoder outputs with decoder queries—essential for seq2seq (T5), RAG reranking, and image-to-text models.',diag:`
+print(f'Multi-head output shape: {output.shape}')`,tip:'Each head learns to attend to different aspects: syntax, semantics, positional patterns.\n\n8 heads of 64-dim each is typical; bigger models use 12-40 heads.\n\nHeads are computed in parallel—no sequential dependency—making attention fast.',refs:[{label:'Attention Is All You Need',url:'https://arxiv.org/abs/1706.03762'}]},
+cross_attn:{use:'Cross-attention attends encoder outputs with decoder queries—essential for seq2seq (T5), → RAG node reranking, and image-to-text models.',diag:`
   Self-attention vs Cross-attention:
 
   Self-attention (encoder or decoder self):
@@ -7752,8 +7752,8 @@ V = W_v(encoder_out).view(batch_size, enc_len, num_heads, head_dim).transpose(1,
 scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(head_dim)
 attn = F.softmax(scores, dim=-1)
 cross_out = torch.matmul(attn, V)
-print(f'Cross-attention output shape: {cross_out.shape}')`,tip:'Cross-attention lets decoder conditions on encoder context—unlike self-attention.\n\nUsed in T5, BART for seq2seq; in LLaMA with retrieval (RAG).\n\nMasking differs: cross-attention is unmasked (full visibility to encoder); decoder self-attention is causal.',refs:[{label:'Attention is All You Need',url:'https://arxiv.org/abs/1706.03762'},{label:'T5 paper',url:'https://arxiv.org/abs/1910.10683'},{label:'Cross-attention in RAG (Facebook)',url:'https://arxiv.org/abs/2005.11401'}]},
-rope:{use:'RoPE (Rotary Position Embeddings) encodes relative positions via rotation matrices—used by Llama, Mistral, Qwen; extrapolates well beyond training length.',diag:`
+print(f'Cross-attention output shape: {cross_out.shape}')`,tip:'Cross-attention lets decoder conditions on encoder context—unlike self-attention.\n\nUsed in T5, BART for seq2seq; in LLaMA with retrieval (→ RAG node).\n\nMasking differs: cross-attention is unmasked (full visibility to encoder); decoder self-attention is causal.',refs:[{label:'Attention Is All You Need',url:'https://arxiv.org/abs/1706.03762'}]},
+rope:{use:'RoPE (Rotary Position Embeddings) encodes relative positions via rotation matrices—used by the → Llama 3.1 and → Mistral 7B nodes (and Qwen); extrapolates well beyond training length.',diag:`
   RoPE (Rotary Position Embedding):
 
   Key idea: encode position as rotation of Q and K vectors
@@ -7789,7 +7789,7 @@ freqs = torch.cat([freqs, freqs], dim=-1)
 # Apply to queries and keys
 q = torch.randn(4, 8, seq_len, dim)  # (batch, heads, seq, dim)
 rope_q = apply_rope(q, (torch.cos(freqs), torch.sin(freqs)))
-print(f'RoPE-encoded queries: {rope_q.shape}')`,tip:'RoPE encodes relative position info in the complex plane via rotation.\n\nExtrapolates to longer sequences than training without fine-tuning (unlike sinusoidal PE).\n\nMore efficient than ALiBi in practice; standard in modern LLMs.',refs:[{label:'RoPE paper (Su et al.)',url:'https://arxiv.org/abs/2104.09864'},{label:'Llama implementation',url:'https://github.com/facebookresearch/llama/blob/main/llama/model.py'},{label:'Position encoding comparison',url:'https://blog.eleuther.ai/rotary-embeddings/'}]},
+print(f'RoPE-encoded queries: {rope_q.shape}')`,tip:'RoPE encodes relative position info in the complex plane via rotation.\n\nExtrapolates to longer sequences than training without fine-tuning (unlike sinusoidal PE).\n\nMore efficient than the → ALiBi node in practice; standard in modern LLMs.',refs:[{label:'RoPE paper (Su et al.)',url:'https://arxiv.org/abs/2104.09864'}]},
 alibi:{use:'ALiBi (Attention with Linear Biases) adds fixed linear biases to attention scores by distance—simpler than RoPE, extrapolates to long sequences.',diag:`
   ALiBi (Attention with Linear Biases):
 
@@ -7825,8 +7825,8 @@ K = torch.randn(4, num_heads, seq_len, 64)
 scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(64)
 scores = scores + alibi_bias  # add ALiBi bias
 attn = F.softmax(scores, dim=-1)
-print(f'ALiBi-biased attention shape: {attn.shape}')`,tip:'ALiBi is simpler and faster than RoPE—no sinusoidal frequency computation.\n\nExtrapolates better than absolute positional embeddings; comparable to RoPE.\n\nUsed in BLOOM and other models; less common than RoPE in 2024+ models.',refs:[{label:'ALiBi paper (Press et al.)',url:'https://arxiv.org/abs/2108.12409'},{label:'BLOOM paper (includes ALiBi)',url:'https://arxiv.org/abs/2211.05100'},{label:'Position bias comparison',url:'https://huggingface.co/blog/position_embeddings_v2'}]},
-sinusoidal_pe:{use:'Sinusoidal positional encoding (original Transformer) encodes absolute positions via sin/cos at different frequencies—simpler but less scalable than RoPE.',diag:`
+print(f'ALiBi-biased attention shape: {attn.shape}')`,tip:'ALiBi is simpler and faster than the → RoPE node—no sinusoidal frequency computation.\n\nExtrapolates better than absolute positional embeddings; comparable to the → RoPE node.\n\nUsed in BLOOM and other models; less common than RoPE in 2024+ models.',refs:[{label:'ALiBi paper (Press et al.)',url:'https://arxiv.org/abs/2108.12409'}]},
+sinusoidal_pe:{use:'Sinusoidal positional encoding (original Transformer) encodes absolute positions via sin/cos at different frequencies—simpler but less scalable than the → RoPE node.',diag:`
   Sinusoidal positional encoding (original Transformer):
 
   For position pos, dimension i:
@@ -7861,7 +7861,7 @@ pe = get_sinusoidal_pe(seq_len, dim)
 # Add to token embeddings
 token_emb = torch.randn(4, seq_len, dim)  # (batch, seq, dim)
 x = token_emb + pe.unsqueeze(0)
-print(f'Token embeddings with positional encoding: {x.shape}')`,tip:'Different frequency bands for each dimension—low frequencies capture long-range, high frequencies capture local patterns.\n\nDoes not extrapolate well beyond training sequence length without fine-tuning.\n\nHistorical; mostly replaced by RoPE or ALiBi in modern models.',refs:[{label:'Attention is All You Need',url:'https://arxiv.org/abs/1706.03762'},{label:'Positional encoding explained',url:'https://kazemnejad.com/blog/transformer_architecture_positional_encoding/'},{label:'PE variants review',url:'https://huggingface.co/blog/position_embeddings_v2'}]},
+print(f'Token embeddings with positional encoding: {x.shape}')`,tip:'Different frequency bands for each dimension—low frequencies capture long-range, high frequencies capture local patterns.\n\nDoes not extrapolate well beyond training sequence length without fine-tuning.\n\nHistorical; mostly replaced by the → RoPE node or → ALiBi node in modern models.',refs:[{label:'Attention Is All You Need',url:'https://arxiv.org/abs/1706.03762'}]},
 encoder_only:{use:'Encoder-only models (BERT, RoBERTa) use bidirectional attention for classification, NER, and dense embeddings—not for generation.',diag:`
   Encoder-only architecture (BERT family):
 
