@@ -245,6 +245,26 @@ docker run --gpus '"device=0,1,2,3"' -p 8080:80   -v $HF_HOME:/data   ghcr.io/hu
 <p><strong><a class="concept-link" href="tokenization.html">Tokenizer</a> mismatch</strong>: If you use a chat template, TGI applies it automatically from the model's tokenizer config. If you pass already-formatted prompts AND enable the chat completions endpoint, you may get double-formatting.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>TGI Deployment Configuration Reference</h2>
+<p>Text Generation Inference (TGI) is HuggingFace's high-performance serving framework for large language models. It implements continuous batching, tensor parallelism, and quantization support out of the box, making it one of the most widely deployed open-source LLM serving solutions in production environments.</p>
+<table>
+<thead><tr><th>Parameter</th><th>Effect</th><th>Recommended Value</th><th>Trade-off</th></tr></thead>
+<tbody>
+<tr><td>--max-batch-total-tokens</td><td>Max tokens across all batched requests</td><td>16,000–32,000</td><td>Higher = better GPU util, more memory</td></tr>
+<tr><td>--max-input-length</td><td>Maximum prompt length</td><td>4096</td><td>Higher = more memory per slot</td></tr>
+<tr><td>--quantize</td><td>Weight quantization scheme</td><td>bitsandbytes / awq</td><td>Lower memory, slight quality loss</td></tr>
+<tr><td>--num-shard</td><td>Tensor parallel degree</td><td>Number of GPUs</td><td>Required for models larger than single GPU</td></tr>
+<tr><td>--max-concurrent-requests</td><td>Queue depth cap</td><td>128</td><td>Higher = better throughput, more latency</td></tr>
+</tbody>
+</table>
+<p>TGI's continuous batching engine processes new requests as capacity becomes available rather than waiting for a fixed batch to fill up. This reduces the average time-to-first-token for interactive use cases while still achieving high throughput by keeping the GPU utilization high. The key metric to monitor in production TGI deployments is "batch size over time" — consistently low batch sizes indicate underloaded infrastructure; consistently maxed batch sizes with high queue depths indicate the need to scale out.</p>
+<p>For multi-GPU deployments, TGI uses tensor parallelism to split model weights across GPUs, with each GPU holding a shard of every layer. This is different from pipeline parallelism, which assigns whole layers to different GPUs. Tensor parallelism requires fast inter-GPU communication (NVLink or NVSwitch) but provides better latency characteristics since all GPUs work on every request simultaneously rather than passing activations through a pipeline of stages.</p>
+
+<p>Speculative decoding in TGI uses a small "draft" model to generate multiple candidate tokens, which are then verified in a single forward pass of the larger target model. For tasks where the draft model's predictions are frequently correct — such as code completion or continuation of factual text — speculative decoding can increase effective throughput by 2–3× with no change in output quality. The draft model must have the same vocabulary and tokenizer as the target model, making same-family model pairs (e.g., Llama 3 8B as draft for Llama 3 70B) the natural choice.</p>
+
+<p>TGI exposes Prometheus metrics at the /metrics endpoint, including request queue depth, token generation rate, and per-request latency percentiles. Integrating these metrics with Grafana dashboards enables capacity planning based on observed traffic patterns. The most important SLO to track for interactive applications is the time-to-first-token (TTFT) at the 99th percentile — this determines the perceived responsiveness of the interface from the user's perspective, and is more sensitive to GPU memory pressure and batch scheduling decisions than median latency.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

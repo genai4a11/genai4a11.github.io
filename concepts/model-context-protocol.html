@@ -297,6 +297,25 @@ asyncio.run(chat_with_mcp())
 <p><strong>Tool descriptions are still critical.</strong> MCP doesn't change the fact that the LLM picks tools based on their descriptions. An MCP server with poorly-written tool descriptions will be used incorrectly, regardless of the protocol.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>MCP Server Implementation Patterns</h2>
+<p>The Model Context Protocol (MCP) standardizes how AI applications connect to external data sources and tools through a client-server architecture. An MCP server exposes resources, tools, and prompts via a JSON-RPC interface; an MCP client (typically an LLM application or IDE) discovers and invokes these capabilities at runtime without requiring custom integration code for each data source.</p>
+<table>
+<thead><tr><th>Capability Type</th><th>Purpose</th><th>When to Use</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Resources</td><td>Expose structured data</td><td>Read-heavy, cacheable content</td><td>File contents, DB records</td></tr>
+<tr><td>Tools</td><td>Expose callable actions</td><td>Side-effecting operations</td><td>create_issue, send_email</td></tr>
+<tr><td>Prompts</td><td>Expose prompt templates</td><td>Reusable instruction patterns</td><td>code_review_template</td></tr>
+<tr><td>Sampling</td><td>Request model inference</td><td>Server-driven LLM calls</td><td>Summarize before returning</td></tr>
+</tbody>
+</table>
+<p>MCP servers communicate over stdio (for local processes) or HTTP with Server-Sent Events (for remote servers). The stdio transport is ideal for development and local tool integrations — the client spawns the server as a subprocess and communicates through standard input/output streams. The HTTP+SSE transport enables deploying MCP servers as persistent network services, supporting multiple concurrent clients and enabling centralized tool infrastructure shared across an organization.</p>
+<p>Security boundaries are a critical consideration in MCP deployments. An MCP server that exposes file system access or shell execution capabilities should be run with the minimum required permissions and should validate all inputs from the LLM client. Since the LLM generates tool arguments, a prompt injection attack on the model could lead to malicious tool calls — MCP servers should treat all incoming arguments as untrusted and enforce their own validation logic independent of the LLM layer.</p>
+
+<p>MCP's resource abstraction handles pagination and streaming for large data sources. Resources that return large payloads — a full codebase, a long document, a large database query result — can use cursor-based pagination to return data in chunks that fit within context window limits. The LLM client decides how many resource pages to fetch based on the task requirements, and the MCP server manages the underlying data access pattern transparently.</p>
+
+<p>Authorization in MCP is deliberately out of scope for the core protocol, allowing implementers to use OAuth, API keys, mTLS, or any other auth mechanism appropriate for their environment. In practice, most production MCP servers that access sensitive resources use OAuth 2.0, with the MCP client handling the OAuth flow and passing access tokens in the request headers. The server validates tokens and enforces access control at the resource and tool level before executing any operations on behalf of the requesting agent.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -349,6 +349,26 @@ feedback_stats = client.list_feedback(
 <p><strong>Dataset drift makes old evals misleading.</strong> <a class="concept-link" href="eval.html">Evaluation</a> datasets built from early production traffic may not represent current user behaviour. Refresh your dataset quarterly by sampling recent production traces, especially after product changes that attract new user segments.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>LangSmith Observability Features</h2>
+<p>LangSmith provides tracing, evaluation, and dataset management for LLM applications built with LangChain or any Python/TypeScript application using the LangSmith SDK. It captures the full execution trace of an LLM pipeline — including every prompt sent, every model response received, and every tool call made — enabling both real-time debugging and offline evaluation workflows.</p>
+<table>
+<thead><tr><th>Feature</th><th>Purpose</th><th>Key Metric</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td>Tracing</td><td>Full pipeline visibility</td><td>Latency per step</td><td>Debugging, optimization</td></tr>
+<tr><td>Datasets</td><td>Curated test cases</td><td>Coverage, diversity</td><td>Regression testing</td></tr>
+<tr><td>Evaluators</td><td>Automated quality scoring</td><td>Pass rate, score distribution</td><td>CI/CD quality gates</td></tr>
+<tr><td>Human Annotation</td><td>Manual quality labeling</td><td>Agreement rate</td><td>Ground truth creation</td></tr>
+<tr><td>Playground</td><td>Interactive prompt testing</td><td>—</td><td>Prompt engineering</td></tr>
+</tbody>
+</table>
+<p>LangSmith's dataset management workflow supports a virtuous cycle of quality improvement. Production traces that expose failures or unexpected behavior can be saved directly to evaluation datasets with one click. These datasets feed into automated evaluators that run on every code change, preventing regressions from reaching production. Over time, the dataset grows to cover an increasingly representative sample of real-world inputs, making the evaluation suite progressively more reliable as a quality signal.</p>
+<p>The evaluator framework in LangSmith supports both reference-based evaluation (comparing model output to a gold standard answer) and reference-free evaluation (judging output quality without a ground truth). LLM-as-judge evaluators are particularly useful for assessing dimensions like helpfulness, tone, and factual accuracy that are difficult to measure with string matching. Custom evaluators can be defined as Python functions that receive the input, output, and optional reference, returning a numeric score and optional reasoning string.</p>
+
+<p>LangSmith's online evaluation feature allows evaluators to run automatically against production traffic samples as requests arrive, providing continuous quality monitoring without requiring explicit test dataset maintenance. By sampling a configurable percentage of production traces and running them through an LLM-as-judge evaluator, teams can detect quality regressions within hours of a deployment rather than waiting for user complaints or manual review cycles to surface problems.</p>
+
+<p>Prompt versioning in LangSmith's Hub stores named, versioned prompt templates alongside their evaluation results. When a prompt change improves average evaluation scores, the new version can be tagged as the production version and pulled directly in application code via the Hub API. This creates a complete audit trail of prompt evolution: who changed what, when, and what the measured quality impact was — closing the feedback loop between prompt engineering experimentation and production deployment.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

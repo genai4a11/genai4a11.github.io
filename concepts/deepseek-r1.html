@@ -311,6 +311,27 @@ print(response)
 <p><strong>Local quantised R1 has significant quality degradation on hard tasks.</strong> The 4-bit quantised 7B distil model and the full 671B model are not comparable — the smaller model may fail on competition math problems the full model handles easily. Benchmark on your actual task before committing to a particular model size.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>DeepSeek-R1 vs. Other Reasoning Models</h2>
+<p>DeepSeek-R1 achieved frontier-level mathematical and coding reasoning performance through reinforcement learning directly on reasoning traces, without relying on distillation from a larger teacher model for its core capabilities. This approach produced emergent reasoning behaviors including self-verification, backtracking, and extended chain-of-thought, at a fraction of the compute cost reported by comparable proprietary models.</p>
+<table>
+<thead><tr><th>Model</th><th>Reasoning Method</th><th>Training Data</th><th>Open Weights</th><th>AIME 2024</th></tr></thead>
+<tbody>
+<tr><td>DeepSeek-R1</td><td>RL on reasoning traces</td><td>Self-generated</td><td>Yes</td><td>~79%</td></tr>
+<tr><td>OpenAI o1</td><td>RL (details proprietary)</td><td>Proprietary</td><td>No</td><td>~83%</td></tr>
+<tr><td>OpenAI o3</td><td>RL + search</td><td>Proprietary</td><td>No</td><td>~96%</td></tr>
+<tr><td>QwQ-32B</td><td>RL on reasoning</td><td>Self-generated</td><td>Yes</td><td>~50%</td></tr>
+</tbody>
+</table>
+<p>The training recipe for DeepSeek-R1 proceeds in stages: first, a cold-start SFT phase teaches the model basic chain-of-thought formatting using a small set of curated reasoning examples; then large-scale RL with rule-based rewards (correctness for math/code, format compliance) drives the emergence of more sophisticated reasoning strategies. The rule-based reward design avoids reward hacking more effectively than a learned reward model, since mathematical correctness is verifiable and unambiguous.</p>
+<p>DeepSeek-R1's open-weight release (including distilled variants at 1.5B, 7B, 14B, 32B, and 70B) has significant implications for the open-source ecosystem. The distilled versions use R1's reasoning traces as SFT data to transfer reasoning capabilities to smaller base models like Qwen2.5 and Llama-3, making capable reasoning models accessible without the computational requirements of running the full 671B MoE architecture.</p>
+
+<p>The emergent self-verification behavior in DeepSeek-R1 is one of its most practically useful properties. During generation, the model sometimes produces a tentative answer, then re-examines its reasoning and explicitly revises it — a pattern that mirrors how human experts check their work. This behavior was not explicitly trained but emerged from the RL reward structure: since correctness is rewarded and the model has budget to continue generating, it learns that re-checking its work before committing to a final answer increases expected reward.</p>
+
+<p>Deploying DeepSeek-R1 in production requires decisions about thinking token budgets. The model generates a long chain of reasoning (the "thinking" trace) before producing its final answer, and the quality of the final answer improves with longer reasoning traces up to a point. Setting a maximum thinking token budget controls latency and cost, but too tight a budget degrades reasoning quality on hard problems. Dynamic budgeting — allocating more thinking tokens for queries classified as complex by a lightweight router — balances quality and cost better than a single fixed limit.</p>
+
+<p>Cost benchmarking for DeepSeek-R1 versus proprietary reasoning models should account for both API pricing and thinking token consumption. Problems that require extensive reasoning chains consume substantially more tokens than the visible output, and API costs scale with total tokens generated including the thinking trace. Comparing cost-per-correct-answer rather than cost-per-output-token provides a more accurate picture of the economic trade-offs between open-weight and proprietary reasoning models.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

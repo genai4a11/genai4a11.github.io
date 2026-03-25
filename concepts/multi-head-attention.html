@@ -297,6 +297,27 @@ output, _ = mha(dec_in, enc_out, enc_out)  # Q from dec, K/V from enc
 <p><strong>Attention <a class="concept-link" href="dropout.html">dropout</a> is applied to weights, not values.</strong> Dropout in attention zeroes out entire attention edges (rows in the weight matrix), forcing the model to route information through different paths. It's applied after softmax, before the weighted sum of V — not to the output.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Multi-Head Attention Variants Compared</h2>
+<p>Multi-head attention (MHA) splits the model dimension into H parallel attention heads, allowing the model to jointly attend to information from different representation subspaces. Variants like Multi-Query Attention (MQA) and Grouped-Query Attention (GQA) reduce the KV cache memory burden — a critical bottleneck during inference — by sharing key and value projections across multiple query heads.</p>
+<table>
+<thead><tr><th>Variant</th><th>KV Heads</th><th>KV Cache Size</th><th>Quality vs MHA</th><th>Used In</th></tr></thead>
+<tbody>
+<tr><td>MHA</td><td>= Query heads</td><td>Full</td><td>Baseline</td><td>GPT-2, BERT</td></tr>
+<tr><td>MQA</td><td>1</td><td>Minimal</td><td>Slight degradation</td><td>PaLM, Falcon</td></tr>
+<tr><td>GQA</td><td>G groups (2–8)</td><td>G/H × Full</td><td>Near MHA</td><td>Llama 2/3, Mistral</td></tr>
+<tr><td>MLA</td><td>Low-rank KV</td><td>Very small</td><td>Near MHA</td><td>DeepSeek-V2/V3</td></tr>
+</tbody>
+</table>
+<p>Grouped-Query Attention strikes the best practical balance between quality and efficiency. By grouping query heads to share a single KV pair within each group, GQA reduces the KV cache by a factor equal to the group size while retaining most of the expressive power of full MHA. At inference time, the reduced KV cache means more sequences can fit in GPU memory simultaneously, directly improving throughput for batched serving workloads.</p>
+<p>Multi-head Latent Attention (MLA), introduced in DeepSeek-V2, takes a different approach: it compresses the KV cache by projecting keys and values into a low-rank latent space, then reconstructing them at attention time. This achieves even smaller KV cache footprints than GQA while maintaining high model quality, at the cost of slightly higher per-token computation during the reconstruction step.</p>
+
+<p>The number of attention heads is typically set to H = d_model / d_head, where d_head is fixed at 64 or 128 dimensions per head. Empirically, smaller d_head values (64) train more stably and generalize better, while larger d_head values reduce the number of heads needed for the same model dimension, lowering the overhead of the head-splitting and concatenation operations. Modern models like Llama 3 use d_head = 128 with 32–64 heads for the 8B–70B size range.</p>
+
+<p>Flash Attention implementation details interact with multi-head variants in important ways. For GQA, the FlashAttention-2 kernel handles the shared KV projection natively, broadcasting the same key and value tensors across the query heads in each group without materializing separate copies. This implementation detail means GQA does not just save KV cache memory at inference time — it also reduces the memory bandwidth required during training, accelerating training throughput by 15–25% for models using GQA versus full MHA.</p>
+
+<p>Attention head pruning studies consistently find that a significant fraction of attention heads in trained models contribute negligibly to output quality and can be removed with minimal degradation. Structured pruning methods that target entire heads (rather than individual weights) produce models that are both smaller and faster, since the reduction in head count directly reduces the dimensionality of the Q, K, V projection matrices. Models compressed through head pruning often require brief continued pre-training to recover any quality loss.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

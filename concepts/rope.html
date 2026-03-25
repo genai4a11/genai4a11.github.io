@@ -286,6 +286,25 @@ def dynamic_ntk_base(d: int, seq_len: int, max_trained: int, alpha: float = 1.0)
 <p><strong>RoPE doesn't work on V.</strong> Only Q and K are rotated. V is left as-is. This is intentional — the rotation only needs to affect the dot-product similarity score, not the values that are summed. Applying rotation to V would have no effect on position encoding and just wastes compute.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>RoPE Variants and Context Extension</h2>
+<p>Rotary Position Embedding (RoPE) encodes position by rotating query and key vectors in a position-dependent manner, so that the attention dot product naturally captures relative distance between tokens. This design makes RoPE more generalizable to sequence lengths beyond those seen during training compared to absolute position embeddings, and has made it the standard choice in most modern open-weight models.</p>
+<table>
+<thead><tr><th>Variant</th><th>Max Context</th><th>Method</th><th>Quality at Extension</th></tr></thead>
+<tbody>
+<tr><td>Base RoPE</td><td>Training length</td><td>Fixed theta</td><td>Degrades beyond training</td></tr>
+<tr><td>Position Interpolation</td><td>4–8× training</td><td>Scale positions down</td><td>Good with fine-tuning</td></tr>
+<tr><td>YaRN</td><td>4–32× training</td><td>NTK-aware interpolation</td><td>Strong, minimal fine-tuning</td></tr>
+<tr><td>LongRoPE</td><td>2M+ tokens</td><td>Non-uniform rescaling</td><td>Strong across all lengths</td></tr>
+</tbody>
+</table>
+<p>The theta parameter in RoPE controls how quickly rotations accumulate with distance. Larger theta values rotate more slowly, effectively compressing more positional information into the same angular range and allowing the model to handle longer sequences without the rotation cycling issue. Models like Llama 3 use a significantly higher base theta (500,000) compared to the original Llama (10,000), which is the primary mechanism enabling their extended context windows without additional fine-tuning tricks.</p>
+<p>YaRN (Yet Another RoPE extensioN) applies different scaling factors to different frequency components of the RoPE embedding. Low-frequency dimensions, which encode long-range positional relationships, are interpolated more aggressively, while high-frequency dimensions, which encode local structure, are kept closer to their original values. This targeted approach preserves local attention patterns — critical for coherent phrase-level generation — while successfully extending the effective context window.</p>
+
+<p>The choice of RoPE base theta has downstream effects on retrieval and attention patterns. With small theta values, position rotations cycle rapidly, causing the model to confuse distant tokens with nearby ones at long context lengths — a phenomenon sometimes called "position aliasing." Increasing theta delays the cycling, but if theta is too large, the model's pre-training never exposed it to meaningful rotational variation, potentially reducing its sensitivity to fine-grained position information at short ranges.</p>
+
+<p>When fine-tuning a model on longer sequences to extend its effective context window, it is important to include long-document examples in the fine-tuning data that require the model to retrieve information from the beginning of the context to answer questions at the end. Without such training signal, the model may learn to handle longer position embeddings technically but never develop the attention patterns needed to actually use distant tokens effectively for multi-hop reasoning.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

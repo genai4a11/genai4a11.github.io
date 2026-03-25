@@ -325,6 +325,27 @@ system, tools = compose_skills(
 <p><strong>Skills need versioning.</strong> When you improve a skill's prompts or add new tools, you want to roll out the change gradually — not break all running agents simultaneously. Store skill version in the registry and let agents pin to a major version ("web_research@1").</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Agent Skill Design Patterns</h2>
+<p>Agent skills are modular capability units that encapsulate a specific ability — web search, code execution, API calls, file manipulation — behind a consistent interface. Designing skills well determines whether an agent can reliably compose them to solve complex tasks or gets stuck on ambiguous tool selection and incorrect parameter construction.</p>
+<table>
+<thead><tr><th>Skill Type</th><th>Interface Pattern</th><th>Error Handling</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Retrieval</td><td>query → documents</td><td>Return empty list on miss</td><td>web_search, vector_lookup</td></tr>
+<tr><td>Action</td><td>params → status</td><td>Raise on failure, return receipt</td><td>send_email, create_file</td></tr>
+<tr><td>Transform</td><td>input → output</td><td>Validate schema in/out</td><td>parse_json, summarize</td></tr>
+<tr><td>Compound</td><td>goal → result</td><td>Sub-skill error propagation</td><td>research_topic, book_meeting</td></tr>
+</tbody>
+</table>
+<p>Retrieval skills should always return structured metadata alongside content: source URL, timestamp, confidence score. This allows the orchestrator to reason about result quality rather than treating all retrieved content as equally reliable. Action skills should return receipts — unique identifiers or confirmation tokens — so the agent can reference the completed action in subsequent steps without re-executing it.</p>
+<p>Compound skills compose simpler primitives into higher-level capabilities. A "research_topic" skill might internally invoke web_search, read_page, and summarize in sequence. Exposing compound skills to the top-level agent reduces the planning horizon required, but introduces a trade-off: the agent loses fine-grained control over intermediate steps and cannot recover gracefully if a sub-skill fails in an unexpected way.</p>
+
+<p>Skill versioning is essential for long-running agent deployments. When a skill interface changes — new required parameters, modified return schema — agents that were trained or prompted to use the old interface will fail silently or produce incorrect results. Semantic versioning for skill APIs, with backward compatibility guarantees within major versions, allows agents to safely call skills without needing to be retrained every time the underlying implementation is updated.</p>
+
+<p>Skill discovery mechanisms allow agents to dynamically learn about available capabilities rather than having a fixed set of tools hardcoded at design time. MCP (Model Context Protocol) and OpenAI function calling both support listing available tools at runtime. Dynamic skill discovery enables agent architectures where new capabilities can be added to the tool registry without modifying the agent itself, and allows the agent to gracefully degrade when certain skills are temporarily unavailable.</p>
+
+<p>Testing agent skills in isolation, before integrating them into a full agent loop, dramatically accelerates development. Unit tests for individual skills verify that correct inputs produce correct outputs and that invalid inputs are rejected gracefully. Integration tests verify that the agent correctly selects and parameterizes skills given realistic natural language inputs, catching schema mismatch errors before they surface in production conversations.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

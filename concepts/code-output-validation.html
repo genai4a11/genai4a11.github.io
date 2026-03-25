@@ -363,6 +363,26 @@ def generate_and_validate(task: str, test_cases: list[dict], max_retries: int = 
 <p>The AST-based checks above are a defence-in-depth layer, not a replacement for OS-level sandboxing.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Validation Strategy Comparison</h2>
+<p>Code output validation ensures that LLM-generated code meets functional and safety requirements before execution in production environments. The appropriate validation strategy depends on the risk profile of the use case — code run in a sandbox for exploration has different requirements than code automatically deployed to a production pipeline.</p>
+<table>
+<thead><tr><th>Strategy</th><th>Catches</th><th>Misses</th><th>Latency</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Syntax check (AST parse)</td><td>Syntax errors</td><td>Logic bugs, security issues</td><td>~1ms</td><td>All use cases</td></tr>
+<tr><td>Static analysis (linting)</td><td>Style, common bugs</td><td>Runtime errors, logic errors</td><td>~10ms</td><td>Code quality gates</td></tr>
+<tr><td>Sandbox execution</td><td>Runtime errors, panics</td><td>Logic correctness, security</td><td>~500ms</td><td>Auto-run pipelines</td></tr>
+<tr><td>LLM review</td><td>Logic bugs, security</td><td>Performance, subtle edge cases</td><td>~1–5s</td><td>High-stakes code</td></tr>
+<tr><td>Unit tests (generated)</td><td>Functional correctness</td><td>Edge cases without coverage</td><td>~1–10s</td><td>Library generation</td></tr>
+</tbody>
+</table>
+<p>Layered validation pipelines combine multiple strategies in sequence. A fast syntax check runs first as a gate; code that passes syntax validation is then linted; code passing lint is executed in a sandbox to check for runtime errors. Only code passing all automated checks proceeds to optional LLM review for logic correctness. This layered approach catches the majority of errors with cheap early-stage checks and reserves expensive validation for code that has already passed simpler gates.</p>
+<p>For security-critical code generation tasks — generating SQL queries, shell scripts, or network request handlers — static analysis should include security-focused rules such as SQL injection detection, unsafe deserialization patterns, and hardcoded credentials. Tools like Bandit (Python), Semgrep, and CodeQL can be integrated into validation pipelines to scan for known vulnerability patterns before code is executed or reviewed by humans.</p>
+
+<p>Test generation as a validation strategy asks the LLM to generate unit tests alongside the code it produces, then executes those tests against the code in a sandbox. If the generated code passes its own generated tests, this provides moderate confidence in functional correctness — although the tests themselves may have gaps. A stronger variant asks a separate LLM invocation to critique the tests for coverage and then augment them with edge cases before running the full suite.</p>
+
+<p>Streaming validation — checking code incrementally as it is generated rather than waiting for the full output — is possible for structural constraints like syntax and style, but not for behavioral correctness that requires executing the complete function. Streaming syntax checks can abort generation early when a syntax error is detected, saving tokens and reducing latency compared to completing the full generation and then rejecting it. This is particularly valuable for long code generation tasks where errors in the function signature or early structure would invalidate the entire output.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

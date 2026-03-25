@@ -305,6 +305,26 @@ chain.predict(input="What project did I mention?")  # still knows
 <p><strong>System messages are not magic memory.</strong> Prepending summaries to the system prompt works but can "feel" lower quality to the model than actual conversation history in the <code>messages</code> array. For anthropic models, the conversation history format (user/assistant alternation) is the most natural way to provide context.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Conversation Memory Strategy Comparison</h2>
+<p>Conversation buffer management determines how much conversation history an LLM agent retains across turns. The choice of strategy directly affects coherence (can the agent remember what was said earlier?), cost (how many tokens does each turn consume?), and relevance (is the retained context actually useful for the current turn?).</p>
+<table>
+<thead><tr><th>Strategy</th><th>What Is Retained</th><th>Token Cost</th><th>Coherence</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Full Buffer</td><td>All messages</td><td>Grows unboundedly</td><td>Perfect</td><td>Short conversations</td></tr>
+<tr><td>Window Buffer</td><td>Last N messages</td><td>Fixed cap</td><td>Good for recent context</td><td>General chat</td></tr>
+<tr><td>Summary Buffer</td><td>Summary + recent N</td><td>Controlled growth</td><td>Good overall</td><td>Long conversations</td></tr>
+<tr><td>Token Buffer</td><td>Messages within token limit</td><td>Fixed cap</td><td>Good for recent context</td><td>Token-constrained apps</td></tr>
+<tr><td>Semantic Buffer</td><td>Most relevant messages</td><td>Controlled</td><td>Task-specific</td><td>Task-focused agents</td></tr>
+</tbody>
+</table>
+<p>Summary buffer memory compresses older conversation history into a rolling summary while retaining the N most recent messages verbatim. When the buffer approaches its token limit, a summarization call is triggered that condenses the oldest messages into an updated summary paragraph. The verbatim recent messages are preserved because they contain the most immediate context and are difficult to summarize accurately without losing critical details like specific values, names, or instructions the user just provided.</p>
+<p>Semantic buffer memory uses embedding similarity to select which past messages to include in the context window, rather than relying purely on recency. This is most useful for task-focused agents where the user's goal stated at the beginning of a long conversation is more relevant to the current turn than the ten intermediate exchanges that happened since. Hybrid approaches that combine recency and semantic relevance tend to outperform either strategy alone.</p>
+
+<p>Implementing summary buffer memory correctly requires careful handling of the summarization timing to avoid disrupting the conversation flow. Triggering summarization synchronously at the moment the buffer exceeds its limit introduces a latency spike that users notice. Asynchronous summarization — triggering the summarization call in a background task while the current turn proceeds using the un-summarized buffer — prevents this latency spike, but requires the buffer management layer to handle the case where summarization has not yet completed when the next turn arrives.</p>
+
+<p>Multi-session memory persistence extends conversation buffer concepts to conversations that span multiple sessions over time. Rather than starting each session with an empty context, the agent loads a persisted summary of previous interactions along with any episodic memories flagged as important. Building this correctly requires distinguishing between working memory (intra-session context for the current conversation) and long-term memory (inter-session context persisted to a database), which have different storage, retrieval, and decay requirements.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
