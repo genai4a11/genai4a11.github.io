@@ -323,6 +323,25 @@ merged.save_pretrained("./merged-model")
 <p><strong>The merged model is larger than the 4-bit base.</strong> Merging adds LoRA weights back into the base weights at full precision — the merged model is back to float16 size. If you need a small model for deployment, quantise the merged model to GGUF/<a class="concept-link" href="gptq.html">GPTQ</a> after merging, not before.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>QLoRA Hyperparameter Reference</h2>
+<table>
+<thead><tr><th>Hyperparameter</th><th>Typical Range</th><th>Impact</th><th>Recommendation</th></tr></thead>
+<tbody>
+<tr><td>Quantisation bits</td><td>4-bit (NF4)</td><td>Memory: saves 75% vs fp16</td><td>Always use NF4; 8-bit rarely worth the memory cost</td></tr>
+<tr><td>LoRA rank (r)</td><td>8–64</td><td>Trainable params, expressivity</td><td>r=16 for most tasks; r=64 for complex style transfer</td></tr>
+<tr><td>LoRA alpha</td><td>16–128</td><td>Effective learning rate scale</td><td>Set alpha = 2r as a starting point</td></tr>
+<tr><td>Gradient checkpointing</td><td>On/Off</td><td>Memory vs compute trade-off</td><td>Always enable; adds ~30% compute, saves 60% activation memory</td></tr>
+<tr><td>Batch size</td><td>1–8 (+ grad accum)</td><td>Training stability</td><td>Effective batch 32–64 via gradient accumulation</td></tr>
+</tbody>
+</table>
+<p>QLoRA's memory savings come primarily from keeping base model weights frozen in 4-bit and only computing gradients through the LoRA adapters in bfloat16. The double quantisation further reduces the quantisation constants themselves from fp32 to fp8, saving ~0.4 bits per parameter. For a 7B model this totals roughly 5 GB VRAM for the base model, plus ~300 MB for LoRA adapters — making a single 16 GB consumer GPU sufficient for fine-tuning models that previously required 4× A100s.</p>
+
+<p>When evaluating a QLoRA fine-tuned model, always compare against the quantised base model, not the full-precision base. The NF4 quantisation itself introduces a small quality degradation before any fine-tuning — typically 1–3 points on standard benchmarks. Your fine-tuning should recover this and improve beyond it. If your fine-tuned QLoRA model performs below the quantised baseline on held-out tasks, the training data or hyperparameters need adjustment before deployment.</p>
+
+<p>The QLoRA paper demonstrated that 4-bit NF4 quantisation loses less than 1% accuracy vs bfloat16 on most downstream tasks. NF4 non-uniform bin boundaries are optimised for zero-centred normal weight distributions, resulting in lower quantisation error than linear 4-bit for the same bit budget. Always prefer NF4 over fp4 when using bitsandbytes.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

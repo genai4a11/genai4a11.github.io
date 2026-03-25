@@ -308,6 +308,25 @@ for block in response.content:
 <p><strong>Users don't want to see reasoning traces.</strong> Internal reasoning is for you and the system, not the user. Always strip scratchpad content before returning to the user. Showing raw reasoning makes responses feel unpolished and can reveal sensitive intermediate steps.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Reasoning Framework Comparison</h2>
+<table>
+<thead><tr><th>Framework</th><th>Structure</th><th>Best For</th><th>Limitation</th></tr></thead>
+<tbody>
+<tr><td>Chain-of-Thought</td><td>Linear reasoning steps</td><td>Math, logical deduction</td><td>No backtracking; single path</td></tr>
+<tr><td>Tree-of-Thought</td><td>Branching + pruning</td><td>Open-ended exploration, planning</td><td>High cost; complex to implement</td></tr>
+<tr><td>ReAct</td><td>Interleaved think + act</td><td>Tool-using agents</td><td>Prone to reasoning drift over many steps</td></tr>
+<tr><td>Scratchpad</td><td>Free-form working memory</td><td>Long-horizon problem solving</td><td>No structured verification</td></tr>
+<tr><td>Extended thinking (Claude)</td><td>Internal chain-of-thought</td><td>Complex reasoning without prompting</td><td>Not inspectable; higher latency</td></tr>
+</tbody>
+</table>
+<p>Structured reasoning before action reduces agent errors by forcing explicit state tracking. The key discipline: separate the reasoning phase (what do I know, what do I need, what is my plan?) from the action phase (call tool X with parameters Y). Agents that blend reasoning and action in the same output frequently skip reasoning steps under token pressure. Use dedicated XML or JSON blocks for reasoning vs action to enforce this separation structurally rather than relying on the model to self-regulate.</p>
+
+<p>When evaluating reasoning quality in agentic systems, assess the reasoning trace separately from the final action. A correct action reached through flawed reasoning is brittle — it will fail on variations of the same task. Use an LLM-as-judge to score both the reasoning quality (is the plan logically sound and complete?) and the action accuracy (did the agent call the right tool with the right parameters?). Track these metrics separately in your eval dashboard so you can distinguish between reasoning failures and execution failures.</p>
+
+<p>Budget reasoning tokens explicitly in complex agentic tasks. Set a thinking budget (2,000 tokens for simple tasks, 8,000 for complex) and monitor usage in your cost dashboard. Tasks that consistently max out their thinking budget may benefit from upstream decomposition that routes sub-tasks to specialist agents, each requiring less reasoning than a single monolithic agent handling full complexity.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

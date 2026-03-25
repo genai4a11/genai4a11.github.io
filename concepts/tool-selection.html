@@ -314,6 +314,25 @@ tools = registry.get_tools_for_user(user_id="user_123", tier="pro")
 <p><strong>The model can call no tool when it should.</strong> If the model can't find a good tool match, it will sometimes answer from its parametric knowledge instead of calling a tool. Add explicit instructions: "Always use the available tools to answer user questions. Do not use general knowledge for questions about orders, products, or account information."</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Tool Selection Patterns Reference</h2>
+<table>
+<thead><tr><th>Pattern</th><th>Scale</th><th>Selection Method</th><th>Latency Overhead</th></tr></thead>
+<tbody>
+<tr><td>Flat list</td><td>1–20 tools</td><td>In-context description</td><td>None (in prompt)</td></tr>
+<tr><td>Semantic routing</td><td>20–200 tools</td><td>Embedding similarity</td><td>+20–50ms</td></tr>
+<tr><td>Hierarchical (category → tool)</td><td>50–500 tools</td><td>Two-stage LLM routing</td><td>+100–300ms</td></tr>
+<tr><td>Agent-selects-tools (meta-agent)</td><td>Any</td><td>LLM reasons over tool catalogue</td><td>+200–500ms</td></tr>
+</tbody>
+</table>
+<p>For semantic tool routing, embed both the tool descriptions and the incoming query, then retrieve the top-k most similar tools by cosine similarity before passing them to the LLM. Use a retrieval threshold of 0.75 minimum similarity — tools below this threshold are unlikely to be relevant and including them wastes context. Maintain a tool embedding index that updates automatically when tool descriptions change, and log tool selection decisions to detect cases where the wrong tool was retrieved.</p>
+<p>Tool description quality is the most impactful variable in selection accuracy. Include the tool name, a one-sentence description of what it does, what input format it expects, and a concrete example of when to use it versus similar tools. Descriptions under 50 words typically underperform; descriptions over 200 words slow down context processing without quality gain. Aim for 80–120 words per tool description.</p>
+
+<p>Monitor tool selection accuracy in production by logging every tool call alongside the user intent category. Compute a confusion matrix monthly: which tools are being selected for which intent categories? Systematic misrouting (e.g. a search tool being called for calculation tasks) reveals gaps in tool descriptions that a simple prompt update can fix. Set up an alert when a tool's call volume drops by more than 50% week-over-week — this often indicates the tool has silently broken or been incorrectly deprioritised by the model.</p>
+
+<p>When the tool set changes frequently, implement a tool registry with versioning: each tool carries a unique ID, a semantic version, and a deprecation date. Route queries to the correct tool version based on when the conversation started, not the current registry state. This prevents mid-conversation behaviour changes. Archive deprecated definitions for at least 90 days to support debugging of past conversations.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

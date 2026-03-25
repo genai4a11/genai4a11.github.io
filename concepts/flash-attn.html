@@ -486,6 +486,24 @@ output = F.scaled_dot_product_attention(
 </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Flash Attention Version Comparison</h2>
+<table>
+<thead><tr><th>Version</th><th>Key Innovation</th><th>Speedup vs Standard</th><th>Hardware Target</th></tr></thead>
+<tbody>
+<tr><td>Flash Attention 1</td><td>Tiling + recomputation; IO-aware</td><td>2–4× training</td><td>A100, V100</td></tr>
+<tr><td>Flash Attention 2</td><td>Better parallelism, fewer non-matmul FLOPs</td><td>2× over FA1</td><td>A100, A10G</td></tr>
+<tr><td>Flash Attention 3</td><td>Async WGMMA + pingpong scheduling</td><td>1.5–2× over FA2</td><td>H100 only</td></tr>
+</tbody>
+</table>
+<p>Flash Attention is now the default attention implementation in most major frameworks (PyTorch 2.0+, HuggingFace Transformers, vLLM). Enable it in PyTorch with <code>F.scaled_dot_product_attention</code> which auto-selects FlashAttention when the inputs are on CUDA and meet alignment requirements. For HuggingFace models, set <code>attn_implementation="flash_attention_2"</code> in <code>from_pretrained()</code>. Verify it is active by checking that model forward passes do not appear in the CUDA memory trace as large temporary attention matrices — they should be absent with FA enabled.</p>
+<p>FA3 requires H100 GPUs and the <code>flash-attn==3.x</code> wheel. It is not backward-compatible with A100 due to its use of H100-specific WGMMA (Warp Group Matrix Multiply-Accumulate) instructions. For mixed GPU fleets, keep FA2 to maintain portability.</p>
+
+<p>FlashAttention's recomputation strategy trades compute for memory: rather than storing the full N×N attention matrix in HBM (high bandwidth memory), it recomputes attention scores during the backward pass from stored activations. This is profitable when N is large enough that the HBM read/write savings outweigh the extra compute. For sequences shorter than ~512 tokens, standard attention may be faster due to the overhead of tiling logic. Profile on your specific sequence length distribution before assuming FlashAttention is always faster in your workload.</p>
+
+<p>FlashAttention requires version matching for grouped-query attention (GQA) architectures used in Llama, Mistral, and Gemma. Use flash-attn 2.3+ for GQA support. Alibi positional encodings and custom attention masks also require special handling -- always check the flash-attn documentation for your specific model architecture before assuming out-of-the-box compatibility.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

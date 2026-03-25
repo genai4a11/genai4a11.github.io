@@ -328,6 +328,25 @@ async def multi_query_async(variants: list[str]) -&gt; list:
 <p><strong>Don't use multi-query for simple keyword lookups.</strong> If the user types an exact product code or error message, generating paraphrases introduces noise. Apply multi-query selectively for natural-language questions, not for exact-match lookups.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Multi-Query Retrieval in Production</h2>
+<table>
+<thead><tr><th>Strategy</th><th>Query Variants</th><th>Recall Gain</th><th>Cost Multiplier</th></tr></thead>
+<tbody>
+<tr><td>Perspective expansion</td><td>3–5 rephrasings</td><td>+20–35%</td><td>3–5×</td></tr>
+<tr><td>Hypothetical document</td><td>1 HyDE variant</td><td>+15–25%</td><td>2×</td></tr>
+<tr><td>Sub-question decomposition</td><td>2–4 sub-questions</td><td>+30–50% on multi-hop</td><td>3–5×</td></tr>
+<tr><td>Step-back abstraction</td><td>1 generalised query</td><td>+10–20%</td><td>2×</td></tr>
+</tbody>
+</table>
+<p>In production, gate multi-query retrieval behind a complexity classifier. Simple factual queries ("What is the capital of France?") gain nothing from query expansion and waste embedding + retrieval budget. Classify queries by complexity using a fast Haiku call or a lightweight fine-tuned classifier, then apply multi-query only to complex, multi-hop, or ambiguous questions. This reduces multi-query overhead by 40–60% in typical production traffic while preserving recall gains where they matter.</p>
+<p>Deduplication of retrieved chunks is critical: running 5 query variants typically returns 3–4× more chunks than a single query, with significant overlap. Use a cosine similarity threshold (0.92+) or exact chunk-ID deduplication before passing context to the synthesis LLM to avoid wasting context window on near-duplicate passages.</p>
+
+<p>For evaluation of multi-query retrieval systems, measure both recall improvement and answer faithfulness. Higher recall sometimes introduces noisy passages that confuse the synthesis model and reduce answer quality. Run end-to-end evaluation: compare final answer accuracy with and without query expansion on your domain-specific test set. The goal is not maximum recall but maximum answer quality — and sometimes a targeted single query outperforms an expanded set if your retrieval corpus is noisy or your topic requires precision over recall.</p>
+
+<p>Implement a result diversity check after merging multi-query results. If top-5 retrieved chunks are all from the same source document, your retrieval set is over-concentrated. Use maximum marginal relevance (MMR) re-ranking to enforce source diversity while maintaining relevance. LlamaIndex and LangChain both implement MMR natively with a diversity_bias parameter between 0.3 and 0.5.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

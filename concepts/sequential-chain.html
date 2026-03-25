@@ -359,6 +359,26 @@ report = generate_report(filter_facts(facts))
 <p><strong>Latency is additive.</strong> A 5-step chain where each step takes 2 seconds takes 10 seconds minimum. For user-facing applications, stream intermediate results so users see progress, or use async chains so other work can proceed while waiting.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Sequential Chain Patterns Reference</h2>
+<table>
+<thead><tr><th>Pattern</th><th>Data Flow</th><th>Error Handling</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Linear pipe</td><td>A → B → C</td><td>Fail on first error</td><td>Simple transformation pipelines</td></tr>
+<tr><td>Linear with validation</td><td>A → validate → B</td><td>Retry or branch on schema error</td><td>Production pipelines with quality gates</td></tr>
+<tr><td>Reduce (map-reduce)</td><td>A1..N → merge → B</td><td>Partial results on failure</td><td>Long document processing</td></tr>
+<tr><td>Accumulate</td><td>A feeds state into B, B into C</td><td>State rollback on error</td><td>Iterative refinement</td></tr>
+</tbody>
+</table>
+<p>In production sequential chains, instrument each step with timing and token-count logging. Over time this data reveals which steps are the bottlenecks (slow steps to optimise) and which are the cost drivers (high token-count steps to simplify). A step that consistently adds tokens without improving final output quality is a candidate for removal or replacement with a deterministic function. Map this instrumentation to your cost tracking to calculate per-step ROI.</p>
+
+<p>For long sequential chains (5+ steps), implement a checkpoint-and-resume pattern: persist intermediate outputs to a key-value store after each step, keyed by a chain run ID. If the chain fails at step 4, you can resume from step 3's output rather than restarting from scratch. This is especially valuable for chains with expensive upstream steps (large document processing, web search). Retention policy: keep intermediate checkpoints for 24 hours to enable human debugging, then expire them to control storage costs.</p>
+
+<p>When debugging a sequential chain with incorrect outputs, bisect the chain by logging intermediate outputs and identifying the first step where quality diverges from expected. The error is usually not in the final step but in an earlier step whose output looks plausible but subtly misframes the task for subsequent steps. Fixing the first bad step is more impactful than adding validation at the end of the chain.</p>
+
+<p>Add a cost attribution step at the end of each sequential chain run: sum the input and output tokens for each step and log the breakdown. Over time this reveals which steps account for the most spend. Typically, the synthesis or summarisation steps at the end of a chain consume the most tokens. Refactoring these steps to use map-reduce (summarise in chunks, then combine) rather than passing a full concatenated input often reduces costs by 40-60% with minimal quality impact.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

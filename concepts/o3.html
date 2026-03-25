@@ -337,6 +337,27 @@ for model in ["gpt-4o", "o4-mini", "o3"]:
 <p><strong>Latency is much higher than GPT-4o.</strong> o3 with high reasoning effort can take 30–120 seconds for complex problems. For user-facing applications, show a progress indicator, use <a class="concept-link" href="streaming.html">streaming</a>, and set a reasonable timeout. o4-mini with low effort gets closer to GPT-4o latency.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Reasoning Model Selection Guide</h2>
+<table>
+<thead><tr><th>Task Type</th><th>Best Model</th><th>Reasoning Effort</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Simple Q&amp;A, summarisation</td><td>GPT-4o / Claude Sonnet</td><td>None needed</td><td>Reasoning models overkill here</td></tr>
+<tr><td>Moderate coding / analysis</td><td>o4-mini (low effort)</td><td>Low</td><td>3–5× cheaper than o3 full</td></tr>
+<tr><td>Hard math, competition problems</td><td>o3 (medium effort)</td><td>Medium</td><td>Good accuracy/cost balance</td></tr>
+<tr><td>Research-level problems</td><td>o3 (high effort)</td><td>High</td><td>Budget-aware; set max thinking tokens</td></tr>
+<tr><td>Agentic multi-step tasks</td><td>o3 or o4-mini</td><td>Medium</td><td>Tool use + reasoning is the sweet spot</td></tr>
+</tbody>
+</table>
+<p>The break-even analysis for reasoning models hinges on task complexity. For tasks where GPT-4o already achieves 90%+ accuracy, reasoning models add cost without quality gain. For tasks where GPT-4o is at 50–70% accuracy (hard math, complex code debugging, multi-step planning), o3 typically lifts accuracy to 85–95% — a quality improvement that often justifies the 5–10× higher per-call cost, especially if the task outcome has high business value. Instrument your pipeline to measure per-task-type accuracy so you can route to reasoning models selectively rather than universally.</p>
+
+<p>Streaming reasoning tokens from o3 provides user experience benefits but also debugging insights. The visible thinking trace shows which sub-problems the model decomposed the question into, which approaches it tried and abandoned, and how it reached its final answer. Use this trace in development to diagnose why the model gave a wrong answer — the error almost always appears as a flawed reasoning step in the trace, which points directly to what additional context or constraint needs to be added to the prompt.</p>
+
+<p>When budgeting for reasoning models, account for thinking tokens which are charged at the same rate as output tokens but not shown in the visible response. A query with 200 visible output tokens may have consumed 2,000 thinking tokens, making the real cost 11x higher than a naive count suggests. Use usage.completion_tokens_details.reasoning_tokens in the API response to track actual consumption and include it in cost monitoring from day one.</p>
+
+<p>For agentic tasks with reasoning models, prefer many small tool-use steps over few large steps. Reasoning models benefit from tight observe-reason-act cycles where each tool result updates the model's working context before the next action. Batching multiple actions into a single step deprives the model of intermediate feedback that would have changed its reasoning. Design your tool interfaces to return focused, actionable results rather than large data dumps that the model must parse in isolation.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -334,6 +334,28 @@ def get_stock_price(ticker: str) -&gt; str:
 <p><strong>Tool errors must be handled gracefully.</strong> If a tool raises an exception, return a string error message — don't let the exception propagate and kill the agent loop. The model should be able to recover from tool failures and try a different approach.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>ReAct Agent Design Reference</h2>
+<table>
+<thead><tr><th>Design Decision</th><th>Options</th><th>Tradeoff</th></tr></thead>
+<tbody>
+<tr><td>Thought format</td><td>Free text vs structured XML</td><td>Free text is more flexible; XML is easier to parse</td></tr>
+<tr><td>Max iterations</td><td>5–20 steps</td><td>Higher = more complex tasks; lower = fewer runaway loops</td></tr>
+<tr><td>Tool result truncation</td><td>200–2000 tokens</td><td>More context = better reasoning; less = lower cost</td></tr>
+<tr><td>Stop condition</td><td>Final answer vs tool signal</td><td>Explicit signal is more reliable</td></tr>
+<tr><td>Memory</td><td>Full history vs rolling window</td><td>Full history is most accurate; window controls cost</td></tr>
+</tbody>
+</table>
+<p>The most common ReAct failure mode is "reasoning drift" — the agent's reasoning in the Thought step gradually diverges from the actual task goal over many iterations. Mitigate this by injecting the original task goal at the start of each Thought block: <code>Task: {original_task}
+Thought:</code>. This re-anchors the agent to the goal and reduces off-task tangents. For long-running ReAct agents, also add a periodic "progress check" step that explicitly asks the agent to assess whether it is making progress toward the goal.</p>
+
+<p>For production ReAct agents, add structured logging of every Thought/Action/Observation cycle with timestamps and token counts. This log is your primary debugging tool when an agent produces an unexpected result. Review failed runs by reading the thought trace: the failure point is almost always visible as a step where the reasoning diverged from the task goal, a tool returned unexpected output, or the agent prematurely concluded it had finished. Store these traces for at least 30 days to enable root-cause analysis of reported incidents.</p>
+
+<p>Enforce a consistent scratchpad format per ReAct cycle: Thought (one concise sentence about the current goal), Action (tool name plus JSON arguments), Observation (truncated tool result). Truncate observation outputs aggressively to around 200 tokens without losing key information -- verbose tool result logs waste context window space and make it harder for the model to maintain coherent reasoning across many steps.</p>
+
+<p>For agents that handle sensitive domains (legal, medical, financial), add a pre-action review step before executing any tool call. The review step prompts a separate model instance to evaluate whether the planned action is safe, appropriate, and consistent with the stated user intent. This adds 200-400ms latency but significantly reduces the risk of irreversible harmful actions. Route flagged actions to human review rather than blocking them outright, to preserve recall while protecting against high-severity errors.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

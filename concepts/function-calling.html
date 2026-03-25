@@ -366,6 +366,27 @@ print(agent_loop("What is the square root of 1764?"))
 <p><strong>Tool errors should return strings, not raise exceptions.</strong> When a tool fails, return an error message string as the tool result. The model can then recover and try a different approach. Propagating exceptions kills the agent loop entirely.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Function Calling Across Providers</h2>
+<table>
+<thead><tr><th>Feature</th><th>Anthropic (tools)</th><th>OpenAI (functions)</th><th>Google (function declarations)</th></tr></thead>
+<tbody>
+<tr><td>Parallel calls</td><td>Yes (tool_use blocks)</td><td>Yes (parallel_tool_calls)</td><td>Yes</td></tr>
+<tr><td>Forced call</td><td>tool_choice: {type: "tool", name: "X"}</td><td>tool_choice: {"type":"function","function":{"name":"X"}}</td><td>mode: "ANY"</td></tr>
+<tr><td>Result injection</td><td>tool_result content block</td><td>role: "tool" message</td><td>functionResponse part</td></tr>
+<tr><td>Schema format</td><td>JSON Schema subset</td><td>JSON Schema subset</td><td>OpenAPI subset</td></tr>
+<tr><td>Streaming support</td><td>Yes (input_json_delta)</td><td>Yes (tool_calls delta)</td><td>Yes</td></tr>
+</tbody>
+</table>
+<p>When building provider-agnostic tool loops, LiteLLM normalises the tool call format across providers so you can write your tool loop once and swap providers via a model string. The main divergence to handle is error injection: Anthropic requires tool results even on errors (return an error message in the tool_result content), while some providers allow omitting failed tool results. Always return a result for every tool call to avoid malformed conversation histories that confuse subsequent turns.</p>
+
+<p>Secure tool loop implementations should validate tool arguments before execution, not just trust the LLM-generated JSON. Even with a well-designed schema, models occasionally hallucinate parameter values outside expected ranges or inject unexpected string content into path parameters. Add a validation layer between tool call parsing and execution: check that numeric parameters are within bounds, string parameters pass regex validation, and file paths are within permitted directories. Treat LLM-generated tool arguments as untrusted user input, not internal trusted data.</p>
+
+<p>For multi-turn conversations with tool use, maintain a clean call history by including all tool_use and tool_result pairs in the message history. Many LLM providers require a complete alternating sequence of assistant tool calls followed by user tool results. Always append to an existing message list rather than reconstructing it to avoid missing intermediate turns that cause API errors or degraded behaviour.</p>
+
+<p>Test your tool loop with adversarial inputs before deploying to production. Ask the model to call tools with edge-case arguments: empty strings, very large numbers, SQL injection patterns, and path traversal strings. A well-designed tool should validate and reject these inputs gracefully. Log any case where validation fails -- these represent potential security issues that need fixing before the agent handles untrusted user input at scale.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

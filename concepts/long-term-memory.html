@@ -331,6 +331,26 @@ list the IDs to delete. If not, say "no conflict".'''
 <p><strong>Embedding model and memory model should be consistent.</strong> If you change the embedding model (e.g., from all-MiniLM to text-embedding-3-small), all existing embeddings become incompatible. Store the embedding model name with each memory and rebuild the index when you upgrade models.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Memory System Comparison</h2>
+<table>
+<thead><tr><th>Memory Type</th><th>Storage</th><th>Retrieval</th><th>Best For</th><th>Limitation</th></tr></thead>
+<tbody>
+<tr><td>Episodic (raw logs)</td><td>Vector DB</td><td>Semantic search</td><td>Conversation history, past interactions</td><td>Noisy; needs summarisation</td></tr>
+<tr><td>Semantic (facts)</td><td>Key-value or graph</td><td>Exact or fuzzy lookup</td><td>User preferences, domain knowledge</td><td>Manual extraction needed</td></tr>
+<tr><td>Procedural (skills)</td><td>Prompt templates</td><td>Task-type routing</td><td>Learned workflows, successful patterns</td><td>Hard to update incrementally</td></tr>
+<tr><td>Working (in-context)</td><td>Context window</td><td>Immediate</td><td>Current task state</td><td>Lost at session end</td></tr>
+</tbody>
+</table>
+<p>Memory write quality determines retrieval quality. Raw conversation turns stored as memories are too verbose and noisy — always extract atomic facts before storing. A reliable extraction prompt: "Extract 3–5 specific, reusable facts from this exchange that would help an assistant in a future conversation with this user. Return as a JSON list of strings." Run this extraction after every user session end, not inline during the conversation, to avoid latency spikes in the hot path.</p>
+
+<p>Memory privacy is a critical concern for production systems. Personal facts extracted and stored in a long-term memory system may be subject to GDPR right-to-erasure requirements. Design your memory store with user-scoped deletion from the start: every memory entry should carry a user ID and a created timestamp, and a delete-user endpoint should purge all entries for that user atomically. Test deletion coverage in staging — memory systems with denormalised storage often retain references even after a nominal delete operation.</p>
+
+<p>For multi-user deployments, namespace all memory queries by user ID at the infrastructure level rather than filtering by a metadata field at query time. Use separate namespaces or collections per user (Pinecone, Weaviate, and Chroma all support this). Namespace-level isolation prevents information leakage from incorrect metadata filters and improves retrieval performance since the per-user search space is much smaller than the full corpus.</p>
+
+<p>Run periodic memory consolidation jobs on long-running agent deployments. After 30 days of operation, a user's memory store may contain hundreds of redundant or outdated facts (old preferences that have changed, superseded information). A weekly consolidation job that deduplicates similar memories and marks stale entries for expiry keeps retrieval precision high and prevents the memory store from becoming a source of outdated context that misleads the agent.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
