@@ -61,7 +61,18 @@ adam:{use:'Default optimizer for training transformers and fine-tuning LLMs.',di
 
   AdamW adds weight decay OUTSIDE the
   adaptive term — prevents L2 coupling:
-  θ ← θ − η·(m̂/√v̂ + λ·θ)`,code:`import torch\nfrom torch.optim import AdamW\nmodel = MyModel()\noptimizer = AdamW(\n    model.parameters(),\n    lr=2e-4,\n    betas=(0.9, 0.999),\n    weight_decay=0.01  # AdamW decouples L2\n)\n# With cosine LR schedule\nfrom transformers import get_cosine_schedule_with_warmup\nscheduler = get_cosine_schedule_with_warmup(\n    optimizer, num_warmup_steps=100,\n    num_training_steps=1000\n)`,tip:'Use AdamW (not Adam) for transformers — weight decay is decoupled correctly.',refs:[{label:"Adam Optimizer",url:"concepts/adam.html"}]},
+  θ ← θ − η·(m̂/√v̂ + λ·θ)`,code:`import torch\nfrom torch.optim import AdamW\nmodel = MyModel()\noptimizer = AdamW(\n    model.parameters(),\n    lr=2e-4,\n    betas=(0.9, 0.999),\n    weight_decay=0.01  # AdamW decouples L2\n)\n# With cosine LR schedule\nfrom transformers import get_cosine_schedule_with_warmup\nscheduler = get_cosine_schedule_with_warmup(\n    optimizer, num_warmup_steps=100,\n    num_training_steps=1000\n)`,tip:'Use AdamW (not Adam) for transformers — weight decay is decoupled correctly.',questions:{
+  leader:['Adam is the default optimizer for most deep learning — when does it fail and what signals tell you to switch?','Optimizer choice affects training cost and convergence speed — how do you standardize this across your ML team?'],
+  pm:['How does optimizer hyperparameter tuning (lr, β1, β2) affect model quality — and what's the cost of getting it wrong?','When teams report training instability, how do you determine whether the optimizer or learning rate schedule is the root cause?'],
+  eng:['How do you implement AdamW correctly — what is the exact difference from Adam + L2 regularization in the gradient update?','What is the typical β1=0.9, β2=0.999, ε=1e-8 starting point — and when do you deviate from these defaults?','How do you handle Adam's memory cost (2 extra buffers per parameter) when training on GPU memory-constrained hardware?']
+},
+learn:[
+  {type:'paper',label:'Adam: A Method for Stochastic Optimization (Kingma & Ba, 2014)',url:'https://arxiv.org/abs/1412.6980'},
+  {type:'paper',label:'AdamW: Decoupled Weight Decay Regularization (Loshchilov & Hutter, 2017)',url:'https://arxiv.org/abs/1711.05101'},
+  {type:'blog',label:'Sebastian Ruder: An overview of gradient descent optimization algorithms',url:'https://ruder.io/optimizing-gradient-descent/'},
+  {type:'paper',label:'On the Convergence of Adam and Beyond (Reddi et al., 2018)',url:'https://arxiv.org/abs/1904.09237'},
+  {type:'video',label:'fast.ai: Adam optimizer intuition and implementation (Lesson 9)',url:'https://course.fast.ai/'}
+],refs:[{label:"Adam Optimizer",url:"concepts/adam.html"}]},
 flash_attn:{use:'Drop-in attention replacement for 2-4× faster training and inference.',diag:`
   Standard attention (slow):          FlashAttention (fast):
   ┌─────────────────────┐             ┌─────────────────────┐
@@ -251,7 +262,18 @@ zero_cot:{use:'Prompt the model to reason step by step before answering. A singl
   • Forces sequential token generation
   • Each step conditions the next
   • Errors are catchable and correctable
-  • Works zero-shot: just add the phrase`,code:`from openai import OpenAI\nclient = OpenAI()\ndef cot_solve(problem: str) -> str:\n    response = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[\n            {'role': 'system', 'content':\n             'Think step by step before answering.'},\n            {'role': 'user', 'content': problem}\n        ]\n    )\n    return response.choices[0].message.content\nanswer = cot_solve('If I have 3 apples and give away 1.5, how many remain?')\nprint(answer)`,tip:'Add "Show your work" for math. Add "List your assumptions first" for logic problems.',refs:[{"label":"Wei et al. (2022) — Chain-of-Thought Prompting","url":"https://arxiv.org/abs/2201.11903"},{"label":"Kojima et al. (2022) — Large Language Models are Zero-Shot Reasoners","url":"https://arxiv.org/abs/2205.11916"}]},
+  • Works zero-shot: just add the phrase`,code:`from openai import OpenAI\nclient = OpenAI()\ndef cot_solve(problem: str) -> str:\n    response = client.chat.completions.create(\n        model='gpt-4o',\n        messages=[\n            {'role': 'system', 'content':\n             'Think step by step before answering.'},\n            {'role': 'user', 'content': problem}\n        ]\n    )\n    return response.choices[0].message.content\nanswer = cot_solve('If I have 3 apples and give away 1.5, how many remain?')\nprint(answer)`,tip:'Add "Show your work" for math. Add "List your assumptions first" for logic problems.',questions:{
+  leader:['Adding "Let's think step by step" to a prompt significantly improves reasoning quality for free — what tasks in your product would benefit from this technique?','How do you balance the token cost (longer outputs) of chain-of-thought prompting against the quality improvement it provides?'],
+  pm:['When users get wrong answers from your AI feature, how do you determine whether adding CoT reasoning would fix it vs requiring a fundamentally different approach?','How do you surface the model's reasoning to users in a way that builds trust without overwhelming them?'],
+  eng:['How do you measure the quality improvement of CoT on your specific task — what benchmark or eval harness do you use?','When does zero-shot CoT fail — what types of problems don't benefit from "think step by step"?','How do you combine zero-shot CoT with self-consistency — and what's the token cost vs quality trade-off?']
+},
+learn:[
+  {type:'paper',label:'Large Language Models are Zero-Shot Reasoners — "Let's think step by step" (Kojima et al., 2022)',url:'https://arxiv.org/abs/2205.11916'},
+  {type:'paper',label:'Chain-of-Thought Prompting Elicits Reasoning in LLMs (Wei et al., 2022)',url:'https://arxiv.org/abs/2201.11903'},
+  {type:'paper',label:'Self-Consistency Improves Chain of Thought Reasoning (Wang et al., 2022)',url:'https://arxiv.org/abs/2203.11171'},
+  {type:'blog',label:'Lilian Weng: Prompt Engineering (comprehensive CoT survey)',url:'https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/'},
+  {type:'course',label:'DeepLearning.AI: ChatGPT Prompt Engineering — chain-of-thought section',url:'https://www.deeplearning.ai/short-courses/chatgpt-prompt-engineering-for-developers/'}
+],refs:[{"label":"Wei et al. (2022) — Chain-of-Thought Prompting","url":"https://arxiv.org/abs/2201.11903"},{"label":"Kojima et al. (2022) — Large Language Models are Zero-Shot Reasoners","url":"https://arxiv.org/abs/2205.11916"}]},
 scratchpad:{use:'Give the model a private reasoning space before it commits to an answer — dramatically improves accuracy on hard math, logic, and multi-step problems.',diag:`  Standard answer (no thinking):
   Q: "Is 1547 prime?"
   A: "Yes" ✗  (wrong — 1547 = 7 × 13 × 17)
@@ -285,7 +307,18 @@ self_consist:{use:'High-stakes questions where single path reasoning might be un
 
   Cost: 5× more calls
   Accuracy gain: 5–15% on math/logic
-  Sweet spot: n=5, temp=0.7`,code:`from openai import OpenAI\nfrom collections import Counter\nclient = OpenAI()\ndef self_consistency(question, n=5):\n    responses = []\n    for _ in range(n):\n        r = client.chat.completions.create(\n            model='gpt-4o-mini',\n            messages=[\n                {'role': 'system', 'content': 'Think step by step. End with ANSWER: <answer>'},\n                {'role': 'user', 'content': question}\n            ],\n            temperature=0.7\n        )\n        text = r.choices[0].message.content\n        if 'ANSWER:' in text:\n            responses.append(text.split('ANSWER:')[-1].strip())\n    return Counter(responses).most_common(1)[0][0]\nprint(self_consistency('What is 17 * 24?'))`,tip:'Use temperature 0.5-0.8 for diversity. n=5 is sweet spot for cost vs accuracy.',refs:[{"label":"Wang et al. (2022) — Self-Consistency Improves Chain-of-Thought","url":"https://arxiv.org/abs/2203.11171"}]},
+  Sweet spot: n=5, temp=0.7`,code:`from openai import OpenAI\nfrom collections import Counter\nclient = OpenAI()\ndef self_consistency(question, n=5):\n    responses = []\n    for _ in range(n):\n        r = client.chat.completions.create(\n            model='gpt-4o-mini',\n            messages=[\n                {'role': 'system', 'content': 'Think step by step. End with ANSWER: <answer>'},\n                {'role': 'user', 'content': question}\n            ],\n            temperature=0.7\n        )\n        text = r.choices[0].message.content\n        if 'ANSWER:' in text:\n            responses.append(text.split('ANSWER:')[-1].strip())\n    return Counter(responses).most_common(1)[0][0]\nprint(self_consistency('What is 17 * 24?'))`,tip:'Use temperature 0.5-0.8 for diversity. n=5 is sweet spot for cost vs accuracy.',questions:{
+  leader:['Self-consistency improves accuracy by 5–20% on reasoning tasks by sampling multiple paths — when does this quality gain justify the 5–20× token cost increase?','How do you incorporate reliability techniques like self-consistency into your product's quality/cost optimization framework?'],
+  pm:['Which high-stakes product decisions (medical, legal, financial) warrant self-consistency despite higher cost — and which don't?','How do you communicate to users that an answer was verified by sampling multiple reasoning paths?'],
+  eng:['How do you implement majority voting over multiple CoT samples — what aggregation strategy works for non-multiple-choice outputs?','How many samples (N) are needed before self-consistency gains plateau for your task type?','How do you cache or parallelize self-consistency samples to minimize latency impact?']
+},
+learn:[
+  {type:'paper',label:'Self-Consistency Improves Chain of Thought Reasoning in Language Models (Wang et al., 2022)',url:'https://arxiv.org/abs/2203.11171'},
+  {type:'paper',label:'Chain-of-Thought Prompting Elicits Reasoning in LLMs (Wei et al., 2022)',url:'https://arxiv.org/abs/2201.11903'},
+  {type:'paper',label:'Universal Self-Consistency for Large Language Model Generation (Chen et al., 2023)',url:'https://arxiv.org/abs/2311.17311'},
+  {type:'blog',label:'Lilian Weng: Prompt Engineering — self-consistency and sampling strategies',url:'https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/'},
+  {type:'paper',label:'Scaling LLM Test-Time Compute — test-time methods survey (Snell et al., 2024)',url:'https://arxiv.org/abs/2408.03314'}
+],refs:[{"label":"Wang et al. (2022) — Self-Consistency Improves Chain-of-Thought","url":"https://arxiv.org/abs/2203.11171"}]},
 dspy:{use:'When you need to optimize prompts programmatically using labeled examples.',diag:`
   Hand-crafted prompt (fragile):
   "You are an expert. Given: {input}, answer..."
@@ -305,7 +338,18 @@ dspy:{use:'When you need to optimize prompts programmatically using labeled exam
   │ 4. Compiled prompt auto-generated    │
   │    with optimal demonstrations       │
   └──────────────────────────────────────┘
-  Accuracy improves without manual prompt work`,code:`import dspy\nlm = dspy.LM('openai/gpt-4o-mini')\ndspy.configure(lm=lm)\nclass QA(dspy.Signature):\n    """Answer questions with a short factual response."""\n    question: str = dspy.InputField()\n    answer: str = dspy.OutputField(desc='1-3 words')\npredict = dspy.Predict(QA)\nresult = predict(question='What is the capital of France?')\nprint(result.answer)\n# Optimize with labeled data\noptimizer = dspy.BootstrapFewShot(metric=my_metric)\noptimized = optimizer.compile(predict, trainset=examples)`,tip:'Start with dspy.Predict, then upgrade to dspy.ChainOfThought if accuracy is low.',refs:[{"label":"Khattab et al. (2023) — DSPy: Compiling Declarative Language Model Calls","url":"https://arxiv.org/abs/2310.03714"},{"label":"DSPy documentation","url":"https://dspy.ai/"}]},
+  Accuracy improves without manual prompt work`,code:`import dspy\nlm = dspy.LM('openai/gpt-4o-mini')\ndspy.configure(lm=lm)\nclass QA(dspy.Signature):\n    """Answer questions with a short factual response."""\n    question: str = dspy.InputField()\n    answer: str = dspy.OutputField(desc='1-3 words')\npredict = dspy.Predict(QA)\nresult = predict(question='What is the capital of France?')\nprint(result.answer)\n# Optimize with labeled data\noptimizer = dspy.BootstrapFewShot(metric=my_metric)\noptimized = optimizer.compile(predict, trainset=examples)`,tip:'Start with dspy.Predict, then upgrade to dspy.ChainOfThought if accuracy is low.',questions:{
+  leader:['DSPy optimizes prompts automatically — how does this change your team's prompt engineering workflow and what expertise does it require?','What is the trade-off between DSPy's compile-time optimization and maintaining human-readable, auditable prompts?'],
+  pm:['How do you evaluate whether DSPy-compiled prompts are better than hand-crafted ones on your specific task distribution?','What is the maintenance burden of DSPy pipelines vs traditional prompts when the underlying model or API changes?'],
+  eng:['How do you write a DSPy metric function for your specific task — what makes a good automatic quality signal?','How does DSPy's BootstrapFewShot optimizer work — what training examples does it use and how many compilation steps does it take?','How do you integrate DSPy with production APIs and handle latency at optimization compile time vs runtime?']
+},
+learn:[
+  {type:'paper',label:'DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines (Khattab et al., 2023)',url:'https://arxiv.org/abs/2310.03714'},
+  {type:'tool',label:'DSPy documentation and tutorials (Stanford NLP)',url:'https://dspy-docs.vercel.app/'},
+  {type:'video',label:'Omar Khattab: DSPy — from prompt engineering to program optimization (talk)',url:'https://youtu.be/41EfOY0Ldkc'},
+  {type:'blog',label:'Connor Shorten: DSPy — the framework for programming LLMs',url:'https://towardsdatascience.com/intro-to-dspy-goodbye-prompting-hello-programming-4ca1c6ce3eb9'},
+  {type:'paper',label:'Optimizing Instructions and Demonstrations for Multi-Stage Language Model Programs',url:'https://arxiv.org/abs/2406.11695'}
+],refs:[{"label":"Khattab et al. (2023) — DSPy: Compiling Declarative Language Model Calls","url":"https://arxiv.org/abs/2310.03714"},{"label":"DSPy documentation","url":"https://dspy.ai/"}]},
 instructor:{use:'Get typed, validated Python objects back from any LLM — no JSON parsing, no schema drift. Define a Pydantic model, pass it as response_model, get the object back. Handles retries and validation errors automatically.',diag:`  Without Instructor:
   LLM → raw string → json.loads() → KeyError?
                                    → wrong type?
@@ -1059,7 +1103,18 @@ for _ in range(6):  # safety cap
         result = TOOLS[tc.function.name](**args)
         print(f"  {tc.function.name}({args}) → {result}")
         messages.append({"role": "tool",
-            "tool_call_id": tc.id, "content": result})`,tip:'Keep system prompt short for ReAct — the model generates its own Thought traces. Adding "Think step by step before each action" is usually sufficient to activate reliable ReAct behaviour.',tip:'Keep system prompt short for ReAct — the model generates its own Thought traces. Add "Think step by step before each action" to activate reliable reasoning. Always cap iterations at 5-10 to prevent runaway loops.',refs:[{"label":"Yao et al. (2022) — ReAct: Synergizing Reasoning and Acting","url":"https://arxiv.org/abs/2210.03629"},{"label":"ReAct GitHub repo","url":"https://react-lm.github.io/"}]},
+            "tool_call_id": tc.id, "content": result})`,tip:'Keep system prompt short for ReAct — the model generates its own Thought traces. Adding "Think step by step before each action" is usually sufficient to activate reliable ReAct behaviour.',tip:'Keep system prompt short for ReAct — the model generates its own Thought traces. Add "Think step by step before each action" to activate reliable reasoning. Always cap iterations at 5-10 to prevent runaway loops.',questions:{
+  leader:['ReAct enables LLMs to reason and act with tools in an interleaved loop — how do you scope and constrain what tools an agent can use to manage risk?','At what point does a ReAct agent need human oversight in your product — and how do you implement approval gates?'],
+  pm:['What tasks in your product are good candidates for a ReAct agent vs a simpler one-shot prompt — what complexity threshold makes agentic behavior worth the cost?','How do you explain to users that the AI is taking actions on their behalf — and what transparency do they need?'],
+  eng:['How do you implement tool error handling in a ReAct loop — what happens when a tool returns an error and how does the agent recover?','How do you prevent infinite ReAct loops — what max_iterations and stop conditions do you implement?','How do you log and trace ReAct reasoning chains for debugging — what observability setup do you use?']
+},
+learn:[
+  {type:'paper',label:'ReAct: Synergizing Reasoning and Acting in Language Models (Yao et al., 2022)',url:'https://arxiv.org/abs/2210.03629'},
+  {type:'blog',label:'Lilian Weng: LLM Powered Autonomous Agents — ReAct and tool use',url:'https://lilianweng.github.io/posts/2023-06-23-agent/'},
+  {type:'paper',label:'Toolformer: Language Models Can Teach Themselves to Use Tools (Schick et al., 2023)',url:'https://arxiv.org/abs/2302.04761'},
+  {type:'course',label:'DeepLearning.AI: AI Agents in LangGraph — building ReAct agents',url:'https://www.deeplearning.ai/short-courses/ai-agents-in-langgraph/'},
+  {type:'tool',label:'LangChain: ReAct agent implementation examples',url:'https://python.langchain.com/docs/how_to/agent_executor/'}
+],refs:[{"label":"Yao et al. (2022) — ReAct: Synergizing Reasoning and Acting","url":"https://arxiv.org/abs/2210.03629"},{"label":"ReAct GitHub repo","url":"https://react-lm.github.io/"}]},
 plan_execute:{use:'Complex multi-step tasks where upfront planning reduces wasted tool calls.',diag:`  ┌─────────────────────────────┐\n  │          Task               │\n  └──────────────┬──────────────┘\n                 ↓\n  ┌─────────────────────────────┐\n  │    PLAN  (cheap model)      │\n  │  1. Research X              │\n  │  2. Compare Y vs Z          │\n  │  3. Summarise findings      │\n  └──────────────┬──────────────┘\n                 ↓\n  ┌──────┐  ┌──────┐  ┌──────┐\n  │Step 1│→ │Step 2│→ │Step 3│   (strong model)\n  └──────┘  └──────┘  └──────┘\n                 ↓\n  ┌─────────────────────────────┐\n  │         Final Result        │\n  └─────────────────────────────┘`,code:`from openai import OpenAI\n\nclient = OpenAI()\n\ndef llm(system: str, user: str, model: str = "gpt-4o-mini") -> str:\n    return client.chat.completions.create(\n        model=model,\n        messages=[\n            {"role": "system", "content": system},\n            {"role": "user", "content": user}\n        ]\n    ).choices[0].message.content\n\ntask = "Research and compare the top 3 vector databases"\n\n# Step 1: Plan (cheap model is fine here)\nplan = llm(\n    "Break this task into 3-5 clear numbered steps. One step per line.",\n    task,\n    model="gpt-4o-mini"\n)\nprint("PLAN:\\n", plan)\n\n# Step 2: Execute each step (stronger model for actual work)\nsteps = [s.strip() for s in plan.split("\\n")\n         if s.strip() and s.strip()[0].isdigit()]\n\ncontext = ""\nfor step in steps:\n    result = llm(\n        f"Complete this one step concisely.\\nContext so far:\\n{context}",\n        step,\n        model="gpt-4o"\n    )\n    print(f"\\n{step}\\n-> {result[:300]}")\n    context += f"{step}: {result}\\n"`,tip:'Use gpt-4o-mini for planning — it rarely needs frontier intelligence. Save the strong model for execution steps where quality matters.',refs:[{label:"Plan And Execute",url:"concepts/plan-and-execute.html"}]},
 reflection:{use:'When output quality matters and you want the model to self-critique before finalising.',diag:`
   Reflection agent loop:
@@ -1098,7 +1153,18 @@ tot:{use:'Hard problems where the first reasoning path often fails — proofs, p
 
   Each node = partial reasoning state
   Model evaluates + prunes bad paths
-  Works when: first path often fails`,code:`from openai import OpenAI\nclient = OpenAI()\n\ndef tree_of_thoughts(problem: str, n_paths: int = 3) -> str:\n    # Generate multiple independent reasoning paths\n    paths = []\n    for i in range(n_paths):\n        r = client.chat.completions.create(\n            model="gpt-4o",\n            messages=[{"role": "user",\n                "content": f"Problem: {problem}\\n"\n                           f"Explore reasoning path {i+1} step by step."}],\n            temperature=0.8\n        )\n        paths.append(r.choices[0].message.content)\n\n    # Evaluate and select the best path\n    combined = "\\n\\n---\\n\\n".join(\n        [f"Path {i+1}:\\n{p}" for i, p in enumerate(paths)]\n    )\n    verdict = client.chat.completions.create(\n        model="gpt-4o",\n        messages=[{"role": "user",\n            "content": f"{combined}\\n\\nWhich path is correct? Give final answer."}]\n    )\n    return verdict.choices[0].message.content`,tip:'Note: this implementation generates parallel paths then picks the best — closer to Self-Consistency than true ToT. Full ToT requires step-level evaluation and backtracking, which needs LangGraph or a custom loop. For most problems, CoT is enough; use ToT only when the first reasoning path regularly fails.',refs:[{"label":"Yao et al. (2023) — Tree of Thoughts","url":"https://arxiv.org/abs/2305.10601"},{"label":"Tree of Thoughts GitHub repo","url":"https://github.com/princeton-nlp/tree-of-thought-llm"}]},
+  Works when: first path often fails`,code:`from openai import OpenAI\nclient = OpenAI()\n\ndef tree_of_thoughts(problem: str, n_paths: int = 3) -> str:\n    # Generate multiple independent reasoning paths\n    paths = []\n    for i in range(n_paths):\n        r = client.chat.completions.create(\n            model="gpt-4o",\n            messages=[{"role": "user",\n                "content": f"Problem: {problem}\\n"\n                           f"Explore reasoning path {i+1} step by step."}],\n            temperature=0.8\n        )\n        paths.append(r.choices[0].message.content)\n\n    # Evaluate and select the best path\n    combined = "\\n\\n---\\n\\n".join(\n        [f"Path {i+1}:\\n{p}" for i, p in enumerate(paths)]\n    )\n    verdict = client.chat.completions.create(\n        model="gpt-4o",\n        messages=[{"role": "user",\n            "content": f"{combined}\\n\\nWhich path is correct? Give final answer."}]\n    )\n    return verdict.choices[0].message.content`,tip:'Note: this implementation generates parallel paths then picks the best — closer to Self-Consistency than true ToT. Full ToT requires step-level evaluation and backtracking, which needs LangGraph or a custom loop. For most problems, CoT is enough; use ToT only when the first reasoning path regularly fails.',questions:{
+  leader:['Tree of Thoughts enables deliberate multi-path reasoning for hard problems — what specific use cases in your product warrant this level of compute investment?','When does an AI agent benefit from exploring multiple reasoning branches vs committing to a single chain of thought?'],
+  pm:['ToT is compute-intensive but solves hard planning problems — what product features become viable when you can reliably solve multi-step puzzles?','How do you explain to users why some queries take longer or cost more than others?'],
+  eng:['How do you implement tree search with an LLM — what is the branching factor, depth limit, and evaluation function?','How do you prune unpromising branches early to manage token budget — what heuristic or LLM-as-evaluator strategy do you use?','How does ToT compare to MCTS (Monte Carlo Tree Search) — when does structured tree search add value vs simpler beam search?']
+},
+learn:[
+  {type:'paper',label:'Tree of Thoughts: Deliberate Problem Solving with LLMs (Yao et al., 2023)',url:'https://arxiv.org/abs/2305.10601'},
+  {type:'paper',label:'Reasoning with Language Model is Planning with World Model (Hao et al., 2023)',url:'https://arxiv.org/abs/2305.14992'},
+  {type:'paper',label:'Graph of Thoughts: Solving Elaborate Problems with LLMs (Besta et al., 2024)',url:'https://arxiv.org/abs/2308.09687'},
+  {type:'blog',label:'Lilian Weng: LLM Powered Autonomous Agents — reasoning and planning section',url:'https://lilianweng.github.io/posts/2023-06-23-agent/'},
+  {type:'paper',label:'Scaling LLM Test-Time Compute Optimally (Snell et al., 2024)',url:'https://arxiv.org/abs/2408.03314'}
+],refs:[{"label":"Yao et al. (2023) — Tree of Thoughts","url":"https://arxiv.org/abs/2305.10601"},{"label":"Tree of Thoughts GitHub repo","url":"https://github.com/princeton-nlp/tree-of-thought-llm"}]},
 lora:{use:'Fine-tuning any model on your task while training less than 0.1% of its weights.',diag:`
   LoRA: Low-Rank Adaptation
 
@@ -1472,7 +1538,18 @@ translated = zero_shot(
     "The model achieved state-of-the-art performance on all benchmarks.",
     "a professional translator"
 )
-print(translated)`,tip:'The single biggest lever for zero-shot quality is instruction specificity. "Summarise this" gets mediocre results. "Summarise in 3 bullet points, each under 15 words, focusing on action items" gets exactly what you need.',refs:[{"label":"Brown et al. (2020) — Language Models are Few-Shot Learners","url":"https://arxiv.org/abs/2005.14165"},{"label":"Anthropic — Zero-shot prompting guide","url":"https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/zero-shot-prompting"}]},
+print(translated)`,tip:'The single biggest lever for zero-shot quality is instruction specificity. "Summarise this" gets mediocre results. "Summarise in 3 bullet points, each under 15 words, focusing on action items" gets exactly what you need.',questions:{
+  leader:['Zero-shot prompting is the fastest way to get value from an LLM — how do you standardize prompt quality review across your team before deploying to production?','When zero-shot quality falls short, what is your decision tree — few-shot, fine-tuning, or a different model?'],
+  pm:['How do you measure whether a zero-shot prompt is good enough for production — what evaluation threshold do you require?','When non-technical teams write prompts, what quality control process ensures they're robust to edge cases?'],
+  eng:['How do you systematically evaluate zero-shot prompt variations — what prompt regression testing framework do you use?','What common zero-shot prompt anti-patterns cause inconsistent outputs — and how do you detect them?','How do you handle zero-shot prompt sensitivity to model version — what happens when you upgrade from GPT-4o to a new release?']
+},
+learn:[
+  {type:'paper',label:'Language Models are Few-Shot Learners (GPT-3, Brown et al., 2020) — zero-shot and few-shot results',url:'https://arxiv.org/abs/2005.14165'},
+  {type:'course',label:'Anthropic prompt engineering guide — zero-shot best practices',url:'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview'},
+  {type:'blog',label:'OpenAI: Prompt engineering guide — zero-shot and system prompts',url:'https://platform.openai.com/docs/guides/prompt-engineering'},
+  {type:'paper',label:'Large Language Models Are Human-Level Prompt Engineers (Zhou et al., 2022)',url:'https://arxiv.org/abs/2211.01910'},
+  {type:'course',label:'DeepLearning.AI: ChatGPT Prompt Engineering for Developers (free, 1 hour)',url:'https://www.deeplearning.ai/short-courses/chatgpt-prompt-engineering-for-developers/'}
+],refs:[{"label":"Brown et al. (2020) — Language Models are Few-Shot Learners","url":"https://arxiv.org/abs/2005.14165"},{"label":"Anthropic — Zero-shot prompting guide","url":"https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/zero-shot-prompting"}]},
 few_shot:{use:'Provide 2–5 input/output examples in the prompt to show the model exactly what format and style you expect. The fastest way to improve quality without fine-tuning.',diag:`  Few-shot prompt structure:
 
   [System] You are a {persona}.
@@ -1527,7 +1604,18 @@ def few_shot_classify(text: str) -> str:
 
 result = few_shot_classify("Payment declined three times this morning")
 print(result)
-# → category:billing | urgency:high | action:escalate`,tip:'If zero-shot gives 70% accuracy and you need 90%, try few-shot before fine-tuning. Good examples are 10× cheaper than labelled training data. If you still need more, those same examples become your fine-tuning seed set.',refs:[{"label":"Brown et al. (2020) — Language Models are Few-Shot Learners (GPT-3)","url":"https://arxiv.org/abs/2005.14165"},{"label":"Min et al. (2022) — Rethinking the Role of Demonstrations","url":"https://arxiv.org/abs/2202.12837"}]},
+# → category:billing | urgency:high | action:escalate`,tip:'If zero-shot gives 70% accuracy and you need 90%, try few-shot before fine-tuning. Good examples are 10× cheaper than labelled training data. If you still need more, those same examples become your fine-tuning seed set.',questions:{
+  leader:['Few-shot examples in the prompt can dramatically improve output quality without fine-tuning — how do you decide how many examples to include vs when to fine-tune instead?','What is your team's process for collecting, curating, and maintaining the few-shot examples used in production prompts?'],
+  pm:['How do you select which few-shot examples to include — random, diverse, or task-similar? What quality signal guides this?','At what quality level does few-shot prompting satisfy your product requirements vs requiring fine-tuning?'],
+  eng:['How do you dynamically select few-shot examples based on similarity to the input — what retrieval approach do you use?','How many few-shot examples are optimal for your model and task — and how do you measure diminishing returns?','How do you handle token budget constraints when including many few-shot examples in long-context prompts?']
+},
+learn:[
+  {type:'paper',label:'Language Models are Few-Shot Learners (GPT-3, Brown et al., 2020)',url:'https://arxiv.org/abs/2005.14165'},
+  {type:'paper',label:'What Makes Good In-Context Examples for GPT-3? (Liu et al., 2021)',url:'https://arxiv.org/abs/2101.06804'},
+  {type:'paper',label:'Fantastically Ordered Prompts and How to Find Them — order sensitivity in few-shot (Lu et al., 2021)',url:'https://arxiv.org/abs/2104.08786'},
+  {type:'course',label:'DeepLearning.AI: ChatGPT Prompt Engineering for Developers (few-shot section)',url:'https://www.deeplearning.ai/short-courses/chatgpt-prompt-engineering-for-developers/'},
+  {type:'blog',label:'Anthropic: Few-shot prompting guide with examples',url:'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/use-examples'}
+],refs:[{"label":"Brown et al. (2020) — Language Models are Few-Shot Learners (GPT-3)","url":"https://arxiv.org/abs/2005.14165"},{"label":"Min et al. (2022) — Rethinking the Role of Demonstrations","url":"https://arxiv.org/abs/2202.12837"}]},
 system_prompts:{use:'The persistent instruction layer that sets persona, tone, constraints, and output format for every message in the conversation. The highest-leverage prompt you write.',diag:`  Request lifecycle:
 
   ┌──────────────────────────────────────┐
@@ -7398,7 +7486,18 @@ loss.backward()
 # Gradients now available in model parameters
 for name, param in model.named_parameters():
     if param.grad is not None:
-        print(f'{name} grad shape: {param.grad.shape}')`,tip:'Backprop traces through every operation in reverse order—ReLU, matmuls, activations all have gradient rules.\n\nGradients accumulate by default; call \`zero_grad()\` between steps.\n\nGradient clipping prevents exploding gradients in RNNs and long sequences.',refs:[{label:'Backpropagation derivation (Colah)',url:'https://colah.github.io/posts/2015-08-Backprop/'},{label:'PyTorch backprop tutorial',url:'https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html'},{label:'Understanding backprop visually',url:'https://www.youtube.com/watch?v=Ilg3gGewQ5U'}]},
+        print(f'{name} grad shape: {param.grad.shape}')`,tip:'Backprop traces through every operation in reverse order—ReLU, matmuls, activations all have gradient rules.\n\nGradients accumulate by default; call \`zero_grad()\` between steps.\n\nGradient clipping prevents exploding gradients in RNNs and long sequences.',questions:{
+  leader:['Training cost is dominated by backprop — how does your training compute budget translate to the number of gradient update steps your team can afford per experiment?','When fine-tuning a pre-trained model, how many layers do you freeze (no backprop) vs train — and how does that affect cost and quality?'],
+  pm:['How fast can your team iterate on model quality — and what bottlenecks (data prep, training compute, evaluation) dominate iteration speed?','What product quality improvement justifies another training run — how do you make that trade-off?'],
+  eng:['How do you diagnose vanishing or exploding gradients in deep networks — what checks (gradient norms, loss curves) do you add to your training loop?','What is gradient accumulation and when do you use it — how does effective batch size relate to gradient update quality?','How do you verify backprop is correct for a custom module — what numerical gradient checking approach do you use?']
+},
+learn:[
+  {type:'paper',label:'Efficient BackProp — LeCun et al., practical guide to training NNs (1998, still relevant)',url:'http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf'},
+  {type:'video',label:'3Blue1Brown: Backpropagation calculus — visual explanation',url:'https://youtu.be/tIeHLnjs5U8'},
+  {type:'video',label:'Andrej Karpathy: micrograd — build backprop engine from scratch (2h)',url:'https://youtu.be/VMj-3S1tku0'},
+  {type:'blog',label:'CS231n: Backpropagation, Intuitions (Stanford course notes)',url:'https://cs231n.github.io/optimization-2/'},
+  {type:'paper',label:'Automatic Differentiation in Machine Learning: a Survey (Baydin et al., 2018)',url:'https://arxiv.org/abs/1502.05767'}
+],refs:[{label:'Backpropagation derivation (Colah)',url:'https://colah.github.io/posts/2015-08-Backprop/'},{label:'PyTorch backprop tutorial',url:'https://pytorch.org/tutorials/beginner/basics/autogradqs_tutorial.html'},{label:'Understanding backprop visually',url:'https://www.youtube.com/watch?v=Ilg3gGewQ5U'}]},
 activations:{use:'Nonlinearities like ReLU, GELU, and SwiGLU give transformers their expressive power—without them, stacking layers would just be matrix multiplication.',diag:`
   Activation function comparison:
 
@@ -7433,7 +7532,18 @@ W = torch.randn(256, 512)
 V = torch.randn(256, 512)
 b = torch.randn(512)
 swiglu = (x @ W + b) * torch.sigmoid(x @ V)
-print(f'Shapes: relu={relu_out.shape}, gelu={gelu_out.shape}, swiglu={swiglu.shape}')`,tip:'ReLU is fast but can suffer dead neurons (gradients become zero).\n\nGELU is smoother and generally works better; it\'s the modern default.\n\nSwiGLU/GLU variants add gating to increase expressiveness without more parameters.',refs:[{label:'GELU paper',url:'https://arxiv.org/abs/1606.08415'},{label:'GLU variants paper',url:'https://arxiv.org/abs/2002.05202'},{label:'PyTorch activation functions',url:'https://pytorch.org/docs/stable/nn.html#non-linear-activations-weighted-sum-nonlinearity'}]},
+print(f'Shapes: relu={relu_out.shape}, gelu={gelu_out.shape}, swiglu={swiglu.shape}')`,tip:'ReLU is fast but can suffer dead neurons (gradients become zero).\n\nGELU is smoother and generally works better; it\'s the modern default.\n\nSwiGLU/GLU variants add gating to increase expressiveness without more parameters.',questions:{
+  leader:['Activation function is an implementation detail with real quality implications — when evaluating open-source models, how do you verify they use the same activation as the paper claims?','SwiGLU is used in GPT-4 and Llama — what product trade-off does it represent vs simpler ReLU?'],
+  pm:['When comparing models, how much of the quality difference is from architecture choices like activation vs training data vs scale?','Do activation functions affect inference speed in a way that matters for your latency budget?'],
+  eng:['How do you benchmark GELU vs SwiGLU vs ReLU throughput on your GPU — what is the FLOPs difference for a given hidden dimension?','How does the "dying ReLU" problem manifest in deep networks — how do you detect it and what activation switch fixes it?','When implementing a custom model in PyTorch, how do you decide between F.gelu, F.silu, and F.relu — and does the approximate GELU matter?']
+},
+learn:[
+  {type:'paper',label:'Gaussian Error Linear Units (GELU) — Hendrycks & Gimpel (2016)',url:'https://arxiv.org/abs/1606.08415'},
+  {type:'paper',label:'SwiGLU activation — better than ReLU for LLM FFN layers (Shazeer, 2020)',url:'https://arxiv.org/abs/2002.05202'},
+  {type:'blog',label:'Lilian Weng: Activation functions summary (ReLU, GELU, Swish, SwiGLU)',url:'https://lilianweng.github.io/posts/2017-10-29-object-recognition/#activation-functions'},
+  {type:'video',label:'3Blue1Brown: What is a neural network? (ReLU intuition)',url:'https://youtu.be/aircAruvnKk'},
+  {type:'paper',label:'Searching for Activation Functions (Ramachandran et al., Google Brain 2017)',url:'https://arxiv.org/abs/1710.05941'}
+],refs:[{label:'GELU paper',url:'https://arxiv.org/abs/1606.08415'},{label:'GLU variants paper',url:'https://arxiv.org/abs/2002.05202'},{label:'PyTorch activation functions',url:'https://pytorch.org/docs/stable/nn.html#non-linear-activations-weighted-sum-nonlinearity'}]},
 batch_norm:{use:'LayerNorm stabilizes transformer training by normalizing activations per token; BatchNorm is less common in LLMs but important for CNNs.',diag:`
   Batch Normalization vs Layer Normalization:
 
@@ -7461,7 +7571,18 @@ x_cnn = torch.randn(32, 64, 28, 28)  # (batch, channels, height, width)
 batch_norm = nn.BatchNorm2d(64)
 x_bn = batch_norm(x_cnn)
 # LayerNorm is applied per-token; doesn't depend on batch composition
-print(f'LayerNorm is batch-independent; BatchNorm depends on batch stats')`,tip:'LayerNorm comes after linear projections in transformers; it stabilizes gradients.\n\nBatchNorm requires careful tuning of momentum and epsilon; LayerNorm is more stable out-of-the-box.\n\nUse LayerNorm in transformers; BatchNorm in convolutional layers or older architectures.',refs:[{label:'LayerNorm paper',url:'https://arxiv.org/abs/1607.06450'},{label:'BatchNorm paper',url:'https://arxiv.org/abs/1502.03167'},{label:'PyTorch normalization layers',url:'https://pytorch.org/docs/stable/nn.html#normalization-layers'}]},
+print(f'LayerNorm is batch-independent; BatchNorm depends on batch stats')`,tip:'LayerNorm comes after linear projections in transformers; it stabilizes gradients.\n\nBatchNorm requires careful tuning of momentum and epsilon; LayerNorm is more stable out-of-the-box.\n\nUse LayerNorm in transformers; BatchNorm in convolutional layers or older architectures.',questions:{
+  leader:['BatchNorm enabled training very deep CNNs — but LayerNorm is now dominant in transformers. What does this architectural shift mean when choosing models?','Normalization strategy affects training stability and convergence speed — how does this factor into your training infrastructure decisions?'],
+  pm:['When switching between vision models (BatchNorm) and language models (LayerNorm), how do you set quality expectations for fine-tuning and convergence?','What product failure modes stem from poorly normalized activations — what production signals would you watch?'],
+  eng:['How does BatchNorm behave differently at train time (batch statistics) vs inference time (running statistics) — what bugs does this create?','When fine-tuning a model, do you freeze BatchNorm layers — and how does this affect quality for small-batch fine-tuning?','How do you implement Group Normalization as an alternative when batch size is too small for BatchNorm to work well?']
+},
+learn:[
+  {type:'paper',label:'Batch Normalization: Accelerating Deep Network Training (Ioffe & Szegedy, 2015)',url:'https://arxiv.org/abs/1502.03167'},
+  {type:'paper',label:'Layer Normalization — the transformer standard (Ba et al., 2016)',url:'https://arxiv.org/abs/1607.06450'},
+  {type:'paper',label:'Group Normalization — alternative when batch size is small (Wu & He, 2018)',url:'https://arxiv.org/abs/1803.08494'},
+  {type:'blog',label:'fast.ai: Normalization in neural networks — practical guide',url:'https://www.fast.ai/posts/2020-02-13-v2-batch-norm.html'},
+  {type:'video',label:'Andrew Ng: Batch Normalization — why and how it works (DeepLearning.AI)',url:'https://youtu.be/nUUqwaxLnWs'}
+],refs:[{label:'LayerNorm paper',url:'https://arxiv.org/abs/1607.06450'},{label:'BatchNorm paper',url:'https://arxiv.org/abs/1502.03167'},{label:'PyTorch normalization layers',url:'https://pytorch.org/docs/stable/nn.html#normalization-layers'}]},
 lr_schedule:{use:'Learning rate scheduling adjusts step size during training—cosine decay and warmup prevent divergence early on and help convergence at the end.',diag:`
   Learning rate schedule patterns:
 
@@ -7492,7 +7613,18 @@ scheduler = SequentialLR(optimizer, [warmup_scheduler, cosine_scheduler], milest
 for epoch in range(total_epochs):
     # ... train step ...
     scheduler.step()
-    print(f'Epoch {epoch}, LR: {optimizer.param_groups[0]["lr"]:.6f}')`,tip:'Warmup (linear increase) prevents divergence on large batches in the first few steps.\n\nCosine annealing with eta_min > 0 avoids learning rate going to zero too early.\n\nFor inference, set learning rate to zero or use \`model.eval()\` to disable dropout/norm updates.',refs:[{label:'SGDR paper (cosine annealing)',url:'https://arxiv.org/abs/1608.03983'},{label:'PyTorch scheduler docs',url:'https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate'},{label:'LR scheduling best practices',url:'https://cs231n.github.io/neural-networks-3/#anneal'}]},
+    print(f'Epoch {epoch}, LR: {optimizer.param_groups[0]["lr"]:.6f}')`,tip:'Warmup (linear increase) prevents divergence on large batches in the first few steps.\n\nCosine annealing with eta_min > 0 avoids learning rate going to zero too early.\n\nFor inference, set learning rate to zero or use \`model.eval()\` to disable dropout/norm updates.',questions:{
+  leader:['Learning rate schedule determines whether training converges efficiently or wastes compute — how do you standardize schedule selection across your ML team?','When a training run fails, how do you determine whether the LR schedule is the cause vs data quality, model architecture, or batch size?'],
+  pm:['Training compute budget is directly tied to the number of schedule steps — how do you decide when you've trained long enough vs need more steps?','How does schedule length affect fine-tuning quality — and what's the cost of over-training (forgetting pre-trained knowledge)?'],
+  eng:['How do you tune the warmup steps parameter — what fraction of total training steps do you use for warmup and why?','What is cosine annealing with restarts vs one-cycle policy — when does each work better in practice?','How do you implement learning rate finder in PyTorch to pick a good max_lr before committing to a full training run?']
+},
+learn:[
+  {type:'paper',label:'SGDR: Stochastic Gradient Descent with Warm Restarts (Loshchilov & Hutter, 2016)',url:'https://arxiv.org/abs/1608.03983'},
+  {type:'paper',label:'Cyclical Learning Rates for Training Neural Networks (Smith, 2017)',url:'https://arxiv.org/abs/1506.01186'},
+  {type:'blog',label:'fast.ai: The 1-cycle learning rate policy — practical guide with code',url:'https://www.fast.ai/posts/2018-07-02-adam-weight-decay.html'},
+  {type:'blog',label:'HuggingFace: LR schedulers in the transformers library',url:'https://huggingface.co/docs/transformers/en/main_classes/optimizer_schedules'},
+  {type:'paper',label:'Attention Is All You Need — original transformer warmup schedule (Vaswani et al., 2017)',url:'https://arxiv.org/abs/1706.03762'}
+],refs:[{label:'SGDR paper (cosine annealing)',url:'https://arxiv.org/abs/1608.03983'},{label:'PyTorch scheduler docs',url:'https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate'},{label:'LR scheduling best practices',url:'https://cs231n.github.io/neural-networks-3/#anneal'}]},
 weight_init:{use:'Smart weight initialization (Xavier, He/Kaiming) prevents vanishing and exploding gradients before training even begins. Wrong initialization can cause loss to plateau or diverge in the first epoch — it takes one line to fix.',diag:`  Why initialization matters:
 
   Too small (→ vanishing gradients):
@@ -7541,7 +7673,18 @@ x = torch.randn(32, 256)
 for layer in model:
     x = layer(x)
     if hasattr(layer, 'weight'):
-        print(f'{layer}: std={x.std():.3f}')  # should stay ~1`,tip:'Use kaiming_normal_ for any network with ReLU/GeLU. Use xavier_uniform_ for tanh/sigmoid. For transformers follow GPT convention: std=0.02 for embeddings and linear layers, residual projections scaled by 1/√(2·N_layers). PyTorch default init (Kaiming) is already correct for most cases — only override when you see early divergence.',refs:[{label:"Weight Initialization",url:"concepts/weight-initialization.html"}]},
+        print(f'{layer}: std={x.std():.3f}')  # should stay ~1`,tip:'Use kaiming_normal_ for any network with ReLU/GeLU. Use xavier_uniform_ for tanh/sigmoid. For transformers follow GPT convention: std=0.02 for embeddings and linear layers, residual projections scaled by 1/√(2·N_layers). PyTorch default init (Kaiming) is already correct for most cases — only override when you see early divergence.',questions:{
+  leader:['Weight initialization affects whether training starts at all — what monitoring tells you initialization is causing early training instability?','Does weight initialization matter less with pre-trained models — and when do you actually need to think about it for fine-tuning?'],
+  pm:['How does initialization affect time-to-convergence — and what's the cost of multiple failed training runs from poor init?','When hiring ML engineers, what does knowledge of initialization signals about their depth of neural net understanding?'],
+  eng:['How does Kaiming/He initialization differ from Xavier/Glorot — which do you use for ReLU vs GELU activations?','How do you handle custom layers that aren't automatically initialized by PyTorch — what init strategy do you apply?','How does initialization interact with BatchNorm and LayerNorm — do normalized layers reduce sensitivity to init choice?']
+},
+learn:[
+  {type:'paper',label:'Understanding the difficulty of training deep networks — Xavier/Glorot init (Glorot & Bengio, 2010)',url:'http://proceedings.mlr.press/v9/glorot10a.html'},
+  {type:'paper',label:'Delving Deep into Rectifiers — Kaiming/He init for ReLU networks (He et al., 2015)',url:'https://arxiv.org/abs/1502.01852'},
+  {type:'blog',label:'CS231n: Weight Initialization in Neural Networks — Stanford course notes',url:'https://cs231n.github.io/neural-networks-2/#init'},
+  {type:'video',label:'fast.ai: Weight initialization (Lesson 17) — motivation and code',url:'https://course.fast.ai/'},
+  {type:'paper',label:'Fixup Initialization: Residual Learning Without Normalization (Zhang et al., 2019)',url:'https://arxiv.org/abs/1901.09321'}
+],refs:[{label:"Weight Initialization",url:"concepts/weight-initialization.html"}]},
 mixed_prec:{use:'Training in bfloat16 cuts GPU memory by 50% and speeds up matrix ops 1.5-2x, with no accuracy loss on modern hardware. The master weights stay in fp32; only the forward/backward passes use reduced precision.',diag:`  Precision formats compared:
 
   fp32  │ sign│── 8 exp ──│──── 23 mantissa ────│  4 bytes
@@ -7589,7 +7732,18 @@ scaler.step(optimizer)
 scaler.update()
 
 # HuggingFace Trainer: single flag
-# TrainingArguments(bf16=True)`,tip:'Always prefer bf16 over fp16 on A100/H100/4090 — same memory saving, no overflow risk, no GradScaler. Use fp16 only on older Volta/Turing GPUs that lack bf16 support. In HuggingFace Trainer, set bf16=True in TrainingArguments — nothing else changes. Memory footprint: 4 bytes/param in fp32 shrinks to 2 bytes in the active forward/backward pass.',refs:[{label:"Mixed Precision",url:"concepts/mixed-precision.html"}]},
+# TrainingArguments(bf16=True)`,tip:'Always prefer bf16 over fp16 on A100/H100/4090 — same memory saving, no overflow risk, no GradScaler. Use fp16 only on older Volta/Turing GPUs that lack bf16 support. In HuggingFace Trainer, set bf16=True in TrainingArguments — nothing else changes. Memory footprint: 4 bytes/param in fp32 shrinks to 2 bytes in the active forward/backward pass.',questions:{
+  leader:['Mixed precision training cuts GPU memory 2× and speeds up training 2–3× — how does this factor into your training infrastructure investment decisions?','What risks come with mixed precision — and how do you validate that fp16/bf16 training doesn't silently degrade model quality?'],
+  pm:['Training speed directly affects iteration speed and cost — how do you set expectations for training time when switching to mixed precision?','How do you communicate to ML teams that mixed precision is production-ready and not experimental?'],
+  eng:['When do you use bf16 vs fp16 — and why does bf16 avoid loss scaling overhead that fp16 requires?','How do you implement dynamic loss scaling in PyTorch AMP — what does GradScaler do and when does it trigger?','How do you identify layers that need to stay in fp32 for numerical stability — what overflow/underflow signals do you watch?']
+},
+learn:[
+  {type:'paper',label:'Mixed Precision Training (Micikevicius et al., NVIDIA/Baidu 2017)',url:'https://arxiv.org/abs/1710.03740'},
+  {type:'blog',label:'NVIDIA: Automatic Mixed Precision — practical training guide with PyTorch',url:'https://pytorch.org/docs/stable/amp.html'},
+  {type:'blog',label:'HuggingFace Accelerate: mixed precision training tutorial',url:'https://huggingface.co/docs/accelerate/en/usage_guides/mixed_precision'},
+  {type:'paper',label:'BFloat16: the secret to high performance on Cloud TPUs (Google Brain)',url:'https://cloud.google.com/blog/products/ai-machine-learning/bfloat16-the-secret-to-high-performance-on-cloud-tpus'},
+  {type:'tool',label:'PyTorch AMP documentation — torch.cuda.amp.autocast usage',url:'https://pytorch.org/docs/stable/amp.html'}
+],refs:[{label:"Mixed Precision",url:"concepts/mixed-precision.html"}]},
 grad_ckpt:{use:'Gradient checkpointing recomputes intermediate activations during backprop instead of storing them — trading ~33% extra compute for up to 8x VRAM reduction. Lets you fit larger batches or longer sequences on the same GPU without changing the model.',diag:`  Standard backprop — store everything:
   Fwd: [L1][L2][L3][L4]...[LN]  ← all activations in VRAM
   Bwd: read each stored activation → O(N) memory
@@ -7632,7 +7786,18 @@ x = torch.randn(4, 64, 512, device='cuda')
 loss = model(x).mean()
 loss.backward()
 mb = torch.cuda.max_memory_allocated() // 1_000_000
-print(f'Peak VRAM with checkpointing: {mb} MB')`,tip:'Enable with model.gradient_checkpointing_enable() in HuggingFace — one line, no code changes needed. Combine with bf16 and QLoRA for maximum VRAM reduction. Expect ~33% slower training; well worth it when the alternative is OOM. Checkpoint every sqrt(N_layers) blocks for the optimal memory/compute trade-off.',refs:[{label:"Grad Checkpointing",url:"concepts/grad-checkpointing.html"}]},
+print(f'Peak VRAM with checkpointing: {mb} MB')`,tip:'Enable with model.gradient_checkpointing_enable() in HuggingFace — one line, no code changes needed. Combine with bf16 and QLoRA for maximum VRAM reduction. Expect ~33% slower training; well worth it when the alternative is OOM. Checkpoint every sqrt(N_layers) blocks for the optimal memory/compute trade-off.',questions:{
+  leader:['Gradient checkpointing lets you train larger models on the same GPU by trading compute for memory — how does this affect your training cost budget?','When teams report OOM errors during fine-tuning, how do you triage whether gradient checkpointing alone solves the problem?'],
+  pm:['Training larger models means higher quality potential but higher cost — how do you set the right trade-off for your team's budget and timeline?','What model sizes become accessible when you enable gradient checkpointing + mixed precision together?'],
+  eng:['How does gradient checkpointing work — what is recomputed during backward pass vs stored in memory?','How do you implement gradient checkpointing in HuggingFace transformers — what is model.gradient_checkpointing_enable()?','What is the compute overhead of recomputation — and how do you estimate the memory saved vs compute added for your specific model?']
+},
+learn:[
+  {type:'paper',label:'Training Deep Nets with Sublinear Memory Cost — original gradient checkpointing paper (Chen et al., 2016)',url:'https://arxiv.org/abs/1604.06174'},
+  {type:'blog',label:'HuggingFace: Efficient training — gradient checkpointing guide',url:'https://huggingface.co/docs/transformers/en/performance'},
+  {type:'blog',label:'PyTorch: torch.utils.checkpoint documentation and usage examples',url:'https://pytorch.org/docs/stable/checkpoint.html'},
+  {type:'paper',label:'ZeRO: Memory Optimizations Toward Training Trillion Parameter Models (Rajbhandari et al., 2019)',url:'https://arxiv.org/abs/1910.02054'},
+  {type:'blog',label:'EleutherAI: Reducing Memory Usage When Training Transformers — practical guide',url:'https://blog.eleuther.ai/'}
+],refs:[{label:"Grad Checkpointing",url:"concepts/grad-checkpointing.html"}]},
 deepspeed:{use:'DeepSpeed ZeRO partitions optimizer state, gradients, and parameters across GPUs, eliminating the redundant copies that DDP keeps on every device. A 70B model that needs 280GB in full fp32 DDP can train on 8x A100s (80GB each) with ZeRO-3.',diag:`  DDP: every GPU holds full copy → wasteful
   GPU0: [params][grads][optim]  GPU1: [params][grads][optim]
 
@@ -7679,7 +7844,18 @@ args = TrainingArguments(
     num_train_epochs=3,
     bf16=True,
 )
-# Then: trainer = Trainer(model, args, ...) — no other changes`,tip:'ZeRO-2 is the sweet spot for most multi-GPU training: 4-8x memory saving with minimal communication overhead. ZeRO-3 enables truly massive models but adds allgather latency on every forward pass — profile before committing. ZeRO-Offload makes 10B+ models trainable on a single GPU by moving optimizer state to CPU RAM, at ~30% speed cost.',refs:[{label:"DeepSpeed",url:"concepts/deepspeed.html"}]},
+# Then: trainer = Trainer(model, args, ...) — no other changes`,tip:'ZeRO-2 is the sweet spot for most multi-GPU training: 4-8x memory saving with minimal communication overhead. ZeRO-3 enables truly massive models but adds allgather latency on every forward pass — profile before committing. ZeRO-Offload makes 10B+ models trainable on a single GPU by moving optimizer state to CPU RAM, at ~30% speed cost.',questions:{
+  leader:['DeepSpeed enables training 100B+ parameter models on commodity GPUs — what scale of model does your team actually need, and at what point do you need multi-GPU distributed training?','How do you justify the engineering overhead of DeepSpeed (complex configs, debugging) vs simpler single-node training for your model size?'],
+  pm:['Multi-GPU training increases infrastructure costs — at what model size does DeepSpeed's efficiency gains offset the operational complexity?','How does training infrastructure scale affect your team's ability to iterate — more GPUs means faster experiments but also more coordination overhead.'],
+  eng:['How do you choose between ZeRO Stage 1, 2, and 3 — what does each stage shard and what's the communication overhead trade-off?','How do you integrate DeepSpeed with HuggingFace Trainer — what config changes are needed and what are common gotchas?','How do you debug training instability in a 4-GPU DeepSpeed run — what logging and monitoring do you enable?']
+},
+learn:[
+  {type:'paper',label:'ZeRO: Memory Optimizations Toward Training Trillion Parameter Models (Rajbhandari et al., 2019)',url:'https://arxiv.org/abs/1910.02054'},
+  {type:'tool',label:'DeepSpeed documentation and tutorials (Microsoft)',url:'https://www.deepspeed.ai/getting-started/'},
+  {type:'blog',label:'HuggingFace: Using DeepSpeed with Trainer — integration guide',url:'https://huggingface.co/docs/transformers/en/main_classes/deepspeed'},
+  {type:'paper',label:'DeepSpeed-Chat: Easy, Fast, and Affordable RLHF Training',url:'https://arxiv.org/abs/2308.01320'},
+  {type:'blog',label:'Microsoft DeepSpeed blog: ZeRO-3 and model parallelism explainer',url:'https://www.microsoft.com/en-us/research/blog/deepspeed-extreme-scale-model-training-for-everyone/'}
+],refs:[{label:"DeepSpeed",url:"concepts/deepspeed.html"}]},
 dropout:{use:'Dropout randomly zeros a fraction of activations during training, forcing the network to learn redundant, distributed representations. At inference it is disabled. Overfit on small data? Dropout is often the first regularizer to reach for.',diag:`  Training (p=0.3 dropout):
   Input:  [0.8,  0.3,  0.9,  0.5,  0.7,  0.2]
   Mask:   [  1,    0,    1,    0,    1,    1 ]  ← random
@@ -7730,7 +7906,18 @@ class TransformerBlock(nn.Module):
 block = TransformerBlock(256, 8, dropout=0.1)
 block.train()
 out = block(torch.randn(2, 16, 256))
-print("output shape:", out.shape)`,tip:'Use p=0.1 for transformers — higher values degrade quality. p=0.3-0.5 works for fully-connected classifiers. Always call model.eval() at inference to disable dropout; forgetting this causes non-deterministic predictions that are consistently worse than training accuracy. Dropout is less useful when you have large datasets — weight decay or early stopping is often more effective.',refs:[{label:"Dropout",url:"concepts/dropout.html"}]},
+print("output shape:", out.shape)`,tip:'Use p=0.1 for transformers — higher values degrade quality. p=0.3-0.5 works for fully-connected classifiers. Always call model.eval() at inference to disable dropout; forgetting this causes non-deterministic predictions that are consistently worse than training accuracy. Dropout is less useful when you have large datasets — weight decay or early stopping is often more effective.',questions:{
+  leader:['Dropout is a classic regularization technique — in which modern architectures is it still used, and where has it been replaced by weight decay or other methods?','How do you know if your model is underfitting (too much dropout) vs overfitting (not enough) — what validation metrics guide this?'],
+  pm:['Regularization techniques like dropout affect whether a model generalizes to real users — how do you measure generalization quality vs training set performance?','When evaluating a fine-tuned model, what signs indicate overfitting vs good generalization?'],
+  eng:['How does dropout behave differently at train time vs inference time — and what bug does forgetting model.eval() cause?','What dropout rates do you use for different model parts — attention layers, FFN layers, embedding layers?','In transformers, dropout is often set to 0 for large-scale pre-training — when and why do you add it back?']
+},
+learn:[
+  {type:'paper',label:'Dropout: A Simple Way to Prevent Neural Networks from Overfitting (Srivastava et al., 2014)',url:'https://jmlr.org/papers/v15/srivastava14a.html'},
+  {type:'paper',label:'Variational Dropout and the Local Reparameterization Trick (Kingma et al., 2015)',url:'https://arxiv.org/abs/1506.02557'},
+  {type:'blog',label:'CS231n: Dropout — regularization in neural networks (Stanford notes)',url:'https://cs231n.github.io/neural-networks-2/#reg'},
+  {type:'video',label:'fast.ai: Regularization with dropout — practical guide',url:'https://course.fast.ai/'},
+  {type:'paper',label:'Attention Dropout in Transformer models (Vaswani et al., 2017 supplement)',url:'https://arxiv.org/abs/1706.03762'}
+],refs:[{label:"Dropout",url:"concepts/dropout.html"}]},
 weight_decay:{use:'Weight decay (L2 regularization) via AdamW[1] prevents overfitting in fine-tuning by penalizing large weights.',diag:`
   Weight decay (L2 regularization):
 
