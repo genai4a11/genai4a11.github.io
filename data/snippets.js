@@ -7862,7 +7862,7 @@ pe = get_sinusoidal_pe(seq_len, dim)
 token_emb = torch.randn(4, seq_len, dim)  # (batch, seq, dim)
 x = token_emb + pe.unsqueeze(0)
 print(f'Token embeddings with positional encoding: {x.shape}')`,tip:'Different frequency bands for each dimension—low frequencies capture long-range, high frequencies capture local patterns.\n\nDoes not extrapolate well beyond training sequence length without fine-tuning.\n\nHistorical; mostly replaced by the → RoPE node or → ALiBi node in modern models.',refs:[{label:'Attention Is All You Need',url:'https://arxiv.org/abs/1706.03762'}]},
-encoder_only:{use:'Encoder-only models (BERT[1], RoBERTa[1]) read the full input in both directions—great for classification, NER, and dense embeddings—but cannot generate text.',diag:`
+encoder_only:{use:'Encoder-only models (BERT[1], RoBERTa[2]) read the full input in both directions—great for classification, NER, and dense embeddings—but cannot generate text.',diag:`
   Encoder-only architecture (BERT family):
 
   Input: "The [MASK] sat on the mat"
@@ -7898,7 +7898,7 @@ print(f'Sentence embedding shape: {embeddings.shape}')
 # Typical downstream task: classification head on top
 classifier = torch.nn.Linear(768, 2)
 logits = classifier(embeddings)
-print(f'Classification logits: {logits.shape}')`,tip:'Bidirectional attention: every token sees past AND future—ideal for understanding tasks, but breaks autoregressive generation.\n\nUse [CLS] pooler output as a sentence-level vector for classification; token states for NER and span tasks.\n\nFine-tune only the last 2–4 layers to save memory; earlier layers carry general language knowledge worth preserving.',refs:[{label:'[1] BERT — Bidirectional Encoder Representations from Transformers (Devlin et al., 2018)',url:'https://arxiv.org/abs/1810.04805'}]},
+print(f'Classification logits: {logits.shape}')`,tip:'Bidirectional attention: every token sees past AND future—ideal for understanding tasks, but breaks autoregressive generation.\n\nUse [CLS] pooler output as a sentence-level vector for classification; token states for NER and span tasks.\n\nFine-tune only the last 2–4 layers to save memory; earlier layers carry general language knowledge worth preserving.',refs:[{label:'[1] BERT — Bidirectional Encoder Representations from Transformers (Devlin et al., 2018)',url:'https://arxiv.org/abs/1810.04805'},{label:'[2] RoBERTa — Robustly Optimized BERT Pretraining Approach (Liu et al., 2019)',url:'https://arxiv.org/abs/1907.11692'}]},
 decoder_only:{use:'Decoder-only models use causal masking[1] so each token predicts only from past context—the dominant architecture for LLMs (GPT, Claude, the → Llama 3.1 and → Mistral 7B nodes).',diag:`
   Decoder-only architecture (GPT family):
 
@@ -8029,7 +8029,7 @@ V = V.repeat_interleave(num_q_heads // num_kv_heads, dim=1)
 scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(head_dim)
 attn = F.softmax(scores, dim=-1)
 output = torch.matmul(attn, V)
-print(f'GQA output shape: {output.shape}')`,tip:'GQA: num_q_heads >> num_kv_heads. KV cache size ∝ num_kv_heads, not num_q_heads.\n\nMistral, Llama 2, Gemini use GQA to fit longer contexts in VRAM.\n\nMinimal quality loss (<1% perplexity) compared to full multi-head attention.',refs:[{label:'GQA paper (Ainslie et al.)',url:'https://arxiv.org/abs/2305.13245'},{label:'Llama 2 technical details (GQA)',url:'https://arxiv.org/abs/2307.09288'},{label:'KV cache explained',url:'https://kipp.ly/transformer-inference/'}]},
+print(f'GQA output shape: {output.shape}')`,tip:'GQA: num_q_heads >> num_kv_heads — KV cache size scales with KV heads, not query heads, so long contexts fit in VRAM.\n\nThe → Mistral 7B and → Llama 3.1 nodes use GQA; it is now standard in all efficient open-weight models.\n\nMinimal quality loss (<1% perplexity) compared to full → Multi-Head Attention node with all heads.',refs:[{label:'[1] GQA — Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints (Ainslie et al., 2023)',url:'https://arxiv.org/abs/2305.13245'}]},
 context_window:{use:'Context window is the maximum tokens a model can process—longer windows enable multi-document tasks but increase compute and memory.',diag:`
   Context window — what fits and what it costs:
 
@@ -8065,7 +8065,7 @@ print(f'Document tokens: {num_tokens}, fits in window: {num_tokens < max_positio
 # Handling long documents: split and process in chunks
 chunk_size = min(2048, max_position_embeddings)
 chunks = [document[i:i+chunk_size] for i in range(0, len(document), chunk_size)]
-print(f'Split document into {len(chunks)} chunks of size {chunk_size}')`,tip:'Llama 2: 4k tokens; Mistral: 32k; Claude 3: 200k; GPT-4: 128k.\n\nLonger context ≠ better; trade-off between throughput and ability to handle long documents.\n\nFor multi-document tasks, consider chunking or hierarchical summarization.',refs:[{label:'Context Length Extension Survey',url:'https://arxiv.org/abs/2311.12351'},{label:'Llama 2 context window',url:'https://arxiv.org/abs/2307.09288'},{label:'Long Context in LLMs (blog)',url:'https://huggingface.co/blog/long-context-transformers'}]},
+print(f'Split document into {len(chunks)} chunks of size {chunk_size}')`,tip:'Context limits vary widely: → Mistral 7B node (32k), → Llama 3.1 node (128k), GPT-4o (128k), Claude 3.5 (200k).\n\n"Lost in the middle"[1]: models recall information near the start and end of context better than the middle—structure prompts accordingly.\n\nFor multi-document tasks, consider → RAG node chunking or hierarchical summarization rather than stuffing everything into context.',refs:[{label:'[1] Lost in the Middle — How Language Models Use Long Contexts (Liu et al., 2023)',url:'https://arxiv.org/abs/2307.03172'}]},
 scaling_laws:{use:'Scaling laws (Kaplan, Chinchilla) show power-law relationships between model size, data, compute, and loss—guide training budget allocation.',diag:`
   Chinchilla scaling laws (Hoffmann et al. 2022):
 
