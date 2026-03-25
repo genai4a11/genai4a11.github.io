@@ -7627,7 +7627,7 @@ block = TransformerBlock(256, 8, dropout=0.1)
 block.train()
 out = block(torch.randn(2, 16, 256))
 print("output shape:", out.shape)`,tip:'Use p=0.1 for transformers — higher values degrade quality. p=0.3-0.5 works for fully-connected classifiers. Always call model.eval() at inference to disable dropout; forgetting this causes non-deterministic predictions that are consistently worse than training accuracy. Dropout is less useful when you have large datasets — weight decay or early stopping is often more effective.',refs:[{label:"Dropout",url:"concepts/dropout.html"}]},
-weight_decay:{use:'Weight decay (L2 regularization) via AdamW prevents overfitting in fine-tuning by penalizing large weights.',diag:`
+weight_decay:{use:'Weight decay (L2 regularization) via AdamW[1] prevents overfitting in fine-tuning by penalizing large weights.',diag:`
   Weight decay (L2 regularization):
 
   Standard loss: L = cross_entropy(ŷ, y)
@@ -7667,7 +7667,7 @@ loss = loss_fn(y_pred, y_true)
 loss.backward()
 optimizer.step()
 optimizer.zero_grad()
-print('AdamW with weight_decay=0.01 applied')`,tip:'AdamW decouples weight decay from the gradient update—more effective than L2 in the loss.\n\nWeight decay 0.01-0.1 is typical; too high suppresses learning, too low has no effect.\n\nUse AdamW, not SGD+L2, for modern deep learning.',refs:[{label:'AdamW paper',url:'https://arxiv.org/abs/1711.05101'}]},
+print('AdamW with weight_decay=0.01 applied')`,tip:'AdamW decouples weight decay from the gradient update—more effective than L2 in the loss.\n\nWeight decay 0.01-0.1 is typical; too high suppresses learning, too low has no effect.\n\nUse AdamW, not SGD+L2, for modern deep learning.',refs:[{label:'[1] AdamW — optimizer with decoupled weight decay (Loshchilov & Hutter, 2017)',url:'https://arxiv.org/abs/1711.05101'}]},
 multihead_attn:{use:'Multi-head attention splits the key/query/value into parallel heads attending to different subspaces—core to transformer expressiveness.',diag:`
   Multi-head vs single-head attention:
 
@@ -7862,7 +7862,7 @@ pe = get_sinusoidal_pe(seq_len, dim)
 token_emb = torch.randn(4, seq_len, dim)  # (batch, seq, dim)
 x = token_emb + pe.unsqueeze(0)
 print(f'Token embeddings with positional encoding: {x.shape}')`,tip:'Different frequency bands for each dimension—low frequencies capture long-range, high frequencies capture local patterns.\n\nDoes not extrapolate well beyond training sequence length without fine-tuning.\n\nHistorical; mostly replaced by the → RoPE node or → ALiBi node in modern models.',refs:[{label:'Attention Is All You Need',url:'https://arxiv.org/abs/1706.03762'}]},
-encoder_only:{use:'Encoder-only models (BERT, RoBERTa) use bidirectional attention for classification, NER, and dense embeddings—not for generation.',diag:`
+encoder_only:{use:'Encoder-only models (BERT[1], RoBERTa[1]) read the full input in both directions—great for classification, NER, and dense embeddings—but cannot generate text.',diag:`
   Encoder-only architecture (BERT family):
 
   Input: "The [MASK] sat on the mat"
@@ -7898,8 +7898,8 @@ print(f'Sentence embedding shape: {embeddings.shape}')
 # Typical downstream task: classification head on top
 classifier = torch.nn.Linear(768, 2)
 logits = classifier(embeddings)
-print(f'Classification logits: {logits.shape}')`,tip:'Bidirectional attention means each token sees all future and past tokens—great for understanding but not generation.\n\nUse [CLS] token pooler output as sentence-level representation for downstream tasks.\n\nFine-tune only the last 2-4 layers on downstream tasks to save memory and time.',refs:[{label:'BERT paper',url:'https://arxiv.org/abs/1810.04805'},{label:'HuggingFace BERT docs',url:'https://huggingface.co/docs/transformers/model_doc/bert'},{label:'Encoder-decoder vs encoder-only (blog)',url:'https://huggingface.co/course/chapter1/2'}]},
-decoder_only:{use:'Decoder-only models (GPT, Llama, Claude) use causal masking for autoregressive generation—the dominant architecture for LLMs.',diag:`
+print(f'Classification logits: {logits.shape}')`,tip:'Bidirectional attention: every token sees past AND future—ideal for understanding tasks, but breaks autoregressive generation.\n\nUse [CLS] pooler output as a sentence-level vector for classification; token states for NER and span tasks.\n\nFine-tune only the last 2–4 layers to save memory; earlier layers carry general language knowledge worth preserving.',refs:[{label:'[1] BERT — Bidirectional Encoder Representations from Transformers (Devlin et al., 2018)',url:'https://arxiv.org/abs/1810.04805'}]},
+decoder_only:{use:'Decoder-only models use causal masking[1] so each token predicts only from past context—the dominant architecture for LLMs (GPT, Claude, the → Llama 3.1 and → Mistral 7B nodes).',diag:`
   Decoder-only architecture (GPT family):
 
   Input: "The cat sat"  → predicts "on"
@@ -7940,7 +7940,7 @@ print(f'Generated: {generated_text}')
 # Forward pass returns next-token logits
 logits = model(**inputs).logits  # (batch, seq_len, vocab_size)
 next_token_logits = logits[:, -1, :]
-print(f'Next-token logits: {next_token_logits.shape}')`,tip:'Causal masking: each token attends only to past tokens (including itself) during training.\n\nAutoregressive generation: sample next token, append, repeat until [EOS].\n\nTop-k, top-p, temperature control diversity; beam search ensures higher-quality outputs.',refs:[{label:'Language Models are Unsupervised Multitask Learners (GPT-2)',url:'https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf'},{label:'HuggingFace text generation',url:'https://huggingface.co/docs/transformers/generation_strategies'},{label:'Generation parameters guide',url:'https://huggingface.co/blog/how-to-generate'}]},
+print(f'Next-token logits: {next_token_logits.shape}')`,tip:'Causal masking: token i attends only to positions 0..i—the upper triangle of the attention matrix is masked to −∞ before softmax.\n\nAutoregressive generation: sample next token, append to input, repeat until [EOS]—each pass extends the sequence by exactly one token.\n\nTop-k, top-p (nucleus), and temperature shape diversity; beam search trades speed for higher-probability outputs.',refs:[{label:'[1] Causal masking — Language Models are Unsupervised Multitask Learners (GPT-2, Radford et al.)',url:'https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf'}]},
 enc_dec:{use:'Encoder-decoder models (T5, BART) combine bidirectional encoder + causal decoder for seq2seq tasks: translation, summarization, QA.',diag:`
   Encoder-Decoder (seq2seq) architecture:
 
@@ -7982,7 +7982,7 @@ logits = outputs.logits  # (batch, tgt_len, vocab_size)
 # Generate
 generated = model.generate(encoder_inputs['input_ids'], max_length=50)
 translated = tokenizer.decode(generated[0])
-print(f'Translated: {translated}')`,tip:'Encoder is bidirectional (like BERT); decoder is causal (like GPT).\n\nT5 uses task prefixes (\'translate\', \'summarize\') to signal intent—very flexible.\n\nCross-attention connects encoder outputs to decoder—decoder can attend all encoder tokens.',refs:[{label:'T5 paper',url:'https://arxiv.org/abs/1910.10683'},{label:'BART paper',url:'https://arxiv.org/abs/1910.13461'},{label:'Seq2Seq with Transformers (HuggingFace)',url:'https://huggingface.co/docs/transformers/tasks/summarization'}]},
+print(f'Translated: {translated}')`,tip:'Encoder is bidirectional (like BERT)—reads full source; decoder is causal (like GPT)—generates target token by token.\n\nT5[1] uses task prefixes (\'translate\', \'summarize\') to signal intent without architecture changes—the same model handles many tasks.\n\nThe → Cross-Attention node bridges encoder and decoder: each decoder step attends to all encoder positions.',refs:[{label:'[1] T5 — Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (Raffel et al.)',url:'https://arxiv.org/abs/1910.10683'}]},
 gqa:{use:'Grouped-Query Attention uses fewer key/value heads shared across query heads—reduces KV cache 4-16x without quality loss, critical for long-context.',diag:`
   MHA vs GQA vs MQA:
 
