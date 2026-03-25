@@ -260,6 +260,52 @@ print(json.dumps(results, indent=2))
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>LLaVA model comparison and selection</h2>
+<p>The LLaVA model family has evolved significantly from the original 7B model to LLaVA-NeXT with support for higher resolutions and stronger reasoning. Selecting the right variant requires balancing capability against hardware requirements. The 7B variants fit on a single consumer GPU (16GB VRAM) and handle most visual understanding tasks adequately. The 13B and 34B variants provide meaningfully better performance on complex visual reasoning, document understanding, and chart interpretation tasks, at the cost of requiring 24–48GB VRAM for comfortable inference.</p>
+<table>
+<thead><tr><th>Model</th><th>Parameters</th><th>Max resolution</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>LLaVA-1.5-7B</td><td>7B</td><td>336×336</td><td>General VQA, image captioning</td></tr>
+<tr><td>LLaVA-1.5-13B</td><td>13B</td><td>336×336</td><td>More complex image reasoning</td></tr>
+<tr><td>LLaVA-NeXT-7B</td><td>7B</td><td>672×672+</td><td>High-res images, documents</td></tr>
+<tr><td>LLaVA-NeXT-34B</td><td>34B</td><td>1344×1344</td><td>Dense documents, fine details</td></tr>
+</tbody>
+</table>
+<p>LLaVA fine-tuning on domain-specific image-text pairs requires two stages mirroring the original training: first, training only the projection layer to align domain-specific visual features with the language model's embedding space, then jointly fine-tuning the projection layer and language model on instruction-following examples. Skipping the projection pre-training stage and going directly to instruction fine-tuning produces lower-quality results, particularly when domain images have different statistical properties from the CLIP training distribution — medical imaging, satellite imagery, and microscopy are common cases where the two-stage approach matters.</p>
+
+<div class="example-box">
+<pre><code>from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+import torch
+from PIL import Image
+import requests
+
+processor = LlavaNextProcessor.from_pretrained("llava-hf/llava-v1.6-mistral-7b-hf")
+model = LlavaNextForConditionalGeneration.from_pretrained(
+    "llava-hf/llava-v1.6-mistral-7b-hf",
+    torch_dtype=torch.float16,
+    device_map="auto"
+)
+
+image = Image.open(requests.get("https://example.com/image.jpg", stream=True).raw)
+conversation = [{"role": "user", "content": [
+    {"type": "image"},
+    {"type": "text", "text": "What is shown in this image?"}
+]}]
+prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
+inputs = processor(images=image, text=prompt, return_tensors="pt").to(model.device)
+output = model.generate(**inputs, max_new_tokens=200)
+print(processor.decode(output[0], skip_special_tokens=True))</code></pre>
+</div>
+
+<p>LLaVA's visual token representation uses CLIP's patch-based encoding, where a 336×336 image is divided into 14×14 patches producing 576 visual tokens. Each visual token represents a 24×24 pixel region of the image. This fixed-resolution encoding limits LLaVA-1.5's ability to process fine-grained details in high-resolution images like document scans, small text, and dense charts. LLaVA-NeXT addresses this limitation by processing high-resolution images as a grid of overlapping sub-images, each encoded independently and concatenated, enabling effective processing of images up to 1344×1344 pixels at the cost of producing proportionally more visual tokens per image.</p>
+
+<p>Multi-image reasoning with LLaVA enables comparative analysis tasks that require understanding relationships between multiple images. The model can process multiple images in a single context by prepending each image's visual tokens before the corresponding reference in the text. Use cases include change detection between before-and-after image pairs, multi-view 3D understanding from different camera angles, and visual instruction following that references multiple product images. The multi-image capability is particularly valuable for e-commerce applications comparing product images or medical applications analyzing image sequences over time.</p>
+
+<p>LLaVA instruction tuning quality depends heavily on the visual instruction dataset. The original LLaVA training used GPT-4 to generate instruction-following examples from image captions and bounding box annotations, producing a diverse set of question types covering description, reasoning, and detail spotting. Domain-specific LLaVA fine-tuning follows the same methodology: collect domain images, generate instruction-following pairs using a capable LLM with image context, and fine-tune on the resulting dataset. The generated instruction pairs should cover the full range of question types expected in production rather than only the most common or easy query patterns.</p>
+
+<p>LLaVA's projection layer design choice — using a simple two-layer MLP rather than a cross-attention mechanism — was validated empirically to produce comparable or better performance on visual instruction following benchmarks while being computationally simpler. The MLP projection maps 256-dimensional CLIP patch embeddings to the language model's hidden dimension (typically 4096), effectively translating the visual feature space into the textual embedding space. This architectural simplicity makes LLaVA particularly accessible for academic research and custom deployment, as the projection layer can be trained on consumer hardware in hours using a modest dataset of image-caption pairs.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

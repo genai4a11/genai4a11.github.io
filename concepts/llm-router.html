@@ -298,6 +298,30 @@ response = router.completion(
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Router design and evaluation</h2>
+<p>LLM router evaluation requires a labeled dataset of queries paired with the minimum model tier needed to answer them correctly. Building this calibration dataset typically starts with routing all queries to the strongest model, collecting responses, and then testing each query against cheaper models to determine the minimum acceptable tier. The fraction of queries routable to cheaper models without quality loss is the key metric for estimating cost savings before deploying a router, and the calibration dataset becomes the training data for learned routing classifiers.</p>
+<table>
+<thead><tr><th>Router type</th><th>Latency overhead</th><th>Accuracy</th><th>Maintenance</th></tr></thead>
+<tbody>
+<tr><td>Rule-based (length/keyword)</td><td>~0ms</td><td>Low</td><td>Manual rule updates</td></tr>
+<tr><td>Embedding classifier</td><td>5–20ms</td><td>Medium</td><td>Periodic retraining</td></tr>
+<tr><td>Small LLM judge</td><td>50–200ms</td><td>High</td><td>Prompt maintenance</td></tr>
+<tr><td>RouteLLM (trained)</td><td>10–50ms</td><td>High</td><td>Dataset required</td></tr>
+</tbody>
+</table>
+<p>Router confidence thresholds require separate calibration for different error costs. A router that incorrectly routes a complex query to a weak model produces a wrong answer, while a router that incorrectly routes a simple query to a strong model wastes money but produces a correct answer. The cost asymmetry means the decision boundary should be set conservatively — routing to the stronger model on uncertainty — with the threshold adjusted based on empirical quality measurements at different confidence levels. Regularly auditing routed queries by sampling from each routing decision and comparing outputs validates that the router continues to make correct decisions as query distributions shift.</p>
+
+<p>Cost modeling for LLM routing requires tracking actual per-query costs across model tiers and measuring the quality differential between tiers. A routing system that routes 60% of queries to a model that costs 10x less than the premium tier while maintaining 95% of quality on those queries achieves roughly a 6x cost reduction on routed queries. Tracking routing decisions alongside quality metrics in production enables continuous calibration of the quality threshold — adjusting the classifier confidence boundary to route more queries when quality headroom exists, or fewer when recent misrouting incidents indicate the threshold is too aggressive.</p>
+
+<p>Fallback routing handles cases where the primary routing decision proves incorrect. When a query routed to a cheaper model produces a response that fails a quality check — either an automated judge score below threshold or an explicit user dissatisfaction signal — the fallback path routes the same query to the premium model and returns the higher-quality response. Logging fallback events provides a continuous stream of "hard cases" that the classifier got wrong, forming a natural training signal for router retraining. The fallback latency penalty (two model calls) is acceptable for applications where most queries are correctly classified and fallback is rare.</p>
+
+<p>LLM routing interacts with prompt caching in non-obvious ways. If the primary router sends similar queries to different model tiers, prompt cache hit rates on each tier may be lower than a single-model deployment because the cached context is split across models. Architectures that cache the system prompt and conversation history on the premium model independently from the cheap model need separate cache warming strategies for each tier. Consistent routing of similar queries to the same model tier maximizes cache utilization but may conflict with routing decisions based purely on query complexity scores.</p>
+
+<p>Monitoring for router distribution shift detects when the query distribution has changed enough that the router's training data is no longer representative. An embedding-based distribution monitor computes the centroid of query embeddings over a rolling window and flags when the average cosine distance from the training centroid exceeds a threshold. Distribution shifts often precede quality degradation — when user behavior changes or new use cases emerge, the router may misclassify the new query patterns because they fall outside its training distribution. Triggering router retraining when distribution shift is detected maintains routing accuracy as the application evolves.</p>
+
+<p>Router interpretability tools help identify systematic misrouting patterns that degrade overall quality. Visualizing the embedding space of routed queries — plotting easy and hard query embeddings with routing decision labels — reveals whether the classifier has learned a meaningful decision boundary or is routing based on superficial features like query length or keyword presence. Queries near the decision boundary that are incorrectly routed to cheaper models are the highest-priority candidates for adding to the router training dataset, as they represent the cases where the classifier is least confident and most prone to error.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -295,6 +295,30 @@ messages = [
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Qwen-VL deployment and fine-tuning</h2>
+<p>Qwen2-VL's dynamic resolution handling allows processing images at their native resolution rather than forcing a fixed 224×224 or 448×448 crop. The model's vision encoder divides images into variable-sized patches and creates a dynamic number of visual tokens proportional to image resolution and content complexity. High-resolution inputs produce more visual tokens and enable finer-grained understanding of details like small text, dense charts, and intricate diagrams. The trade-off is increased inference latency for high-resolution inputs, requiring applications to balance image resolution against latency requirements based on task demands.</p>
+<table>
+<thead><tr><th>Model</th><th>Parameters</th><th>Context window</th><th>Video support</th></tr></thead>
+<tbody>
+<tr><td>Qwen2-VL-2B</td><td>2B</td><td>32K tokens</td><td>Yes (limited)</td></tr>
+<tr><td>Qwen2-VL-7B</td><td>7B</td><td>128K tokens</td><td>Yes</td></tr>
+<tr><td>Qwen2-VL-72B</td><td>72B</td><td>128K tokens</td><td>Yes (extended)</td></tr>
+<tr><td>QwQ-VL-72B (reasoning)</td><td>72B</td><td>128K tokens</td><td>Yes</td></tr>
+</tbody>
+</table>
+<p>Fine-tuning Qwen2-VL on domain-specific image-text pairs follows the same PEFT workflow as text-only Qwen2 models, using LoRA adapters applied to the language model backbone while keeping the vision encoder frozen. The most effective fine-tuning datasets pair image inputs with the exact output format required by the application — if the downstream task requires structured JSON extraction from invoice images, training examples should demonstrate the JSON extraction format directly. Mixed fine-tuning datasets that combine domain-specific examples with general instruction-following examples prevent catastrophic forgetting of the model's baseline capabilities.</p>
+
+<p>Qwen2-VL's video understanding capability processes video as a sequence of sampled frames, with the model reasoning across temporal relationships between frames. The frame sampling rate can be configured based on video content type: fast-moving scenes require denser sampling (4–8 fps) while instructional or static-scene videos can be sampled more sparsely (1–2 fps) with equivalent understanding quality. The dynamic token allocation mechanism ensures that frames with more visual complexity receive more visual tokens than simple or static frames, improving overall video representation quality within context window constraints.</p>
+
+<p>Document understanding with Qwen2-VL leverages the model's native high-resolution input capability to process scanned documents, PDFs rendered as images, and screenshots containing dense text. Unlike approaches that first run OCR and then process the extracted text, Qwen2-VL reasons directly from the visual representation, preserving spatial layout information that is lost in text extraction. This layout preservation is valuable for structured document understanding tasks like invoice processing, form extraction, and table interpretation, where the spatial relationship between elements (column alignment, checkbox proximity, label-value pairs) conveys semantic information not captured by sequential text extraction.</p>
+
+<p>Qwen2-VL's multilingual visual understanding capability extends to text recognition and visual question answering across multiple scripts and languages, reflecting the multilingual training of the underlying Qwen2 language model. This cross-lingual capability is particularly valuable for global document processing applications where documents in different languages must be processed by a single model without language-specific preprocessing pipelines. The model handles mixed-language documents — a Chinese invoice with English product names, or a Japanese form with numerical data — more reliably than models trained primarily on English vision-language data.</p>
+
+<p>Qwen2-VL's absolute position encoding for visual tokens enables consistent spatial reasoning regardless of image resolution or aspect ratio. By encoding each visual patch with its absolute position in the image grid rather than relative sequential position, the model maintains spatial awareness of where in the image each visual token originated. This position encoding approach supports accurate spatial reasoning about object locations, directional relationships, and layout understanding across images with diverse aspect ratios and content densities without requiring the input image to be normalized to a fixed canonical format.</p>
+
+<p>Qwen2-VL fine-tuning with LoRA adapters applied to the language model backbone while keeping the vision encoder frozen is the most practical adaptation strategy for domain-specific visual tasks. Using LoRA rank-8 or rank-16 applied to the attention layers of the language model backbone requires only 50–200MB of adapter weights for a 7B model, with full fine-tuning of the 7B model on domain data requiring approximately 28GB VRAM. The frozen vision encoder approach is justified when domain images are sufficiently similar to the pre-training distribution that the existing visual features are adequate — specialized domains like medical imaging may benefit from also fine-tuning the vision encoder.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -294,6 +294,32 @@ for doc in compressed_docs:
 <p><strong>Filter before compress.</strong> Always rerank or filter to top-3 before compressing. Compressing 20 chunks is expensive; compressing 3 well-chosen chunks is reasonable.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Selective context compression strategies</h2>
+<p>Selective compression passes only the most relevant spans of retrieved context to the generation model rather than compressing uniformly across all retrieved text. Sentence-level extractive compression scores each sentence independently using a cross-encoder relevance model and retains only the top-k sentences by relevance score. This approach is faster and more interpretable than LLM-based compression because it makes discrete inclusion decisions rather than generating paraphrased summaries, and the retained sentences are guaranteed to be verbatim from the source — important for applications where attribution fidelity matters.</p>
+
+<h2>Context compression in production RAG pipelines</h2>
+<p>Integrating context compression into a production RAG pipeline requires benchmarking the quality-latency tradeoff for the specific application. LLM-based compression adds one full generation call to each RAG request, roughly doubling end-to-end latency. This overhead is justified when the compressed context produces measurably better generation quality — for instance, when the retrieval system returns many partially relevant passages that confuse the generation model. If retrieval precision is already high (retrieved passages are mostly relevant), compression overhead rarely pays for itself in quality improvements.</p>
+<table>
+<thead><tr><th>Compression method</th><th>Latency overhead</th><th>Quality improvement</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>Extractive (sentence scoring)</td><td>Low (~20ms)</td><td>Medium</td><td>Long passages with noise</td></tr>
+<tr><td>LLM rewrite</td><td>High (~500ms+)</td><td>High</td><td>Complex multi-passage contexts</td></tr>
+<tr><td>LLMLingua token pruning</td><td>Medium (~100ms)</td><td>High</td><td>Token budget constraints</td></tr>
+<tr><td>No compression (reranking only)</td><td>None additional</td><td>Low</td><td>High-precision retrieval</td></tr>
+</tbody>
+</table>
+
+<p>LLMLingua's token-level compression approach uses a small language model (typically a 125M–7B parameter model) to score each token's importance to the query by measuring perplexity changes when tokens are removed. Tokens with low information content relative to the query — filler words, redundant phrases, tangential sentences — are pruned from the context, preserving only the tokens most relevant to answering the specific question. Compression ratios of 3–5x are achievable with minimal quality degradation, reducing the effective context length fed to the large generation model while preserving the key information needed for accurate generation.</p>
+
+<p>Context compression quality degrades when applied to structured content like code, tables, and lists. Compressing these structured formats by removing "low perplexity" tokens often disrupts the structural integrity of the content — removing a comma from a table row or a bracket from code invalidates the entire structure. Compression systems should detect structured content blocks and apply them with zero compression or alternative strategies like summarizing the structure's schema without individual values. Separate compression policies for unstructured prose versus structured data elements are essential for maintaining content integrity in mixed-content RAG pipelines.</p>
+
+<p>Reranking and compression are complementary techniques that operate on different aspects of the retrieved context quality problem. Reranking addresses the ordering problem — ensuring the most relevant passages appear first in the context window where model attention is strongest. Compression addresses the noise problem — removing irrelevant content from within individual passages to reduce the total tokens the generation model must process. Applying both in sequence — rerank to select top passages, then compress each passage to remove noise — consistently produces better generation quality than either technique alone, with a latency cost of approximately 200–700ms for the combined pipeline.</p>
+
+<p>Selective passage inclusion — choosing which retrieved passages to include in the context at all, rather than compressing all passages — is often more effective than compressing every passage. A relevance threshold that excludes low-scoring passages entirely produces cleaner contexts than including all passages after aggressive compression. The optimal strategy depends on retrieval precision: high-precision retrievers benefit from threshold-based exclusion, while lower-precision retrievers benefit more from compression that reduces noise within included passages. Evaluating both strategies on a quality benchmark before production deployment identifies which approach provides better quality-efficiency tradeoffs for the specific retrieval system.</p>
+
+<p>Token budget constraints in LLM APIs with context limits make compression a practical necessity for long-document RAG applications rather than an optional optimization. A RAG pipeline that retrieves 10 passages of 500 tokens each produces 5,000 input tokens of context, consuming a large fraction of a 8K context limit and leaving little room for conversation history and output. Compression that reduces the retrieved context to 1,500 tokens while preserving the key information enables fitting more retrieved knowledge, longer conversation histories, and more detailed system prompts within the available context window, directly improving answer quality for context-constrained applications.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

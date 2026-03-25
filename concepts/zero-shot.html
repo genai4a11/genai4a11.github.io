@@ -290,6 +290,31 @@ Text: {text}
       </div>
 </div>
 </div>
+<div class="section-block">
+<h2>Zero-shot chain-of-thought</h2>
+<p>Zero-shot chain-of-thought (CoT) prompting adds the phrase "Let's think step by step" to a question before requesting the answer, eliciting explicit reasoning traces from models without requiring manually crafted examples. This simple addition consistently improves accuracy on multi-step reasoning tasks — arithmetic, logical deduction, symbolic manipulation — by prompting the model to externalize intermediate reasoning rather than attempting to produce the final answer directly. The reasoning trace also provides interpretability: when the model makes an error, the trace reveals where the reasoning went wrong, enabling targeted prompt improvements.</p>
+
+<h2>Comparison: zero-shot vs few-shot vs fine-tuning</h2>
+<p>Zero-shot, few-shot, and fine-tuning represent different points on the cost-accuracy tradeoff curve for task adaptation. Zero-shot requires no examples and no training but achieves lower accuracy on specialized tasks with unusual output formats. Few-shot improves accuracy with 3–10 examples provided in context but consumes tokens and may not generalize reliably. Fine-tuning produces the highest accuracy on well-defined tasks but requires labeled datasets, compute, and ongoing maintenance. Starting with zero-shot, adding few-shot if accuracy is insufficient, and escalating to fine-tuning only when few-shot plateaus is the recommended progression.</p>
+<table>
+<thead><tr><th>Approach</th><th>Data required</th><th>Latency cost</th><th>Accuracy on novel tasks</th></tr></thead>
+<tbody>
+<tr><td>Zero-shot</td><td>None</td><td>None</td><td>Medium (instruction following)</td></tr>
+<tr><td>Few-shot</td><td>3–10 examples</td><td>Example tokens per request</td><td>Medium-high</td></tr>
+<tr><td>Fine-tuning</td><td>100s–1000s examples</td><td>None at inference</td><td>High (in-distribution)</td></tr>
+</tbody>
+</table>
+
+<p>Zero-shot generalization is constrained by the model's instruction following capability, which varies significantly across model families and sizes. Small models (under 7B parameters) with minimal instruction tuning often fail to interpret complex zero-shot task specifications correctly, defaulting to general text completion rather than following the specified task format. Larger models and models fine-tuned specifically on diverse instruction datasets handle zero-shot task specification more reliably. When zero-shot performance is poor on a task that larger models handle correctly, the bottleneck is typically instruction comprehension rather than task knowledge — the model understands the information but cannot follow the output format instructions.</p>
+
+<p>Zero-shot evaluation on held-out task categories is the standard methodology for measuring a model's generalization capability beyond its training distribution. FLAN-style evaluation, where models are tested on tasks with instruction formats that were not seen during instruction tuning, measures the extent to which instruction following generalizes to novel task formulations. Models that perform well on zero-shot evaluation across diverse task categories with unseen instruction formats are better candidates for production deployment on new tasks, because they are less likely to require prompt engineering iterations when task specifications change.</p>
+
+<p>Negative zero-shot instructions — explicitly telling the model what not to do rather than what to do — are often more effective than positive instructions for constraining output format and content. Specifying "Do not include explanations, preamble, or apologies — output only the requested JSON" produces cleaner structured outputs than positive specifications of the desired format alone. The combination of both positive (what to produce) and negative (what to exclude) instructions in zero-shot prompts provides the clearest behavioral specification and reduces format variance across responses.</p>
+
+<p>Role prompting in zero-shot settings significantly affects response quality for domain-specific tasks. Instructing the model to "act as an experienced data scientist" or "respond as a senior software engineer reviewing this code" activates relevant knowledge domains and response styles associated with that role in the model's training data. Role prompts are most effective when the role is specific and the associated expertise is dense in the training distribution — general professional roles outperform highly specific or fictional roles because the training corpus contains more examples of how professionals in common fields communicate.</p>
+
+<p>Output format specification is the most consistently impactful element of zero-shot prompts for structured generation tasks. Providing an exact template of the expected output format — including field names, data types, and example values — reduces format variance dramatically compared to descriptive format instructions. For JSON extraction tasks, including a sample JSON structure with placeholder values guides the model to produce correctly nested and typed output far more reliably than instructions like "return a JSON object with these fields." The more precisely the expected output format is specified, the less work downstream parsing code must do to handle format variations.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -276,6 +276,30 @@ def arena_battle(prompt: str, models: list[str]) -&gt; dict:
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Arena results and model benchmarking</h2>
+<p>Chatbot Arena's Elo ratings have become the most trusted real-world capability benchmark for LLMs because they measure human preference on actual user-generated conversations rather than curated benchmark datasets. Models that score highly on traditional NLP benchmarks sometimes rank unexpectedly on Arena due to the distribution shift between benchmark tasks and genuine user needs. Conversely, models optimized for chat interaction and instruction following sometimes outperform technically superior models in Arena rankings, reflecting the gap between benchmark performance and user-perceived quality.</p>
+<table>
+<thead><tr><th>Metric</th><th>What it measures</th><th>Limitation</th></tr></thead>
+<tbody>
+<tr><td>Elo rating</td><td>Relative win probability against other models</td><td>Rating depends on comparison pool</td></tr>
+<tr><td>Win rate</td><td>Fraction of battles where model is preferred</td><td>Confounded by opponent quality</td></tr>
+<tr><td>Confidence interval</td><td>Statistical uncertainty in Elo estimate</td><td>Wide CIs for newer/fewer-battle models</td></tr>
+<tr><td>Category score</td><td>Performance within topic (coding, math, etc.)</td><td>Category definitions vary over time</td></tr>
+</tbody>
+</table>
+<p>Arena data is periodically released as public datasets, enabling external analysis of model quality trends and failure modes. Researchers have used the battle datasets to study mode collapse in LLM preferences (certain response styles being consistently preferred regardless of quality), verbosity bias (longer responses winning disproportionately), and category-specific capability gaps. Running custom analysis on the Arena dataset provides richer insights than reading top-line Elo rankings, particularly for understanding which failure modes are most prevalent for specific use cases.</p>
+
+<p>Chatbot Arena's evaluation methodology has important selection biases that consumers of Arena rankings should account for. Arena users are predominantly English-speaking, technically sophisticated individuals who evaluate responses based on their own preferences and expertise. This user population over-represents queries about programming, mathematics, and technical domains compared to the full distribution of LLM use cases. Models optimized for the coding and reasoning tasks that Arena users disproportionately submit perform better in Arena rankings than their overall capability distribution would predict, making Arena less predictive for non-technical applications.</p>
+
+<p>Arena's category breakdown provides more actionable quality signals than the aggregate Elo for teams with specific use cases. Filtering to "Coding" category battles when selecting a model for a software development assistant, or "Creative Writing" for a content generation application, reveals capability differences between models that the aggregate ranking obscures. Models that rank similarly in aggregate may differ by 50–100 Elo points in specific categories, making category-specific Arena scores the most relevant decision input for use-case-matched model selection.</p>
+
+<p>Building an internal arena for private model evaluation follows the same statistical methodology as Chatbot Arena but applied to proprietary prompts and evaluation panels. A minimum of 500–1,000 battles between each pair of model versions is typically needed to achieve Elo confidence intervals narrow enough to make reliable deployment decisions. Using a stratified sampling approach — ensuring battles cover the full distribution of query types rather than sampling uniformly from available prompts — produces more representative Elo estimates for complex real-world workloads than convenience sampling from a readily available prompt pool.</p>
+
+<p>Arena's tie resolution methodology affects ranking interpretation. When both models in a battle receive a tie vote, neither model receives a positive ranking signal. The frequency of ties varies significantly by model quality and query difficulty — well-matched model pairs produce more ties, while quality-mismatched pairs produce clear winners. High tie rates for a specific model often indicate that it performs consistently but without distinctive strengths, rather than indicating poor quality. Treating tie rate as a separate quality signal alongside win rate provides a more complete picture of model consistency than win rate alone.</p>
+
+<p>Arena's open-source battle dataset enables reproducibility research and meta-analysis of LLM evaluation methodology. Published battle logs with anonymized model identifiers allow external researchers to recompute Elo ratings, test alternative statistical models, and analyze systematic preferences in human evaluation. This dataset transparency distinguishes Arena from proprietary benchmark providers and has enabled peer-reviewed research on evaluation biases, verbosity preferences, and cultural variation in quality judgments across different user populations who contribute battles to the platform.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

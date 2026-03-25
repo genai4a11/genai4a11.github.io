@@ -271,6 +271,32 @@ def classify_with_dynamic_examples(review: str, example_pool: list) -&gt; str:
       </div>
 </div>
 </div>
+<div class="section-block">
+<h2>Dynamic few-shot example selection</h2>
+<p>Static few-shot examples chosen once at prompt design time perform significantly worse than dynamically selected examples that are semantically similar to each incoming query. Retrieving the most similar examples from a labeled example store using embedding similarity — the same mechanism as RAG document retrieval — provides examples that demonstrate the output format on inputs resembling the current query. Studies on few-shot performance consistently show that semantically relevant examples improve accuracy by 10–30 percentage points compared to random or hand-picked static examples, particularly for tasks with diverse input distributions where no single static set of examples covers the full input space.</p>
+
+<h2>Few-shot example quality criteria</h2>
+<p>Not all labeled examples are equal as few-shot demonstrations. High-quality few-shot examples are unambiguous — the correct output is clearly derivable from the input without domain expertise. They cover edge cases and difficult patterns rather than only easy, representative examples. They demonstrate consistent formatting with no variation in structure or style. And they are diverse enough that together they cover the input space the model will encounter. Curating examples to these criteria rather than randomly sampling from a labeled dataset typically produces larger accuracy improvements per example added.</p>
+<table>
+<thead><tr><th>Example quality factor</th><th>Impact</th><th>How to assess</th></tr></thead>
+<tbody>
+<tr><td>Semantic similarity to query</td><td>High</td><td>Cosine similarity with test query embedding</td></tr>
+<tr><td>Label correctness</td><td>Critical</td><td>Human review or LLM-as-judge audit</td></tr>
+<tr><td>Output format consistency</td><td>Medium</td><td>Regex/schema validation across examples</td></tr>
+<tr><td>Diversity of input coverage</td><td>Medium</td><td>Clustering examples by embedding</td></tr>
+</tbody>
+</table>
+
+<p>Few-shot ordering effects — the observation that different orderings of the same examples produce significantly different accuracy results — are a documented property of in-context learning that requires explicit management. The last example in the few-shot list tends to have disproportionate influence on the model's next output, a recency bias effect. Placing the most typical or representative example last and the most edge-case examples earlier mitigates this bias. When example order cannot be controlled (as in dynamic example retrieval), averaging predictions over multiple orderings provides more stable accuracy estimates but doubles inference cost.</p>
+
+<p>Few-shot calibration — the tendency of few-shot models to assign output class probabilities proportional to class frequency in the examples rather than in the true distribution — is a systematic bias that degrades classification accuracy. A few-shot classifier with 3 positive and 1 negative example will assign higher prior probability to positive outputs regardless of the input, producing overconfident positive predictions. Calibration techniques like contextual calibration, which estimates and subtracts the base rate bias from few-shot logits, significantly improve classification accuracy in imbalanced scenarios without requiring additional labeled data.</p>
+
+<p>Chain-of-thought few-shot examples that include explicit reasoning traces produce significantly higher accuracy on complex reasoning tasks than examples with direct input-output pairs. The reasoning trace in the examples implicitly teaches the model the problem-solving strategy — how to decompose the problem, what intermediate quantities to compute, and how to check the answer — rather than just the input-output mapping. For arithmetic, logical reasoning, and commonsense inference tasks, few-shot CoT examples with 3–5 demonstrations routinely outperform 10+ direct answer examples, making the example quality (reasoning traces) more important than the example count.</p>
+
+<p>Negative examples in few-shot prompts — demonstrating incorrect outputs alongside correct outputs with explicit labeling — can improve boundary learning for classification and extraction tasks. Showing the model what not to produce (irrelevant extractions, hallucinated entities, over-specified answers) alongside positive examples provides the contrastive signal needed to define the task boundary precisely. The effectiveness of negative examples varies by task: tasks with ambiguous boundaries (like relevance classification) benefit more from negative examples than tasks with clear criteria (like structured data extraction where schema compliance is objectively verifiable).</p>
+
+<p>Label leakage in few-shot examples occurs when the example selection process accidentally includes examples similar to the test queries, inflating measured few-shot performance. When evaluating few-shot accuracy on a test set, examples must be drawn from a separate labeled pool with no overlap with the test distribution. For dynamic example selection using semantic similarity retrieval, ensuring that the example pool and the test set were drawn from different time periods or different data sources provides a clean separation that prevents leakage from artificially high similarity between selected examples and test queries.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

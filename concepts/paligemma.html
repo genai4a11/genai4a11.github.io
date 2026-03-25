@@ -292,6 +292,31 @@ prompts = [
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>PaliGemma deployment and use cases</h2>
+<p>PaliGemma's instruction format follows a specific structure where the task prefix determines the model's behavior. Prefixes like "caption", "describe", "ocr", "detect", and "answer" activate different task heads trained during the mix-fine-tuning stage. Using the wrong prefix for a task — for instance, using "describe" when "ocr" is appropriate for text extraction — produces qualitatively different and typically lower-quality outputs because the model activates the wrong task pathway. Reading the task-specific prefix documentation before deployment prevents this common misconfiguration.</p>
+<table>
+<thead><tr><th>Task prefix</th><th>Output type</th><th>Typical use case</th></tr></thead>
+<tbody>
+<tr><td>caption</td><td>Short natural language description</td><td>Image alt text, search indexing</td></tr>
+<tr><td>describe</td><td>Detailed description</td><td>Accessibility, image understanding</td></tr>
+<tr><td>ocr</td><td>Text extracted from image</td><td>Document digitization, form reading</td></tr>
+<tr><td>detect &lt;object&gt;</td><td>Bounding box coordinates</td><td>Object detection, spatial reasoning</td></tr>
+<tr><td>answer &lt;question&gt;</td><td>Direct answer string</td><td>Visual QA, image-based queries</td></tr>
+</tbody>
+</table>
+<p>PaliGemma's compact size makes it the most practical open-weight VLM for on-device and edge deployment scenarios. The 3B variant runs inference at interactive speeds on consumer GPUs (RTX 3060 and above) and can be quantized to 4-bit using GPTQ or AWQ with minimal quality degradation on most vision tasks. For mobile deployment using ONNX Runtime or TensorFlow Lite, the quantized 3B model fits within the memory constraints of high-end mobile devices, enabling on-device image understanding without API calls.</p>
+
+<p>PaliGemma's mixture fine-tuning approach trained the model jointly on diverse vision-language tasks including image captioning, visual question answering, referring expression comprehension, document understanding, and image segmentation. This multi-task training produces a model that transfers effectively to new tasks with minimal additional fine-tuning, because the shared representation space has been organized to support a wide range of visual reasoning patterns. Domain-specific fine-tuning starting from PaliGemma consistently outperforms fine-tuning from CLIP + frozen language model baselines, because PaliGemma's pre-training has already aligned visual and language representations for structured task completion.</p>
+
+<p>Vision-language alignment in PaliGemma uses a linear projection layer that maps SigLIP visual embeddings into the PaliGemma language model's embedding space. Unlike more complex cross-attention mechanisms, this simple linear projection is computationally efficient and produces competitive alignment quality. The projection layer is the most task-sensitive component of the model — fine-tuning the projection layer alongside the language model on domain-specific image-text pairs is the minimum intervention needed to adapt PaliGemma to a new visual domain, while keeping the SigLIP backbone frozen preserves the general visual feature extraction capability.</p>
+
+<p>PaliGemma's segmentation capability, inherited from PaLI's detection pre-training, enables referring expression segmentation — identifying the region of an image described by a natural language phrase. This capability is exposed through the "segment" task prefix and returns segmentation mask coordinates rather than bounding boxes. For applications requiring precise object boundary delineation — medical image analysis, quality inspection, satellite image annotation — PaliGemma's built-in segmentation eliminates the need for a separate specialized segmentation model in the pipeline.</p>
+
+<p>PaliGemma's SigLIP vision encoder was trained using sigmoid loss rather than the contrastive softmax loss used by CLIP, producing a vision encoder with improved calibration for fine-grained visual tasks. The sigmoid loss treats each image-text pair independently rather than contrasting against all other pairs in the batch, which reduces the dependence on large batch sizes for training quality. This training difference produces SigLIP encoders with higher linear probing accuracy on fine-grained recognition benchmarks compared to CLIP encoders of equivalent size, explaining part of PaliGemma's strong performance on visual reasoning tasks.</p>
+
+<p>PaliGemma's 224px and 448px input resolution variants offer a latency-quality tradeoff for deployment. The 224px variant processes images roughly 4x faster than the 448px variant due to the quadratic scaling of visual token count with resolution, making it suitable for real-time applications. The 448px variant captures finer image details and consistently outperforms the 224px variant on tasks requiring text reading, small object recognition, and fine-grained categorization. Selecting the input resolution based on the smallest resolution at which task quality is acceptable minimizes inference cost while meeting accuracy requirements.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
