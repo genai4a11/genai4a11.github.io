@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkpointing | GenAI Mindmap</title>
+  <meta name="description" content="Saving intermediate agent and pipeline state at key execution points so that long-running tasks can resume after failures without restarting from scratch." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Checkpointing" />
+  <meta property="og:description" content="Saving intermediate agent and pipeline state at key execution points so that long-running tasks can resume after failures without restarting from scratch." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/checkpointing.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/checkpointing.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Checkpointing | GenAI Mindmap",
+  "description": "Saving intermediate agent and pipeline state at key execution points so that long-running tasks can resume after failures without restarting from scratch.",
+  "url": "https://genai4a11.github.io/concepts/checkpointing.html",
+  "dateModified": "2026-03-25T00:39:07.344575",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Checkpointing | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/checkpointing.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #7c3aed;
+      --accent-dark: #6d28d9;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/prod-eng.html" class="nav-back">← Production Engineering</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Production Engineering</span>
+    <h1><em>Checkpointing</em></h1>
+    <p class="hero-sub">Saving intermediate agent and pipeline state at key execution points so that long-running tasks can resume after failures without restarting from scratch.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Recovery time</div><div class="stat-label">seconds vs minutes</div></div>
+      <div><div class="stat-num">Storage overhead</div><div class="stat-label">low</div></div>
+      <div><div class="stat-num">Frameworks</div><div class="stat-label">LangGraph, custom Redis</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why Checkpointing?</a></li>
+        <li><a href="#s2" data-num="02">Checkpoint Granularity</a></li>
+        <li><a href="#s3" data-num="03">Storage Backends</a></li>
+        <li><a href="#s4" data-num="04">Resumption Logic</a></li>
+        <li><a href="#s5" data-num="05">Idempotency Requirements</a></li>
+        <li><a href="#s6" data-num="06">LangGraph Integration</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+('Why Checkpointing?', 'A 10-step agentic pipeline that fails at step 9 without checkpointing restarts from step 1, wasting compute and time. Checkpointing saves the output of each completed step so on retry, execution resumes from the last successful checkpoint. Critical for: long research tasks, multi-tool agents, batch processing jobs.')
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+('Checkpoint Granularity', 'Too coarse (checkpoint only at end): no benefit. Too fine (every token): overhead overwhelms. Optimal: checkpoint at natural step boundaries — after each tool call, after each sub-task completion, before expensive operations. For batch jobs, checkpoint every N items (N=100 is typical).')
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+('Storage Backends', 'Redis: fast, ephemeral — good for intra-session checkpoints. "\n   "Postgres/SQLite: persistent, queryable — good for multi-session tasks. "\n   "S3/blob storage: for large intermediate artifacts (generated documents, retrieved corpora).\n\nimport json, redis, hashlib\n\nr = redis.Redis()\n\ndef save_checkpoint(task_id: str, step: int, state: dict, ttl: int = 3600):\n    key = f"checkpoint:{task_id}:{step}"\n    r.set(key, json.dumps(state), ex=ttl)\n    # Track latest checkpoint\n    r.set(f"checkpoint:{task_id}:latest", step, ex=ttl)\n    print(f"Checkpoint saved: step {step}")\n\ndef load_latest_checkpoint(task_id: str) -> tuple[int, dict]:\n    latest = r.get(f"checkpoint:{task_id}:latest")\n    if not latest:\n        return 0, {}\n    step = int(latest)\n    state = json.loads(r.get(f"checkpoint:{task_id}:{step}"))\n    return step, state')
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+('Resumption Logic', 'On task start, check for an existing checkpoint. If found, resume from that step. "\n   "If not found, start from step 0. Pass the checkpoint state to downstream steps.\n\nasync def run_pipeline(task_id: str, inputs: dict) -> dict:\n    start_step, state = load_latest_checkpoint(task_id)\n    if start_step > 0:\n        print(f"Resuming from step {start_step}")\n    else:\n        state = {"inputs": inputs, "results": {}}\n\n    steps = [step_retrieve, step_analyze, step_generate, step_validate, step_format]\n    for i, step_fn in enumerate(steps):\n        if i < start_step:\n            continue  # skip already-completed steps\n        state = await step_fn(state)\n        save_checkpoint(task_id, i + 1, state)\n\n    return state["results"]')
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+('Idempotency Requirements', "Each step must be idempotent: running it twice with the same input produces the same output. For LLM calls, use temperature=0 and store the output hash to detect re-runs. For external API calls (web search, database writes), use idempotency keys. Non-idempotent steps (file writes, emails) must check 'already done' before executing.")
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+('LangGraph Integration', 'LangGraph has built-in checkpointing via a Checkpointer interface. SqliteSaver, PostgresSaver, and RedisSaver are provided out of the box. Pass a checkpointer to your graph at compile time; LangGraph saves state after each node. On re-run with the same thread_id, execution resumes from the last saved state automatically.')
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/prod-eng.html" style="color:var(--accent)">Production Engineering</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
