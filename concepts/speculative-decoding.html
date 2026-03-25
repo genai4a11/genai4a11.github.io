@@ -153,7 +153,7 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>The decoding bottleneck</h2>
-<p>Autoregressive LLM generation is sequential: you generate one token at a time, each step requires a full forward pass through the model. For a 70B parameter model, each token costs ~140 GFLOPS. The throughput bottleneck is memory bandwidth — loading all 140B parameters from HBM to compute units to generate a single token. On an A100 80GB, this limits you to roughly 50 tokens/second for a 70B model.</p>
+<p>Autoregressive LLM generation is sequential: you generate one token at a time, each step requires a full forward pass through the model. For a 70B parameter model, each token costs ~140 GFLOPS. The throughput bottleneck is <a class="concept-link" href="agent-memory.html">memory</a> bandwidth — loading all 140B parameters from HBM to compute units to generate a single token. On an A100 80GB, this limits you to roughly 50 tokens/second for a 70B model.</p>
 <p>Speculative decoding exploits the observation that a small model (e.g. 7B) can correctly predict the next 3–5 tokens most of the time. If we can verify all those predictions in a single large-model forward pass, we get multiple tokens per expensive call.</p>
 </div>
 <div class="section-block" id="s2">
@@ -246,24 +246,21 @@ def speculative_decode(draft_model, target_model, tokenizer, prompt, gamma=4, ma
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
-<li><strong>Memory</strong>: Running two models simultaneously doubles GPU memory requirements. On memory-constrained hardware, consider self-speculative decoding (no second model) or medusa heads instead.</li>
+<li><strong><a class="concept-link" href="agent-memory.html">Memory</a></strong>: Running two models simultaneously doubles GPU memory requirements. On memory-constrained <a class="concept-link" href="hardware.html">hardware</a>, consider self-speculative decoding (no second model) or medusa heads instead.</li>
 <li><strong>Temperature 0</strong>: At temperature=0 (greedy decoding), acceptance becomes deterministic (always accept if draft token = argmax). Acceptance rate is essentially 1 for easy tokens.</li>
-<li><strong>Batching</strong>: Speculative decoding with batched requests is harder because different sequences in the batch may reject at different steps. vLLM and TGI implement efficient batched speculative decoding.</li>
-<li><strong>Medusa alternative</strong>: Medusa adds multiple prediction heads to the target model to generate draft tokens without a separate model — lower memory cost but requires fine-tuning.</li>
+<li><strong>Batching</strong>: Speculative decoding with batched requests is harder because different sequences in the batch may reject at different steps. <a class="concept-link" href="vllm.html">vLLM</a> and TGI implement efficient batched speculative decoding.</li>
+<li><strong>Medusa alternative</strong>: Medusa adds multiple prediction heads to the target model to generate draft tokens without a separate model — lower memory cost but requires <a class="concept-link" href="finetuning.html">fine-tuning</a>.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="paged-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Paged Attention</span></a>
-<a href="gqa.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Grouped-Query Attn</span></a>
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
-<a href="multi-head-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
-<a href="flash-attn.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
+<a class="rc-card" href="paged-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Paged Attention</span></a>
+<a class="rc-card" href="gqa.html" style="--rc-accent:#64748b"><span class="rc-label">Grouped-Query Attn</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="multi-head-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
+<a class="rc-card" href="flash-attn.html" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
 </div>
 </div>
 <footer>

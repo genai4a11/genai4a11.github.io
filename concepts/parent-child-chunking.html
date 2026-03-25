@@ -154,7 +154,7 @@
 <div class="section-marker">SECTION 01</div>
 <h2>The parent-child idea</h2>
 <p>Parent-child chunking (also called hierarchical chunking or small-to-big retrieval) decouples the retrieval unit from the synthesis unit — just like sentence windows, but applied to larger document structures.</p>
-<p><strong>The problem with fixed-size chunks</strong>: Large chunks (1024 tokens) give LLMs good context but embed poorly — the embedding averages over too many concepts and matches imprecisely. Small chunks (128 tokens) embed precisely but leave the LLM with too little context to synthesise a good answer.</p>
+<p><strong>The problem with <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> chunks</strong>: Large chunks (1024 tokens) give <a class="concept-link" href="llms.html">LLMs</a> good context but embed poorly — the <a class="concept-link" href="embeddings.html">embedding</a> averages over too many concepts and matches imprecisely. Small chunks (128 tokens) embed precisely but leave the LLM with too little context to synthesise a good answer.</p>
 <p><strong>The solution</strong>: Create two chunk sizes. Small "child" chunks (128–256 tokens) are embedded and indexed for retrieval — they point sharply at specific facts. Large "parent" chunks (1024–2048 tokens) are stored separately. When a child chunk is retrieved, the system looks up its parent and returns the parent chunk to the LLM instead.</p>
 </div>
 <div class="section-block" id="s2">
@@ -234,7 +234,7 @@ for r in results:
 <li><strong>Level 2 (section)</strong>: 1024–2048 tokens. A section or topic within the document. The typical "parent" returned to the LLM.</li>
 <li><strong>Level 3 (sentence/passage)</strong>: 64–256 tokens. The actual retrieval unit. Precise semantic match to the query.</li>
 </ul>
-<p>LlamaIndex's <code>AutoMergingRetriever</code> handles this automatically: if a threshold of sibling chunks are retrieved, it replaces them with their parent. This is the "auto-merging" behaviour — the system automatically scales up the context when many related passages are retrieved.</p>
+<p><a class="concept-link" href="llamaindex.html">LlamaIndex</a>'s <code>AutoMergingRetriever</code> handles this automatically: if a threshold of sibling chunks are retrieved, it replaces them with their parent. This is the "auto-merging" behaviour — the system automatically scales up the context when many related passages are retrieved.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
@@ -264,28 +264,25 @@ for r in results:
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>When it outperforms alternatives</h2>
-<p>Parent-child retrieval consistently outperforms both fixed-size and sentence-window on benchmarks that test answer comprehensiveness — questions that require integrating information from multiple nearby sentences. It's particularly strong for: technical documentation where precise sub-section retrieval + full section context is needed, legal and compliance documents where narrowly-scoped facts must be returned with full surrounding context, and multi-hop reasoning chains where small child chunks enable precise retrieval of each reasoning step.</p>
+<p>Parent-child retrieval consistently outperforms both <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> and sentence-window on <a class="concept-link" href="benchmarks.html">benchmarks</a> that test answer comprehensiveness — questions that require integrating information from multiple nearby sentences. It's particularly strong for: technical documentation where precise sub-section retrieval + full section context is needed, legal and compliance documents where narrowly-scoped facts must be returned with full surrounding context, and multi-hop reasoning chains where small child chunks enable precise retrieval of each reasoning step.</p>
 <p>It's roughly equivalent to sentence-window for simple factoid retrieval but significantly better for complex synthesis tasks.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Storage complexity</strong>: Requires two storage systems (vector store + document store). Simple deployments can use an in-memory docstore, but production needs persistent storage. This adds operational complexity vs single-store approaches.</p>
-<p><strong>Parent size calibration</strong>: Parents that are too large waste LLM context window; too small don't provide enough synthesis context. Profile your documents — count average tokens per section — and set parent chunk size to cover 2–3 typical sections.</p>
-<p><strong>Merging threshold</strong>: The auto-merging threshold in LlamaIndex (ratio of children retrieved before upgrading to parent) needs tuning per use case. Too aggressive = always returning full documents; too conservative = never merging, losing the hierarchy benefit. Start at 0.3 and adjust based on context waste metrics.</p>
+<p><strong>Storage complexity</strong>: Requires two storage systems (<a class="concept-link" href="vector-dbs.html">vector store</a> + document store). Simple deployments can use an in-<a class="concept-link" href="agent-memory.html">memory</a> docstore, but production needs persistent storage. This adds operational complexity vs single-store approaches.</p>
+<p><strong>Parent size calibration</strong>: Parents that are too large waste LLM <a class="concept-link" href="context-window.html">context window</a>; too small don't provide enough synthesis context. Profile your documents — count average tokens per section — and set parent chunk size to cover 2–3 typical sections.</p>
+<p><strong>Merging threshold</strong>: The auto-merging threshold in <a class="concept-link" href="llamaindex.html">LlamaIndex</a> (ratio of children retrieved before upgrading to parent) needs tuning per use case. Too aggressive = always returning full documents; too conservative = never merging, losing the hierarchy benefit. Start at 0.3 and adjust based on context waste metrics.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="fixed-size-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Fixed-size</span></a>
-<a href="sentence-window.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Sentence Window</span></a>
-<a href="semantic-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Semantic Chunking</span></a>
-<a href="late-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Late Chunking</span></a>
-<a href="proposition-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Proposition Chunking</span></a>
+<a class="rc-card" href="fixed-size-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Fixed-size</span></a>
+<a class="rc-card" href="sentence-window.html" style="--rc-accent:#64748b"><span class="rc-label">Sentence Window</span></a>
+<a class="rc-card" href="semantic-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Semantic Chunking</span></a>
+<a class="rc-card" href="late-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Late Chunking</span></a>
+<a class="rc-card" href="proposition-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Proposition Chunking</span></a>
 </div>
 </div>
 <footer>

@@ -153,13 +153,13 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>The selection framework</h2>
-<p>Model selection should be driven by systematic evaluation, not brand preference or benchmark rankings. The framework:</p>
+<p>Model selection should be driven by systematic <a class="concept-link" href="eval.html">evaluation</a>, not brand preference or benchmark rankings. The framework:</p>
 <ol>
-<li><strong>Define requirements first</strong>: What task (classification, generation, reasoning, code)? What quality bar (human parity, 90% of GPT-4, etc.)? What latency budget (real-time &lt;1s, interactive &lt;5s, batch &lt;60s)? What cost budget (per-query, per-month)?</li>
+<li><strong>Define requirements first</strong>: What task (classification, generation, reasoning, code)? What quality bar (human parity, 90% of GPT-4, etc.)? What <a class="concept-link" href="latency-budget.html">latency budget</a> (real-time &lt;1s, interactive &lt;5s, batch &lt;60s)? What cost budget (per-query, per-month)?</li>
 <li><strong>Build a golden test set</strong>: 100–500 representative inputs with expected outputs or quality criteria. This is non-negotiable — you cannot select a model without a domain-specific eval.</li>
 <li><strong>Shortlist candidates</strong>: 3–5 models that plausibly meet your requirements. Include the obvious frontrunners and one or two cheaper alternatives.</li>
 <li><strong>Benchmark systematically</strong>: Run all candidates on your golden test set. Score automatically where possible, sample-human-review otherwise.</li>
-<li><strong>Calculate total cost of ownership</strong>: API cost + infrastructure + maintenance + model update costs.</li>
+<li><strong>Calculate total cost of ownership</strong>: API cost + <a class="concept-link" href="infra.html">infrastructure</a> + maintenance + model update costs.</li>
 </ol>
 </div>
 <div class="section-block" id="s2">
@@ -176,7 +176,7 @@
 <tr><td>Claude 3 Haiku</td><td>Anthropic</td><td>Fastest Anthropic model, cheap</td><td>$0.25</td></tr>
 <tr><td>Gemini 1.5 Flash</td><td>Google</td><td>Multimodal, long context at low cost</td><td>$0.35</td></tr>
 </tbody></table>
-<p>For most production use cases: start with GPT-4o-mini or Claude Haiku for high-volume/low-stakes tasks, GPT-4o or Claude 3.5 Sonnet for quality-sensitive tasks.</p>
+<p>For most production use cases: start with <a class="concept-link" href="gpt4o.html">GPT-4o</a>-mini or Claude Haiku for high-volume/low-stakes tasks, GPT-4o or <a class="concept-link" href="claude35.html">Claude 3.5 Sonnet</a> for quality-sensitive tasks.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -259,31 +259,28 @@ print("Claude Haiku:", monthly_cost_estimate(daily_queries, avg_input, avg_outpu
 <h2>Latency requirements</h2>
 <p>Latency is often the deciding factor that overrides quality considerations:</p>
 <ul>
-<li><strong>Real-time (&lt;500ms)</strong>: Voice assistants, autocomplete, live search. Only fast API models (GPT-4o-mini, Gemini Flash) or self-hosted small models (7B, quantised). No 70B+ models.</li>
-<li><strong>Interactive (&lt;5s)</strong>: Chat interfaces, form assistance. Most API models qualify. Consider streaming for perceived latency — first token in 500ms feels fast even if full response takes 4s.</li>
-<li><strong>Batch (&gt;10s acceptable)</strong>: Document processing, overnight analysis. Use larger, higher-quality models. Batch APIs (OpenAI, Anthropic) give 50% cost reduction at 24h turnaround.</li>
+<li><strong>Real-time (&lt;500ms)</strong>: Voice assistants, autocomplete, live search. Only fast API models (<a class="concept-link" href="gpt4o.html">GPT-4o</a>-mini, Gemini Flash) or self-hosted small models (7B, quantised). No 70B+ models.</li>
+<li><strong>Interactive (&lt;5s)</strong>: Chat interfaces, form assistance. Most API models qualify. Consider <a class="concept-link" href="streaming.html">streaming</a> for perceived latency — first token in 500ms feels fast even if full response takes 4s.</li>
+<li><strong>Batch (&gt;10s acceptable)</strong>: <a class="concept-link" href="doc-processing.html">Document processing</a>, overnight analysis. Use larger, higher-quality models. Batch APIs (OpenAI, Anthropic) give 50% cost reduction at 24h turnaround.</li>
 </ul>
 <p>Streaming is critical for user-facing applications: <code>stream=True</code> in API calls means users see tokens as they're generated, dramatically improving perceived responsiveness even when total latency is unchanged.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Public benchmarks don't predict your task performance</strong>: MMLU, HumanEval, and MT-Bench measure specific capabilities. A model that ranks 5th on MMLU may rank 1st on your classification task. Always evaluate on your domain data.</p>
+<p><strong>Public <a class="concept-link" href="benchmarks.html">benchmarks</a> don't predict your task performance</strong>: <a class="concept-link" href="mmlu.html">MMLU</a>, <a class="concept-link" href="humaneval.html">HumanEval</a>, and <a class="concept-link" href="mt-bench.html">MT-Bench</a> measure specific capabilities. A model that ranks 5th on MMLU may rank 1st on your classification task. Always evaluate on your domain data.</p>
 <p><strong>Model versions change silently</strong>: OpenAI and Anthropic update models behind the same API endpoint. <code>gpt-4o</code> in March 2024 is not the same model as <code>gpt-4o</code> in December 2024. Pin to specific model versions (e.g., <code>gpt-4o-2024-08-06</code>) in production to avoid silent quality regressions.</p>
 <p><strong>Rate limits matter at scale</strong>: Enterprise tier rate limits are 10–100× higher than free/standard tiers. Factor in the lead time to upgrade limits — OpenAI rate limit increases can take days or weeks to approve.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="rag-vs-finetuning.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
-<a href="agent-vs-pipeline.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Agent vs Pipeline</span></a>
-<a href="build-vs-buy.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Build vs Buy vs OSS</span></a>
-<a href="eval-design.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Eval Design</span></a>
-<a href="golden-test-sets.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Golden Test Sets</span></a>
+<a class="rc-card" href="rag-vs-finetuning.html" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
+<a class="rc-card" href="agent-vs-pipeline.html" style="--rc-accent:#64748b"><span class="rc-label">Agent vs Pipeline</span></a>
+<a class="rc-card" href="build-vs-buy.html" style="--rc-accent:#64748b"><span class="rc-label">Build vs Buy vs OSS</span></a>
+<a class="rc-card" href="eval-design.html" style="--rc-accent:#64748b"><span class="rc-label">Eval Design</span></a>
+<a class="rc-card" href="golden-test-sets.html" style="--rc-accent:#64748b"><span class="rc-label">Golden Test Sets</span></a>
 </div>
 </div>
 <footer>

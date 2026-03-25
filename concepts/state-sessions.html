@@ -502,7 +502,7 @@
 <div class="section-block" id="why-hard">
 <div class="section-marker">01 — Foundation</div>
 <h2>Why State Is Hard</h2>
-<p>LLMs are stateless by nature. Each API call starts fresh — the model has no built-in memory of previous interactions. Yet users expect continuity. Conversations should remember context, tone, decisions. Managing that gap is the job of application-level state.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> are stateless by nature. Each API call starts fresh — the model has no built-in <a class="concept-link" href="agent-memory.html">memory</a> of previous interactions. Yet users expect continuity. Conversations should remember context, tone, decisions. Managing that gap is the job of application-level state.</p>
 <p>The core challenge: <strong>Every API call costs tokens.</strong> Sending full conversation history every time gets expensive fast. Context windows aren't infinite — GPT-4 offers 128K tokens, but real-world requests sit in 2K–10K windows. And multi-user apps need isolation: user A's history should never leak into user B's session.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
@@ -529,17 +529,17 @@
 </table>
 </div>
 <h3>Strategy Details</h3>
-<p><strong>Full history:</strong> Best quality, worst cost. Works for demos and short chat sessions (&lt; 20 turns). Once you exceed your context window, quality drops sharply.</p>
+<p><strong>Full history:</strong> Best quality, worst cost. Works for demos and short chat sessions (&lt; 20 turns). Once you exceed your <a class="concept-link" href="context-window.html">context window</a>, quality drops sharply.</p>
 <p><strong>Sliding window:</strong> Keep last N messages (e.g., last 10 turns = 20 messages). Simple, predictable cost. Loses distant context but often sufficient for coherent conversations.</p>
 <p><strong>Summarise + trim:</strong> Periodically ask the LLM to summarize old turns into a condensed summary. Replace old messages with "Summary: ...". Preserves key context while cutting token cost. Adds latency (extra API call).</p>
-<p><strong>Embedding memory:</strong> Store turn embeddings in a vector DB. On each new message, retrieve the most relevant past turns. Best for long-term, multi-session memory but requires embedding infrastructure.</p>
+<p><strong><a class="concept-link" href="embeddings.html">Embedding</a> <a class="concept-link" href="agent-memory.html">memory</a>:</strong> Store turn <a class="concept-link" href="embeddings.html">embeddings</a> in a <a class="concept-link" href="vector-dbs.html">vector DB</a>. On each new message, retrieve the most relevant past turns. Best for long-term, multi-session memory but requires embedding <a class="concept-link" href="infra.html">infrastructure</a>.</p>
 <p><strong>Hybrid (recommended):</strong> Keep last 5 turns in full. Summarize older turns into a rolling summary. Combine both in the context. Best cost/quality tradeoff for production.</p>
 </div>
 <!-- ── 3. IMPLEMENTING IN PYTHON ── -->
 <div class="section-block" id="implementing-python">
 <div class="section-marker">03 — Code</div>
 <h2>Implementing History in Python</h2>
-<p>LangChain offers memory utilities for sliding window and summarization. Here's how to use them:</p>
+<p><a class="concept-link" href="langchain.html">LangChain</a> offers <a class="concept-link" href="agent-memory.html">memory</a> utilities for sliding window and summarization. Here's how to use them:</p>
 <div class="example-box">from langchain.memory import ConversationBufferWindowMemory, ConversationSummaryBufferMemory
 from langchain_openai import OpenAI
 
@@ -642,7 +642,7 @@ if data:
 pattern = f"user_123_*"
 session_keys = r.keys(pattern)</div>
 <h3>PostgreSQL with pgvector</h3>
-<p>For embedding-based memory, PostgreSQL + pgvector allows semantic search over past turns:</p>
+<p>For <a class="concept-link" href="embeddings.html">embedding</a>-based <a class="concept-link" href="agent-memory.html">memory</a>, PostgreSQL + <a class="concept-link" href="pgvector.html">pgvector</a> allows semantic search over past turns:</p>
 <div class="example-box">-- Create session table
 CREATE TABLE sessions (
     session_id UUID PRIMARY KEY,
@@ -743,7 +743,7 @@ r.setex(key, timedelta(hours=24), json.dumps(session_data))</div>
 <div class="section-block" id="stateful-agents">
 <div class="section-marker">06 — Persistence</div>
 <h2>Stateful Agents</h2>
-<p>Agents are programs that loop: observe state, decide action, execute tool, update state. State persists across steps and sessions.</p>
+<p><a class="concept-link" href="agents.html">Agents</a> are programs that loop: observe state, decide action, execute tool, update state. State persists across steps and sessions.</p>
 <h3>Agent Scratchpad &amp; Tool History</h3>
 <p>An agent's scratchpad stores its internal reasoning and tool calls. Must be saved between steps:</p>
 <div class="example-box">from langchain.agents import AgentExecutor, initialize_agent
@@ -764,7 +764,7 @@ agent = initialize_agent(
 response = agent.run("User query")
 # Agent's reasoning, tool calls, and results are logged</div>
 <h3>Checkpointing with LangGraph</h3>
-<p>LangGraph provides explicit checkpointing for agent state. Save snapshots after each step:</p>
+<p><a class="concept-link" href="langgraph.html">LangGraph</a> provides explicit <a class="concept-link" href="checkpointing.html">checkpointing</a> for agent state. Save snapshots after each step:</p>
 <div class="example-box">from langgraph.checkpoint.base import BaseCheckpointStorage
 from langgraph.checkpoint.postgres import PostgresCheckpointStorage
 import psycopg
@@ -791,7 +791,7 @@ result = app.invoke(
 snapshot = checkpointer.get(config)
 print(snapshot.values)  # Last saved state</div>
 <h3>MemGPT-Style External Memory</h3>
-<p>MemGPT stores agent memory in a database, partitioning by type:</p>
+<p>MemGPT stores agent <a class="concept-link" href="agent-memory.html">memory</a> in a database, partitioning by type:</p>
 <div class="example-box">-- MemGPT memory tables
 CREATE TABLE agent_core_memory (
     agent_id UUID,
@@ -858,7 +858,7 @@ async def process_task(task_id: str, user_id: str, query: str):
 <li style="margin: 0.4rem 0;">Bind sessions to user + IP (optional, for non-mobile apps)</li>
 <li style="margin: 0.4rem 0;">Use HttpOnly, Secure cookies (browser storage)</li>
 <li style="margin: 0.4rem 0;">Rotate session IDs on login</li>
-<li style="margin: 0.4rem 0;">Implement rate limiting on session endpoints</li>
+<li style="margin: 0.4rem 0;">Implement <a class="concept-link" href="rate-limiting.html">rate limiting</a> on session endpoints</li>
 </ul>
 <h3>PII Redaction in Stored History</h3>
 <p>Before storing messages in long-term storage, redact sensitive data:</p>
@@ -988,8 +988,8 @@ await log_audit(user_id, "data_exported", {"count": 50}, db)</div>
 </div>
 <div class="ref-group-title">Documentation</div>
 <ul class="ref-list">
-<li><span class="ref-badge badge-docs">Docs</span> LangChain Memory — <a href="https://python.langchain.com/docs/modules/memory/" target="_blank">python.langchain.com/docs/modules/memory/ ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> LangGraph Checkpoints — <a href="https://langchain-ai.github.io/langgraph/" target="_blank">langchain-ai.github.io/langgraph ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="langchain.html">LangChain</a> <a class="concept-link" href="agent-memory.html">Memory</a> — <a href="https://python.langchain.com/docs/modules/memory/" target="_blank">python.langchain.com/docs/modules/memory/ ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="langgraph.html">LangGraph</a> Checkpoints — <a href="https://langchain-ai.github.io/langgraph/" target="_blank">langchain-ai.github.io/langgraph ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> Zep — <a href="https://docs.getzep.com/" target="_blank">docs.getzep.com ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> Redis session patterns — <a href="https://redis.io/docs/manual/client-side-caching/" target="_blank">redis.io/docs ↗</a></li>
 </ul>
@@ -1003,17 +1003,14 @@ await log_audit(user_id, "data_exported", {"count": 50}, db)</div>
 <li><span class="ref-badge badge-blog">Blog</span> Building Stateful LLM Apps — <a href="https://www.anthropic.com/research" target="_blank">anthropic.com/research ↗</a></li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="execution-models.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Execution Models</span></a>
-<a href="reliability.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Reliability Patterns</span></a>
-<a href="traffic-cost.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Traffic & Cost</span></a>
-<a href="human-oversight.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Human Oversight</span></a>
-<a href="sync-async-serving.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Sync vs Async</span></a>
+<a class="rc-card" href="execution-models.html" style="--rc-accent:#ef4444"><span class="rc-label">Execution Models</span></a>
+<a class="rc-card" href="reliability.html" style="--rc-accent:#ef4444"><span class="rc-label">Reliability Patterns</span></a>
+<a class="rc-card" href="traffic-cost.html" style="--rc-accent:#ef4444"><span class="rc-label">Traffic &amp; Cost</span></a>
+<a class="rc-card" href="human-oversight.html" style="--rc-accent:#ef4444"><span class="rc-label">Human Oversight</span></a>
+<a class="rc-card" href="sync-async-serving.html" style="--rc-accent:#ef4444"><span class="rc-label">Sync vs Async</span></a>
 </div>
 </div>
 <footer class="page-footer">

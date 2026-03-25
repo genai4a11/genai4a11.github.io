@@ -155,12 +155,12 @@
 <h2>The intuition</h2>
 <p>Self-attention is a mechanism for letting each token in a sequence gather information from all other tokens. Think of it as a soft lookup: each token asks a <em>query</em> ("what information do I need?"), every token broadcasts a <em>key</em> ("here's what I contain"), and when a query matches a key, the token retrieves that token's <em>value</em> ("here's my content").</p>
 <p>In a sentence like "The animal didn't cross the street because it was too tired", the word "it" needs to figure out whether it refers to "animal" or "street". Self-attention allows "it" to attend strongly to "animal" (high query-key compatibility) and weakly to "street", incorporating the animal's representation into the encoding of "it".</p>
-<p>This happens simultaneously for every token, in parallel. Unlike RNNs which process tokens left-to-right and struggle with long-range dependencies, self-attention has a direct path between any two tokens regardless of distance — one of the key reasons transformers outperform RNNs.</p>
+<p>This happens simultaneously for every token, in parallel. Unlike RNNs which process tokens left-to-right and struggle with long-range dependencies, self-attention has a direct path between any two tokens regardless of distance — one of the key reasons <a class="concept-link" href="transformers.html">transformers</a> outperform RNNs.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Queries, keys, and values</h2>
-<p>Given a sequence of token embeddings X ∈ ℝ<sup>n×d</sup> (n tokens, d dimensions), self-attention learns three weight matrices: W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> ∈ ℝ<sup>d×d_k</sup>.</p>
+<p>Given a sequence of token <a class="concept-link" href="embeddings.html">embeddings</a> X ∈ ℝ<sup>n×d</sup> (n tokens, d dimensions), self-attention learns three weight matrices: W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> ∈ ℝ<sup>d×d_k</sup>.</p>
 <p>These project X into three spaces:</p>
 <pre><code class="language-python">import numpy as np
 
@@ -295,7 +295,7 @@ def causal_attention(Q, K, V):
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Computational cost</h2>
-<p>Self-attention has <strong>O(n²·d)</strong> time and <strong>O(n²)</strong> memory complexity — the attention matrix is n×n. For n=512 this is fine; for n=32768 (32K context) it's 32768² = 1 billion entries per layer per head.</p>
+<p>Self-attention has <strong>O(n²·d)</strong> time and <strong>O(n²)</strong> <a class="concept-link" href="agent-memory.html">memory</a> complexity — the attention matrix is n×n. For n=512 this is fine; for n=32768 (32K context) it's 32768² = 1 billion entries per layer per head.</p>
 <p>This quadratic scaling is why long-context models are expensive, and why alternatives like Flash Attention (IO-aware tiling), linear attention, and SSMs (Mamba) exist.</p>
 <pre><code class="language-python">import torch
 
@@ -323,21 +323,18 @@ print(out.shape)  # (1, 8, 512, 64)
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Softmax in float16 overflows.</strong> QK<sup>T</sup> values can be large; in float16 (max ~65504), exp(score) overflows to NaN. Always subtract the max before softmax (numerically stable softmax) and consider running attention in float32 even when the rest of the model is float16. PyTorch's <code>scaled_dot_product_attention</code> handles this correctly.</p>
-<p><strong>d_k must be divisible by num_heads.</strong> In multi-head attention, d_k is typically d_model / num_heads. If d_model=512 and num_heads=6, d_k=85.3 — not an integer. Choose num_heads that evenly divides d_model (8 or 16 for d_model=512).</p>
+<p><strong>d_k must be divisible by num_heads.</strong> In <a class="concept-link" href="multi-head-attention.html">multi-head attention</a>, d_k is typically d_model / num_heads. If d_model=512 and num_heads=6, d_k=85.3 — not an integer. Choose num_heads that evenly divides d_model (8 or 16 for d_model=512).</p>
 <p><strong>Attention is not the only operation.</strong> The full transformer block is: LayerNorm → Attention → residual add → LayerNorm → FFN → residual add. The FFN (2 linear layers with activation) typically uses 4× the dimension of attention and accounts for ~67% of parameters. Don't optimise attention in isolation.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="multi-head-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
-<a href="flash-attn.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
-<a href="cross-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Cross-Attention</span></a>
-<a href="rope.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RoPE</span></a>
-<a href="alibi.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">ALiBi</span></a>
+<a class="rc-card" href="multi-head-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
+<a class="rc-card" href="flash-attn.html" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
+<a class="rc-card" href="cross-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Cross-Attention</span></a>
+<a class="rc-card" href="rope.html" style="--rc-accent:#64748b"><span class="rc-label">RoPE</span></a>
+<a class="rc-card" href="alibi.html" style="--rc-accent:#64748b"><span class="rc-label">ALiBi</span></a>
 </div>
 </div>
 <footer>

@@ -153,14 +153,14 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Code mode vs JSON tool dispatch</h2>
-<p>Standard function calling: the model outputs <code>{"name": "search", "args": {"query": "..."}}</code>. Your code parses this JSON, routes to the right function, handles argument validation, runs the function, and returns the result. Each tool call is a round-trip.</p>
+<p>Standard <a class="concept-link" href="function-calling.html">function calling</a>: the model outputs <code>{"name": "search", "args": {"query": "..."}}</code>. Your code parses this JSON, routes to the right function, handles argument validation, runs the function, and returns the result. Each tool call is a round-trip.</p>
 <p>Code mode: the model outputs Python code that calls your API directly. Instead of multiple JSON dispatch round-trips, the model writes a complete program:</p>
 <pre><code>results = search("LLM benchmarks 2024")
 filtered = [r for r in results if r.date &gt; "2024-01-01"]
 summary = summarise(filtered[:3])
 final_answer(summary)
 </code></pre>
-<p>This is more powerful: the model can use loops, conditionals, list comprehensions, and intermediate variables without a round-trip per operation. It's also more compact — one code block does what would take 5+ JSON tool calls. The SmolAgents and Code Interpreter patterns both use this approach.</p>
+<p>This is more powerful: the model can use loops, conditionals, list comprehensions, and intermediate variables without a round-trip per operation. It's also more compact — one code block does what would take 5+ JSON tool calls. The <a class="concept-link" href="smolagents.html">SmolAgents</a> and Code Interpreter patterns both use this approach.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -251,7 +251,7 @@ print(code_agent("What is 1234 * 5678?"))
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Typed SDK for the agent</h2>
-<p>The quality of code-mode agents depends heavily on how well the SDK is documented. The model generates code based on the docstrings and type hints in the system prompt:</p>
+<p>The quality of code-mode <a class="concept-link" href="agents.html">agents</a> depends heavily on how well the SDK is documented. The model generates code based on the docstrings and type hints in the system prompt:</p>
 <pre><code class="language-python">SDK_DOCS = '''
 Available SDK (import as `sdk`):
 
@@ -292,7 +292,7 @@ services:
     volumes:
       - /tmp/agent-sandbox:/tmp:rw
 </code></pre>
-<p><strong>E2B (cloud sandbox)</strong>: managed cloud sandboxes specifically designed for LLM code execution. Pay-per-use, no infrastructure management, with file I/O and network access controls. Best for production.</p>
+<p><strong>E2B (cloud sandbox)</strong>: managed cloud sandboxes specifically designed for LLM code execution. Pay-per-use, no <a class="concept-link" href="infra.html">infrastructure</a> management, with file I/O and network access controls. Best for production.</p>
 <p><strong>WebAssembly (Pyodide)</strong>: run Python in a Wasm sandbox in the browser or a confined runtime. No network access by default, strong isolation, but limited library support.</p>
 </div>
 <div class="section-block" id="s6">
@@ -309,21 +309,18 @@ services:
 <h2>Gotchas</h2>
 <p><strong>Code execution latency adds up.</strong> Each code block requires parsing, sandboxing, execution, and result formatting. If the agent generates 10 code blocks per query, this overhead is significant. Cache SDK call results aggressively.</p>
 <p><strong>The model can import libraries you didn't intend.</strong> Even with restricted builtins, <code>__import__</code> might be available. Explicitly block imports in your SDK docs and in the execution environment.</p>
-<p><strong>LLMs can write infinite loops.</strong> Always set a timeout on code execution: <code>signal.alarm(30)</code> or a threading timeout. An infinite loop in exec() will block your server thread indefinitely without a timeout.</p>
-<p><strong>SDK documentation is your prompt.</strong> The model writes code against the docstrings you provide. Missing a return type or an example will cause the model to guess, often incorrectly. Treat SDK docs with the same care as system prompts.</p>
+<p><strong><a class="concept-link" href="llms.html">LLMs</a> can write infinite loops.</strong> Always set a timeout on code execution: <code>signal.alarm(30)</code> or a threading timeout. An infinite loop in exec() will block your server thread indefinitely without a timeout.</p>
+<p><strong>SDK documentation is your prompt.</strong> The model writes code against the docstrings you provide. Missing a return type or an example will cause the model to guess, often incorrectly. Treat SDK docs with the same care as <a class="concept-link" href="system-prompts.html">system prompts</a>.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="function-calling.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Function Calling</span></a>
-<a href="model-context-protocol.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Model Context Protocol</span></a>
-<a href="tool-selection.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Tool Selection</span></a>
-<a href="agent-skills.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Agent Skills</span></a>
-<a href="react-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="function-calling.html" style="--rc-accent:#06b6d4"><span class="rc-label">Function Calling</span></a>
+<a class="rc-card" href="model-context-protocol.html" style="--rc-accent:#06b6d4"><span class="rc-label">Model Context Protocol</span></a>
+<a class="rc-card" href="tool-selection.html" style="--rc-accent:#06b6d4"><span class="rc-label">Tool Selection</span></a>
+<a class="rc-card" href="agent-skills.html" style="--rc-accent:#06b6d4"><span class="rc-label">Agent Skills</span></a>
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
 </div>
 </div>
 <footer>

@@ -153,8 +153,8 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>The late chunking insight</h2>
-<p>Standard chunking has a fundamental problem: when you split a document into chunks and embed each chunk independently, you lose the document-level context. A chunk containing "it was announced last year" loses the antecedent of "it" — the embedding encodes an ambiguous fragment. Similarly, technical abbreviations defined earlier in the document are opaque in later chunks.</p>
-<p>Late chunking (Günther et al. 2024, Jina AI) inverts the order of operations. Instead of: <em>split → embed chunks</em>, it does: <em>embed whole document → split embeddings</em>.</p>
+<p>Standard chunking has a fundamental problem: when you split a document into chunks and embed each chunk independently, you lose the document-level context. A chunk containing "it was announced last year" loses the antecedent of "it" — the <a class="concept-link" href="embeddings.html">embedding</a> encodes an ambiguous fragment. Similarly, technical abbreviations defined earlier in the document are opaque in later chunks.</p>
+<p>Late chunking (Günther et al. 2024, Jina AI) inverts the order of operations. Instead of: <em>split → embed chunks</em>, it does: <em>embed whole document → split <a class="concept-link" href="embeddings.html">embeddings</a></em>.</p>
 <p>The key insight: modern transformer encoders produce token-level embeddings that are contextualised by the entire input sequence (via attention). If you feed the full document through the encoder and then pool the resulting token embeddings into chunk-level vectors, each chunk's embedding reflects its meaning <em>in context</em>, not in isolation. A chunk about "it" now has an embedding shaped by everything that came before.</p>
 </div>
 <div class="section-block" id="s2">
@@ -165,10 +165,10 @@
 <ol>
 <li>Feed the entire document through the long-context encoder: <code>token_embeddings = encoder(D)</code> — shape (N, d).</li>
 <li>Determine chunk boundaries: positions [0, b₁, b₂, ..., N].</li>
-<li>Pool token embeddings within each chunk boundary: <code>e(Cᵢ) = mean(token_embeddings[bᵢ:bᵢ₊₁])</code>.</li>
+<li>Pool token <a class="concept-link" href="embeddings.html">embeddings</a> within each chunk boundary: <code>e(Cᵢ) = mean(token_embeddings[bᵢ:bᵢ₊₁])</code>.</li>
 </ol>
-<p>The embedding for chunk Cᵢ is now computed from token representations that were contextualised by the full document — they've "seen" every other token via self-attention before being pooled.</p>
-<p>Requirement: the encoder must have a context window large enough to process the full document (hence Jina's 8K token encoder). For documents longer than the encoder context, late chunking must be applied to document segments rather than the full doc.</p>
+<p>The <a class="concept-link" href="embeddings.html">embedding</a> for chunk Cᵢ is now computed from token representations that were contextualised by the full document — they've "seen" every other token via <a class="concept-link" href="self-attention.html">self-attention</a> before being pooled.</p>
+<p>Requirement: the encoder must have a <a class="concept-link" href="context-window.html">context window</a> large enough to process the full document (hence Jina's 8K token encoder). For documents longer than the encoder context, late chunking must be applied to document segments rather than the full doc.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -214,42 +214,39 @@ print(f"Created {len(embeddings)} contextualised chunk embeddings")
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Late chunking vs standard chunking</h2>
-<p>On retrieval benchmarks, late chunking outperforms standard chunking by 4–12% on documents where context is important for disambiguation. The gains are largest for: documents with many anaphora (pronouns, "this", "the above"), technical documents where acronyms are defined early and used throughout, legal documents with cross-references, and scientific papers where a finding mentioned in the abstract is referenced by number later.</p>
+<p>On retrieval <a class="concept-link" href="benchmarks.html">benchmarks</a>, late chunking outperforms standard chunking by 4–12% on documents where context is important for disambiguation. The gains are largest for: documents with many anaphora (pronouns, "this", "the above"), technical documents where acronyms are defined early and used throughout, legal documents with cross-references, and scientific papers where a finding mentioned in the abstract is referenced by number later.</p>
 <p>The gains are smaller on: short documents (where context loss is less severe), documents about a single well-defined topic (less ambiguity), and factoid retrieval from simple FAQs.</p>
-<p>A key result from the Jina AI paper: late chunking matches or exceeds parent-child and sentence-window on BEIR benchmark while using a simpler retrieval architecture (no separate parent store needed).</p>
+<p>A key result from the Jina AI paper: late chunking matches or exceeds <a class="concept-link" href="parent-child-chunking.html">parent-child</a> and sentence-window on BEIR benchmark while using a simpler retrieval architecture (no separate parent store needed).</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Limitations</h2>
-<p><strong>Encoder context window</strong>: The full document must fit in the encoder's context window. Jina v2 supports 8192 tokens. For longer documents, you must either: truncate (losing late-chunking's main benefit for later sections), segment the document into 8K windows and apply late chunking to each, or use a long-context encoder (Jina v3 or similar).</p>
-<p><strong>Inference cost</strong>: One forward pass through a full 8K-token document uses more VRAM and time than K separate forward passes through K small chunks (K × smaller_cost). For batch processing at scale, measure the actual throughput difference on your hardware.</p>
-<p><strong>Requires compatible model</strong>: Late chunking requires an encoder that returns token-level embeddings with sufficient capacity to contextualise the full document. Not all embedding APIs expose token-level embeddings — OpenAI's API only returns sentence-level embeddings, making late chunking impossible via the API.</p>
+<p><strong>Encoder <a class="concept-link" href="context-window.html">context window</a></strong>: The full document must fit in the encoder's context window. Jina v2 supports 8192 tokens. For longer documents, you must either: truncate (losing late-chunking's main benefit for later sections), segment the document into 8K windows and apply late chunking to each, or use a long-context encoder (Jina v3 or similar).</p>
+<p><strong>Inference cost</strong>: One forward pass through a full 8K-token document uses more VRAM and time than K separate forward passes through K small chunks (K × smaller_cost). For batch processing at scale, measure the actual throughput difference on your <a class="concept-link" href="hardware.html">hardware</a>.</p>
+<p><strong>Requires compatible model</strong>: Late chunking requires an encoder that returns token-level <a class="concept-link" href="embeddings.html">embeddings</a> with sufficient capacity to contextualise the full document. Not all <a class="concept-link" href="embeddings.html">embedding</a> APIs expose token-level embeddings — OpenAI's API only returns sentence-level embeddings, making late chunking impossible via the API.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>When to use it</h2>
-<p>Late chunking is the right choice when: documents have strong cross-references or contextual dependencies, you're using a self-hosted encoder (no API token-level embedding restrictions), document length fits within 8K tokens, and retrieval quality is a higher priority than ingestion speed/cost.</p>
-<p>For most production systems today, parent-child or sentence-window provides comparable quality with broader infrastructure compatibility. Monitor this space — as long-context encoders improve, late chunking's advantages will compound.</p>
+<p>Late chunking is the right choice when: documents have strong cross-references or contextual dependencies, you're using a self-hosted encoder (no API token-level <a class="concept-link" href="embeddings.html">embedding</a> restrictions), document length fits within 8K tokens, and retrieval quality is a higher priority than ingestion speed/cost.</p>
+<p>For most production systems today, <a class="concept-link" href="parent-child-chunking.html">parent-child</a> or sentence-window provides comparable quality with broader <a class="concept-link" href="infra.html">infrastructure</a> compatibility. Monitor this space — as long-context encoders improve, late chunking's advantages will compound.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Pooling strategy matters</strong>: Mean pooling across all tokens in a chunk boundary is the standard approach. Max pooling and CLS token approaches have also been tried. Mean pooling is most robust and matches Jina's implementation.</p>
-<p><strong>Special tokens at boundaries</strong>: Tokenizers add special tokens ([CLS], [SEP]) at the start and end of the full document. These shouldn't be included in chunk pooling. Slice the token embeddings starting from index 1 and ending at -1 to exclude special tokens.</p>
-<p><strong>Batching for production</strong>: For bulk ingestion, batch documents that fit within the context window together. Jina's model can process ~32 documents of 256 tokens in a single forward pass on a 24GB GPU.</p>
+<p><strong>Special tokens at boundaries</strong>: <a class="concept-link" href="tokenization.html">Tokenizers</a> add special tokens ([CLS], [SEP]) at the start and end of the full document. These shouldn't be included in chunk pooling. Slice the token <a class="concept-link" href="embeddings.html">embeddings</a> starting from index 1 and ending at -1 to exclude special tokens.</p>
+<p><strong>Batching for production</strong>: For bulk ingestion, batch documents that fit within the <a class="concept-link" href="context-window.html">context window</a> together. Jina's model can process ~32 documents of 256 tokens in a single forward pass on a 24GB GPU.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="fixed-size-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Fixed-size</span></a>
-<a href="sentence-window.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Sentence Window</span></a>
-<a href="semantic-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Semantic Chunking</span></a>
-<a href="parent-child-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Parent-Child</span></a>
-<a href="proposition-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Proposition Chunking</span></a>
+<a class="rc-card" href="fixed-size-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Fixed-size</span></a>
+<a class="rc-card" href="sentence-window.html" style="--rc-accent:#64748b"><span class="rc-label">Sentence Window</span></a>
+<a class="rc-card" href="semantic-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Semantic Chunking</span></a>
+<a class="rc-card" href="parent-child-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Parent-Child</span></a>
+<a class="rc-card" href="proposition-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Proposition Chunking</span></a>
 </div>
 </div>
 <footer>

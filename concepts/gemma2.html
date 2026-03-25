@@ -153,15 +153,15 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Gemma 2 model family</h2>
-<p>Gemma 2 (Google DeepMind, June 2024) is a family of open-weight models at 2B, 9B, and 27B parameters. All three variants use the same core architecture but differ in depth and width. Context window: 8192 tokens. The models are released with permissive terms for research and commercial use. Gemma 2 improves significantly over Gemma 1, particularly for instruction following and reasoning.</p>
+<p>Gemma 2 (Google DeepMind, June 2024) is a family of open-weight models at 2B, 9B, and 27B parameters. All three variants use the same core architecture but differ in depth and width. <a class="concept-link" href="context-window.html">Context window</a>: 8192 tokens. The models are released with permissive terms for research and commercial use. Gemma 2 improves significantly over Gemma 1, particularly for instruction following and reasoning.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Architectural innovations</h2>
-<p>Gemma 2 introduces two key architectural changes over standard transformers:</p>
+<p>Gemma 2 introduces two key architectural changes over standard <a class="concept-link" href="transformers.html">transformers</a>:</p>
 <ul>
-<li><strong>Alternating local and global attention</strong>: Even-numbered layers use sliding-window attention with a 4096-token window (local); odd-numbered layers use full global attention. This halves the KV cache size of the global-attention layers while preserving long-range context. The pattern is: local → global → local → global...</li>
-<li><strong>Knowledge distillation</strong>: The 2B model is trained with soft targets from a larger teacher model, not just next-token prediction. This knowledge distillation gives the 2B model much better instruction-following and reasoning than its size would suggest.</li>
+<li><strong>Alternating local and global attention</strong>: Even-numbered layers use sliding-window attention with a 4096-token window (local); odd-numbered layers use full global attention. This halves the <a class="concept-link" href="kv-cache.html">KV cache</a> size of the global-attention layers while preserving long-range context. The pattern is: local → global → local → global...</li>
+<li><strong>Knowledge <a class="concept-link" href="distillation.html">distillation</a></strong>: The 2B model is trained with soft targets from a larger teacher model, not just next-token prediction. This knowledge distillation gives the 2B model much better instruction-following and reasoning than its size would suggest.</li>
 <li><strong>Logit soft-capping</strong>: Attention logits and output logits are soft-capped (tanh(x/cap)·cap) to prevent training instability from extreme logit values.</li>
 </ul>
 </div>
@@ -201,7 +201,7 @@ print(tokenizer.decode(new_tokens, skip_special_tokens=True))
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Gemma 2 2B: edge deployment</h2>
-<p>Gemma 2 2B is one of the strongest models for on-device and edge deployment. At bfloat16 it requires ~4.5 GB VRAM, and with int4 quantisation fits in ~1.3 GB — runnable on a smartphone with a GPU (Google Pixel 9, iPhone 15 Pro). Despite its small size, Gemma 2 2B-IT outperforms many 7B models on instruction-following benchmarks, thanks to distillation. It's used in Google's AI Edge SDK for on-device inference.</p>
+<p>Gemma 2 2B is one of the strongest models for on-device and edge deployment. At bfloat16 it requires ~4.5 GB VRAM, and with int4 <a class="concept-link" href="quantization.html">quantisation</a> fits in ~1.3 GB — runnable on a smartphone with a GPU (Google Pixel 9, iPhone 15 Pro). Despite its small size, Gemma 2 2B-IT outperforms many 7B models on instruction-following <a class="concept-link" href="benchmarks.html">benchmarks</a>, thanks to <a class="concept-link" href="distillation.html">distillation</a>. It's used in Google's AI Edge SDK for on-device inference.</p>
 <pre><code class="language-python">model_name = "google/gemma-2-2b-it"
 # For deployment with llama.cpp / Ollama:
 # ollama run gemma2:2b
@@ -234,30 +234,27 @@ model.print_trainable_parameters()
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Performance vs peers</h2>
-<p>At the 9B scale, Gemma 2 9B outperforms Llama 3 8B on MMLU (71.3% vs 68.4%), MATH (36.6% vs 30.0%), and HumanEval (71.3% vs 62.2%). The 27B model is competitive with much larger models — it was near-state-of-the-art for open models under 30B when released. The 2B model outperforms Llama 3 8B on several benchmarks despite being 4× smaller, demonstrating the effectiveness of knowledge distillation.</p>
+<p>At the 9B scale, Gemma 2 9B outperforms Llama 3 8B on <a class="concept-link" href="mmlu.html">MMLU</a> (71.3% vs 68.4%), MATH (36.6% vs 30.0%), and <a class="concept-link" href="humaneval.html">HumanEval</a> (71.3% vs 62.2%). The 27B model is competitive with much larger models — it was near-state-of-the-art for open models under 30B when released. The 2B model outperforms Llama 3 8B on several <a class="concept-link" href="benchmarks.html">benchmarks</a> despite being 4× smaller, demonstrating the effectiveness of knowledge <a class="concept-link" href="distillation.html">distillation</a>.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
-<li><strong>8192 token context</strong>: Gemma 2 has a shorter context window than Qwen 2.5 or Llama 3 (which support 128k). For long-context tasks, prefer Llama 3 or Qwen 2.5.</li>
+<li><strong>8192 token context</strong>: Gemma 2 has a shorter <a class="concept-link" href="context-window.html">context window</a> than <a class="concept-link" href="qwen25.html">Qwen 2.5</a> or Llama 3 (which support 128k). For long-context tasks, prefer Llama 3 or Qwen 2.5.</li>
 <li><strong>Chat template format</strong>: Gemma 2 uses a specific chat format with <code>&lt;start_of_turn&gt;user
 ...&lt;end_of_turn&gt;</code> tokens. Always use <code>tokenizer.apply_chat_template()</code> for instruct variants.</li>
-<li><strong>Logit cap side effects</strong>: The logit soft-capping (tanh) changes the distribution compared to standard softmax. This can affect speculative decoding compatibility — the draft model must also use logit capping for correct acceptance probabilities.</li>
+<li><strong>Logit cap side effects</strong>: The logit soft-capping (tanh) changes the distribution compared to standard softmax. This can affect <a class="concept-link" href="speculative-decoding.html">speculative decoding</a> compatibility — the draft model must also use logit capping for correct acceptance probabilities.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="llama3.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Llama 3.1</span></a>
-<a href="mistral.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Mistral 7B</span></a>
-<a href="phi3.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Phi-3 / Phi-4</span></a>
-<a href="qwen25.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Qwen 2.5</span></a>
-<a href="deepseek-r1.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">DeepSeek R1</span></a>
+<a class="rc-card" href="llama3.html" style="--rc-accent:#64748b"><span class="rc-label">Llama 3.1</span></a>
+<a class="rc-card" href="mistral.html" style="--rc-accent:#64748b"><span class="rc-label">Mistral 7B</span></a>
+<a class="rc-card" href="phi3.html" style="--rc-accent:#64748b"><span class="rc-label">Phi-3 / Phi-4</span></a>
+<a class="rc-card" href="qwen25.html" style="--rc-accent:#64748b"><span class="rc-label">Qwen 2.5</span></a>
+<a class="rc-card" href="deepseek-r1.html" style="--rc-accent:#64748b"><span class="rc-label">DeepSeek R1</span></a>
 </div>
 </div>
 <footer>

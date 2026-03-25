@@ -153,9 +153,9 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>What problem MCP solves</h2>
-<p>Before MCP, every LLM application reinvented tool integration from scratch. Want your Claude app to access your database? Write a custom wrapper. Want to reuse that wrapper in your LangChain app? Rewrite it. Want to give your OpenAI app the same capability? Rewrite it again. Every AI client had its own incompatible tool protocol.</p>
+<p>Before MCP, every LLM application reinvented tool integration from scratch. Want your Claude app to access your database? Write a custom wrapper. Want to reuse that wrapper in your <a class="concept-link" href="langchain.html">LangChain</a> app? Rewrite it. Want to give your OpenAI app the same capability? Rewrite it again. Every AI client had its own incompatible tool protocol.</p>
 <p>MCP (Model Context Protocol) is Anthropic's answer to this: a standardised, open protocol where tools are exposed as <strong>MCP servers</strong> and LLM applications connect as <strong>MCP clients</strong>. Write a database MCP server once; use it with Claude Desktop, VS Code Copilot, Cursor, or any other MCP client without modification.</p>
-<p>It's the USB of AI tools: a standard connector so any tool works with any client. As of 2024, MCP is supported natively in Claude Desktop, many IDE plugins, and major agent frameworks.</p>
+<p>It's the USB of AI tools: a standard connector so any tool works with any client. As of 2024, MCP is supported natively in Claude Desktop, many IDE plugins, and major agent <a class="concept-link" href="agent-frameworks.html">frameworks</a>.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -239,7 +239,7 @@ if __name__ == "__main__":
   }
 }
 </code></pre>
-<p>For <strong>programmatic use</strong> with the Anthropic Python SDK:</p>
+<p>For <strong><a class="concept-link" href="programmatic-prompting.html">programmatic</a> use</strong> with the Anthropic Python SDK:</p>
 <pre><code class="language-python">import asyncio
 from anthropic import Anthropic
 from mcp import ClientSession, StdioServerParameters
@@ -276,7 +276,7 @@ asyncio.run(chat_with_mcp())
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>MCP vs plain tool use</h2>
-<p><strong>Use plain tool use</strong> (direct Anthropic API <code>tools</code> parameter) when: you're building a self-contained application, your tools are tightly coupled to your app logic, or you don't need to share tools across different AI clients.</p>
+<p><strong>Use plain <a class="concept-link" href="tool-use.html">tool use</a></strong> (direct Anthropic API <code>tools</code> parameter) when: you're building a self-contained application, your tools are tightly coupled to your app logic, or you don't need to share tools across different AI clients.</p>
 <p><strong>Use MCP</strong> when: you want to share tools across multiple AI applications (Claude Desktop + VS Code + your app), you're building tools for the broader ecosystem, your tool server runs as a long-lived process serving multiple clients, or you want to use existing MCP servers from the community without writing wrappers.</p>
 <p>The practical difference: MCP adds a network layer and a discovery protocol. For a simple single-app integration, this overhead is unnecessary. For tools that should be broadly accessible and reusable, MCP is the right abstraction.</p>
 </div>
@@ -286,28 +286,25 @@ asyncio.run(chat_with_mcp())
 <p>The MCP ecosystem has grown rapidly since Anthropic open-sourced the protocol in late 2024. Key sources for pre-built MCP servers:</p>
 <p><strong>Official Anthropic servers</strong>: filesystem, GitHub, GitLab, Google Drive, Slack, Postgres, SQLite, Puppeteer (browser automation), and more at github.com/modelcontextprotocol/servers.</p>
 <p><strong>Community servers</strong>: thousands of community-built servers for specific services. The MCP registry at mcp.so catalogues available servers by category.</p>
-<p><strong>Framework integrations</strong>: LangChain, LlamaIndex, and AutoGen have MCP adapter libraries so you can use MCP servers as tools within those frameworks without writing custom adapters.</p>
+<p><strong>Framework integrations</strong>: <a class="concept-link" href="langchain.html">LangChain</a>, <a class="concept-link" href="llamaindex.html">LlamaIndex</a>, and <a class="concept-link" href="autogen.html">AutoGen</a> have MCP adapter libraries so you can use MCP servers as tools within those <a class="concept-link" href="agent-frameworks.html">frameworks</a> without writing custom adapters.</p>
 <p>Before writing a custom MCP server, search the registry — there's a good chance someone has already built what you need for common services (Notion, Jira, Salesforce, databases, etc.).</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>stdio transport blocks on large outputs.</strong> The default stdio transport reads/writes line-by-line, which struggles with large tool results (e.g., a database query returning 10,000 rows). Always paginate large results from MCP tools, returning at most a few KB per call. Use SSE transport for streaming use cases.</p>
+<p><strong>stdio transport blocks on large outputs.</strong> The default stdio transport reads/writes line-by-line, which struggles with large tool results (e.g., a database query returning 10,000 rows). Always paginate large results from MCP tools, returning at most a few KB per call. Use SSE transport for <a class="concept-link" href="streaming.html">streaming</a> use cases.</p>
 <p><strong>Server lifecycle matters.</strong> MCP servers launched by Claude Desktop start fresh for each session. If your server holds state (open DB connections, cached data), you need to re-initialise on each connect. For stateful servers, run them as long-lived processes and connect via SSE rather than stdio.</p>
 <p><strong>Tool descriptions are still critical.</strong> MCP doesn't change the fact that the LLM picks tools based on their descriptions. An MCP server with poorly-written tool descriptions will be used incorrectly, regardless of the protocol.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="function-calling.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Function Calling</span></a>
-<a href="tool-selection.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Tool Selection</span></a>
-<a href="code-mode.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Code Mode</span></a>
-<a href="agent-skills.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Agent Skills</span></a>
-<a href="react-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="function-calling.html" style="--rc-accent:#06b6d4"><span class="rc-label">Function Calling</span></a>
+<a class="rc-card" href="tool-selection.html" style="--rc-accent:#06b6d4"><span class="rc-label">Tool Selection</span></a>
+<a class="rc-card" href="code-mode.html" style="--rc-accent:#06b6d4"><span class="rc-label">Code Mode</span></a>
+<a class="rc-card" href="agent-skills.html" style="--rc-accent:#06b6d4"><span class="rc-label">Agent Skills</span></a>
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
 </div>
 </div>
 <footer>

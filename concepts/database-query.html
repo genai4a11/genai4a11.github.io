@@ -422,11 +422,11 @@
 <div class="section-block" id="why-text-to-sql">
 <div class="section-marker">01 — Motivation</div>
 <h2>Why Text-to-SQL Matters</h2>
-<p>SQL is powerful but requires technical expertise. Non-technical users struggle with JOIN syntax, aggregations, subqueries. Text-to-SQL bridges this: ask a natural language question, get back results. Democratizes data access.</p>
+<p>SQL is powerful but requires technical expertise. Non-technical users struggle with JOIN syntax, aggregations, subqueries. <a class="concept-link" href="text2sql.html">Text-to-SQL</a> bridges this: ask a natural language question, get back results. Democratizes data access.</p>
 <h3>Use Cases</h3>
-<p><strong>Business analytics:</strong> Execs query sales data without consulting data engineers. <strong>Customer support:</strong> Agents pull customer records in real-time. <strong>Internal tools:</strong> Teams explore logs, metrics, historical data. <strong>Data exploration:</strong> Data scientists prototype queries faster.</p>
+<p><strong>Business analytics:</strong> Execs query sales data without consulting data engineers. <strong>Customer support:</strong> <a class="concept-link" href="agents.html">Agents</a> pull customer records in real-time. <strong>Internal tools:</strong> Teams explore logs, metrics, historical data. <strong>Data exploration:</strong> Data scientists prototype queries faster.</p>
 <h3>Challenges</h3>
-<p>SQL is precise; LLMs are probabilistic. A small mistake (wrong table, incorrect JOIN) breaks the query. Safety is critical: you can't let an LLM blindly run DELETE statements. Schema understanding is hard: a thousand-column database requires explaining the LLM which columns matter.</p>
+<p>SQL is precise; <a class="concept-link" href="llms.html">LLMs</a> are probabilistic. A small mistake (wrong table, incorrect JOIN) breaks the query. <a class="concept-link" href="safety.html">Safety</a> is critical: you can't let an LLM blindly run DELETE statements. Schema understanding is hard: a thousand-column database requires explaining the LLM which columns matter.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Key insight:</strong> Text-to-SQL success depends 80% on schema quality and context, 20% on LLM capability. A clear schema with good descriptions beats a fancy LLM on a bad schema.</span>
@@ -437,7 +437,7 @@
 <h2>How Text-to-SQL Works</h2>
 <p>The basic pipeline: user question → schema context → LLM generates SQL → validate → execute → explain result.</p>
 <h3>Step-by-Step</h3>
-<p><strong>1. Receive question:</strong> "What were our top 5 products by revenue last quarter?" <strong>2. Schema retrieval:</strong> Identify relevant tables. Use sparse search (keyword matching) or dense (embedding-based) or both. <strong>3. Context assembly:</strong> Build prompt with schema description, example queries, business rules. <strong>4. LLM generation:</strong> Prompt the LLM with context + question. <strong>5. Validation:</strong> Parse SQL, check syntax, enforce guardrails (no DELETE, no cross-db access). <strong>6. Execution:</strong> Run on prod DB with timeout, row limits. <strong>7. Explanation:</strong> Summarize results in natural language.</p>
+<p><strong>1. Receive question:</strong> "What were our top 5 products by revenue last quarter?" <strong>2. Schema retrieval:</strong> Identify relevant tables. Use sparse search (keyword matching) or dense (<a class="concept-link" href="embeddings.html">embedding</a>-based) or both. <strong>3. Context assembly:</strong> Build prompt with schema description, example queries, business rules. <strong>4. LLM generation:</strong> Prompt the LLM with context + question. <strong>5. Validation:</strong> Parse SQL, check syntax, enforce <a class="concept-link" href="guardrails.html">guardrails</a> (no DELETE, no cross-db access). <strong>6. Execution:</strong> Run on prod DB with timeout, row limits. <strong>7. Explanation:</strong> Summarize results in natural language.</p>
 <div class="example-box">Prompt assembly example:
 
 You are a SQL expert. Generate a single SQL query based on:
@@ -465,7 +465,7 @@ Your response (SQL only, no markdown):
 <div class="section-block" id="schema-context">
 <div class="section-marker">03 — Schema Representation</div>
 <h2>Schema and Context</h2>
-<p>LLM performance on Text-to-SQL is dominated by schema clarity. A vague schema ("customer_id INT") loses to a clear one ("customer_id INT — Foreign key to users.id, required").</p>
+<p>LLM performance on <a class="concept-link" href="text2sql.html">Text-to-SQL</a> is dominated by schema clarity. A vague schema ("customer_id INT") loses to a clear one ("customer_id INT — Foreign key to users.id, required").</p>
 <h3>Schema Description Best Practices</h3>
 <div class="methods-list">
 <div class="method-card">
@@ -511,7 +511,7 @@ Your response (SQL only, no markdown):
 </div>
 </div>
 <h3>Schema Compression</h3>
-<p>Large schemas overwhelm LLMs. For a 100-table database, LLMs only see ~20 most relevant tables (selected by keyword matching). Techniques: <strong>semantic chunking</strong> (split by business domain), <strong>relevance ranking</strong> (use embedding similarity to rank tables), <strong>dynamic selection</strong> (parse question first, retrieve relevant tables).</p>
+<p>Large schemas overwhelm <a class="concept-link" href="llms.html">LLMs</a>. For a 100-table database, <a class="concept-link" href="llms.html">LLMs</a> only see ~20 most relevant tables (selected by keyword matching). Techniques: <strong><a class="concept-link" href="semantic-chunking.html">semantic chunking</a></strong> (split by business domain), <strong>relevance ranking</strong> (use <a class="concept-link" href="embeddings.html">embedding</a> similarity to rank tables), <strong>dynamic selection</strong> (parse question first, retrieve relevant tables).</p>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Schema context token cost:</strong> A detailed schema for 50 tables = ~2k tokens. Multiply that across queries. For high volume, cache schema context in prompt templates or use shorter schema digests.</span>
@@ -520,7 +520,7 @@ Your response (SQL only, no markdown):
 <div class="section-block" id="few-shot">
 <div class="section-marker">04 — Learning Techniques</div>
 <h2>Few-Shot Learning for SQL</h2>
-<p>Providing example queries (few-shot) dramatically improves LLM SQL generation. Examples show style, common patterns, and business logic.</p>
+<p>Providing example queries (<a class="concept-link" href="few-shot.html">few-shot</a>) dramatically improves LLM SQL generation. Examples show style, common patterns, and business logic.</p>
 <h3>Few-Shot Example Strategy</h3>
 <p><strong>Include 3–5 diverse examples:</strong> simple (SELECT from single table), moderate (JOIN 2–3 tables), complex (subqueries, aggregation). <strong>Show realistic patterns:</strong> how do we typically filter by date? Which tables JOIN together? <strong>Use actual question/answer pairs from prod:</strong> log successful queries and use them as examples. <strong>Group by domain:</strong> separate examples for finance queries vs. product queries.</p>
 <div class="table-wrap">
@@ -544,9 +544,9 @@ Your response (SQL only, no markdown):
 <div class="section-block" id="vanna-approach">
 <div class="section-marker">05 — Vanna AI</div>
 <h2>The Vanna Approach: RAG + Fine-Tuning</h2>
-<p>Vanna AI is a commercial Text-to-SQL platform that combines RAG (retrieve past successful queries) with optional fine-tuning. Instead of relying purely on prompting, it learns from your data.</p>
+<p><a class="concept-link" href="vanna.html">Vanna AI</a> is a commercial <a class="concept-link" href="text2sql.html">Text-to-SQL</a> platform that combines <a class="concept-link" href="rag.html">RAG</a> (retrieve past successful queries) with optional <a class="concept-link" href="finetuning.html">fine-tuning</a>. Instead of relying purely on <a class="concept-link" href="prompting.html">prompting</a>, it learns from your data.</p>
 <h3>How Vanna Works</h3>
-<p><strong>Indexing:</strong> Vanna ingests your schema + successful SQL queries from prod. <strong>Retrieval:</strong> When a new question arrives, it retrieves similar past queries (by embedding or semantic search). <strong>Augmentation:</strong> Includes retrieved examples in prompt. <strong>Optional fine-tuning:</strong> With enough examples (100+), fine-tune a smaller model on your domain.</p>
+<p><strong>Indexing:</strong> Vanna ingests your schema + successful SQL queries from prod. <strong>Retrieval:</strong> When a new question arrives, it retrieves similar past queries (by <a class="concept-link" href="embeddings.html">embedding</a> or semantic search). <strong>Augmentation:</strong> Includes retrieved examples in prompt. <strong>Optional <a class="concept-link" href="finetuning.html">fine-tuning</a>:</strong> With enough examples (100+), fine-tune a smaller model on your domain.</p>
 <h3>Vanna vs LangChain SQL Agent</h3>
 <div class="table-wrap">
 <table>
@@ -570,7 +570,7 @@ Your response (SQL only, no markdown):
 <div class="section-block" id="safety">
 <div class="section-marker">06 — Safety</div>
 <h2>Safety and Guardrails</h2>
-<p>LLMs can generate dangerous SQL (DELETE, DROP) or inefficient queries (Cartesian products). Guardrails are non-negotiable in production.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> can generate dangerous SQL (DELETE, DROP) or inefficient queries (Cartesian products). <a class="concept-link" href="guardrails.html">Guardrails</a> are non-negotiable in production.</p>
 <h3>Safety Checks</h3>
 <p><strong>Blocklist dangerous operations:</strong> Reject queries with DELETE, DROP, ALTER, INSERT. <strong>Whitelist tables:</strong> Only allow queries against safe tables. <strong>Row limits:</strong> Cap results at 10k rows; prevent full-table scans. <strong>Timeout:</strong> Kill queries exceeding 5–10s. <strong>Cost limits:</strong> For cloud DBs, cap query cost. <strong>Validation:</strong> Parse SQL, check syntax before execution. <strong>Audit:</strong> Log all generated queries, results, user, timestamp.</p>
 <div class="table-wrap">
@@ -595,7 +595,7 @@ Your response (SQL only, no markdown):
 <div class="section-block" id="production">
 <div class="section-marker">07 — Production</div>
 <h2>Production Challenges</h2>
-<p>Moving Text-to-SQL from prototype to prod surfaces real issues: schema changes, query errors, monitoring, user expectations.</p>
+<p>Moving <a class="concept-link" href="text2sql.html">Text-to-SQL</a> from prototype to prod surfaces real issues: schema changes, query errors, monitoring, user expectations.</p>
 <h3>Key Challenges</h3>
 <p><strong>Schema versioning:</strong> Your schema evolves. How do you handle renamed tables/columns? <strong>Query errors:</strong> LLM generates invalid SQL. Retry with error feedback? <strong>Incorrect results:</strong> Query succeeds but answer is wrong. How do you detect this? <strong>Latency:</strong> Text-to-SQL adds ~500ms–1s over direct SQL. <strong>User trust:</strong> Users trust SQL but distrust LLM-generated SQL. Requires good UX (show query, allow editing).</p>
 <h3>Best Practices</h3>
@@ -610,12 +610,12 @@ Your response (SQL only, no markdown):
 <h2>References and Related Concepts</h2>
 <div class="ref-group-title">Child Concepts</div>
 <ul class="ref-list">
-<li><a href="text2sql.html">Text-to-SQL</a> — Core Text-to-SQL techniques and libraries</li>
+<li><a href="text2sql.html">Text-to-SQL</a> — Core <a class="concept-link" href="text2sql.html">Text-to-SQL</a> techniques and libraries</li>
 <li><a href="vanna.html">Vanna AI</a> — Commercial Text-to-SQL platform</li>
 </ul>
 <div class="ref-group-title">Related Concepts</div>
 <ul class="ref-list">
-<li><a href="function-calling.html">Function Calling</a> — Tool use for structured execution</li>
+<li><a href="function-calling.html">Function Calling</a> — <a class="concept-link" href="tool-use.html">Tool use</a> for structured execution</li>
 <li><a href="few-shot-prompting.html">Few-Shot Prompting</a> — Learning from examples</li>
 <li><a href="output-control.html">Output Control</a> — Constraining generation format</li>
 </ul>
@@ -623,25 +623,22 @@ Your response (SQL only, no markdown):
 <ul class="ref-list">
 <li>
 <span class="ref-badge badge-docs">Docs</span>
-        LangChain SQL Agent — <a href="https://python.langchain.com/docs/agents/agent_types/sql" target="_blank">docs ↗</a>
+<a class="concept-link" href="langchain.html">LangChain</a> SQL Agent — <a href="https://python.langchain.com/docs/agents/agent_types/sql" target="_blank">docs ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-blog">Blog</span>
-        Vanna AI — <a href="https://vanna.ai" target="_blank">vanna.ai ↗</a>
+<a class="concept-link" href="vanna.html">Vanna AI</a> — <a href="https://vanna.ai" target="_blank">vanna.ai ↗</a>
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="rag-systems.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RAG Systems</span></a>
-<a href="code-assist.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Code Assistants</span></a>
-<a href="structured-output-app.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Structured Outputs</span></a>
-<a href="voice-agents.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Voice Agents</span></a>
-<a href="doc-processing.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Document Processing</span></a>
+<a class="rc-card" href="rag-systems.html" style="--rc-accent:#64748b"><span class="rc-label">RAG Systems</span></a>
+<a class="rc-card" href="code-assist.html" style="--rc-accent:#64748b"><span class="rc-label">Code Assistants</span></a>
+<a class="rc-card" href="structured-output-app.html" style="--rc-accent:#64748b"><span class="rc-label">Structured Outputs</span></a>
+<a class="rc-card" href="voice-agents.html" style="--rc-accent:#64748b"><span class="rc-label">Voice Agents</span></a>
+<a class="rc-card" href="doc-processing.html" style="--rc-accent:#64748b"><span class="rc-label">Document Processing</span></a>
 </div>
 </div>
 <footer class="page-footer">

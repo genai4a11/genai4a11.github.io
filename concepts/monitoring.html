@@ -457,7 +457,7 @@
 <div class="section-block" id="why-differs">
 <div class="section-marker">01 — Context</div>
 <h2>Why LLM Monitoring Differs</h2>
-<p>Traditional ML systems emit easily measured signals: prediction, ground truth, latency. LLMs are harder. Outputs are non-deterministic — the same prompt twice yields different responses. There's no single ground truth; quality is subjective and emerges over multiple interactions. Cost is per-call, not per-batch, and scales with context window size. Latency is multi-stage: tokenization, inference, post-processing.</p>
+<p>Traditional ML systems emit easily measured signals: prediction, ground truth, latency. <a class="concept-link" href="llms.html">LLMs</a> are harder. Outputs are non-deterministic — the same prompt twice yields different responses. There's no single ground truth; quality is subjective and emerges over multiple interactions. Cost is per-call, not per-batch, and scales with <a class="concept-link" href="context-window.html">context window</a> size. Latency is multi-stage: <a class="concept-link" href="tokenization.html">tokenization</a>, inference, post-processing.</p>
 <p>Traditional monitoring asks: "Is the model accurate?" LLM monitoring asks: "Is this response helpful? Honest? Safe? Expensive? Is the model degrading over time?"</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
@@ -482,7 +482,7 @@
 </table>
 </div>
 <h3>Why All Four Matter</h3>
-<p><strong>Quality</strong> is business value. <strong>Cost</strong> is business sustainability. <strong>Latency</strong> is user experience. <strong>Safety</strong> is risk. Monitor all four; they're not orthogonal. A model can be fast and cheap but produce hallucinations. It can be accurate but prohibitively expensive.</p>
+<p><strong>Quality</strong> is business value. <strong>Cost</strong> is business sustainability. <strong>Latency</strong> is user experience. <strong><a class="concept-link" href="safety.html">Safety</a></strong> is risk. Monitor all four; they're not orthogonal. A model can be fast and cheap but produce hallucinations. It can be accurate but prohibitively expensive.</p>
 </div>
 <!-- ── 3. TRACING & LOGGING ── -->
 <div class="section-block" id="tracing-logging">
@@ -529,7 +529,7 @@ with tracer.start_as_current_span("llm_call") as span:
 <div class="section-block" id="quality-scoring">
 <div class="section-marker">04 — Automated Evaluation</div>
 <h2>Quality Scoring in Production</h2>
-<p>Asking users "Was this helpful?" takes time. LLM-as-judge scores responses automatically. Train or prompt an LLM to rate other LLM outputs on a rubric: correctness, helpfulness, safety, tone. Score every response in near real-time. Compare against human labels to calibrate.</p>
+<p>Asking users "Was this helpful?" takes time. <a class="concept-link" href="llm-judge.html">LLM-as-judge</a> scores responses automatically. Train or prompt an LLM to rate other LLM outputs on a rubric: correctness, helpfulness, <a class="concept-link" href="safety.html">safety</a>, tone. Score every response in near real-time. Compare against human labels to calibrate.</p>
 <h3>Rubric Design</h3>
 <p><strong>Clarity:</strong> Each dimension must be observable from the text alone. "Helpful" is vague; "answers the user's question without hallucinating" is concrete. <strong>Completeness:</strong> Cover business-critical dimensions. <strong>Reproducibility:</strong> The same response should score similarly across judges.</p>
 <div class="example-box">Rubric for customer support responses:
@@ -577,7 +577,7 @@ Total: 0–7 points</div>
 <div class="method-num">2</div>
 <div class="method-body">
 <h3>Prompt Caching <em>— reuse computation</em></h3>
-<p>Cache system prompts, documentation, and conversation histories. Cache hits cost 10% of normal tokens. With repeated context (RAG, retrieval results), caching reduces costs 30–50%.</p>
+<p>Cache <a class="concept-link" href="system-prompts.html">system prompts</a>, documentation, and conversation histories. Cache hits cost 10% of normal tokens. With repeated context (<a class="concept-link" href="rag.html">RAG</a>, retrieval results), caching reduces costs 30–50%.</p>
 </div>
 </div>
 <div class="method-card">
@@ -591,11 +591,11 @@ Total: 0–7 points</div>
 <div class="method-num">4</div>
 <div class="method-body">
 <h3>Speculative Decoding <em>— predict ahead</em></h3>
-<p>Faster models draft multiple tokens; strong model verifies. Total tokens are similar but latency improves. Reduces cost in some architectures.</p>
+<p>Faster models draft multiple tokens; strong model verifies. Total tokens are similar but latency improves. Reduces cost in some <a class="concept-link" href="transformer-arch.html">architectures</a>.</p>
 </div>
 </div>
 </div>
-<p><strong>Example cost optimization:</strong> System processes 100K requests/day. Average cost $0.005/request = $500/day. Implement routing: 60% to Haiku ($0.0008 avg), 40% to Opus ($0.015 avg). New cost: $0.0088/request = $880/day. But quality on easy queries doesn't degrade. Caching cuts 40%. Final: $530/day — 6% savings after quality controls.</p>
+<p><strong>Example cost <a class="concept-link" href="optimization.html">optimization</a>:</strong> System processes 100K requests/day. Average cost $0.005/request = $500/day. Implement routing: 60% to Haiku ($0.0008 avg), 40% to Opus ($0.015 avg). New cost: $0.0088/request = $880/day. But quality on easy queries doesn't degrade. Caching cuts 40%. Final: $530/day — 6% savings after quality controls.</p>
 </div>
 <!-- ── 6. DRIFT DETECTION ── -->
 <div class="section-block" id="drift-detection">
@@ -604,8 +604,8 @@ Total: 0–7 points</div>
 <p>Drift is silent model degradation. Input distribution shifts: users ask different questions. Output quality drifts: the model behaves differently (bug in prompt? model update? world changed?). Detect drift by tracking distributions over time.</p>
 <h3>Types of Drift</h3>
 <ul style="padding-left: 1.2rem;">
-<li><strong>Input distribution drift:</strong> Query length, topic distribution, language changes. Signals: vocabulary shift, TF-IDF divergence, embedding drift.</li>
-<li><strong>Model behavior drift:</strong> Outputs are different despite same inputs. Signals: response length change, safety scores drop, user complaint rate rises.</li>
+<li><strong>Input distribution drift:</strong> Query length, topic distribution, language changes. Signals: vocabulary shift, TF-IDF divergence, <a class="concept-link" href="embeddings.html">embedding</a> drift.</li>
+<li><strong>Model behavior drift:</strong> Outputs are different despite same inputs. Signals: response length change, <a class="concept-link" href="safety.html">safety</a> scores drop, user complaint rate rises.</li>
 <li><strong>Quality degradation:</strong> Judge scores decline. Signals: average judge score drops 0.5 points, hallucination rate increases, user ratings fall.</li>
 </ul>
 <h3>Re-evaluation Triggers</h3>
@@ -622,19 +622,19 @@ Total: 0–7 points</div>
 <div class="tools-grid">
 <div class="tool-card">
 <h3>Langfuse</h3>
-<p>Open-source LLM tracing &amp; analytics. Native integration with LangChain, LlamaIndex. Real-time dashboards, prompt management, cost tracking.</p>
+<p>Open-source LLM tracing &amp; analytics. Native integration with <a class="concept-link" href="langchain.html">LangChain</a>, <a class="concept-link" href="llamaindex.html">LlamaIndex</a>. Real-time dashboards, prompt management, cost tracking.</p>
 </div>
 <div class="tool-card">
 <h3>Arize Phoenix</h3>
-<p>ML observability for LLMs. Embedding drift detection, quality scoring, cost analysis. Integrates with major inference APIs.</p>
+<p>ML observability for <a class="concept-link" href="llms.html">LLMs</a>. <a class="concept-link" href="embeddings.html">Embedding</a> drift detection, quality scoring, cost analysis. Integrates with major inference APIs.</p>
 </div>
 <div class="tool-card">
 <h3>Helicone</h3>
-<p>LLM monitoring proxy. Drop-in replacement for OpenAI, Anthropic APIs. Traces, cost breakdowns, caching, rate limiting built-in.</p>
+<p>LLM monitoring proxy. Drop-in replacement for OpenAI, Anthropic APIs. Traces, cost breakdowns, caching, <a class="concept-link" href="rate-limiting.html">rate limiting</a> built-in.</p>
 </div>
 <div class="tool-card">
 <h3>LangSmith</h3>
-<p>LangChain's tracing &amp; evaluation platform. Runs evals at scale, compares model versions, surfaces problematic traces.</p>
+<p>LangChain's tracing &amp; <a class="concept-link" href="eval.html">evaluation</a> platform. Runs evals at scale, compares model versions, surfaces problematic traces.</p>
 </div>
 <div class="tool-card">
 <h3>Weights &amp; Biases</h3>
@@ -662,7 +662,7 @@ Total: 0–7 points</div>
 <ul class="ref-list">
 <li>
 <span class="ref-badge badge-paper">Paper</span>
-        Liang, P. et al. (2022). <em>Holistic Evaluation of Language Models.</em>
+        Liang, P. et al. (2022). <em>Holistic <a class="concept-link" href="eval.html">Evaluation</a> of Language Models.</em>
         Stanford CRFM. —
         <a href="https://arxiv.org/abs/2211.09110" target="_blank">arxiv:2211.09110 ↗</a>
 </li>
@@ -675,10 +675,10 @@ Total: 0–7 points</div>
 </ul>
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
-<li><span class="ref-badge badge-docs">Docs</span> Langfuse — LLM Tracing &amp; Analytics. <a href="https://langfuse.com" target="_blank">langfuse.com ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="langfuse.html">Langfuse</a> — LLM Tracing &amp; Analytics. <a href="https://langfuse.com" target="_blank">langfuse.com ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> OpenTelemetry — Instrumentation Guide. <a href="https://opentelemetry.io" target="_blank">opentelemetry.io ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> Arize Phoenix — LLM Observability. <a href="https://phoenix.arize.com" target="_blank">phoenix.arize.com ↗</a></li>
-<li><span class="ref-badge badge-guide">Guide</span> Helicone — Cost Optimization for LLMs. <a href="https://helicone.ai" target="_blank">helicone.ai ↗</a></li>
+<li><span class="ref-badge badge-guide">Guide</span> Helicone — Cost <a class="concept-link" href="optimization.html">Optimization</a> for <a class="concept-link" href="llms.html">LLMs</a>. <a href="https://helicone.ai" target="_blank">helicone.ai ↗</a></li>
 </ul>
 <div class="ref-group-title">Practitioner Writing</div>
 <ul class="ref-list">
@@ -694,17 +694,14 @@ Total: 0–7 points</div>
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="benchmarks.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">Benchmarks</span></a>
-<a href="rag-eval.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">RAG Evaluation</span></a>
-<a href="mmlu.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">MMLU</span></a>
-<a href="humaneval.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">HumanEval</span></a>
-<a href="mt-bench.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">MT-Bench</span></a>
+<a class="rc-card" href="benchmarks.html" style="--rc-accent:#f59e0b"><span class="rc-label">Benchmarks</span></a>
+<a class="rc-card" href="rag-eval.html" style="--rc-accent:#f59e0b"><span class="rc-label">RAG Evaluation</span></a>
+<a class="rc-card" href="mmlu.html" style="--rc-accent:#f59e0b"><span class="rc-label">MMLU</span></a>
+<a class="rc-card" href="humaneval.html" style="--rc-accent:#f59e0b"><span class="rc-label">HumanEval</span></a>
+<a class="rc-card" href="mt-bench.html" style="--rc-accent:#f59e0b"><span class="rc-label">MT-Bench</span></a>
 </div>
 </div>
 <footer class="page-footer">

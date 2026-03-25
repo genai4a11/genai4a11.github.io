@@ -502,14 +502,14 @@
 <div class="section-block" id="post-retrieval-gap">
 <div class="section-marker">01 — The Problem</div>
 <h2>The Post-Retrieval Gap</h2>
-<p>Retrieval gives you candidates; it doesn't guarantee they're the best ones for generation. A dense retriever may return semantically similar documents that are actually tangential. Sparse (BM25) retrievers excel at keyword matching but miss semantic nuance. And the <strong>lost-in-the-middle effect</strong> (Liu et al. 2023) shows that LLMs attend worst to content in the middle of their context — best at the start and end.</p>
+<p>Retrieval gives you candidates; it doesn't guarantee they're the best ones for generation. A dense retriever may return semantically similar documents that are actually tangential. Sparse (<a class="concept-link" href="bm25.html">BM25</a>) retrievers excel at keyword matching but miss semantic nuance. And the <strong>lost-in-the-middle effect</strong> (Liu et al. 2023) shows that <a class="concept-link" href="llms.html">LLMs</a> attend worst to content in the middle of their context — best at the start and end.</p>
 <p>Post-retrieval processing closes this gap: rerank for relevance, compress to remove noise, reorder to put critical context at the edges.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Retrieval gets candidates; post-retrieval makes the final cut.</strong> Top-k retrieved chunks ≠ best chunks for generation. A second pass adds precision.</span>
 </div>
 <h3>Key Distinctions</h3>
-<p><strong>Relevance vs Faithfulness:</strong> A chunk may be relevant to the query but contradict other retrieved chunks. Reranking optimizes for relevance; compression and ordering handle consistency.</p>
+<p><strong>Relevance vs Faithfulness:</strong> A chunk may be relevant to the query but contradict other retrieved chunks. <a class="concept-link" href="reranking.html">Reranking</a> optimizes for relevance; compression and ordering handle consistency.</p>
 </div>
 <!-- ── 2. TECHNIQUES TABLE ── -->
 <div class="section-block" id="techniques-table">
@@ -535,8 +535,8 @@
 <div class="section-block" id="cross-encoder">
 <div class="section-marker">03 — Precision</div>
 <h2>Cross-Encoder Reranking</h2>
-<p><strong>Bi-encoder:</strong> Embed query and documents separately, compute similarity via dot product. Fast at retrieval time. But embeddings ignore document context — similarity is shallow.</p>
-<p><strong>Cross-encoder:</strong> Pass query + document as a pair to the model. The model attends to both, producing a relevance score. Slower (no pre-computed embeddings) but more accurate for reranking.</p>
+<p><strong>Bi-encoder:</strong> Embed query and documents separately, compute similarity via dot product. Fast at retrieval time. But <a class="concept-link" href="embeddings.html">embeddings</a> ignore document context — similarity is shallow.</p>
+<p><strong>Cross-encoder:</strong> Pass query + document as a pair to the model. The model attends to both, producing a relevance score. Slower (no pre-computed embeddings) but more accurate for <a class="concept-link" href="reranking.html">reranking</a>.</p>
 <h3>Popular Cross-Encoder Models</h3>
 <ul style="margin-left: 1.2rem; margin-top: 0.5rem;">
 <li style="margin: 0.4rem 0;"><strong>Cohere Rerank API:</strong> Managed service, lowest latency, best for production.</li>
@@ -570,7 +570,7 @@ for result in results:
 <h3>Score Calibration</h3>
 <p>Reranker scores aren't directly comparable across queries. A score of 0.8 on one query doesn't mean the same relevance as 0.8 on another. Use scores only to rank within a query, not across queries.</p>
 <h3>When to Skip Reranking</h3>
-<p>Reranking adds 50–200ms latency. Skip if: (1) latency budget is tight, (2) retrieval quality is already high, (3) you're doing real-time interactive search (&lt; 100ms required).</p>
+<p>Reranking adds 50–200ms latency. Skip if: (1) <a class="concept-link" href="latency-budget.html">latency budget</a> is tight, (2) retrieval quality is already high, (3) you're doing real-time interactive search (&lt; 100ms required).</p>
 </div>
 <!-- ── 4. CONTEXT COMPRESSION ── -->
 <div class="section-block" id="compression">
@@ -681,7 +681,7 @@ for doc_id, score in fused[:5]:
 <h2>Context Window Management</h2>
 <p>Your token budget is fixed: query tokens + history + context + response. Allocate wisely.</p>
 <h3>The Lost-in-the-Middle Effect</h3>
-<p>LLMs attend least to content in the middle of context windows. Most important information should be at the start (right after the query) or at the very end, just before the generation prompt.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> attend least to content in the middle of context windows. Most important information should be at the start (right after the query) or at the very end, just before the generation prompt.</p>
 <h3>Chunk Ordering Strategy</h3>
 <p><strong>Best position (start):</strong> Most relevant 1–2 chunks. <strong>Middle (worst):</strong> Least critical supporting docs. <strong>End (strong):</strong> Second-most relevant chunks.</p>
 <div class="example-box">def arrange_context(chunks, scores):
@@ -747,7 +747,7 @@ max_ctx = estimate_tokens("What is machine learning?")</div>
 <div class="section-block" id="evaluation">
 <div class="section-marker">07 — Metrics</div>
 <h2>Evaluation</h2>
-<p>Measure the impact of post-retrieval processing on RAG quality.</p>
+<p>Measure the impact of post-retrieval processing on <a class="concept-link" href="rag.html">RAG</a> quality.</p>
 <h3>Ranking Metrics: MRR@k, NDCG@k</h3>
 <p><strong>MRR (Mean Reciprocal Rank):</strong> Position of first relevant result. Rewards putting relevant docs high.</p>
 <div class="example-box">def mrr(retrieved_docs, relevant_doc_ids, k=5):
@@ -864,28 +864,25 @@ Conclusion: Reranking dominates; compression and ordering add marginal but consi
 <li><span class="ref-badge badge-docs">Docs</span> Cohere Rerank API — <a href="https://docs.cohere.com/docs/rerank" target="_blank">docs.cohere.com/docs/rerank ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> LLMLingua — <a href="https://github.com/microsoft/LLMLingua" target="_blank">github.com/microsoft/LLMLingua ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> FlashRank — <a href="https://github.com/PrithivirajDamodaran/FlashRank" target="_blank">github.com/PrithivirajDamodaran/FlashRank ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> RAGAS — <a href="https://docs.ragas.io/" target="_blank">docs.ragas.io ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="ragas.html">RAGAS</a> — <a href="https://docs.ragas.io/" target="_blank">docs.ragas.io ↗</a></li>
 </ul>
 <div class="ref-group-title">Practitioner Guides</div>
 <ul class="ref-list">
 <li>
 <span class="ref-badge badge-blog">Blog</span>
-        FlashRank GitHub. <em>Fast, Efficient Cross-Encoder Reranking.</em> —
+        FlashRank GitHub. <em>Fast, Efficient Cross-Encoder <a class="concept-link" href="reranking.html">Reranking</a>.</em> —
         <a href="https://github.com/PrithivirajDamodaran/FlashRank" target="_blank">github.com ↗</a>
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Embeddings</span></a>
-<a href="vector-dbs.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Vector Databases</span></a>
-<a href="retrieval-tech.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Retrieval Techniques</span></a>
-<a href="advanced-rag.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Advanced RAG</span></a>
-<a href="sentence-transformers.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
+<a class="rc-card" href="embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">Embeddings</span></a>
+<a class="rc-card" href="vector-dbs.html" style="--rc-accent:#3b82f6"><span class="rc-label">Vector Databases</span></a>
+<a class="rc-card" href="retrieval-tech.html" style="--rc-accent:#3b82f6"><span class="rc-label">Retrieval Techniques</span></a>
+<a class="rc-card" href="advanced-rag.html" style="--rc-accent:#3b82f6"><span class="rc-label">Advanced RAG</span></a>
+<a class="rc-card" href="sentence-transformers.html" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
 </div>
 </div>
 <footer class="page-footer">

@@ -463,7 +463,7 @@
 <div class="section-marker">01 — Motivation</div>
 <h2>Why Synthetic Data?</h2>
 <p>Human annotation is slow (weeks), expensive ($1–10/sample), and hard to scale to rare capabilities. Synthetic data takes a different approach: generate examples with a strong model (GPT-4, Claude), filter for quality, then train a weaker model on the filtered outputs.</p>
-<p>This is the distillation insight: a small model trained on GPT-4 outputs can match GPT-4 on narrow tasks. Alpaca, Vicuna, and WizardLM all use this approach, achieving competitive quality with minimal human labeling.</p>
+<p>This is the <a class="concept-link" href="distillation.html">distillation</a> insight: a small model trained on GPT-4 outputs can match GPT-4 on narrow tasks. Alpaca, Vicuna, and WizardLM all use this approach, achieving competitive quality with minimal human labeling.</p>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Model collapse risk:</strong> Training on synthetic data from a model trained on synthetic data degrades quality over rounds. Hallucinations propagate, distribution shift increases. Always validate against real-world held-out data before declaring success.</span>
@@ -484,7 +484,7 @@
 <h3>The Self-Instruct Pipeline</h3>
 <ol style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
 <li style="margin: 0.5rem 0;">Seed tasks: Start with ~175 manually-written instruction examples</li>
-<li style="margin: 0.5rem 0;">Generate: Use few-shot prompting to generate new instruction-output pairs</li>
+<li style="margin: 0.5rem 0;">Generate: Use <a class="concept-link" href="few-shot.html">few-shot</a> <a class="concept-link" href="prompting.html">prompting</a> to generate new instruction-output pairs</li>
 <li style="margin: 0.5rem 0;">Filter: Remove duplicates and low-quality examples</li>
 <li style="margin: 0.5rem 0;">Outputs: Generate responses to keep</li>
 <li style="margin: 0.5rem 0;">Fine-tune: Train the model on the full dataset</li>
@@ -527,7 +527,7 @@ Generate 20 new instructions:
 <div class="section-block" id="distillation">
 <div class="section-marker">03 — Technique</div>
 <h2>Distillation Pipelines</h2>
-<p><strong>Knowledge distillation for LLMs:</strong> Train a small student model to mimic a large teacher model's outputs. Hard distillation keeps only final answers (Alpaca-style). Soft distillation uses token probability distributions (better but requires white-box access). Speculative distillation generates diverse outputs, filters with a reward model, and trains on the best ones.</p>
+<p><strong>Knowledge <a class="concept-link" href="distillation.html">distillation</a> for <a class="concept-link" href="llms.html">LLMs</a>:</strong> Train a small student model to mimic a large teacher model's outputs. Hard distillation keeps only final answers (Alpaca-style). Soft distillation uses token probability distributions (better but requires white-box access). Speculative distillation generates diverse outputs, filters with a reward model, and trains on the best ones.</p>
 <h3>Distillation Types</h3>
 <ul style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
 <li style="margin: 0.5rem 0;"><strong>Hard distillation:</strong> Student trains on teacher's final answers. Simple, but loses intermediate reasoning steps.</li>
@@ -567,7 +567,7 @@ print(f"Kept {len(filtered)}/{len(dataset)} pairs ({100*len(filtered)/len(datase
 <div class="section-block" id="rejection">
 <div class="section-marker">04 — Filtering</div>
 <h2>Rejection Sampling and Filtering</h2>
-<p><strong>Rejection Sampling Fine-Tuning (RFT):</strong> Generate N outputs per prompt, keep only those that pass a correctness check, train on kept outputs. For math and code, you can verify correctness cheaply (run unit tests, check answer keys). Use this to filter synthetic data.</p>
+<p><strong>Rejection Sampling <a class="concept-link" href="finetuning.html">Fine-Tuning</a> (RFT):</strong> Generate N outputs per prompt, keep only those that pass a correctness check, train on kept outputs. For math and code, you can verify correctness cheaply (run unit tests, check answer keys). Use this to filter synthetic data.</p>
 <p>Rejection sampling is the gold standard for code and math tasks. DeepSeek-R1 and similar reasoning models bootstrapped their training data this way.</p>
 <h3>Filtering Methods by Task Type</h3>
 <div class="table-wrap">
@@ -593,7 +593,7 @@ print(f"Kept {len(filtered)}/{len(dataset)} pairs ({100*len(filtered)/len(datase
 <ul style="margin: 1rem 0 1.5rem; padding-left: 1.2rem;">
 <li style="margin: 0.5rem 0;"><strong>Exact-match dedup:</strong> Hash outputs, remove identical ones</li>
 <li style="margin: 0.5rem 0;"><strong>Near-dedup:</strong> MinHash LSH for fuzzy matching</li>
-<li style="margin: 0.5rem 0;"><strong>Embedding-based clustering:</strong> Cluster similar examples, keep one per cluster</li>
+<li style="margin: 0.5rem 0;"><strong><a class="concept-link" href="embeddings.html">Embedding</a>-based clustering:</strong> Cluster similar examples, keep one per cluster</li>
 </ul>
 <p>Duplicates hurt more than they help — they waste training capacity and create false confidence in patterns.</p>
 </div>
@@ -603,7 +603,7 @@ print(f"Kept {len(filtered)}/{len(dataset)} pairs ({100*len(filtered)/len(datase
 <h2>Magpie and Self-Play Methods</h2>
 <p><strong>Magpie (Xu et al. 2024):</strong> Instead of generating responses to human instructions, prompt the model in pre-query position and let it generate both the instruction AND response. No seed data needed. Works because instruction-tuned models learn to generate user-like queries when given the system prompt plus an empty human turn.</p>
 <p><strong>Self-play:</strong> Two model instances play adversarial roles (teacher and student, examiner and examinee) to generate challenging data without human involvement.</p>
-<p><strong>Constitutional AI data generation:</strong> Model critiques its own response using a set of principles, then rewrites to better follow them. Generates (critique, revision) pairs for training.</p>
+<p><strong><a class="concept-link" href="constitutional-ai.html">Constitutional AI</a> data generation:</strong> Model critiques its own response using a set of principles, then rewrites to better follow them. Generates (critique, revision) pairs for training.</p>
 <h3>Magpie-Style Pre-Query Generation</h3>
 <div class="example-box">
 # Give model the assistant prefix to trigger instruction generation
@@ -624,7 +624,7 @@ response = client.messages.create(
 <li style="margin: 0.5rem 0;"><strong>No seed data:</strong> Start generation from an empty state</li>
 <li style="margin: 0.5rem 0;"><strong>Automatic diversity:</strong> Model naturally generates varied instructions</li>
 <li style="margin: 0.5rem 0;"><strong>Scale:</strong> Generate millions of examples cheaply</li>
-<li style="margin: 0.5rem 0;"><strong>Self-consistency:</strong> Each instruction-response pair comes from the same model, high internal consistency</li>
+<li style="margin: 0.5rem 0;"><strong><a class="concept-link" href="self-consistency.html">Self-consistency</a>:</strong> Each instruction-response pair comes from the same model, high internal consistency</li>
 </ul>
 </div>
 <!-- ── 6. DOMAIN-SPECIFIC DATA ── -->
@@ -664,7 +664,7 @@ response = client.messages.create(
 <div class="section-block" id="quality">
 <div class="section-marker">07 — Validation</div>
 <h2>Quality Evaluation and Model Collapse Prevention</h2>
-<p>Quality metrics for synthetic data: perplexity on held-out real data (should not increase), task accuracy on real benchmarks, human evaluation of 1–5% samples. Model collapse is detected by measuring n-gram diversity and topic coverage — each successive round should maintain or increase diversity.</p>
+<p>Quality metrics for synthetic data: perplexity on held-out real data (should not increase), task accuracy on real <a class="concept-link" href="benchmarks.html">benchmarks</a>, human <a class="concept-link" href="eval.html">evaluation</a> of 1–5% samples. Model collapse is detected by measuring n-gram diversity and topic coverage — each successive round should maintain or increase diversity.</p>
 <h3>Prevention Strategies</h3>
 <div class="practice-grid">
 <div class="practice-item">
@@ -767,7 +767,7 @@ response = client.messages.create(
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Xu, C. et al. (2024).
-        <em>Magpie: Alignment Data Synthesis from Scratch by Prompting Aligned LLMs with Nothing.</em>
+        <em>Magpie: Alignment Data Synthesis from Scratch by <a class="concept-link" href="prompting.html">Prompting</a> Aligned <a class="concept-link" href="llms.html">LLMs</a> with Nothing.</em>
         arXiv:2406.08464. —
         <a href="https://arxiv.org/abs/2406.08464" target="_blank">arxiv:2406.08464 ↗</a>
 </li>
@@ -781,7 +781,7 @@ response = client.messages.create(
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Wen, Z. et al. (2023).
-        <em>Rejection Sampling Fine-Tuning for LLMs.</em>
+        <em>Rejection Sampling <a class="concept-link" href="finetuning.html">Fine-Tuning</a> for LLMs.</em>
         arXiv:2308.01825. —
         <a href="https://arxiv.org/abs/2308.01825" target="_blank">arxiv:2308.01825 ↗</a>
 </li>
@@ -790,8 +790,8 @@ response = client.messages.create(
 <ul class="ref-list">
 <li><span class="ref-badge badge-docs">Docs</span> Argilla distilabel. <a href="https://distilabel.argilla.io" target="_blank">distilabel.argilla.io ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Datasets. <a href="https://huggingface.co/docs/datasets" target="_blank">huggingface.co/docs/datasets ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> OpenAI Batch API. <a href="https://platform.openai.com/docs/guides/batch" target="_blank">platform.openai.com ↗</a></li>
-<li><span class="ref-badge badge-guide">Guide</span> Axolotl fine-tuning. <a href="https://github.com/OpenAccess-AI-Collective/axolotl" target="_blank">github.com/axolotl ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> OpenAI <a class="concept-link" href="batch-api.html">Batch API</a>. <a href="https://platform.openai.com/docs/guides/batch" target="_blank">platform.openai.com ↗</a></li>
+<li><span class="ref-badge badge-guide">Guide</span> <a class="concept-link" href="axolotl.html">Axolotl</a> fine-tuning. <a href="https://github.com/OpenAccess-AI-Collective/axolotl" target="_blank">github.com/axolotl ↗</a></li>
 </ul>
 <div class="ref-group-title">Blog &amp; Articles</div>
 <ul class="ref-list">
@@ -807,17 +807,14 @@ response = client.messages.create(
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="data-ingestion.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ingestion & Pipelines</span></a>
-<a href="data-labeling.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Labeling & Annotation</span></a>
-<a href="data-governance.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Data Governance</span></a>
-<a href="data-centric.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Data-Centric Training</span></a>
-<a href="metadata-design.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Metadata Design</span></a>
+<a class="rc-card" href="data-ingestion.html" style="--rc-accent:#64748b"><span class="rc-label">Ingestion &amp; Pipelines</span></a>
+<a class="rc-card" href="data-labeling.html" style="--rc-accent:#64748b"><span class="rc-label">Labeling &amp; Annotation</span></a>
+<a class="rc-card" href="data-governance.html" style="--rc-accent:#64748b"><span class="rc-label">Data Governance</span></a>
+<a class="rc-card" href="data-centric.html" style="--rc-accent:#64748b"><span class="rc-label">Data-Centric Training</span></a>
+<a class="rc-card" href="metadata-design.html" style="--rc-accent:#64748b"><span class="rc-label">Metadata Design</span></a>
 </div>
 </div>
 <footer class="page-footer">

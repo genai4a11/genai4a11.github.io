@@ -153,9 +153,9 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Why Unsloth is faster</h2>
-<p>Standard HuggingFace/PyTorch training computes attention and RoPE using autograd — every operation is tracked for the backward pass, with intermediate activations stored in GPU memory. Unsloth replaces these with hand-written CUDA kernels that: (1) fuse multiple operations into one kernel (fewer memory round-trips), (2) use tiling to reduce HBM bandwidth, and (3) recompute some activations instead of storing them.</p>
-<p>The result: Unsloth's attention kernel is ~2× faster than Flash Attention 2 on single-GPU training, and uses 60% less VRAM than equivalent QLoRA training with standard TRL. This means a model that would require an A100 80GB with standard tools trains on an RTX 4090 24GB with Unsloth.</p>
-<p>Unsloth is actively maintained and supports Llama 3.x, Qwen 2.5, Mistral, Phi-3, Gemma 2, and DeepSeek. The free tier runs on any NVIDIA GPU; the Pro tier adds multi-GPU and AMD support.</p>
+<p>Standard HuggingFace/PyTorch training computes attention and <a class="concept-link" href="rope.html">RoPE</a> using <a class="concept-link" href="autograd.html">autograd</a> — every operation is tracked for the backward pass, with intermediate <a class="concept-link" href="activations.html">activations</a> stored in GPU <a class="concept-link" href="agent-memory.html">memory</a>. Unsloth replaces these with hand-written CUDA kernels that: (1) fuse multiple operations into one kernel (fewer memory round-trips), (2) use tiling to reduce HBM bandwidth, and (3) recompute some activations instead of storing them.</p>
+<p>The result: Unsloth's attention kernel is ~2× faster than <a class="concept-link" href="flash-attn.html">Flash Attention 2</a> on single-GPU training, and uses 60% less VRAM than equivalent <a class="concept-link" href="qlora.html">QLoRA</a> training with standard TRL. This means a model that would require an A100 80GB with standard tools trains on an RTX 4090 24GB with Unsloth.</p>
+<p>Unsloth is actively maintained and supports Llama 3.x, <a class="concept-link" href="qwen25.html">Qwen 2.5</a>, Mistral, Phi-3, <a class="concept-link" href="gemma2.html">Gemma 2</a>, and DeepSeek. The free tier runs on any NVIDIA GPU; the Pro tier adds multi-GPU and AMD support.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -260,7 +260,7 @@ model.push_to_hub_gguf(
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Benchmarks vs standard TRL</h2>
-<p>Measured on Llama 3.1 8B, single RTX 4090 (24GB), 2048 tokens, batch=4, rank=16:</p>
+<p>Measured on <a class="concept-link" href="llama3.html">Llama 3.1</a> 8B, single RTX 4090 (24GB), 2048 tokens, batch=4, rank=16:</p>
 <pre><code class="language-python">benchmarks = {
     "method": ["Standard QLoRA (TRL)", "Flash Attention 2 + TRL", "Unsloth"],
     "tokens_per_second": [1420, 2080, 3890],
@@ -311,21 +311,18 @@ model, tokenizer = FastLanguageModel.from_pretrained(
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Unsloth requires CUDA — no MPS (Apple Silicon) or CPU training.</strong> Unsloth's kernels are CUDA-specific. If you're on a Mac or a CPU-only machine, use standard TRL + PEFT instead. For Apple Silicon, consider MLX-LM which has native optimisations for M-series chips.</p>
-<p><strong>use_gradient_checkpointing="unsloth" not True.</strong> Unsloth has its own gradient checkpointing implementation that's faster than PyTorch's. Always pass the string "unsloth" rather than the boolean True — using True enables standard PyTorch gradient checkpointing which is slower and may cause errors with Unsloth's kernels.</p>
-<p><strong>lora_dropout=0 is intentional in Unsloth benchmarks.</strong> Unsloth benchmarks are run with dropout=0 for maximum speed. For production fine-tuning where you risk overfitting (small dataset, many epochs), add dropout=0.05. The speed difference is modest.</p>
+<p><strong>use_gradient_checkpointing="unsloth" not True.</strong> Unsloth has its own gradient <a class="concept-link" href="checkpointing.html">checkpointing</a> implementation that's faster than PyTorch's. Always pass the string "unsloth" rather than the boolean True — using True enables standard PyTorch gradient checkpointing which is slower and may cause errors with Unsloth's kernels.</p>
+<p><strong>lora_dropout=0 is intentional in Unsloth <a class="concept-link" href="benchmarks.html">benchmarks</a>.</strong> Unsloth benchmarks are run with <a class="concept-link" href="dropout.html">dropout</a>=0 for maximum speed. For production <a class="concept-link" href="finetuning.html">fine-tuning</a> where you risk overfitting (small dataset, many epochs), add dropout=0.05. The speed difference is modest.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="trl.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">HF TRL</span></a>
-<a href="axolotl.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Axolotl</span></a>
-<a href="llama-factory.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LLaMA-Factory</span></a>
-<a href="lora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
-<a href="qlora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
+<a class="rc-card" href="trl.html" style="--rc-accent:#8b5cf6"><span class="rc-label">HF TRL</span></a>
+<a class="rc-card" href="axolotl.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Axolotl</span></a>
+<a class="rc-card" href="llama-factory.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LLaMA-Factory</span></a>
+<a class="rc-card" href="lora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
+<a class="rc-card" href="qlora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
 </div>
 </div>
 <footer>

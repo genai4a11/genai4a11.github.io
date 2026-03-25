@@ -153,16 +153,16 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>What GGUF and llama.cpp are</h2>
-<p>llama.cpp is a C++ library by Georgi Gerganov that runs LLM inference with minimal dependencies — no Python, no CUDA required (though it uses them if available). It was originally a proof-of-concept to run LLaMA on a MacBook. It became the de facto standard for local LLM inference because it's fast, memory-efficient, and runs everywhere: Mac, Windows, Linux, Raspberry Pi, even Android.</p>
-<p><strong>GGUF</strong> (GPT-Generated Unified Format) is the file format used by llama.cpp. It stores the model weights plus all metadata needed for inference (tokeniser, architecture params, quantisation scheme) in a single binary file. Before GGUF, the ecosystem used GGML — GGUF replaced it in August 2023 with better extensibility and metadata support.</p>
-<p>Quantisation reduces model size by storing weights in lower precision: instead of 16 or 32 bits per weight, GGUF uses 4 or 8 bits. A 7B model that's 14GB in FP16 becomes 4GB in Q4. You lose some quality — typically 1–5% on benchmarks — but gain the ability to run on consumer hardware.</p>
+<p>llama.cpp is a C++ library by Georgi Gerganov that runs LLM inference with minimal dependencies — no Python, no CUDA required (though it uses them if available). It was originally a proof-of-concept to run LLaMA on a MacBook. It became the de facto standard for local LLM inference because it's fast, <a class="concept-link" href="agent-memory.html">memory</a>-efficient, and runs everywhere: Mac, Windows, Linux, Raspberry Pi, even Android.</p>
+<p><strong>GGUF</strong> (GPT-Generated Unified Format) is the file format used by llama.cpp. It stores the model weights plus all metadata needed for inference (tokeniser, architecture params, <a class="concept-link" href="quantization.html">quantisation</a> scheme) in a single binary file. Before GGUF, the ecosystem used GGML — GGUF replaced it in August 2023 with better extensibility and metadata support.</p>
+<p>Quantisation reduces model size by storing weights in lower precision: instead of 16 or 32 bits per weight, GGUF uses 4 or 8 bits. A 7B model that's 14GB in FP16 becomes 4GB in Q4. You lose some quality — typically 1–5% on <a class="concept-link" href="benchmarks.html">benchmarks</a> — but gain the ability to run on consumer <a class="concept-link" href="hardware.html">hardware</a>.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Quantisation levels explained</h2>
-<p>GGUF quantisation levels follow the naming convention <strong>Q[bits]_[type]</strong>:</p>
-<p><strong>Q2_K</strong>: 2 bits per weight. Extreme compression. Noticeable quality loss. Only useful when memory is the critical constraint.</p>
-<p><strong>Q4_K_M</strong>: 4 bits per weight, K-quant method, medium size. The sweet spot for most use cases. Roughly 40% performance of FP16 on <em>quality</em>; GGML benchmarks show ~2–3% accuracy loss on standard tasks. Recommended default.</p>
+<p>GGUF <a class="concept-link" href="quantization.html">quantisation</a> levels follow the naming convention <strong>Q[bits]_[type]</strong>:</p>
+<p><strong>Q2_K</strong>: 2 bits per weight. Extreme compression. Noticeable quality loss. Only useful when <a class="concept-link" href="agent-memory.html">memory</a> is the critical constraint.</p>
+<p><strong>Q4_K_M</strong>: 4 bits per weight, K-quant method, medium size. The sweet spot for most use cases. Roughly 40% performance of FP16 on <em>quality</em>; GGML <a class="concept-link" href="benchmarks.html">benchmarks</a> show ~2–3% accuracy loss on standard tasks. Recommended default.</p>
 <p><strong>Q4_K_S</strong>: 4-bit small. Slightly smaller file than Q4_K_M with marginally lower quality.</p>
 <p><strong>Q5_K_M</strong>: 5 bits. Better quality than Q4, fits in more memory than Q6/Q8. Good choice when you have 6–8GB VRAM.</p>
 <p><strong>Q6_K</strong>: 6 bits. Very close to FP16 quality. Recommended when memory allows.</p>
@@ -281,7 +281,7 @@ for f in ["llama3.1-8b-f16.gguf", "llama3.1-8b-q4km.gguf"]:
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Hardware selection guide</h2>
-<p>The golden rule: the model must fit in <strong>memory</strong> (VRAM + RAM). Layers not in VRAM run on CPU — dramatically slower.</p>
+<p>The golden rule: the model must fit in <strong><a class="concept-link" href="agent-memory.html">memory</a></strong> (VRAM + RAM). Layers not in VRAM run on CPU — dramatically slower.</p>
 <p><strong>CPU-only</strong> (no GPU): Q4_K_M models generate 5–15 tokens/second on modern CPUs. Acceptable for batch processing; too slow for interactive chat. Apple Silicon Macs are a special case: M-series chips have unified memory shared between CPU and GPU, giving 30–80 tok/s even "CPU-only".</p>
 <p><strong>Consumer GPUs (8–12GB VRAM)</strong>: RTX 3060/4060/3080 12GB. Fits 7B models at Q4_K_M with full GPU offload (100+ tok/s). 13B at Q4_K_M needs 8GB (tight). Use <code>n_gpu_layers=-1</code> for full offload.</p>
 <p><strong>Professional GPUs (24GB VRAM)</strong>: RTX 4090, A5000. Fits 13B at Q8, 34B at Q4. Best cost-efficiency for local deployment.</p>
@@ -291,21 +291,18 @@ for f in ["llama3.1-8b-f16.gguf", "llama3.1-8b-q4km.gguf"]:
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>n_gpu_layers needs tuning per model and GPU.</strong> Setting <code>n_gpu_layers=-1</code> (offload everything) sounds ideal but will OOM if the model doesn't fit. Use <code>n_gpu_layers=0</code> to test CPU-only, then increase until you hit VRAM limits. Rule of thumb: each layer of a 7B model uses roughly 120MB of VRAM in Q4.</p>
-<p><strong>Context size multiplies memory usage.</strong> <code>n_ctx=32768</code> (32K context) uses significantly more memory than <code>n_ctx=4096</code> — the KV cache scales with context length × batch size. For memory-constrained hardware, set n_ctx to only what you need.</p>
-<p><strong>Model quality varies by quantisation and task.</strong> Q4_K_M is excellent for coding and factual tasks but can degrade noticeably on nuanced reasoning compared to Q8. Always benchmark the quantised model on a representative sample of your actual use cases before committing to a quantisation level in production.</p>
+<p><strong>Context size multiplies <a class="concept-link" href="agent-memory.html">memory</a> usage.</strong> <code>n_ctx=32768</code> (32K context) uses significantly more memory than <code>n_ctx=4096</code> — the <a class="concept-link" href="kv-cache.html">KV cache</a> scales with context length × batch size. For memory-constrained <a class="concept-link" href="hardware.html">hardware</a>, set n_ctx to only what you need.</p>
+<p><strong>Model quality varies by <a class="concept-link" href="quantization.html">quantisation</a> and task.</strong> Q4_K_M is excellent for coding and factual tasks but can degrade noticeably on nuanced reasoning compared to Q8. Always benchmark the quantised model on a representative sample of your actual use cases before committing to a quantisation level in production.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="gptq.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">GPTQ</span></a>
-<a href="awq.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">AWQ</span></a>
-<a href="bitsandbytes.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">BitsAndBytes</span></a>
-<a href="vllm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
-<a href="ollama.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
+<a class="rc-card" href="gptq.html" style="--rc-accent:#64748b"><span class="rc-label">GPTQ</span></a>
+<a class="rc-card" href="awq.html" style="--rc-accent:#64748b"><span class="rc-label">AWQ</span></a>
+<a class="rc-card" href="bitsandbytes.html" style="--rc-accent:#64748b"><span class="rc-label">BitsAndBytes</span></a>
+<a class="rc-card" href="vllm.html" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
+<a class="rc-card" href="ollama.html" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
 </div>
 </div>
 <footer>

@@ -472,9 +472,9 @@
 <div class="section-block" id="problem-free-text">
 <div class="section-marker">01 — Core Challenge</div>
 <h2>The Problem with Free-Text Output</h2>
-<p>LLMs produce free text by default. Production systems need structured data: JSON objects, typed fields, validated schemas.</p>
-<p>Three approaches in order of reliability: (1) prompt engineering ("respond only in JSON"), (2) native structured output modes (OpenAI/Anthropic), (3) constrained decoding (grammar-guided token sampling).</p>
-<p>Why prompting alone fails: model can still produce preamble ("Sure! Here's the JSON: ..."), truncate mid-object, or add trailing text. Brittle at scale.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> produce free text by default. Production systems need structured data: JSON objects, typed fields, validated schemas.</p>
+<p>Three approaches in order of reliability: (1) prompt engineering ("respond only in JSON"), (2) native structured output modes (OpenAI/Anthropic), (3) <a class="concept-link" href="constrained-decoding.html">constrained decoding</a> (grammar-guided token sampling).</p>
+<p>Why <a class="concept-link" href="prompting.html">prompting</a> alone fails: model can still produce preamble ("Sure! Here's the JSON: ..."), truncate mid-object, or add trailing text. Brittle at scale.</p>
 <div class="callout rose">
 <span class="callout-icon">⚠️</span>
 <span><strong>Never use json.loads() on raw LLM output in production</strong> without a try/except and retry loop. Even "JSON mode" can produce subtly malformed output on edge cases.</span>
@@ -486,7 +486,7 @@
 <h2>Native Structured Output Modes</h2>
 <p><strong>OpenAI response_format:</strong> set to {"type": "json_object"} for best-effort JSON, or use response_format=MyPydanticModel with beta.chat.completions.parse for strict schema enforcement</p>
 <p><strong>Anthropic:</strong> pass tool definitions — model always returns valid tool_use blocks matching the schema</p>
-<p><strong>Strict mode (OpenAI):</strong> guarantees output exactly matches your JSON Schema. No extra fields, no missing required fields. Uses constrained decoding under the hood.</p>
+<p><strong>Strict mode (OpenAI):</strong> guarantees output exactly matches your JSON Schema. No extra fields, no missing required fields. Uses <a class="concept-link" href="constrained-decoding.html">constrained decoding</a> under the hood.</p>
 <h3>OpenAI Strict Structured Output</h3>
 <div class="example-box">from openai import OpenAI
 from pydantic import BaseModel
@@ -530,7 +530,7 @@ result: DocumentAnalysis = response.choices[0].message.parsed
 <div class="section-block" id="instructor-library">
 <div class="section-marker">03 — Cross-Provider</div>
 <h2>Instructor Library</h2>
-<p><strong>instructor</strong> wraps any LLM (OpenAI, Anthropic, Gemini, local) and adds Pydantic validation + automatic retries. On validation failure: feeds the error back to the model with the original request — model self-corrects.</p>
+<p><strong><a class="concept-link" href="instructor.html">instructor</a></strong> wraps any LLM (OpenAI, Anthropic, Gemini, local) and adds Pydantic validation + automatic retries. On validation failure: feeds the error back to the model with the original request — model self-corrects.</p>
 <p>Works across providers: single API, swap model without changing structured output code.</p>
 <h3>Instructor Example</h3>
 <div class="example-box">import instructor
@@ -570,8 +570,8 @@ result = client.messages.create(
 <div class="section-block" id="constrained-decoding">
 <div class="section-marker">04 — Token-Level</div>
 <h2>Constrained Decoding with Outlines</h2>
-<p><strong>Constrained decoding:</strong> instead of sampling freely from the full vocabulary, mask out tokens that would violate the schema at each generation step</p>
-<p><strong>Outlines:</strong> open-source library that intercepts token logits and zeroes out invalid tokens before sampling. Works with any local model (Transformers, vLLM).</p>
+<p><strong><a class="concept-link" href="constrained-decoding.html">Constrained decoding</a>:</strong> instead of sampling freely from the full vocabulary, mask out tokens that would violate the schema at each generation step</p>
+<p><strong><a class="concept-link" href="outlines.html">Outlines</a>:</strong> open-source library that intercepts token logits and zeroes out invalid tokens before sampling. Works with any local model (<a class="concept-link" href="transformers.html">Transformers</a>, <a class="concept-link" href="vllm.html">vLLM</a>).</p>
 <p><strong>Supported constraints:</strong> JSON Schema, Pydantic models, regex patterns, EBNF grammars, choice from a list</p>
 <h3>Outlines with Local Model</h3>
 <div class="example-box">import outlines
@@ -616,7 +616,7 @@ phone = phone_gen("What's the phone number? Area code 555, number 867-5309")
 <h2>Grammar-Guided Generation and LMQL</h2>
 <p><strong>EBNF grammars:</strong> define the exact syntax of valid outputs. Any context-free grammar can be enforced.</p>
 <p><strong>llama.cpp grammar:</strong> --grammar or --grammar-file flag to enforce output format at inference time</p>
-<p><strong>LMQL (Language Model Query Language):</strong> SQL-like language for constrained generation with variables, conditionals, and loops</p>
+<p><strong><a class="concept-link" href="lmql.html">LMQL</a> (Language Model Query Language):</strong> SQL-like language for constrained generation with variables, conditionals, and loops</p>
 <p><strong>Guidance:</strong> Microsoft library for interleaving Python control flow with LLM generation. Template with {{gen ...}} blocks.</p>
 <h3>llama.cpp Grammar for Structured Address</h3>
 <div class="example-box"># address.gbnf
@@ -635,7 +635,7 @@ ws ::= " "?
 <div class="section-marker">06 — Specialized</div>
 <h2>Classification and Choice Constraints</h2>
 <p><strong>Multiple-choice:</strong> constrain output to exactly one of N options — eliminates ambiguous paraphrasing</p>
-<p><strong>Outlines generate.choice:</strong> guarantees output is one of the provided strings, no variations</p>
+<p><strong><a class="concept-link" href="outlines.html">Outlines</a> generate.choice:</strong> guarantees output is one of the provided strings, no variations</p>
 <h3>Choice Constraint for Classification</h3>
 <div class="example-box">import outlines
 
@@ -740,24 +740,21 @@ label = sentiment("Classify: 'The product works but shipping was slow'")
 <h2>References</h2>
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
-<li><span class="ref-badge badge-docs">Docs</span> instructor docs — <a href="https://python.useinstructor.com" target="_blank">python.useinstructor.com ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> Outlines docs — <a href="https://outlines-dev.github.io/outlines" target="_blank">outlines-dev.github.io/outlines ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> OpenAI structured outputs guide — <a href="https://platform.openai.com/docs/guides/structured-outputs" target="_blank">platform.openai.com/docs ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="instructor.html">instructor</a> docs — <a href="https://python.useinstructor.com" target="_blank">python.useinstructor.com ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="outlines.html">Outlines</a> docs — <a href="https://outlines-dev.github.io/outlines" target="_blank">outlines-dev.github.io/outlines ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> OpenAI <a class="concept-link" href="structured-output-app.html">structured outputs</a> guide — <a href="https://platform.openai.com/docs/guides/structured-outputs" target="_blank">platform.openai.com/docs ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> Guidance — <a href="https://github.com/guidance-ai/guidance" target="_blank">github.com/guidance-ai/guidance ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> LMQL — <a href="https://lmql.ai" target="_blank">lmql.ai ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="lmql.html">LMQL</a> — <a href="https://lmql.ai" target="_blank">lmql.ai ↗</a></li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="basic-prompting.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Basic Techniques</span></a>
-<a href="advanced-reasoning.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Advanced Reasoning</span></a>
-<a href="programmatic-prompting.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Programmatic</span></a>
-<a href="zero-shot.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Zero-shot</span></a>
-<a href="few-shot.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Few-shot</span></a>
+<a class="rc-card" href="basic-prompting.html" style="--rc-accent:#64748b"><span class="rc-label">Basic Techniques</span></a>
+<a class="rc-card" href="advanced-reasoning.html" style="--rc-accent:#64748b"><span class="rc-label">Advanced Reasoning</span></a>
+<a class="rc-card" href="programmatic-prompting.html" style="--rc-accent:#64748b"><span class="rc-label">Programmatic</span></a>
+<a class="rc-card" href="zero-shot.html" style="--rc-accent:#64748b"><span class="rc-label">Zero-shot</span></a>
+<a class="rc-card" href="few-shot.html" style="--rc-accent:#64748b"><span class="rc-label">Few-shot</span></a>
 </div>
 </div>
 <footer class="page-footer">

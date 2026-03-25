@@ -159,15 +159,15 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>What Are Frontier Implications?</h2>
-<p>Frontier model improvements don't just make existing patterns faster — they change which patterns you should use. Three shifts in 2024–2025 require rethinking system design from first principles: test-time compute scaling, million-token context windows, and truly multimodal native models.</p>
+<p>Frontier model improvements don't just make existing patterns faster — they change which patterns you should use. Three shifts in 2024–2025 require rethinking <a class="concept-link" href="system-design.html">system design</a> from first principles: <a class="concept-link" href="test-time-compute.html">test-time compute</a> scaling, million-token context windows, and truly <a class="concept-link" href="multimodal-native.html">multimodal native</a> models.</p>
 <p>This page is a map of those shifts and their practical consequences for how you architect, cost-model, and iterate on AI systems.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Test-Time Compute</h2>
-<p>Models like o1, o3, and Claude with extended thinking can spend more compute at inference time to reason harder. This changes the fundamental calculus of when to call a model once vs. use an agent loop:</p>
+<p>Models like o1, o3, and Claude with <a class="concept-link" href="extended-thinking.html">extended thinking</a> can spend more compute at inference time to reason harder. This changes the fundamental calculus of when to call a model once vs. use an agent loop:</p>
 <ol>
-<li><strong>Single call with thinking</strong> — o3 on a hard coding problem outperforms a ReAct agent loop over GPT-4o. Simpler, cheaper per-task, easier to debug.</li>
+<li><strong>Single call with thinking</strong> — o3 on a hard coding problem outperforms a <a class="concept-link" href="react-prompting.html">ReAct</a> agent loop over <a class="concept-link" href="gpt4o.html">GPT-4o</a>. Simpler, cheaper per-task, easier to debug.</li>
 <li><strong>Parallel sampling</strong> — Generate N solutions, score them (pass@k or LLM judge), return the best. Scales quality linearly with budget.</li>
 <li><strong>Sequential refinement</strong> — First draft → critique → revise. Works well for writing and analysis.</li>
 </ol>
@@ -186,7 +186,7 @@ print(response.choices[0].message.content)</code></pre>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Long Context Impact</h2>
-<p>Gemini 1.5 / 2.0 (1M tokens), Claude 3.5 (200K), GPT-4o (128K) make it practical to stuff entire codebases, contracts, or document sets directly into a prompt. This changes the RAG calculus:</p>
+<p>Gemini 1.5 / 2.0 (1M tokens), Claude 3.5 (200K), <a class="concept-link" href="gpt4o.html">GPT-4o</a> (128K) make it practical to stuff entire codebases, contracts, or document sets directly into a prompt. This changes the <a class="concept-link" href="rag.html">RAG</a> calculus:</p>
 <ol>
 <li><strong>Full-document stuffing</strong> — For &lt;200K token docs, just include the whole document. No retrieval needed. Eliminates chunking errors and retrieval misses.</li>
 <li><strong>Lost-in-the-middle risk</strong> — Models degrade on information buried in the middle of long contexts. Keep critical facts at the start or end.</li>
@@ -205,10 +205,10 @@ def should_use_rag(corpus_tokens, query_type, model_ctx_limit):
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Multimodal Native Design</h2>
-<p>GPT-4o, Gemini 2.0, and Claude 3.5 treat vision, audio, and text as first-class inputs — not separate pipelines. This collapses the old "extract text from image → feed to LLM" pattern:</p>
+<p><a class="concept-link" href="gpt4o.html">GPT-4o</a>, Gemini 2.0, and Claude 3.5 treat vision, audio, and text as first-class inputs — not separate pipelines. This collapses the old "extract text from image → feed to LLM" pattern:</p>
 <ol>
 <li><strong>Direct image understanding</strong> — Send screenshots, charts, PDFs as images. The model reads them natively; no OCR step needed.</li>
-<li><strong>Audio-first agents</strong> — Realtime speech in/out without a separate STT → LLM → TTS pipeline. OpenAI Realtime API, Gemini Live.</li>
+<li><strong>Audio-first <a class="concept-link" href="agents.html">agents</a></strong> — Realtime speech in/out without a separate STT → LLM → TTS pipeline. OpenAI Realtime API, Gemini Live.</li>
 <li><strong>Mixed-modality prompts</strong> — Interleave text and images in a single prompt for document comparison, UI testing, visual debugging.</li>
 </ol>
 <pre><code>import base64
@@ -234,7 +234,7 @@ response = client.chat.completions.create(
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Distillation Pattern</h2>
-<p>The most cost-effective production pattern: use a frontier model (o3, Claude Opus) to generate high-quality training data, then fine-tune a small fast model (GPT-4o-mini, Llama-3 8B) to replicate it on your specific task.</p>
+<p>The most cost-effective production pattern: use a frontier model (o3, Claude Opus) to generate high-quality training data, then fine-tune a small fast model (<a class="concept-link" href="gpt4o.html">GPT-4o</a>-mini, Llama-3 8B) to <a class="concept-link" href="replicate.html">replicate</a> it on your specific task.</p>
 <pre><code>## Step 1: Generate with frontier model
 ## Step 2: Filter and verify outputs
 ## Step 3: Fine-tune small model
@@ -266,24 +266,21 @@ def generate_training_example(user_input):
 <p>When starting a new AI feature in 2025, run through these questions:</p>
 <ol>
 <li>Can a reasoning model (o3 / Claude thinking) solve this in one call? Try it before building a pipeline.</li>
-<li>Does the relevant context fit in a context window? If yes, stuff it — don't build RAG.</li>
-<li>Is the input natively multimodal? Skip OCR/transcription; send directly to the model.</li>
+<li>Does the relevant context fit in a <a class="concept-link" href="context-window.html">context window</a>? If yes, stuff it — don't build <a class="concept-link" href="rag.html">RAG</a>.</li>
+<li>Is the input natively <a class="concept-link" href="multimodal.html">multimodal</a>? Skip OCR/transcription; send directly to the model.</li>
 <li>Once quality is proven, is the task repetitive enough to distill to a smaller model? Cost will drop 10–50x.</li>
-<li>What's the latency budget? Reasoning models are slower — if &lt;500ms is required, use a standard model or a distilled fine-tune.</li>
+<li>What's the <a class="concept-link" href="latency-budget.html">latency budget</a>? Reasoning models are slower — if &lt;500ms is required, use a standard model or a distilled fine-tune.</li>
 </ol>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="decision-frameworks.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Decision Frameworks</span></a>
-<a href="evals-practice.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Evals-First Dev</span></a>
-<a href="compound-ai.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Compound AI Systems</span></a>
-<a href="rag-vs-finetuning.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
-<a href="model-selection.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Model Selection</span></a>
+<a class="rc-card" href="decision-frameworks.html" style="--rc-accent:#64748b"><span class="rc-label">Decision Frameworks</span></a>
+<a class="rc-card" href="evals-practice.html" style="--rc-accent:#64748b"><span class="rc-label">Evals-First Dev</span></a>
+<a class="rc-card" href="compound-ai.html" style="--rc-accent:#64748b"><span class="rc-label">Compound AI Systems</span></a>
+<a class="rc-card" href="rag-vs-finetuning.html" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
+<a class="rc-card" href="model-selection.html" style="--rc-accent:#64748b"><span class="rc-label">Model Selection</span></a>
 </div>
 </div>
 <footer>

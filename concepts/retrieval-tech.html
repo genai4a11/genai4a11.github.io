@@ -497,7 +497,7 @@
 <h2>The Retrieval Problem</h2>
 <p>You have a corpus of N documents (N = 10K to 100M). A user submits a query. You need to return the top-k most relevant documents in milliseconds.</p>
 <p><strong>The naive approach:</strong> scan all N documents, score each one, sort, return top-k. This is O(N×d) — too slow for any corpus larger than a few thousand documents.</p>
-<p><strong>Two fundamental approaches exist:</strong> Sparse retrieval (keyword/BM25) and dense retrieval (vector/semantic). Each has strengths and blindspots. Modern production systems use both.</p>
+<p><strong>Two fundamental approaches exist:</strong> Sparse retrieval (keyword/<a class="concept-link" href="bm25.html">BM25</a>) and <a class="concept-link" href="dense-retrieval.html">dense retrieval</a> (vector/semantic). Each has strengths and blindspots. Modern production systems use both.</p>
 <p><strong>The ANN problem:</strong> Exact nearest neighbor search in high-dimensional spaces is prohibitively expensive. Approximate Nearest Neighbor (ANN) indices trade a small recall loss for 100–1000× speedup. Most production systems accept 95–99% recall in exchange for real-time latency.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
@@ -508,10 +508,10 @@
 <div class="section-block" id="sparse">
 <div class="section-marker">02 — Keyword Search</div>
 <h2>Sparse Retrieval: BM25</h2>
-<p><strong>BM25 (Best Match 25)</strong> is a probabilistic term-frequency model that scores documents by how well query terms match. It's been the standard for keyword search since the late 1990s.</p>
+<p><strong><a class="concept-link" href="bm25.html">BM25</a> (Best Match 25)</strong> is a probabilistic term-frequency model that scores documents by how well query terms match. It's been the standard for keyword search since the late 1990s.</p>
 <p><strong>How it works:</strong> Each query term is scored based on (1) how often it appears in the document (TF), (2) how rare the term is across the corpus (IDF), (3) saturation so common terms don't dominate, and (4) document-length normalization so longer documents don't win automatically.</p>
-<p><strong>Strengths:</strong> Exact keyword match, handles rare/technical terms, no embedding required, fast on CPU, results are interpretable (you can explain why document A ranked above B).</p>
-<p><strong>Weaknesses:</strong> Vocabulary mismatch (synonym problem — "fast" and "quick" are different tokens), no semantic understanding, requires tokenization, fails on out-of-vocabulary terms.</p>
+<p><strong>Strengths:</strong> Exact keyword match, handles rare/technical terms, no <a class="concept-link" href="embeddings.html">embedding</a> required, fast on CPU, results are interpretable (you can explain why document A ranked above B).</p>
+<p><strong>Weaknesses:</strong> Vocabulary mismatch (synonym problem — "fast" and "quick" are different tokens), no semantic understanding, requires <a class="concept-link" href="tokenization.html">tokenization</a>, fails on out-of-vocabulary terms.</p>
 <h3>Example: BM25 with rank_bm25</h3>
 <div class="example-box"># pip install rank-bm25
 from rank_bm25 import BM25Okapi
@@ -537,8 +537,8 @@ scores = bm25.get_scores(query.split())
 <div class="section-block" id="dense">
 <div class="section-marker">03 — Vector Search</div>
 <h2>Dense Retrieval: Vector Search</h2>
-<p>Embed the query and all documents with a bi-encoder (embedding model). Find the documents whose embeddings are closest to the query embedding. This captures semantic similarity.</p>
-<p><strong>Example:</strong> Query "fast brown dog" matches "quick auburn fox" semantically. BM25 fails here (no exact term overlap). Dense retrieval succeeds because "fast" and "quick" live near each other in the vector space, as do "brown" and "auburn", and "dog" and "fox".</p>
+<p>Embed the query and all documents with a bi-encoder (<a class="concept-link" href="embeddings.html">embedding</a> model). Find the documents whose <a class="concept-link" href="embeddings.html">embeddings</a> are closest to the query embedding. This captures semantic similarity.</p>
+<p><strong>Example:</strong> Query "fast brown dog" matches "quick auburn fox" semantically. <a class="concept-link" href="bm25.html">BM25</a> fails here (no exact term overlap). <a class="concept-link" href="dense-retrieval.html">Dense retrieval</a> succeeds because "fast" and "quick" live near each other in the vector space, as do "brown" and "auburn", and "dog" and "fox".</p>
 <p><strong>The challenge:</strong> Vector spaces have high dimensionality (768, 1024, or more). Finding the nearest neighbor exactly requires scanning all vectors — O(N×d). ANN indices solve this by organizing vectors into hierarchical structures.</p>
 <p><strong>FAISS (Facebook AI Similarity Search):</strong> The standard open-source library for ANN search. It supports multiple index types (Flat, IVF, HNSW, PQ) and combinations thereof.</p>
 <h3>Example: FAISS IndexHNSWFlat</h3>
@@ -671,7 +671,7 @@ distances, indices = index.search(query, k=10)</div>
 <div class="section-block" id="hybrid">
 <div class="section-marker">05 — Combined</div>
 <h2>Hybrid Search: Dense + Sparse</h2>
-<p>Run BM25 and dense retrieval separately, then merge the ranked lists. This covers both vocabulary mismatch (BM25 handles exact terms) and semantic drift (dense handles paraphrases).</p>
+<p>Run <a class="concept-link" href="bm25.html">BM25</a> and <a class="concept-link" href="dense-retrieval.html">dense retrieval</a> separately, then merge the ranked lists. This covers both vocabulary mismatch (BM25 handles exact terms) and semantic drift (dense handles paraphrases).</p>
 <p><strong>Why hybrid works:</strong> BM25 is a specialist — it excels at finding exact keywords. Dense retrieval is a generalist — it understands meaning but can miss specific terms. By combining both, you get the best of both worlds.</p>
 <p><strong>Merging the lists:</strong> You can't just average scores — BM25 scores (0 to ~20) and cosine similarity (0 to 1) are on different scales. The standard solution is <strong>Reciprocal Rank Fusion (RRF)</strong>.</p>
 <h3>Reciprocal Rank Fusion (RRF)</h3>
@@ -735,7 +735,7 @@ fused = reciprocal_rank_fusion([dense_results, sparse_results])
 <div class="section-block" id="databases">
 <div class="section-marker">06 — Storage</div>
 <h2>Vector Databases</h2>
-<p>You can use FAISS directly in Python, but production systems need durability, concurrent access, and filtering. Enter vector databases.</p>
+<p>You can use FAISS directly in Python, but production systems need durability, concurrent access, and filtering. Enter <a class="concept-link" href="vector-dbs.html">vector databases</a>.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -800,7 +800,7 @@ fused = reciprocal_rank_fusion([dense_results, sparse_results])
 </tbody>
 </table>
 </div>
-<p><strong>pgvector is the pragmatic choice:</strong> If you're already on Postgres, start here. You get SQL transactions, query planner, backups, and all the tooling you already know. HNSW and IVF indices handle most workloads. Move to a dedicated vector DB only when you need &gt;10M vectors or &lt;5ms P99 latency.</p>
+<p><strong><a class="concept-link" href="pgvector.html">pgvector</a> is the pragmatic choice:</strong> If you're already on Postgres, start here. You get SQL transactions, query planner, backups, and all the tooling you already know. HNSW and IVF indices handle most workloads. Move to a dedicated <a class="concept-link" href="vector-dbs.html">vector DB</a> only when you need &gt;10M vectors or &lt;5ms P99 latency.</p>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Startup advice:</strong> Don't pick a vector database based on features — they all do similar things. Pick based on what you already use. If you're on Postgres, use pgvector. If you need cloud-native, use Qdrant or Pinecone. The switching cost is low early.</span>
@@ -814,7 +814,7 @@ fused = reciprocal_rank_fusion([dense_results, sparse_results])
 <p><strong>Sharding:</strong> Partition vectors across nodes by ID range or hash. Each shard handles its own ANN search. A scatter-gather layer combines results from all shards. This scales linearly with the number of machines.</p>
 <p><strong>Disk-based indices:</strong> DiskANN (Microsoft) keeps the HNSW graph on SSD and loads neighbors on demand. This enables 1B+ vectors without proportional RAM. Latency is slightly higher (~10–20ms instead of 1–5ms), but you get massive scale.</p>
 <p><strong>Incremental indexing:</strong> Most ANN structures require full rebuild for correctness. Workaround: maintain two indices. The main index has production vectors; a hot buffer has new vectors. Every night, merge them into a new main index. Users query both and see combined results.</p>
-<p><strong>Filtering:</strong> "Find semantically similar documents WHERE category='finance' AND date&gt;2024-01-01". Three approaches: (1) pre-filter then search (fast but recall drops), (2) post-filter (exact but slow — you might need to search top-1000 to get top-10 after filtering), (3) filtered HNSW (best — only Qdrant/Weaviate support this natively).</p>
+<p><strong>Filtering:</strong> "Find semantically similar documents WHERE category='finance' AND date&gt;2024-01-01". Three approaches: (1) pre-filter then search (fast but recall drops), (2) post-filter (exact but slow — you might need to search top-1000 to get top-10 after filtering), (3) filtered HNSW (best — only <a class="concept-link" href="qdrant.html">Qdrant</a>/<a class="concept-link" href="weaviate.html">Weaviate</a> support this natively).</p>
 <p><strong>Tools and libraries:</strong></p>
 <div class="tools-grid">
 <div class="tool-card">
@@ -883,20 +883,17 @@ fused = reciprocal_rank_fusion([dense_results, sparse_results])
 </ul>
 <div class="ref-group-title">Implementation &amp; Techniques</div>
 <ul class="ref-list">
-<li><span class="ref-badge badge-blog">Blog</span> Hybrid Search with RRF — Elasticsearch and Weaviate blogs cover reciprocal rank fusion in detail</li>
+<li><span class="ref-badge badge-blog">Blog</span> <a class="concept-link" href="hybrid-search.html">Hybrid Search</a> with RRF — Elasticsearch and <a class="concept-link" href="weaviate.html">Weaviate</a> blogs cover reciprocal rank fusion in detail</li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Embeddings</span></a>
-<a href="vector-dbs.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Vector Databases</span></a>
-<a href="post-retrieval.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Post-Retrieval</span></a>
-<a href="advanced-rag.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Advanced RAG</span></a>
-<a href="sentence-transformers.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
+<a class="rc-card" href="embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">Embeddings</span></a>
+<a class="rc-card" href="vector-dbs.html" style="--rc-accent:#3b82f6"><span class="rc-label">Vector Databases</span></a>
+<a class="rc-card" href="post-retrieval.html" style="--rc-accent:#3b82f6"><span class="rc-label">Post-Retrieval</span></a>
+<a class="rc-card" href="advanced-rag.html" style="--rc-accent:#3b82f6"><span class="rc-label">Advanced RAG</span></a>
+<a class="rc-card" href="sentence-transformers.html" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
 </div>
 </div>
 <div class="page-footer">

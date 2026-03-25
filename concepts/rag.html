@@ -442,7 +442,7 @@
 <div class="section-block" id="why-llms-need-rag">
 <div class="section-marker">01 — Overview</div>
 <h2>Why LLMs Need RAG</h2>
-<p>LLMs have a fundamental knowledge problem: they only know what was in their training data, which has a hard cutoff. They don't know about your proprietary documents, your company database, live market data, or anything that happened after training. When you ask a plain LLM a question outside its training data, it hallucinates — it fabricates plausible-sounding but false answers.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> have a fundamental knowledge problem: they only know what was in their training data, which has a hard cutoff. They don't know about your proprietary documents, your company database, live market data, or anything that happened after training. When you ask a plain LLM a question outside its training data, it hallucinates — it fabricates plausible-sounding but false answers.</p>
 <p><strong>RAG (Retrieval-Augmented Generation) solves this by attaching external knowledge to the LLM at query time.</strong> Instead of asking the LLM directly, you first retrieve the relevant chunks from your documents, then feed both the chunks and the question to the LLM. The LLM then generates a grounded answer based on what it retrieved, not its training data.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
@@ -479,9 +479,9 @@ LLM: "Your policy is 30 days, no questions asked."  [grounded, correct]</div>
 <h3>Chunk <em>— Break documents into pieces</em></h3>
 <p>Split documents into small, semantically coherent chunks (typically 256–1024 tokens). You need chunks small enough to retrieve precisely but large enough to contain context.</p>
 <ul>
-<li>Fixed-size chunks: Fast, simple, but ignores semantics</li>
+<li><a class="concept-link" href="fixed-size-chunking.html">Fixed-size</a> chunks: Fast, simple, but ignores semantics</li>
 <li>Semantic chunks: Split at sentence/paragraph boundaries, better coherence</li>
-<li>Hierarchical (parent-child): Small chunks for retrieval, fetch parent for context</li>
+<li>Hierarchical (<a class="concept-link" href="parent-child-chunking.html">parent-child</a>): Small chunks for retrieval, fetch parent for context</li>
 </ul>
 </div>
 </div>
@@ -489,9 +489,9 @@ LLM: "Your policy is 30 days, no questions asked."  [grounded, correct]</div>
 <div class="method-num">2</div>
 <div class="method-body">
 <h3>Embed <em>— Turn text into vectors</em></h3>
-<p>Use an embedding model to convert each chunk into a dense vector (e.g., 1536 dimensions). Semantically similar chunks will have similar vectors, enabling similarity search.</p>
+<p>Use an <a class="concept-link" href="embeddings.html">embedding</a> model to convert each chunk into a dense vector (e.g., 1536 dimensions). Semantically similar chunks will have similar vectors, enabling similarity search.</p>
 <ul>
-<li>Embedding models: BAAI/bge-small, OpenAI text-embedding-3-small, Anthropic embeddings</li>
+<li>Embedding models: BAAI/bge-small, OpenAI text-embedding-3-small, Anthropic <a class="concept-link" href="embeddings.html">embeddings</a></li>
 <li>Dimension: 256–1536 dims. Larger models, larger vectors, higher quality but slower search</li>
 <li>Metric: Most systems use cosine similarity for retrieval</li>
 </ul>
@@ -503,7 +503,7 @@ LLM: "Your policy is 30 days, no questions asked."  [grounded, correct]</div>
 <h3>Store <em>— Index in a vector database</em></h3>
 <p>Store the chunks + embeddings in a vector database. The DB builds an index (typically HNSW or IVF) for fast approximate nearest neighbor (ANN) search.</p>
 <ul>
-<li>Vector DBs: Chroma, Pinecone, Weaviate, Milvus, Qdrant, FAISS</li>
+<li><a class="concept-link" href="vector-dbs.html">Vector DBs</a>: <a class="concept-link" href="chroma.html">Chroma</a>, <a class="concept-link" href="pinecone.html">Pinecone</a>, <a class="concept-link" href="weaviate.html">Weaviate</a>, <a class="concept-link" href="milvus.html">Milvus</a>, <a class="concept-link" href="qdrant.html">Qdrant</a>, FAISS</li>
 <li>Also store metadata: filename, chunk number, timestamp, author, source URL</li>
 <li>The index enables fast retrieval: O(log n) to O(1) instead of O(n) full scan</li>
 </ul>
@@ -555,8 +555,8 @@ STEP 5 — Generate answer
   LLM reads the context and question, outputs grounded answer</div>
 <h3>Key Design Decisions</h3>
 <p><strong>How many chunks to retrieve (k)?</strong> Trade-off between context breadth and token budget. Typical: k=3 to k=10. More chunks = more context = slower + more cost, but lower risk of missing relevant info.</p>
-<p><strong>Embedding consistency:</strong> The query and corpus must be embedded with the same model. Mismatched models = broken retrieval.</p>
-<p><strong>Context window limits:</strong> Your LLM has a max token limit. Calculate: tokens(context) + tokens(query) + tokens(answer) must fit. For GPT-4 with 128k tokens and 10 chunks of 300 tokens each, you have 97k tokens for reasoning.</p>
+<p><strong><a class="concept-link" href="embeddings.html">Embedding</a> consistency:</strong> The query and corpus must be embedded with the same model. Mismatched models = broken retrieval.</p>
+<p><strong><a class="concept-link" href="context-window.html">Context window</a> limits:</strong> Your LLM has a max token limit. Calculate: tokens(context) + tokens(query) + tokens(answer) must fit. For GPT-4 with 128k tokens and 10 chunks of 300 tokens each, you have 97k tokens for reasoning.</p>
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Best practice:</strong> Start with k=3, measure retrieval quality (are the top-3 relevant?), then tune k upward if recall is low. Most systems work well with k ≤ 10.</span>
@@ -604,8 +604,8 @@ print(rag('What is the return policy?'))
 # Output: "Our refund policy is 30 days, no questions asked."</div>
 <h3>What's happening here</h3>
 <ul>
-<li><code>SentenceTransformer</code>: Embedding model that converts text to dense vectors</li>
-<li><code>chromadb.Client()</code>: In-memory vector database. For production, use Pinecone or Weaviate</li>
+<li><code>SentenceTransformer</code>: <a class="concept-link" href="embeddings.html">Embedding</a> model that converts text to dense vectors</li>
+<li><code>chromadb.Client()</code>: In-<a class="concept-link" href="agent-memory.html">memory</a> vector database. For production, use <a class="concept-link" href="pinecone.html">Pinecone</a> or <a class="concept-link" href="weaviate.html">Weaviate</a></li>
 <li><code>embed_model.encode(docs)</code>: Convert each document to a 384-dim vector</li>
 <li><code>col.add(...)</code>: Store documents and their vectors in the index</li>
 <li><code>col.query(...)</code>: Find top-k documents most similar to the question vector</li>
@@ -613,18 +613,18 @@ print(rag('What is the return policy?'))
 </ul>
 <h3>Scaling to production</h3>
 <ul>
-<li><strong>Replace Chroma with Pinecone or Weaviate</strong> for persistent, distributed storage</li>
-<li><strong>Add reranking</strong> after retrieval: coarse-rank top-50 with embedding, fine-rank top-5 with cross-encoder</li>
+<li><strong>Replace <a class="concept-link" href="chroma.html">Chroma</a> with Pinecone or Weaviate</strong> for persistent, distributed storage</li>
+<li><strong>Add <a class="concept-link" href="reranking.html">reranking</a></strong> after retrieval: coarse-rank top-50 with embedding, fine-rank top-5 with cross-encoder</li>
 <li><strong>Add metadata filtering</strong>: retrieve only documents matching date, author, category</li>
-<li><strong>Implement hybrid search</strong>: combine dense (embedding) + sparse (BM25) retrieval</li>
-<li><strong>Monitor retrieval quality</strong> with RAGAS metrics: context precision, context recall</li>
+<li><strong>Implement <a class="concept-link" href="hybrid-search.html">hybrid search</a></strong>: combine dense (embedding) + sparse (<a class="concept-link" href="bm25.html">BM25</a>) retrieval</li>
+<li><strong>Monitor retrieval quality</strong> with <a class="concept-link" href="ragas.html">RAGAS</a> metrics: context precision, context recall</li>
 </ul>
 </div>
 <!-- ── 5. RAG VS FINE-TUNING ── -->
 <div class="section-block" id="rag-vs-finetuning">
 <div class="section-marker">05 — Architecture Decision</div>
 <h2>RAG vs. Fine-Tuning: When to Use Which</h2>
-<p>Both RAG and fine-tuning add knowledge to an LLM. They're not mutually exclusive — you can do both. But they solve different problems and have different trade-offs.</p>
+<p>Both RAG and <a class="concept-link" href="finetuning.html">fine-tuning</a> add knowledge to an LLM. They're not mutually exclusive — you can do both. But they solve different problems and have different trade-offs.</p>
 <h3>RAG: Retrieval-Augmented Generation</h3>
 <p><strong>You give the LLM external knowledge at query time via retrieved documents.</strong></p>
 <ul>
@@ -633,7 +633,7 @@ print(rag('What is the return policy?'))
 <li><strong>Latency:</strong> Extra query: embed question + search index (~50–200ms)</li>
 <li><strong>Update speed:</strong> Add/remove documents instantly. No retraining</li>
 <li><strong>Hallucination:</strong> Lower — LLM grounds answer in retrieved context</li>
-<li><strong>Scaling:</strong> Scale retrieval independently of LLM. Use multiple vector DBs</li>
+<li><strong>Scaling:</strong> Scale retrieval independently of LLM. Use multiple <a class="concept-link" href="vector-dbs.html">vector DBs</a></li>
 <li><strong>Drawback:</strong> Depends entirely on retrieval quality. Bad retrieval = bad answer</li>
 </ul>
 <h3>Fine-Tuning: Adapt the Model Weights</h3>
@@ -706,7 +706,7 @@ print(rag('What is the return policy?'))
 <div class="section-block" id="next-steps">
 <div class="section-marker">06 — Deeper Dives</div>
 <h2>What to Explore Next</h2>
-<p>The concepts on this page are the foundation. As you build RAG systems, you'll encounter more advanced topics:</p>
+<p>The concepts on this page are the foundation. As you build <a class="concept-link" href="rag-systems.html">RAG systems</a>, you'll encounter more advanced topics:</p>
 <div class="tools-grid">
 <div class="tool-card">
 <div class="tool-category">Concept</div>
@@ -765,13 +765,13 @@ print(rag('What is the return policy?'))
 <ul class="ref-list">
 <li>
 <span class="ref-badge badge-blog">Blog</span>
-        Pinecone. (2024).
+<a class="concept-link" href="pinecone.html">Pinecone</a>. (2024).
         <em>What is RAG?</em> —
         <a href="https://www.pinecone.io/learn/retrieval-augmented-generation/" target="_blank">pinecone.io/learn ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-docs">Docs</span>
-        LangChain. (2024).
+<a class="concept-link" href="langchain.html">LangChain</a>. (2024).
         <em>RAG Tutorial.</em> —
         <a href="https://python.langchain.com/docs/tutorials/rag/" target="_blank">python.langchain.com ↗</a>
 </li>
@@ -786,7 +786,7 @@ print(rag('What is the return policy?'))
 <div class="section-block" id="learning-path">
 <div class="section-marker">LEARNING PATH</div>
 <h2>Learning Path</h2>
-<p>RAG touches embeddings, vector search, chunking, and LLM prompting. Here's the recommended sequence:</p>
+<p>RAG touches <a class="concept-link" href="embeddings.html">embeddings</a>, vector search, chunking, and LLM <a class="concept-link" href="prompting.html">prompting</a>. Here's the recommended sequence:</p>
 <div class="flow-diagram">
 <div class="flow-box">Embeddings<span class="flow-label">turn text → vectors</span></div>
 <div class="flow-arrow">→</div>
@@ -801,22 +801,19 @@ print(rag('What is the return policy?'))
 <div class="flow-box">RAG Eval<span class="flow-label">RAGAS / TruLens</span></div>
 </div>
 <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Understand embeddings first</h4><p>RAG only makes sense once you know how text becomes a vector and why similar meaning → similar vector. Start with <a href="embeddings.html">Embeddings</a>.</p></div></div>
-<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Build a basic RAG pipeline</h4><p>Use LangChain or LlamaIndex to index a PDF and answer questions over it. Get something working before optimising. Target: &lt;1 hour to a demo.</p></div></div>
-<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Measure before you tune</h4><p>Run RAGAS or LlamaIndex evaluations on your pipeline. Context recall and answer faithfulness tell you <em>where</em> it breaks before you guess at fixes.</p></div></div>
-<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Apply Advanced RAG techniques selectively</h4><p>Hybrid search, reranking, and HyDE each help in specific failure modes. Fix the failure mode you measured, not the one you assume.</p></div></div>
-<div class="lp-step"><div class="lp-num">5</div><div class="lp-body"><h4>Consider alternatives at scale</h4><p>If your whole corpus fits in a 200K context window, try prompt stuffing before maintaining a vector index. See <a href="frontier-implications.html">Frontier Implications</a>.</p></div></div>
+<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Build a basic RAG pipeline</h4><p>Use <a class="concept-link" href="langchain.html">LangChain</a> or <a class="concept-link" href="llamaindex.html">LlamaIndex</a> to index a PDF and answer questions over it. Get something working before optimising. Target: &lt;1 hour to a demo.</p></div></div>
+<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Measure before you tune</h4><p>Run <a class="concept-link" href="ragas.html">RAGAS</a> or LlamaIndex evaluations on your pipeline. Context recall and answer faithfulness tell you <em>where</em> it breaks before you guess at fixes.</p></div></div>
+<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Apply Advanced RAG techniques selectively</h4><p><a class="concept-link" href="hybrid-search.html">Hybrid search</a>, <a class="concept-link" href="reranking.html">reranking</a>, and <a class="concept-link" href="hyde.html">HyDE</a> each help in specific failure modes. Fix the failure mode you measured, not the one you assume.</p></div></div>
+<div class="lp-step"><div class="lp-num">5</div><div class="lp-body"><h4>Consider alternatives at scale</h4><p>If your whole corpus fits in a 200K <a class="concept-link" href="context-window.html">context window</a>, try prompt stuffing before maintaining a vector index. See <a href="frontier-implications.html">Frontier Implications</a>.</p></div></div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="prompting.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Prompting</span></a>
-<a href="agents.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Agents</span></a>
-<a href="finetuning.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Fine-tuning</span></a>
-<a href="framework-tools.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Dev Tools</span></a>
-<a href="data-eng.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Data Engineering</span></a>
+<a class="rc-card" href="prompting.html" style="--rc-accent:#64748b"><span class="rc-label">Prompting</span></a>
+<a class="rc-card" href="agents.html" style="--rc-accent:#06b6d4"><span class="rc-label">Agents</span></a>
+<a class="rc-card" href="finetuning.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Fine-tuning</span></a>
+<a class="rc-card" href="framework-tools.html" style="--rc-accent:#64748b"><span class="rc-label">Dev Tools</span></a>
+<a class="rc-card" href="data-eng.html" style="--rc-accent:#64748b"><span class="rc-label">Data Engineering</span></a>
 </div>
 </div>
 <footer class="page-footer">

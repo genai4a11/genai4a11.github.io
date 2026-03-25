@@ -355,9 +355,9 @@
 <div class="section-block">
 <div class="section-marker">1</div>
 <h2>The Serving Problem</h2>
-<p>Serving large language models in production presents unique challenges. Unlike training where you process fixed batches with known sequence lengths, serving must handle dynamic request arrivals with variable sequence lengths and generation lengths. The primary bottleneck is KV cache memory management. The KV cache (stored key and value tensors for all previous tokens) grows with sequence length and number of requests, consuming significant GPU memory.</p>
+<p>Serving large language models in production presents unique challenges. Unlike training where you process fixed batches with known sequence lengths, serving must handle dynamic request arrivals with variable sequence lengths and generation lengths. The primary bottleneck is <a class="concept-link" href="kv-cache.html">KV cache</a> <a class="concept-link" href="agent-memory.html">memory</a> management. The KV cache (stored key and value tensors for all previous tokens) grows with sequence length and number of requests, consuming significant GPU memory.</p>
 <p>In standard transformer serving, KV cache is allocated statically. If you allocate space for a 2048-token sequence but a request only uses 512 tokens, the remaining 1536 token slots are wasted. Across many requests, this fragmentation can leave 60-80% of allocated KV cache unused. This memory waste forces systems to run with smaller batch sizes, reducing throughput.</p>
-<p>Another serving challenge is request latency variability. Some requests may complete quickly (short generation), others slowly (long generation). With static batching, you must wait for the slowest request before processing a new batch. This leads to inefficient GPU utilization where hardware sits idle waiting for a single slow request to finish.</p>
+<p>Another serving challenge is request latency variability. Some requests may complete quickly (short generation), others slowly (long generation). With static batching, you must wait for the slowest request before processing a new batch. This leads to inefficient GPU utilization where <a class="concept-link" href="hardware.html">hardware</a> sits idle waiting for a single slow request to finish.</p>
 <div class="callout blue">
 <p><strong>KV Cache Problem:</strong> A single 70B parameter model with 2048-token context requires ~280GB of KV cache (both K and V, all layers). If serving 8 requests with average context 512 tokens, you still allocate for 2048, wasting 75% of memory. This forces batch_size=1 or 2, severely limiting throughput.</p>
 </div>
@@ -392,7 +392,7 @@ Result: Force max_context=2048 or batch_size=1
 <div class="section-block">
 <div class="section-marker">2</div>
 <h2>PagedAttention</h2>
-<p>PagedAttention is vLLM's core innovation, adapting the virtual memory concept from operating systems. In OS virtual memory, logical pages (512B-4KB chunks) are mapped to physical memory locations, enabling overcommitting memory and dynamic allocation. PagedAttention applies this to KV cache: logical token blocks are mapped to physical blocks in GPU memory.</p>
+<p>PagedAttention is vLLM's core innovation, adapting the virtual <a class="concept-link" href="agent-memory.html">memory</a> concept from operating systems. In OS virtual memory, logical pages (512B-4KB chunks) are mapped to physical memory locations, enabling overcommitting memory and dynamic allocation. PagedAttention applies this to <a class="concept-link" href="kv-cache.html">KV cache</a>: logical token blocks are mapped to physical blocks in GPU memory.</p>
 <p>The key insight is that KV cache doesn't require contiguous memory. Attention computation can work with scattered memory locations if you maintain a mapping from logical block indices to physical block indices. This allows dynamic allocation: blocks are allocated on-demand as tokens arrive, and released when requests complete. Fragmentation is eliminated because you can allocate any physical block for any logical position.</p>
 <p>With PagedAttention, KV cache is allocated in blocks (e.g., 16 tokens per block). If a request uses 512 tokens, it uses 32 blocks. A different request using 768 tokens uses 48 blocks. The blocks can come from any available physical memory locations; the page table maps them logically. When requests complete, blocks are freed and reused, eliminating fragmentation entirely.</p>
 <div class="callout green">
@@ -453,9 +453,9 @@ cache.allocate_tokens(logical_pos=1792, num_tokens=768)  # Uses 48 blocks
 <div class="section-block">
 <div class="section-marker">3</div>
 <h2>vLLM Architecture</h2>
-<p>vLLM's architecture consists of several key components: an async scheduling engine, continuous batching, prefix caching, and chunked prefill processing. The scheduler manages incoming requests, decides which requests to batch together, and handles KV cache allocation using PagedAttention.</p>
+<p>vLLM's architecture consists of several key components: an async scheduling engine, continuous batching, prefix caching, and chunked prefill processing. The scheduler manages incoming requests, decides which requests to batch together, and handles <a class="concept-link" href="kv-cache.html">KV cache</a> allocation using PagedAttention.</p>
 <p>Continuous batching (also called dynamic batching) allows requests to be added or removed from the batch at any time, not just at batch boundaries. This is crucial for throughput. When a request finishes generation and is removed from the batch, a new request can immediately start. This eliminates idle time waiting for batches to fill or for the slowest request to complete.</p>
-<p>Prefix caching exploits the fact that many requests share common prefixes (system prompts, function definitions, retrieved documents). vLLM caches KV values for these shared prefixes. When a new request arrives with the same prefix, the cached KV values are reused, avoiding redundant computation and memory usage.</p>
+<p>Prefix caching exploits the fact that many requests share common prefixes (<a class="concept-link" href="system-prompts.html">system prompts</a>, function definitions, retrieved documents). vLLM caches KV values for these shared prefixes. When a new request arrives with the same prefix, the cached KV values are reused, avoiding redundant computation and <a class="concept-link" href="agent-memory.html">memory</a> usage.</p>
 <p>Chunked prefill separates prefill (processing the initial prompt) from decode (generating one token at a time). Traditionally, these are batched together, but they have different characteristics: prefill is compute-intensive (many tokens at once), decode is memory-bound (one token at a time). By chunking prefill into smaller batches, vLLM can better interleave prefill and decode, improving GPU utilization.</p>
 <div class="callout amber">
 <p><strong>Continuous Batching Impact:</strong> With traditional static batching, a batch of 8 requests where one finishes quickly must wait for the 7 others. With continuous batching, that request's slot is immediately freed for a new request. For typical request distributions, this can increase throughput by 2-3x.</p>
@@ -513,8 +513,8 @@ vLLM Continuous Batching:
 <div class="section-marker">4</div>
 <h2>Deployment with vLLM</h2>
 <p>Deploying vLLM is straightforward for basic use cases. Installation via pip, launching an OpenAI-compatible server, and querying via standard client libraries are all simple. For production, you'll want to manage multiple workers (GPU processes), monitor throughput, and handle scaling across multiple nodes.</p>
-<p>vLLM provides an OpenAI-compatible API, meaning clients written for OpenAI's API work unchanged with vLLM. This is significant for adoption because it means no client-side code changes needed. Tools like LangChain, LlamaIndex, and custom applications integrate seamlessly.</p>
-<p>For production deployments, vLLM is often run in containers (Docker) with Kubernetes orchestration. This allows scaling horizontally (adding more GPUs) and managing resource allocation. vLLM supports tensor parallelism for single-GPU memory limits (split model across multiple GPUs on same node) and distributed inference across multiple nodes.</p>
+<p>vLLM provides an OpenAI-compatible API, meaning clients written for OpenAI's API work unchanged with vLLM. This is significant for adoption because it means no client-side code changes needed. Tools like <a class="concept-link" href="langchain.html">LangChain</a>, <a class="concept-link" href="llamaindex.html">LlamaIndex</a>, and custom applications integrate seamlessly.</p>
+<p>For production deployments, vLLM is often run in containers (Docker) with Kubernetes orchestration. This allows scaling horizontally (adding more GPUs) and managing resource allocation. vLLM supports tensor parallelism for single-GPU <a class="concept-link" href="agent-memory.html">memory</a> limits (split model across multiple GPUs on same node) and distributed inference across multiple nodes.</p>
 <div class="example-box"># vLLM Installation and Deployment
 
 # Basic Installation
@@ -592,9 +592,9 @@ spec:
 <div class="section-block">
 <div class="section-marker">5</div>
 <h2>Performance Tuning</h2>
-<p>vLLM performance depends on many parameters. The main tuning knobs are: tensor parallelism (how many GPUs split the model), pipeline parallelism (less common), quantization (reduce precision), max_num_seqs (batch size), and max_model_len (context length). Understanding these parameters helps you extract maximum throughput.</p>
+<p>vLLM performance depends on many parameters. The main tuning knobs are: tensor parallelism (how many GPUs split the model), pipeline parallelism (less common), <a class="concept-link" href="quantization.html">quantization</a> (reduce precision), max_num_seqs (batch size), and max_model_len (context length). Understanding these parameters helps you extract maximum throughput.</p>
 <p>Tensor parallelism is crucial for large models. A 70B model doesn't fit on a single A100 (80GB). With tensor parallelism across 8 A100s (640GB total), each GPU holds ~9B parameters, fitting comfortably. Inference latency increases due to communication overhead, but throughput often improves because you can run larger batches. For a 70B model on 8 A100s with max_batch_size=256, you get ~1000+ tokens/sec throughput.</p>
-<p>Quantization reduces memory and bandwidth, allowing larger batches or longer contexts. vLLM supports several quantization schemes: AWQ (Activation-aware Weight Quantization), GPTQ (Generative Pre-trained Transformer Quantization), and FP8. With 4-bit quantization (AWQ/GPTQ), a 70B model uses ~35GB (vs 140GB FP16), enabling single-GPU deployment or larger batches.</p>
+<p><a class="concept-link" href="quantization.html">Quantization</a> reduces <a class="concept-link" href="agent-memory.html">memory</a> and bandwidth, allowing larger batches or longer contexts. vLLM supports several <a class="concept-link" href="quantization.html">quantization</a> schemes: <a class="concept-link" href="awq.html">AWQ</a> (Activation-aware Weight <a class="concept-link" href="quantization.html">Quantization</a>), <a class="concept-link" href="gptq.html">GPTQ</a> (Generative Pre-trained Transformer <a class="concept-link" href="quantization.html">Quantization</a>), and FP8. With 4-bit quantization (<a class="concept-link" href="awq.html">AWQ</a>/<a class="concept-link" href="gptq.html">GPTQ</a>), a 70B model uses ~35GB (vs 140GB FP16), enabling single-GPU deployment or larger batches.</p>
 <p>max_num_seqs controls maximum batch size and is the primary lever for throughput vs latency trade-off. Higher max_num_seqs increases throughput but increases latency for individual requests (more requests in queue waiting to be served). Typical values: 256 for high throughput, 64 for balanced, 16 for low latency.</p>
 <div class="callout blue">
 <p><strong>Tuning Strategy:</strong> Start with max_num_seqs=64, tensor_parallel=ceil(model_size_bytes/48GB), gpu_memory_utilization=0.9. Monitor throughput. If CUDA OOM, reduce max_num_seqs. If underutilized, increase. For latency-sensitive: reduce max_num_seqs, increase tensor_parallel.</p>
@@ -662,13 +662,13 @@ print(f"P99 Latency: {p99_latency*1000:.1f}ms")
 <div class="section-block">
 <div class="section-marker">6</div>
 <h2>Advanced Features</h2>
-<p>Beyond basic serving, vLLM offers several advanced features for production use: speculative decoding, LoRA serving, prefix caching, and multimodal support. These features enable higher throughput, lower costs, and support for more complex workloads.</p>
-<p>Speculative decoding uses a small "draft model" to generate token candidates, which are then verified by the larger model in batches. This parallelizes decode steps, reducing total generation time by 2-3x when the draft model's predictions are correct. The draft model might be a smaller quantized version or a different model entirely.</p>
-<p>LoRA (Low-Rank Adaptation) serving allows serving multiple fine-tuned variants of a model without loading each separately. Multiple requests can share the base model but use different LoRA adapters. This is crucial for multi-tenant scenarios where each customer has their own fine-tuned model. vLLM multiplexes adapter weights efficiently.</p>
-<p>Prefix caching automatically detects common prompts (system messages, retrieved documents) and caches their KV values. Subsequent requests with the same prefix reuse cached KV, reducing computation and memory. For RAG systems where documents are retrieved and prepended to prompts, this provides significant speedup.</p>
-<p>Multimodal support in vLLM (still evolving) includes vision models that process images and text. vLLM handles image tokenization and KV caching for visual tokens, allowing efficient serving of models like LLaVA or GPT-4V-style architectures.</p>
+<p>Beyond basic serving, vLLM offers several advanced features for production use: <a class="concept-link" href="speculative-decoding.html">speculative decoding</a>, <a class="concept-link" href="lora.html">LoRA</a> serving, prefix caching, and <a class="concept-link" href="multimodal.html">multimodal</a> support. These features enable higher throughput, lower costs, and support for more complex workloads.</p>
+<p><a class="concept-link" href="speculative-decoding.html">Speculative decoding</a> uses a small "draft model" to generate token candidates, which are then verified by the larger model in batches. This parallelizes decode steps, reducing total generation time by 2-3x when the draft model's predictions are correct. The draft model might be a smaller quantized version or a different model entirely.</p>
+<p><a class="concept-link" href="lora.html">LoRA</a> (Low-Rank Adaptation) serving allows serving multiple fine-tuned variants of a model without loading each separately. Multiple requests can share the base model but use different <a class="concept-link" href="lora.html">LoRA</a> adapters. This is crucial for multi-tenant scenarios where each customer has their own fine-tuned model. vLLM multiplexes adapter weights efficiently.</p>
+<p>Prefix caching automatically detects common prompts (system messages, retrieved documents) and caches their KV values. Subsequent requests with the same prefix reuse cached KV, reducing computation and <a class="concept-link" href="agent-memory.html">memory</a>. For <a class="concept-link" href="rag-systems.html">RAG systems</a> where documents are retrieved and prepended to prompts, this provides significant speedup.</p>
+<p><a class="concept-link" href="multimodal.html">Multimodal</a> support in vLLM (still evolving) includes vision models that process images and text. vLLM handles image <a class="concept-link" href="tokenization.html">tokenization</a> and KV caching for visual tokens, allowing efficient serving of models like <a class="concept-link" href="llava.html">LLaVA</a> or GPT-4V-style <a class="concept-link" href="transformer-arch.html">architectures</a>.</p>
 <div class="callout green">
-<p><strong>LoRA Serving Benefit:</strong> Instead of loading 8 different 70B fine-tuned models (560GB total), load the base 70B model once (140GB) and 8 LoRA adapters (~200MB each = 1.6GB total). Memory: 141.6GB vs 560GB (75% reduction).</p>
+<p><strong><a class="concept-link" href="lora.html">LoRA</a> Serving Benefit:</strong> Instead of loading 8 different 70B fine-tuned models (560GB total), load the base 70B model once (140GB) and 8 <a class="concept-link" href="lora.html">LoRA</a> adapters (~200MB each = 1.6GB total). Memory: 141.6GB vs 560GB (75% reduction).</p>
 </div>
 <div class="example-box"># Advanced Features: Code Examples
 
@@ -734,10 +734,10 @@ response = client.chat.completions.create(
 <div class="section-block">
 <div class="section-marker">7</div>
 <h2>vLLM vs Alternatives</h2>
-<p>Several alternatives to vLLM exist for serving large language models: Text Generation Inference (TGI), TensorRT-LLM, Ollama, and llama.cpp. Each has different strengths, use cases, and trade-offs. The choice depends on your deployment context, scale, and requirements.</p>
+<p>Several alternatives to vLLM exist for serving large language models: Text Generation Inference (TGI), TensorRT-LLM, <a class="concept-link" href="ollama.html">Ollama</a>, and llama.cpp. Each has different strengths, use cases, and trade-offs. The choice depends on your deployment context, scale, and requirements.</p>
 <p>Text Generation Inference (HuggingFace) is a robust production-grade server with similar features to vLLM. It emphasizes stability, offers OpenAI-compatible APIs, and integrates well with HuggingFace ecosystem. For teams already using HF models and tools, TGI may be preferable. Performance is comparable to vLLM, though PagedAttention gives vLLM an edge for very high batch sizes.</p>
-<p>TensorRT-LLM is NVIDIA's optimization engine for LLM inference. It provides superior performance on NVIDIA hardware through compiled kernels and advanced optimizations. However, it requires TensorRT model export, more infrastructure knowledge, and is primarily targeting NVIDIA GPUs. For maximum performance on H100s, TensorRT-LLM is unbeatable.</p>
-<p>Ollama and llama.cpp are lightweight, single-machine solutions optimized for CPU and consumer GPUs. They're ideal for local development, research, and resource-constrained environments. Performance is lower than vLLM/TGI, but they're simple to run locally without containers or complex setup.</p>
+<p>TensorRT-LLM is NVIDIA's <a class="concept-link" href="optimization.html">optimization</a> engine for LLM inference. It provides superior performance on NVIDIA <a class="concept-link" href="hardware.html">hardware</a> through compiled kernels and advanced optimizations. However, it requires TensorRT model export, more <a class="concept-link" href="infra.html">infrastructure</a> knowledge, and is primarily targeting <a class="concept-link" href="nvidia-gpu.html">NVIDIA GPUs</a>. For maximum performance on H100s, TensorRT-LLM is unbeatable.</p>
+<p><a class="concept-link" href="ollama.html">Ollama</a> and llama.cpp are lightweight, single-machine solutions optimized for CPU and consumer GPUs. They're ideal for local development, research, and resource-constrained environments. Performance is lower than vLLM/TGI, but they're simple to run locally without containers or complex setup.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -827,9 +827,9 @@ response = client.chat.completions.create(
 </table>
 </div>
 <p>vLLM is best suited for production serving at scale, especially for high-throughput batch scenarios. Its PagedAttention innovation, continuous batching, and comprehensive feature set make it the go-to choice for most organizations. If you're deploying in cloud (AWS, GCP, Azure), vLLM is the safest bet.</p>
-<p>For research and prototyping, Ollama or llama.cpp on a laptop or local GPU is unbeatable for simplicity. For NVIDIA-specific optimization, TensorRT-LLM will give you 20-30% better performance. For teams integrated into HuggingFace ecosystem, TGI is a natural fit.</p>
+<p>For research and prototyping, <a class="concept-link" href="ollama.html">Ollama</a> or llama.cpp on a laptop or local GPU is unbeatable for simplicity. For NVIDIA-specific <a class="concept-link" href="optimization.html">optimization</a>, TensorRT-LLM will give you 20-30% better performance. For teams integrated into HuggingFace ecosystem, TGI is a natural fit.</p>
 <div class="callout rose">
-<p><strong>Decision Framework:</strong> Need max performance on H100s? TensorRT-LLM. Need easy setup for development? Ollama/llama.cpp. Need production at scale with multiple models/LoRAs? vLLM. Already using HF stack extensively? TGI.</p>
+<p><strong>Decision Framework:</strong> Need max performance on H100s? TensorRT-LLM. Need easy setup for development? <a class="concept-link" href="ollama.html">Ollama</a>/llama.cpp. Need production at scale with multiple models/LoRAs? vLLM. Already using HF stack extensively? TGI.</p>
 </div>
 <div class="example-box"># Quick Comparison: Serving Same Model
 
@@ -856,17 +856,14 @@ ollama run llama2:70b
 # Best for: Testing, research, demos
         </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="ollama.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
-<a href="tgi.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">TGI (HF)</span></a>
-<a href="sglang.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">SGLang</span></a>
-<a href="llm-router.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">LLM Router</span></a>
-<a href="semantic-cache.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Semantic Cache</span></a>
+<a class="rc-card" href="ollama.html" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
+<a class="rc-card" href="tgi.html" style="--rc-accent:#64748b"><span class="rc-label">TGI (HF)</span></a>
+<a class="rc-card" href="sglang.html" style="--rc-accent:#64748b"><span class="rc-label">SGLang</span></a>
+<a class="rc-card" href="llm-router.html" style="--rc-accent:#64748b"><span class="rc-label">LLM Router</span></a>
+<a class="rc-card" href="semantic-cache.html" style="--rc-accent:#64748b"><span class="rc-label">Semantic Cache</span></a>
 </div>
 </div>
 <footer>

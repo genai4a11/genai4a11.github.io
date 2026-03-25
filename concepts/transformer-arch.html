@@ -415,11 +415,11 @@
 <div class="section-block" id="big-picture">
 <div class="section-marker">01 — THE STACK</div>
 <h2>The Big Picture</h2>
-<p>A Transformer is a stack of identical layers. Each layer contains two main sublayers: Multi-Head Attention and Feed-Forward Network. The input is token embeddings (vocabulary → d_model dimensional vector), and the output is a probability distribution over the vocabulary for the next token.</p>
+<p>A Transformer is a stack of identical layers. Each layer contains two main sublayers: <a class="concept-link" href="multi-head-attention.html">Multi-Head Attention</a> and Feed-Forward Network. The input is token <a class="concept-link" href="embeddings.html">embeddings</a> (vocabulary → d_model dimensional vector), and the output is a probability distribution over the vocabulary for the next token.</p>
 <h3>Model Hyperparameters</h3>
 <p>The following hyperparameters define model size and capacity:</p>
 <ul style="margin: 1rem 0; padding-left: 1.2rem;">
-<li style="margin: 0.5rem 0;"><strong>d_model:</strong> embedding dimension (width of hidden states)</li>
+<li style="margin: 0.5rem 0;"><strong>d_model:</strong> <a class="concept-link" href="embeddings.html">embedding</a> dimension (width of hidden states)</li>
 <li style="margin: 0.5rem 0;"><strong>n_layers:</strong> number of stacked blocks (depth)</li>
 <li style="margin: 0.5rem 0;"><strong>n_heads:</strong> number of attention heads per layer</li>
 <li style="margin: 0.5rem 0;"><strong>d_ff:</strong> intermediate dimension of feed-forward network, usually 4× d_model</li>
@@ -443,7 +443,7 @@
 <div class="section-block" id="self-attention">
 <div class="section-marker">02 — THE CORE MECHANISM</div>
 <h2>Self-Attention: The Core Mechanism</h2>
-<p>Each token attends to all other tokens in the sequence, asking "which other tokens are relevant to me?" This is the fundamental operation that gives Transformers their power and expressiveness.</p>
+<p>Each token attends to all other tokens in the sequence, asking "which other tokens are relevant to me?" This is the fundamental operation that gives <a class="concept-link" href="transformers.html">Transformers</a> their power and expressiveness.</p>
 <h3>The Computation</h3>
 <p>For input X, three learned weight matrices project the input into Query (Q), Key (K), and Value (V) spaces:</p>
 <ul style="margin: 1rem 0; padding-left: 1.2rem;">
@@ -487,7 +487,7 @@ out = attention(Q, K, V, mask)</div>
 <h3>Head Output Combination</h3>
 <p>Concatenate all head outputs and project back to d_model with W_O (output projection). This allows the model to combine diverse attention perspectives.</p>
 <h3>GQA: Grouped Query Attention</h3>
-<p>Modern models use Grouped Query Attention (GQA) instead of full Multi-Head Attention. GQA shares K/V heads across groups of Q heads, reducing KV cache memory by 4-8× with minimal quality loss. This is critical for long-context inference.</p>
+<p>Modern models use Grouped Query Attention (GQA) instead of full <a class="concept-link" href="multi-head-attention.html">Multi-Head Attention</a>. GQA shares K/V heads across groups of Q heads, reducing <a class="concept-link" href="kv-cache.html">KV cache</a> <a class="concept-link" href="agent-memory.html">memory</a> by 4-8× with minimal quality loss. This is critical for long-context inference.</p>
 <h3>Attention Head Variants Comparison</h3>
 <div class="table-wrap">
 <table>
@@ -514,7 +514,7 @@ out = attention(Q, K, V, mask)</div>
 <h3>FFN Structure</h3>
 <p>FFN = Linear(d_model → d_ff) → Activation → Linear(d_ff → d_model). The d_ff is typically 4× d_model, creating a bottleneck-then-expand pattern.</p>
 <h3>SwiGLU Activation</h3>
-<p>Modern models (Llama, PaLM, Gemini) use SwiGLU activation instead of ReLU or GELU. SwiGLU splits the intermediate into two paths — one through SiLU activation, multiply together. Empirically superior to older activations.</p>
+<p>Modern models (Llama, PaLM, Gemini) use SwiGLU activation instead of ReLU or GELU. SwiGLU splits the intermediate into two paths — one through SiLU activation, multiply together. Empirically superior to older <a class="concept-link" href="activations.html">activations</a>.</p>
 <h3>SwiGLU FFN in PyTorch</h3>
 <div class="example-box">import torch
 import torch.nn as nn
@@ -530,7 +530,7 @@ class SwiGLUFFN(nn.Module):
     def forward(self, x):
         return self.w2(F.silu(self.w1(x)) * self.w3(x))</div>
 <h3>Parameter Distribution</h3>
-<p>The FFN accounts for roughly 2/3 of a model's parameters. This is where most factual knowledge lives. When fine-tuning, research shows that LoRA targeting FFN layers often outperforms targeting only attention layers for knowledge-intensive tasks.</p>
+<p>The FFN accounts for roughly 2/3 of a model's parameters. This is where most factual knowledge lives. When <a class="concept-link" href="finetuning.html">fine-tuning</a>, research shows that <a class="concept-link" href="lora.html">LoRA</a> targeting FFN layers often outperforms targeting only attention layers for knowledge-intensive tasks.</p>
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>FFN is where factual knowledge lives.</strong> When implementing low-rank adaptation (LoRA) for fine-tuning, targeting FFN layers often gives better results than attention-only approaches for knowledge-heavy domains.</span>
@@ -540,13 +540,13 @@ class SwiGLUFFN(nn.Module):
 <div class="section-block" id="positional">
 <div class="section-marker">05 — WORD ORDER</div>
 <h2>Positional Encoding</h2>
-<p>Attention is permutation-invariant — without position information, the model has no sense of word order. Positional encoding adds position information to embeddings so the model understands sequence structure.</p>
+<p>Attention is permutation-invariant — without position information, the model has no sense of word order. <a class="concept-link" href="pos-encoding.html">Positional encoding</a> adds position information to <a class="concept-link" href="embeddings.html">embeddings</a> so the model understands sequence structure.</p>
 <h3>Positional Encoding Methods</h3>
 <ul style="margin: 1rem 0; padding-left: 1.2rem;">
 <li style="margin: 0.5rem 0;"><strong>Sinusoidal (original Transformer):</strong> fixed, non-learned position embeddings. Limited extrapolation.</li>
 <li style="margin: 0.5rem 0;"><strong>Learned absolute:</strong> trainable embeddings. Hard cap at training length.</li>
-<li style="margin: 0.5rem 0;"><strong>RoPE (Rotary Position Embedding):</strong> encode position as rotation of Q/K vectors. Allows relative positions to emerge naturally. Good extrapolation.</li>
-<li style="margin: 0.5rem 0;"><strong>ALiBi (Attention with Linear Biases):</strong> add linear bias to attention scores based on distance. Generalizes to longer sequences than trained on.</li>
+<li style="margin: 0.5rem 0;"><strong><a class="concept-link" href="rope.html">RoPE</a> (Rotary Position <a class="concept-link" href="embeddings.html">Embedding</a>):</strong> encode position as rotation of Q/K vectors. Allows relative positions to emerge naturally. Good extrapolation.</li>
+<li style="margin: 0.5rem 0;"><strong><a class="concept-link" href="alibi.html">ALiBi</a> (Attention with Linear Biases):</strong> add linear bias to attention scores based on distance. Generalizes to longer sequences than trained on.</li>
 </ul>
 <h3>Positional Encoding Comparison</h3>
 <div class="table-wrap">
@@ -573,11 +573,11 @@ class SwiGLUFFN(nn.Module):
 <div class="section-block" id="training-stability">
 <div class="section-marker">06 — NORMALIZATION AND RESIDUALS</div>
 <h2>LayerNorm, Residual Connections, and Training Stability</h2>
-<p>Deep networks require techniques to prevent gradient vanishing and activation explosion. Modern Transformers use residual connections and LayerNorm to maintain stable gradient flow and activation magnitudes throughout training.</p>
+<p>Deep networks require techniques to prevent gradient vanishing and activation explosion. Modern <a class="concept-link" href="transformers.html">Transformers</a> use residual connections and LayerNorm to maintain stable gradient flow and activation magnitudes throughout training.</p>
 <h3>Residual Connections</h3>
 <p>Output = x + sublayer(x). Allows gradients to flow directly back to earlier layers without being multiplied by small values, preventing vanishing gradients in deep networks.</p>
 <h3>LayerNorm</h3>
-<p>Normalize activations across features (not batch) at each sublayer. Prevents activation explosion and keeps training stable.</p>
+<p>Normalize <a class="concept-link" href="activations.html">activations</a> across features (not batch) at each sublayer. Prevents activation explosion and keeps training stable.</p>
 <h3>Pre-norm vs Post-norm</h3>
 <p>Modern models use Pre-LayerNorm: normalize input BEFORE sublayer. This improves training stability compared to the original post-norm design (normalize AFTER).</p>
 <h3>Transformer Block in PyTorch (Pre-norm Architecture)</h3>
@@ -601,7 +601,7 @@ class SwiGLUFFN(nn.Module):
 <div class="section-block" id="architecture-variants">
 <div class="section-marker">07 — ENCODER, DECODER, OR BOTH</div>
 <h2>Encoder-Only, Decoder-Only, Encoder-Decoder</h2>
-<p>Different task requirements call for different architectural patterns. Understanding when to use each is essential for model selection and fine-tuning design.</p>
+<p>Different task requirements call for different architectural patterns. Understanding when to use each is essential for <a class="concept-link" href="model-selection.html">model selection</a> and <a class="concept-link" href="finetuning.html">fine-tuning</a> design.</p>
 <h3>Architecture Variants Comparison</h3>
 <div class="table-wrap">
 <table>
@@ -616,11 +616,11 @@ class SwiGLUFFN(nn.Module):
 </table>
 </div>
 <h3>Modern LLM Landscape</h3>
-<p>Modern LLMs are almost exclusively decoder-only: simpler to scale, KV cache enables fast autoregressive generation, in-context learning works naturally. Encoder-only models (BERT-family) remain dominant for: embedding generation, token classification, and sentence similarity tasks.</p>
+<p>Modern <a class="concept-link" href="llms.html">LLMs</a> are almost exclusively decoder-only: simpler to scale, <a class="concept-link" href="kv-cache.html">KV cache</a> enables fast autoregressive generation, in-context learning works naturally. Encoder-only models (BERT-family) remain dominant for: <a class="concept-link" href="embeddings.html">embedding</a> generation, token classification, and sentence similarity tasks.</p>
 <h3>When to Use Each</h3>
 <ul style="margin: 1rem 0; padding-left: 1.2rem;">
 <li style="margin: 0.5rem 0;"><strong>Decoder-only:</strong> For any generation task, chat, coding, question-answering. Default choice for modern LLMs.</li>
-<li style="margin: 0.5rem 0;"><strong>Encoder-only:</strong> For dense embeddings, classification, token-level tasks without generation.</li>
+<li style="margin: 0.5rem 0;"><strong>Encoder-only:</strong> For dense <a class="concept-link" href="embeddings.html">embeddings</a>, classification, token-level tasks without generation.</li>
 <li style="margin: 0.5rem 0;"><strong>Encoder-decoder:</strong> When you need bidirectional context for understanding AND generation capability (translation, summarization).</li>
 </ul>
 <h3>Tools for Architecture Implementation</h3>
@@ -676,14 +676,14 @@ class SwiGLUFFN(nn.Module):
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Su, J. et al. (2021).
-        <em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em>
+        <em>RoFormer: Enhanced Transformer with Rotary Position <a class="concept-link" href="embeddings.html">Embedding</a>.</em>
         arXiv:2104.09864. —
         <a href="https://arxiv.org/abs/2104.09864" target="_blank">arxiv:2104.09864 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Press, O. et al. (2022).
-        <em>ALiBi: Train Short, Test Long.</em>
+        <em><a class="concept-link" href="alibi.html">ALiBi</a>: Train Short, Test Long.</em>
         Attention with Linear Biases for long-context extrapolation. arXiv:2108.12409. —
         <a href="https://arxiv.org/abs/2108.12409" target="_blank">arxiv:2108.12409 ↗</a>
 </li>
@@ -721,25 +721,19 @@ class SwiGLUFFN(nn.Module):
         SwiGLU and gating mechanisms. arXiv:2002.05202. —
         <a href="https://arxiv.org/abs/2002.05202" target="_blank">arxiv:2002.05202 ↗</a>
 </li>
-
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
 <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Transformers — Architecture documentation. <a href="https://huggingface.co/docs/transformers" target="_blank">huggingface.co/docs ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> PyTorch — Transformer implementation reference. <a href="https://pytorch.org/docs/stable/nn.html" target="_blank">pytorch.org ↗</a></li>
 <li><span class="ref-badge badge-guide">Guide</span> The Illustrated Transformer — Visual explanations of all components. <a href="http://jalammar.github.io/illustrated-transformer/" target="_blank">jalammar.github.io ↗</a></li>
-
-
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Attention Mechanisms</span></a>
-<a href="pos-encoding.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Positional Encoding</span></a>
-<a href="kv-cache.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">KV Cache & Efficiency</span></a>
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
-<a href="multi-head-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
+<a class="rc-card" href="attention.html" style="--rc-accent:#64748b"><span class="rc-label">Attention Mechanisms</span></a>
+<a class="rc-card" href="pos-encoding.html" style="--rc-accent:#64748b"><span class="rc-label">Positional Encoding</span></a>
+<a class="rc-card" href="kv-cache.html" style="--rc-accent:#64748b"><span class="rc-label">KV Cache &amp; Efficiency</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="multi-head-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
 </div>
 </div>
 <footer class="page-footer">
@@ -758,7 +752,6 @@ class SwiGLUFFN(nn.Module):
       }
     })();
   </script>
-
 <nav class="concept-nav">
   <a class="concept-nav-prev" href="pos-encoding.html">← Positional Encoding in Transformers</a>
   <span class="concept-nav-cat">Inference & Architecture</span>

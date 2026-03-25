@@ -502,7 +502,7 @@
 <div class="section-marker">01 — Foundation</div>
 <h2>Gradient Descent Variants</h2>
 <p>All modern optimisers are variants of gradient descent: θ ← θ - α∇L(θ), where α is the learning rate. The differences are in how you accumulate gradients and adapt the learning rate.</p>
-<p><strong>Batch GD:</strong> Compute loss over entire dataset. Stable, cheap gradient (amortised over N examples). But expensive memory and slow feedback loops.</p>
+<p><strong>Batch GD:</strong> Compute loss over entire dataset. Stable, cheap gradient (amortised over N examples). But expensive <a class="concept-link" href="agent-memory.html">memory</a> and slow feedback loops.</p>
 <p><strong>Mini-batch GD:</strong> Compute loss over k examples. The standard in deep learning. Good tradeoff between variance and speed.</p>
 <p><strong>Stochastic GD (SGD):</strong> k = 1. Noisier gradients. But noise acts as regularisation — helps escape local minima. Cheaper per step.</p>
 <div class="callout blue">
@@ -572,7 +572,7 @@
 </table>
 </div>
 <p><strong>Adaptive LR:</strong> Optimiser adjusts learning rate per parameter based on gradient history. Good for heterogeneous loss landscapes (different parameters converge at different rates).</p>
-<p><strong>Memory cost:</strong> Extra buffers (momentum, adaptive rates) require more VRAM. AdamW uses 2× model weights. Adafactor uses 1× (factorised second moment).</p>
+<p><strong><a class="concept-link" href="agent-memory.html">Memory</a> cost:</strong> Extra buffers (momentum, adaptive rates) require more VRAM. AdamW uses 2× model weights. Adafactor uses 1× (factorised second moment).</p>
 </div>
 <!-- ── 3. ADAM DEEP DIVE ── -->
 <div class="section-block" id="adam-deep-dive">
@@ -611,7 +611,7 @@ for epoch in range(num_epochs):
 <div class="section-marker">04 — Regularisation</div>
 <h2>Weight Decay vs L2 Regularisation</h2>
 <p><strong>L2 regularisation:</strong> Add λ·‖θ‖² to the loss. Gradient becomes ∇L + 2λ·θ. The penalty is adaptive — parameters with large gradients aren't penalised as much.</p>
-<p><strong>Weight decay:</strong> Subtract λ·θ directly from parameters: θ ← (1-λ)·θ - α·∇L. This is decoupled — all parameters decay uniformly, regardless of gradient magnitude.</p>
+<p><strong><a class="concept-link" href="weight-decay.html">Weight decay</a>:</strong> Subtract λ·θ directly from parameters: θ ← (1-λ)·θ - α·∇L. This is decoupled — all parameters decay uniformly, regardless of gradient magnitude.</p>
 <p>For SGD, they're equivalent. But for Adam, they diverge: Adam divides by √v, so L2 regularisation is scaled differently across parameters. <strong>AdamW decouples them:</strong> weight decay applies uniformly, adaptive learning rate applies separately.</p>
 <h3>Python: AdamW (Correct)</h3>
 <div class="example-box">import torch.optim as optim
@@ -634,12 +634,12 @@ optimizer = optim.AdamW(
 <h2>Learning Rate Scheduling</h2>
 <p>Fixed learning rate rarely works. LR should be high early (explore fast) and low late (refine). Scheduling adapts LR during training.</p>
 <h3>Common Schedules</h3>
-<p><strong>Linear warmup + cosine decay:</strong> Most popular for LLMs. Warmup phase (first 5% of training) ramps LR from ~0 to target. Then cosine annealing (cos(πt)) decays to 0 or small value (min_lr).</p>
+<p><strong>Linear warmup + cosine decay:</strong> Most popular for <a class="concept-link" href="llms.html">LLMs</a>. Warmup phase (first 5% of training) ramps LR from ~0 to target. Then cosine annealing (cos(πt)) decays to 0 or small value (min_lr).</p>
 <p><strong>Linear decay:</strong> LR decreases linearly. Simpler than cosine, works ok but not optimal.</p>
 <p><strong>OneCycleLR:</strong> One cycle: ramp up, then ramp down. Good for shorter training runs.</p>
 <p><strong>Constant with restarts:</strong> Keep LR fixed for N epochs, reset optimiser, repeat. "Cyclical" approach. Less common now.</p>
 <h3>Why Warmup?</h3>
-<p>Gradient statistics (mean, variance) change wildly in the first few steps. Adam's adaptive rates are unstable. Warmup keeps the model moving slowly while gradient estimates stabilise. Critical for Transformers. Empirical: warmup to ~1% of training steps.</p>
+<p>Gradient statistics (mean, variance) change wildly in the first few steps. Adam's adaptive rates are unstable. Warmup keeps the model moving slowly while gradient estimates stabilise. Critical for <a class="concept-link" href="transformers.html">Transformers</a>. Empirical: warmup to ~1% of training steps.</p>
 <h3>Python: Warmup + Cosine Decay</h3>
 <div class="example-box">import math
 from torch.optim.lr_scheduler import LambdaLR
@@ -685,7 +685,7 @@ scheduler = SequentialLR(optimizer, [warmup, cosine], milestones=[500])</div>
 <div class="section-block" id="gradient-clipping">
 <div class="section-marker">06 — Stability</div>
 <h2>Gradient Clipping &amp; Stability</h2>
-<p>Transformers can have "exploding gradients" — a forward pass through many layers accumulates gradients, and a bad batch can spike loss. Clipping caps gradient norm to prevent divergence.</p>
+<p><a class="concept-link" href="transformers.html">Transformers</a> can have "exploding gradients" — a forward pass through many layers accumulates gradients, and a bad batch can spike loss. Clipping caps gradient norm to prevent divergence.</p>
 <p><strong>Max-norm clipping:</strong> If ‖∇L‖ &gt; clip_value, rescale gradients: ∇ ← (clip_value / ‖∇L‖) · ∇. Keeps direction, reduces magnitude.</p>
 <p>Typical clip_value: 1.0 for Transformers. Too aggressive (0.1) slows training. Too lenient (10) allows spikes.</p>
 <h3>Python: Gradient Clipping</h3>
@@ -713,9 +713,9 @@ optimizer.step()</div>
 <div class="section-block" id="memory-efficient">
 <div class="section-marker">07 — Scaling</div>
 <h2>Memory-Efficient Optimisers</h2>
-<p><strong>Adafactor:</strong> Factorises the second moment matrix. Instead of storing v (full matrix), store row and column statistics. Memory: O(n) instead of O(n²) for n-dimensional tensors. Slightly slower convergence, but acceptable.</p>
-<p><strong>8-bit Adam (bitsandbytes):</strong> Quantises momentum and second moment to 8 bits. Reduces memory by ~4×. Negligible accuracy loss. Fast on modern GPUs with NF4 support.</p>
-<p><strong>GaLore (Gradient Low Rank):</strong> Projects gradients to lower rank, trains low-rank approximation. Reduces memory for second moment. Good for fine-tuning on limited VRAM.</p>
+<p><strong>Adafactor:</strong> Factorises the second moment matrix. Instead of storing v (full matrix), store row and column statistics. <a class="concept-link" href="agent-memory.html">Memory</a>: O(n) instead of O(n²) for n-dimensional tensors. Slightly slower convergence, but acceptable.</p>
+<p><strong>8-bit Adam (<a class="concept-link" href="bitsandbytes.html">bitsandbytes</a>):</strong> Quantises momentum and second moment to 8 bits. Reduces memory by ~4×. Negligible accuracy loss. Fast on modern GPUs with NF4 support.</p>
+<p><strong>GaLore (Gradient Low Rank):</strong> Projects gradients to lower rank, trains low-rank approximation. Reduces memory for second moment. Good for <a class="concept-link" href="finetuning.html">fine-tuning</a> on limited VRAM.</p>
 <h3>Python: Adafactor</h3>
 <div class="example-box">from transformers import Adafactor
 
@@ -802,13 +802,13 @@ optimizer = AdamW8bit(
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
-        Loshchilov, I. &amp; Hutter, F. (2019). <em>Decoupled Weight Decay Regularization.</em>
+        Loshchilov, I. &amp; Hutter, F. (2019). <em>Decoupled <a class="concept-link" href="weight-decay.html">Weight Decay</a> <a class="concept-link" href="regularization.html">Regularization</a>.</em>
         arXiv:1711.05101. —
         <a href="https://arxiv.org/abs/1711.05101" target="_blank">arxiv:1711.05101 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
-        Shazeer, N. &amp; Stern, M. (2018). <em>Adafactor: Adaptive Learning Rates with Sublinear Memory Cost.</em>
+        Shazeer, N. &amp; Stern, M. (2018). <em>Adafactor: Adaptive Learning Rates with Sublinear <a class="concept-link" href="agent-memory.html">Memory</a> Cost.</em>
         arXiv:1804.04235. —
         <a href="https://arxiv.org/abs/1804.04235" target="_blank">arxiv:1804.04235 ↗</a>
 </li>
@@ -822,7 +822,7 @@ optimizer = AdamW8bit(
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
 <li><span class="ref-badge badge-docs">Docs</span> PyTorch Optimizers. <a href="https://pytorch.org/docs/stable/optim.html" target="_blank">pytorch.org ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> bitsandbytes Library. <a href="https://github.com/TimDettmers/bitsandbytes" target="_blank">github.com ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a> Library. <a href="https://github.com/TimDettmers/bitsandbytes" target="_blank">github.com ↗</a></li>
 <li><span class="ref-badge badge-guide">Guide</span> HuggingFace Training Guide. <a href="https://huggingface.co/docs/transformers/training" target="_blank">huggingface.co ↗</a></li>
 <li><span class="ref-badge badge-guide">Guide</span> Learning Rate Scheduling (PyTorch). <a href="https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate" target="_blank">pytorch.org ↗</a></li>
 </ul>
@@ -840,17 +840,14 @@ optimizer = AdamW8bit(
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="neural-nets.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Neural Networks</span></a>
-<a href="training-tech.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Training Techniques</span></a>
-<a href="regularization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Regularization</span></a>
-<a href="backprop.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Backpropagation</span></a>
-<a href="activations.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Activations</span></a>
+<a class="rc-card" href="neural-nets.html" style="--rc-accent:#64748b"><span class="rc-label">Neural Networks</span></a>
+<a class="rc-card" href="training-tech.html" style="--rc-accent:#64748b"><span class="rc-label">Training Techniques</span></a>
+<a class="rc-card" href="regularization.html" style="--rc-accent:#64748b"><span class="rc-label">Regularization</span></a>
+<a class="rc-card" href="backprop.html" style="--rc-accent:#64748b"><span class="rc-label">Backpropagation</span></a>
+<a class="rc-card" href="activations.html" style="--rc-accent:#64748b"><span class="rc-label">Activations</span></a>
 </div>
 </div>
 <footer class="page-footer">

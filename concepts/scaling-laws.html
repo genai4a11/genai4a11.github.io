@@ -372,7 +372,7 @@
 <h2>What Are <em>Scaling Laws</em></h2>
 <p>Scaling laws describe empirical power-law relationships between model size (number of parameters, N), dataset size (number of training tokens, D), compute budget (C, measured in FLOPs), and model performance (loss or downstream task accuracy). The key insight: loss decreases predictably as you scale model size, data, or compute, following a power law: Loss ≈ C * N^(-α), where α is the scaling exponent (typically 0.05-0.1) and C is a constant.</p>
 <p>Scaling laws have profound implications. They suggest that: (1) Larger models and more data consistently improve performance—no wall hit, at least at current scales. (2) Performance is predictable: you can forecast downstream task accuracy by measuring loss on a smaller model. (3) Compute is the bottleneck: for a fixed compute budget, there's an optimal split between model size and training data. (4) Efficiency gains persist: past results continue to hold even at much larger scales.</p>
-<p>The field has moved from trying to understand individual model architectures to asking: "How do the fundamental quantities (N, D, C) relate to performance?" This shift has enabled strategic planning: estimate your compute budget, use scaling laws to predict optimal N and D, and know roughly how well the model will perform before training.</p>
+<p>The field has moved from trying to understand individual model <a class="concept-link" href="transformer-arch.html">architectures</a> to asking: "How do the fundamental quantities (N, D, C) relate to performance?" This shift has enabled strategic <a class="concept-link" href="agent-planning.html">planning</a>: estimate your compute budget, use scaling laws to predict optimal N and D, and know roughly how well the model will perform before training.</p>
 <div class="callout success">
 <strong>Why This Matters</strong>
                 Scaling laws remove uncertainty from model design. Instead of guessing whether a 70B model is better than a 7B model, you calculate the expected performance difference based on scaling exponents. This disciplined approach has driven the field's progress.
@@ -385,7 +385,7 @@
 <p>In "Scaling Laws for Neural Language Models," OpenAI researchers trained models ranging from 10M to 10B parameters on datasets up to 400B tokens. They discovered three independent scaling laws:</p>
 <p><strong>1. Model Size (N)</strong><br/>Loss decreases with model size following: Loss_N = (N_0 / N)^α_N, where α_N ≈ 0.076. In practice: doubling model size improves loss by ~5-6%.</p>
 <p><strong>2. Dataset Size (D)</strong><br/>Loss decreases with dataset size following: Loss_D = (D_0 / D)^α_D, where α_D ≈ 0.095. Doubling dataset size improves loss by ~6-7%.</p>
-<p><strong>3. Compute (C)</strong><br/>Loss decreases with compute budget (measured in FLOPs) following: Loss_C = (C_0 / C)^α_C, where α_C ≈ 0.06. The relationship is weaker than N or D individually, but important for planning.</p>
+<p><strong>3. Compute (C)</strong><br/>Loss decreases with compute budget (measured in FLOPs) following: Loss_C = (C_0 / C)^α_C, where α_C ≈ 0.06. The relationship is weaker than N or D individually, but important for <a class="concept-link" href="agent-planning.html">planning</a>.</p>
 <p><strong>Combined Scaling Law</strong><br/>When all three factors are optimized simultaneously: Loss ≈ E + (A / N^α) + (B / D^β) + (C * L^γ), where E is irreducible loss (vocabulary effects, task difficulty), A, B, C are constants, and α, β, γ are exponents. The constants and exponents vary by task and model class.</p>
 <div class="example-box">Kaplan et al. Equations (Simplified):
 
@@ -409,7 +409,7 @@ This means:
 - Loss at 10M params, 10B tokens ≈ 1.69 + 406/(10M^0.34) + 410/(10B^0.28)
 - Loss at 100M params, 100B tokens improves roughly linearly in log-log space
             </div>
-<p><strong>Implications:</strong> (1) No mysterious wall—loss improves smoothly as you scale. (2) The exponents are consistent across tasks and model families (Transformers with different architectures show similar exponents). (3) You can transfer knowledge: a scaling law fit on small models predicts performance on larger models.</p>
+<p><strong>Implications:</strong> (1) No mysterious wall—loss improves smoothly as you scale. (2) The exponents are consistent across tasks and model families (<a class="concept-link" href="transformers.html">Transformers</a> with different <a class="concept-link" href="transformer-arch.html">architectures</a> show similar exponents). (3) You can transfer knowledge: a scaling law fit on small models predicts performance on larger models.</p>
 <div class="callout info">
 <strong>Kaplan et al.'s Contribution</strong>
                 First large-scale empirical study of scaling laws. Showed that power-law relationships hold reliably, enabling quantitative forecasting. Their compute-optimal allocation formula (N ≈ C / (6*D)) was influential, though later work (Chinchilla) showed larger models are better.
@@ -457,7 +457,7 @@ print(f"Optimal N: {optimal_n:.0e}, D: {optimal_d:.0e}")
 <div class="section-block">
 <div class="section-marker">SECTION 04</div>
 <h2><em>Emergent Abilities</em> at Scale</h2>
-<p>A surprising phenomenon: some capabilities appear suddenly at scale—models below a certain size perform at chance, then above a threshold, accuracy jumps to near-human. Examples: in-context learning (few-shot prompting), chain-of-thought reasoning, and mathematical problem-solving show emergent properties. This raises questions: Are emergent abilities real, or artifacts of evaluation metrics?</p>
+<p>A surprising phenomenon: some capabilities appear suddenly at scale—models below a certain size perform at chance, then above a threshold, accuracy jumps to near-human. Examples: in-context learning (<a class="concept-link" href="few-shot.html">few-shot</a> <a class="concept-link" href="prompting.html">prompting</a>), <a class="concept-link" href="chain-of-thought.html">chain-of-thought</a> reasoning, and mathematical problem-solving show emergent properties. This raises questions: Are emergent abilities real, or artifacts of <a class="concept-link" href="eval.html">evaluation</a> metrics?</p>
 <p><strong>The Debate:</strong> Some researchers argue emergence is real—there are threshold phenomena where increasing scale unlocks new capabilities. Others (notably Schaeffer et al., 2024) argue emergence is primarily a measurement artifact: if you plot log-loss vs log-model-size, all curves are smooth power laws. The appearance of sudden emergence depends on the specific metric (accuracy on a binary classification task, for example, is a step function even for smooth underlying loss).</p>
 <p><strong>Evidence for Emergent Abilities:</strong> Few-shot in-context learning improves dramatically at scale. Chain-of-thought reasoning (asking the model to "think step by step") works well for larger models but not smaller ones. Solving complex math problems shows sharp improvements above 100B parameters.</p>
 <p><strong>Skeptical View:</strong> If you measure loss (not binary accuracy), large models and small models show consistent improvement—no sudden jump. The emergence is an artifact of thresholding: a task has a minimum loss required for success, and crossing that threshold looks sudden. But the underlying loss improves smoothly.</p>
@@ -497,8 +497,8 @@ as models cross critical thresholds.
 <h2><em>Compute-Optimal Training</em> in Practice</h2>
 <p><strong>Step 1: Estimate Compute Budget</strong><br/>How many FLOPs do you have? A training run on 8 H100 GPUs for 30 days, with peak throughput of ~1.5e15 FLOPs/GPU/second, yields roughly C = 8 * 1.5e15 * (30 * 86400) ≈ 3e24 FLOPs. Account for overhead (not all compute is utilized)—typical utilization is 50-70% of peak.</p>
 <p><strong>Step 2: Apply Chinchilla Formula</strong><br/>Given C, compute: N_optimal ≈ sqrt(C / 6), D_optimal ≈ 20 * N_optimal. For C = 3e24: N ≈ 70B params, D ≈ 1.4T tokens.</p>
-<p><strong>Step 3: Validate Against Empirical Loss Curves</strong><br/>Fit scaling laws using small pilot runs (e.g., train a 1B model for a few billion tokens). Measure loss and fit: Loss ≈ E + A / N^0.05 + B / D^0.05. Use the fit to predict downstream performance (MMLU, HellaSwag, etc.) for your target model size.</p>
-<p><strong>Step 4: Account for Task-Specific Scaling</strong><br/>Scaling laws vary by task. Arithmetic is slower to improve than language modeling. Few-shot learning requires larger models. Adjust your allocation based on your primary use case.</p>
+<p><strong>Step 3: Validate Against Empirical Loss Curves</strong><br/>Fit scaling laws using small pilot runs (e.g., train a 1B model for a few billion tokens). Measure loss and fit: Loss ≈ E + A / N^0.05 + B / D^0.05. Use the fit to predict downstream performance (<a class="concept-link" href="mmlu.html">MMLU</a>, HellaSwag, etc.) for your target model size.</p>
+<p><strong>Step 4: Account for Task-Specific Scaling</strong><br/>Scaling laws vary by task. Arithmetic is slower to improve than language modeling. <a class="concept-link" href="few-shot.html">Few-shot</a> learning requires larger models. Adjust your allocation based on your primary use case.</p>
 <p><strong>Step 5: Plan Training Duration</strong><br/>For N params and D tokens, effective batch size is key. Typical batch size: 0.5M to 4M tokens per step. Training steps: D / batch_size. A 70B model trained on 1.4T tokens with 2M-token batches = 700k steps. On 8 H100s, ~10k steps per day = 70 days.</p>
 <div class="example-box">Compute-Optimal Planning Spreadsheet:
 
@@ -539,8 +539,8 @@ Result: Predict 10B model performance after 20 days of training
 <div class="section-block">
 <div class="section-marker">SECTION 06</div>
 <h2><em>Inference-Time</em> Scaling &amp; Test-Time Compute</h2>
-<p>Traditional scaling laws apply to training. But recent work on inference-time scaling—models like OpenAI's o1 and DeepSeek-R1—show that test-time compute (how much the model reasons/computes before outputting an answer) also improves performance. This opens a new frontier: instead of only scaling training, scale reasoning.</p>
-<p><strong>Chain-of-Thought and Reasoning:</strong> Models can use more compute at inference time by generating intermediate reasoning steps (chain-of-thought). The model doesn't just jump to an answer—it thinks through the problem. This longer generation requires more inference compute but improves accuracy, especially on hard reasoning tasks (math, coding, logic puzzles).</p>
+<p>Traditional scaling laws apply to training. But recent work on inference-time scaling—models like OpenAI's o1 and DeepSeek-R1—show that <a class="concept-link" href="test-time-compute.html">test-time compute</a> (how much the model reasons/computes before outputting an answer) also improves performance. This opens a new frontier: instead of only scaling training, scale reasoning.</p>
+<p><strong><a class="concept-link" href="chain-of-thought.html">Chain-of-Thought</a> and Reasoning:</strong> Models can use more compute at inference time by generating intermediate reasoning steps (chain-of-thought). The model doesn't just jump to an answer—it thinks through the problem. This longer generation requires more inference compute but improves accuracy, especially on hard reasoning tasks (math, coding, logic puzzles).</p>
 <p><strong>Inference Scaling Laws:</strong> Preliminary results suggest inference performance improves as a power law with compute: Accuracy ≈ f(N) * g(C_test), where N is model size and C_test is inference-time compute. This suggests even modest-sized models can achieve high accuracy on reasoning tasks with enough test-time compute.</p>
 <p><strong>Practical Implications:</strong> For reasoning-heavy applications (coding assistance, math tutoring, research automation), allocate budget to inference compute, not just training. A smaller model with longer reasoning might outperform a larger model with direct prediction.</p>
 <div class="example-box">Inference-Time Scaling Example:
@@ -580,32 +580,29 @@ is more efficient than a larger model.
 <div class="section-block">
 <div class="section-marker">SECTION 07</div>
 <h2><em>Practical Implications</em> for Model Design</h2>
-<p><strong>Planning a Training Run:</strong> (1) Estimate your compute budget (FLOPs available). (2) Use Chinchilla formula to find N and D. (3) Fit scaling laws on small-scale runs (1-8B parameters on 10-100B tokens). (4) Extrapolate to your target scale. (5) Run the full training and measure downstream task performance. (6) If performance is below target, rerun with updated D and N.</p>
-<p><strong>Predicting Downstream Performance:</strong> Loss is a proxy for downstream accuracy, but the mapping is nonlinear and task-dependent. Fit loss to downstream task accuracy (e.g., MMLU score) using small models, then extrapolate. Benchmark on a held-out subset of your target tasks at small scale to validate the relationship.</p>
+<p><strong><a class="concept-link" href="agent-planning.html">Planning</a> a Training Run:</strong> (1) Estimate your compute budget (FLOPs available). (2) Use Chinchilla formula to find N and D. (3) Fit scaling laws on small-scale runs (1-8B parameters on 10-100B tokens). (4) Extrapolate to your target scale. (5) Run the full training and measure downstream task performance. (6) If performance is below target, rerun with updated D and N.</p>
+<p><strong>Predicting Downstream Performance:</strong> Loss is a proxy for downstream accuracy, but the mapping is nonlinear and task-dependent. Fit loss to downstream task accuracy (e.g., <a class="concept-link" href="mmlu.html">MMLU</a> score) using small models, then extrapolate. Benchmark on a held-out subset of your target tasks at small scale to validate the relationship.</p>
 <p><strong>Comparing Models:</strong> Use scaling laws to predict performance of models you haven't trained yet. If a competitor released a 70B model trained on 1.4T tokens, use Chinchilla formulas to estimate its performance without training it yourself.</p>
 <p><strong>Efficiency Targets:</strong> Define your goal: max performance for a given compute budget (Chinchilla), max performance for a given inference cost (larger models, fewer tokens), or balanced (medium models, medium tokens). Adjust N and D accordingly.</p>
 <div class="callout amber">
 <strong>Scaling Law Pitfalls</strong>
                 Scaling laws are empirical, fit to specific model families (Transformers with certain architectures, attention patterns). Changing the model class (e.g., using mixture-of-experts) can change the scaling exponents. Always validate on your specific setup. Also, extrapolation is risky: laws fit on 7B-70B models may not hold at 1T parameters.
             </div>
-<p><strong>Future Directions:</strong> As compute becomes more abundant, expect focus to shift from scaling training to scaling inference (test-time compute). Multi-modal models may have different scaling laws than pure language models. And continual learning (training on new data without forgetting old data) will have its own scaling dynamics.</p>
+<p><strong>Future Directions:</strong> As compute becomes more abundant, expect focus to shift from scaling training to scaling inference (<a class="concept-link" href="test-time-compute.html">test-time compute</a>). Multi-modal models may have different scaling laws than pure language models. And continual learning (training on new data without forgetting old data) will have its own scaling dynamics.</p>
 <div class="callout success">
 <strong>The Takeaway</strong>
                 Scaling laws transform model development from intuition-based to data-driven. Know your compute budget, plug into Chinchilla, and expect smooth improvements as you scale N and D. This disciplined approach has driven the field's progress from GPT-2 to GPT-4 and beyond.
             </div>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="tokenization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Tokenization</span></a>
-<a href="context-window.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Context Window</span></a>
-<a href="moe.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Mixture of Experts</span></a>
-<a href="gpt4o.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">GPT-4o</span></a>
-<a href="claude35.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Claude 3.5 Sonnet</span></a>
+<a class="rc-card" href="tokenization.html" style="--rc-accent:#64748b"><span class="rc-label">Tokenization</span></a>
+<a class="rc-card" href="context-window.html" style="--rc-accent:#64748b"><span class="rc-label">Context Window</span></a>
+<a class="rc-card" href="moe.html" style="--rc-accent:#64748b"><span class="rc-label">Mixture of Experts</span></a>
+<a class="rc-card" href="gpt4o.html" style="--rc-accent:#64748b"><span class="rc-label">GPT-4o</span></a>
+<a class="rc-card" href="claude35.html" style="--rc-accent:#64748b"><span class="rc-label">Claude 3.5 Sonnet</span></a>
 </div>
 </div>
 <footer>

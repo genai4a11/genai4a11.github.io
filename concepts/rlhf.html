@@ -370,8 +370,8 @@
 <div class="section-block">
 <div class="section-marker">SECTION 01</div>
 <h2>Why <em>RLHF</em></h2>
-<p>Supervised fine-tuning (SFT)—where you fine-tune a base model on a dataset of (prompt, ideal response) pairs—has a fundamental ceiling. Human annotators can write down ideal responses, but this static dataset cannot capture the infinite diversity of real-world use cases. Moreover, the "ideal response" is inherently subjective: some users prefer conciseness, others want detail; some value accuracy, others creativity.</p>
-<p>RLHF solves this by treating human preferences as a training signal. Instead of labeling individual responses as "correct," annotators compare pairs of model outputs and indicate which is better. This preference data is then used to train a reward model that predicts "how much will humans prefer this completion?" Finally, a reinforcement learning algorithm (typically Proximal Policy Optimization, or PPO) tunes the language model's policy to maximize expected human-predicted reward.</p>
+<p>Supervised <a class="concept-link" href="finetuning.html">fine-tuning</a> (SFT)—where you fine-tune a base model on a dataset of (prompt, ideal response) pairs—has a fundamental ceiling. Human annotators can write down ideal responses, but this static dataset cannot capture the infinite diversity of real-world use cases. Moreover, the "ideal response" is inherently subjective: some users prefer conciseness, others want detail; some value accuracy, others creativity.</p>
+<p>RLHF solves this by treating human preferences as a training signal. Instead of labeling individual responses as "correct," annotators compare pairs of model outputs and indicate which is better. This preference data is then used to train a reward model that predicts "how much will humans prefer this completion?" Finally, a reinforcement learning algorithm (typically Proximal Policy <a class="concept-link" href="optimization.html">Optimization</a>, or PPO) tunes the language model's policy to maximize expected human-predicted reward.</p>
 <p>The genius of RLHF lies in its leverage: a relatively small preference dataset (tens of thousands of comparisons) can train a reward model, which then guides the LLM's learning across millions of examples. This indirect approach—learning to predict preferences rather than memorizing ideal responses—proved transformative. ChatGPT's release in November 2022 demonstrated RLHF's power: the combination of an instruction-tuned base model plus RLHF produced behavior that felt more natural and helpful than SFT-only models.</p>
 <div class="callout info">
 <strong>The Preference Signal</strong>
@@ -382,7 +382,7 @@
 <div class="section-block">
 <div class="section-marker">SECTION 02</div>
 <h2>The <em>Three Phases</em> of RLHF</h2>
-<p><strong>Phase 1: Supervised Fine-Tuning (SFT)</strong><br/>Start with a pre-trained base model and fine-tune it on a small supervised dataset of high-quality (prompt, response) pairs, often written by expert annotators. This shifts the model's behavior from pure language modeling (predicting the next token) toward instruction-following and helpful responses. SFT is quick—usually a few hours on a single GPU—and establishes a reasonable baseline. Without SFT, the reward model in Phase 2 sees chaotic outputs and struggles to learn meaningful preferences.</p>
+<p><strong>Phase 1: Supervised <a class="concept-link" href="finetuning.html">Fine-Tuning</a> (SFT)</strong><br/>Start with a pre-trained base model and fine-tune it on a small supervised dataset of high-quality (prompt, response) pairs, often written by expert annotators. This shifts the model's behavior from pure language modeling (predicting the next token) toward instruction-following and helpful responses. SFT is quick—usually a few hours on a single GPU—and establishes a reasonable baseline. Without SFT, the reward model in Phase 2 sees chaotic outputs and struggles to learn meaningful preferences.</p>
 <p><strong>Phase 2: Reward Model Training</strong><br/>Collect human preferences: for thousands of prompts, generate multiple candidate responses from the SFT model (or a set of baseline models), and have humans rank or compare them. This creates a dataset of preference pairs (response_A, response_B, preference: A is better). Train a new model (sharing the same architecture as the base model, but with a scalar reward head) to predict: given a prompt and response, what is the reward score? The reward model learns to align with human preferences via supervised learning on preference data.</p>
 <p><strong>Phase 3: Reinforcement Learning (PPO)</strong><br/>Use the reward model to provide a learning signal. For each prompt, generate one or more candidate responses from the fine-tuned policy. Compute the reward for each response. Apply PPO (or another RL algorithm) to update the policy to increase expected reward. Crucially, maintain a KL divergence penalty so the policy doesn't drift too far from the SFT model (to prevent degenerate solutions and preserve in-distribution behavior).</p>
 <div class="example-box">RLHF Pipeline Pseudocode:
@@ -468,7 +468,7 @@ optimizer.step()
 <div class="section-block">
 <div class="section-marker">SECTION 04</div>
 <h2><em>PPO Fine-tuning</em> Loop</h2>
-<p>PPO (Proximal Policy Optimization) is a policy gradient algorithm that updates the model to maximize expected reward while staying close to the reference (SFT) model. The PPO loss has three components:</p>
+<p>PPO (Proximal Policy <a class="concept-link" href="optimization.html">Optimization</a>) is a policy gradient algorithm that updates the model to maximize expected reward while staying close to the reference (SFT) model. The PPO loss has three components:</p>
 <p><strong>1. Reward Signal:</strong> The RM provides a scalar reward r for each generated response. Typically, the reward is clipped (e.g., between -1 and 1) to avoid extreme values that destabilize learning.</p>
 <p><strong>2. KL Divergence Penalty:</strong> The policy (language model) is encouraged to stay close to the reference model (SFT model) via a KL divergence penalty: KL(policy || reference). This prevents the policy from learning adversarial, degenerate outputs that game the RM. The penalty weight β is tuned (typically 0.01 to 0.1).</p>
 <p><strong>3. Advantage Estimation:</strong> Compute the advantage A(s) = reward - V(prompt), where V is a value function (baseline) that predicts expected reward given the prompt. This reduces variance in the gradient estimate. The value function is often a head on the policy model, trained to predict mean rewards.</p>
@@ -518,8 +518,8 @@ optimizer.step()
 <div class="section-marker">SECTION 05</div>
 <h2><em>Practical Challenges</em> in RLHF</h2>
 <p><strong>Reward Hacking:</strong> The policy can find adversarial outputs that score high on the RM but are actually bad. For example, if the RM is trained to prefer long responses, the policy might generate repetitive text. Mitigation: ensure diversity in the RM training data, use multiple RM heads (ensemble), and include a length penalty in the reward signal. Some labs train RM on "hard negatives"—responses that are technically wrong but score high on surface metrics.</p>
-<p><strong>Mode Collapse:</strong> The policy converges to generating the same response for all prompts. This occurs if the RM signal is weak or if the KL penalty is too loose. Mitigation: increase entropy regularization (encourage the policy to sample diverse tokens) or reduce KL weight incrementally. Monitor mode collapse by tracking unique tokens and response diversity.</p>
-<p><strong>Compute Cost:</strong> RLHF is expensive. Generating responses (sampling from the policy), scoring them (forward pass through RM), and running PPO require significant compute. Scaling to large models (100B+ parameters) becomes prohibitive. Mitigation: use inference optimization (quantization, KV caching), batch samples across multiple GPUs, or use distributed PPO algorithms.</p>
+<p><strong>Mode Collapse:</strong> The policy converges to generating the same response for all prompts. This occurs if the RM signal is weak or if the KL penalty is too loose. Mitigation: increase entropy <a class="concept-link" href="regularization.html">regularization</a> (encourage the policy to sample diverse tokens) or reduce KL weight incrementally. Monitor mode collapse by tracking unique tokens and response diversity.</p>
+<p><strong>Compute Cost:</strong> RLHF is expensive. Generating responses (sampling from the policy), scoring them (forward pass through RM), and running PPO require significant compute. Scaling to large models (100B+ parameters) becomes prohibitive. Mitigation: use inference <a class="concept-link" href="optimization.html">optimization</a> (<a class="concept-link" href="quantization.html">quantization</a>, KV caching), batch samples across multiple GPUs, or use distributed PPO algorithms.</p>
 <p><strong>Annotation Quality:</strong> Human annotators have biases, disagreements, and fatigue. Inter-rater agreement is typically 60-70%; some pairs are ambiguous. Low-quality annotations corrupt the RM. Mitigation: use multiple raters per pair and aggregate via voting, train raters on rubrics, and monitor annotation consistency over time. Consider using AI judges (e.g., a strong LLM) to augment human feedback.</p>
 <div class="callout rose">
 <strong>Reward Model Overfitting</strong>
@@ -569,7 +569,7 @@ optimizer.step()
 </tbody>
 </table>
 </div>
-<p>In practice, many labs use a hybrid: start with RLHF to achieve good performance, then switch to DPO (cheaper, faster) for iterative refinement. RLAIF and Constitutional AI are exciting for scaling—they reduce human annotation burden—but they introduce new risks (e.g., if the AI judge is biased, the bias propagates).</p>
+<p>In practice, many labs use a hybrid: start with RLHF to achieve good performance, then switch to <a class="concept-link" href="dpo.html">DPO</a> (cheaper, faster) for iterative refinement. <a class="concept-link" href="rlaif.html">RLAIF</a> and <a class="concept-link" href="constitutional-ai.html">Constitutional AI</a> are exciting for scaling—they reduce human annotation burden—but they introduce new risks (e.g., if the AI judge is biased, the bias propagates).</p>
 <div class="callout success">
 <strong>Modern Trends</strong>
                 The field is moving toward simpler, more stable alternatives to RLHF. DPO (2023) demonstrated that you don't need an explicit RM. Recent work on online DPO and iterative preference optimization suggest even simpler approaches. However, RLHF remains the proven path to state-of-the-art quality at scale.
@@ -579,7 +579,7 @@ optimizer.step()
 <div class="section-block">
 <div class="section-marker">SECTION 07</div>
 <h2><em>Tools</em> &amp; Implementation</h2>
-<p>The Hugging Face TRL (Transformers Reinforcement Learning) library is the go-to toolkit for RLHF and variants. It provides SFTTrainer, RewardTrainer, and PPOTrainer that abstract away complexity.</p>
+<p>The Hugging Face TRL (<a class="concept-link" href="transformers.html">Transformers</a> Reinforcement Learning) library is the go-to toolkit for RLHF and variants. It provides SFTTrainer, RewardTrainer, and PPOTrainer that abstract away complexity.</p>
 <div class="example-box">SFT with TRL:
 
 from trl import SFTTrainer
@@ -687,24 +687,21 @@ for epoch in range(num_epochs):
 ppo_trainer.save_model("./final_model")
             </div>
 <p><strong>Hyperparameter Tuning:</strong> Key hyperparameters include SFT learning rate (1e-4 to 5e-4), RM learning rate (1e-5 to 1e-4), PPO learning rate (1e-5 to 1e-6), KL weight (0.01 to 0.1), and PPO epochs (1-4). Start conservative and scale up. Use a held-out validation set to pick the final checkpoint.</p>
-<p><strong>Hardware &amp; Cost:</strong> Training a 7B model end-to-end (SFT + RM + PPO) on a single A100 GPU typically takes 2-4 weeks. For larger models (70B+), use multi-GPU or multi-node distributed training. Cloud providers (Lambda Labs, Modal, RunPod) offer GPUs by the hour; budget $1k-10k per full RLHF run depending on model size and dataset.</p>
+<p><strong><a class="concept-link" href="hardware.html">Hardware</a> &amp; Cost:</strong> Training a 7B model end-to-end (SFT + RM + PPO) on a single A100 GPU typically takes 2-4 weeks. For larger models (70B+), use multi-GPU or multi-node distributed training. Cloud providers (Lambda Labs, Modal, RunPod) offer GPUs by the hour; budget $1k-10k per full RLHF run depending on model size and dataset.</p>
 <div class="callout info">
 <strong>Open-Source Models</strong>
                 Llama-2 Chat (fine-tuned with RLHF), Mistral Instruct, and Zephyr are all open-source models released after RLHF. Their checkpoints and training recipes serve as baselines for further tuning. Many labs openly share RLHF code and lessons learned.
             </div>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="dpo.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">DPO</span></a>
-<a href="orpo.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">ORPO</span></a>
-<a href="rlaif.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">RLAIF</span></a>
-<a href="lora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
-<a href="qlora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
+<a class="rc-card" href="dpo.html" style="--rc-accent:#8b5cf6"><span class="rc-label">DPO</span></a>
+<a class="rc-card" href="orpo.html" style="--rc-accent:#8b5cf6"><span class="rc-label">ORPO</span></a>
+<a class="rc-card" href="rlaif.html" style="--rc-accent:#8b5cf6"><span class="rc-label">RLAIF</span></a>
+<a class="rc-card" href="lora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
+<a class="rc-card" href="qlora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
 </div>
 </div>
 <footer>

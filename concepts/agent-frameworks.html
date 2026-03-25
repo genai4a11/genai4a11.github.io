@@ -495,7 +495,7 @@
 <div class="section-block" id="what-framework">
 <div class="section-marker">01 — Foundation</div>
 <h2>What Makes a <em>Framework?</em></h2>
-<p>An agent framework gives you tool dispatch, memory management, multi-step planning, and observability — instead of writing it yourself. Rather than stringing together 500 lines of glue code with OpenAI SDK calls, a framework provides the scaffolding.</p>
+<p>An agent framework gives you tool dispatch, <a class="concept-link" href="agent-memory.html">memory</a> management, multi-step <a class="concept-link" href="agent-planning.html">planning</a>, and <a class="concept-link" href="monitoring.html">observability</a> — instead of writing it yourself. Rather than stringing together 500 lines of glue code with OpenAI SDK calls, a framework provides the scaffolding.</p>
 <h3>Four Layers Every Agent Needs</h3>
 <p><strong>(1) LLM interface layer:</strong> abstract the specific model (Claude, GPT-4, Llama). Send structured prompts, parse tool calls, handle errors. <strong>(2) Tool registry:</strong> define what tools the agent has access to, their schemas, and how to execute them. <strong>(3) Memory/state store:</strong> persist conversation history, internal state, past decisions. <strong>(4) Orchestration loop:</strong> handle the agentic loop itself — reason, act, observe, update state, repeat.</p>
 <p>Build vs buy question: frameworks accelerate prototyping but add abstraction overhead. Many teams start with a framework, then rewrite the hot path in plain Python when they hit production constraints.</p>
@@ -578,9 +578,9 @@
 <div class="section-block" id="langgraph">
 <div class="section-marker">03 — Deep Dive</div>
 <h2>LangGraph</h2>
-<p>LangGraph models agents as stateful graphs: nodes are actions or decisions, edges are transitions, state is a typed dict persisted across steps. This makes it powerful for workflows that need to pause, inspect, and resume.</p>
+<p><a class="concept-link" href="langgraph.html">LangGraph</a> models <a class="concept-link" href="agents.html">agents</a> as stateful graphs: nodes are actions or decisions, edges are transitions, state is a typed dict persisted across steps. This makes it powerful for workflows that need to pause, inspect, and resume.</p>
 <h3>Key Concepts</h3>
-<p><strong>StateGraph:</strong> Define your state schema as a TypedDict. <strong>Nodes:</strong> Python functions that take state and return modified state. <strong>Edges:</strong> Deterministic or conditional transitions between nodes. <strong>Checkpointers:</strong> Persist state to Postgres, Redis, memory, or custom backend. <strong>Human-in-the-loop:</strong> Use interrupt_before and interrupt_after to pause execution for human review.</p>
+<p><strong>StateGraph:</strong> Define your state schema as a TypedDict. <strong>Nodes:</strong> Python functions that take state and return modified state. <strong>Edges:</strong> Deterministic or conditional transitions between nodes. <strong>Checkpointers:</strong> Persist state to Postgres, Redis, <a class="concept-link" href="agent-memory.html">memory</a>, or custom backend. <strong><a class="concept-link" href="human-in-the-loop.html">Human-in-the-loop</a>:</strong> Use interrupt_before and interrupt_after to pause execution for human review.</p>
 <h3>Minimal LangGraph Agent</h3>
 <div class="example-box">from langgraph.graph import StateGraph, END
 from typing import TypedDict, Annotated
@@ -615,9 +615,9 @@ app = graph.compile()</div>
 <div class="section-block" id="crewai">
 <div class="section-marker">04 — Deep Dive</div>
 <h2>CrewAI and Multi-Role Agents</h2>
-<p>CrewAI models each agent as a role with a goal, backstory, tools, and memory. A Crew orchestrates agents sequentially or hierarchically; a manager agent can delegate to specialized agents. Best for content pipelines, research tasks, and multi-perspective synthesis.</p>
+<p><a class="concept-link" href="crewai.html">CrewAI</a> models each agent as a role with a goal, backstory, tools, and <a class="concept-link" href="agent-memory.html">memory</a>. A Crew orchestrates <a class="concept-link" href="agents.html">agents</a> sequentially or hierarchically; a manager agent can delegate to specialized agents. Best for content pipelines, research tasks, and multi-perspective synthesis.</p>
 <h3>Role-Based Mental Model</h3>
-<p>Each agent has a clear persona and responsibility. This works exceptionally well when different "experts" are conceptually clean — a researcher agent, an analyst agent, a writer agent. The abstraction maps cleanly to product workflows and makes prompting more intuitive.</p>
+<p>Each agent has a clear persona and responsibility. This works exceptionally well when different "experts" are conceptually clean — a researcher agent, an analyst agent, a writer agent. The abstraction maps cleanly to product workflows and makes <a class="concept-link" href="prompting.html">prompting</a> more intuitive.</p>
 <h3>3-Agent Research Crew Example</h3>
 <div class="example-box">from crewai import Agent, Task, Crew
 
@@ -634,13 +634,13 @@ tasks = [Task(description='Research LLM benchmarks', agent=researcher),
 
 crew = Crew(agents=[researcher, analyst, writer], tasks=tasks)
 result = crew.kickoff()</div>
-<p>CrewAI is particularly strong when you need sequential task dependencies and role-based decomposition. The trade-off is less fine-grained control over state compared to LangGraph.</p>
+<p>CrewAI is particularly strong when you need sequential task dependencies and role-based decomposition. The trade-off is less fine-grained control over state compared to <a class="concept-link" href="langgraph.html">LangGraph</a>.</p>
 </div>
 <!-- ── 5. AUTOGEN ── -->
 <div class="section-block" id="autogen">
 <div class="section-marker">05 — Deep Dive</div>
 <h2>AutoGen Conversational Agents</h2>
-<p>AutoGen treats agents as conversational participants: each agent has a system prompt, can send and receive messages, and can be a human-proxy or an LLM-backed assistant. GroupChat enables round-robin or managed multi-agent conversations with code execution loops.</p>
+<p><a class="concept-link" href="autogen.html">AutoGen</a> treats <a class="concept-link" href="agents.html">agents</a> as conversational participants: each agent has a system prompt, can send and receive messages, and can be a human-proxy or an LLM-backed assistant. GroupChat enables round-robin or managed <a class="concept-link" href="multi-agent.html">multi-agent</a> conversations with code execution loops.</p>
 <h3>Code Execution Loop</h3>
 <p>AssistantAgent can generate code; UserProxyAgent executes it locally and returns feedback. This creates a tight loop: LLM generates, execute, report results, LLM refines. Exceptionally effective for code-generation and problem-solving tasks where you can test ideas immediately.</p>
 <h3>AutoGen Code-Writing Loop</h3>
@@ -707,28 +707,28 @@ user_proxy.initiate_chat(assistant,
 <div class="method-num">1</div>
 <div class="method-body">
 <h3>Starting a prototype <em>— fastest path</em></h3>
-<p>Use LangChain for simple chains; LangGraph the moment you need state or branching. LangChain is easiest to onboard with; LangGraph becomes necessary as soon as your workflow requires conditional logic or pause/resume.</p>
+<p>Use <a class="concept-link" href="langchain.html">LangChain</a> for simple chains; <a class="concept-link" href="langgraph.html">LangGraph</a> the moment you need state or branching. LangChain is easiest to onboard with; LangGraph becomes necessary as soon as your workflow requires conditional logic or pause/resume.</p>
 </div>
 </div>
 <div class="method-card">
 <div class="method-num">2</div>
 <div class="method-body">
 <h3>Collaboration between specialized agents <em>— role-based</em></h3>
-<p>CrewAI. The role-based mental model maps cleanly to product workflows. Researcher, analyst, writer — each with their own backstory and tools — is a natural decomposition for many tasks.</p>
+<p><a class="concept-link" href="crewai.html">CrewAI</a>. The role-based mental model maps cleanly to product workflows. Researcher, analyst, writer — each with their own backstory and tools — is a natural decomposition for many tasks.</p>
 </div>
 </div>
 <div class="method-card">
 <div class="method-num">3</div>
 <div class="method-body">
 <h3>Code-writing or research agents <em>— execution feedback</em></h3>
-<p>AutoGen. Conversational loop + code execution is uniquely good here. The agent proposes, you test, it refines — tight feedback loop beats iterative planning for these domains.</p>
+<p><a class="concept-link" href="autogen.html">AutoGen</a>. Conversational loop + code execution is uniquely good here. The agent proposes, you test, it refines — tight feedback loop beats iterative <a class="concept-link" href="agent-planning.html">planning</a> for these domains.</p>
 </div>
 </div>
 <div class="method-card">
 <div class="method-num">4</div>
 <div class="method-body">
 <h3>High-scale production <em>— full control</em></h3>
-<p>Plain Python + async + OpenAI SDK. Frameworks add latency and debugging friction. Write the abstraction you need, not a general one. Most successful production agents eventually do this.</p>
+<p>Plain Python + async + OpenAI SDK. Frameworks add latency and debugging friction. Write the abstraction you need, not a general one. Most successful production <a class="concept-link" href="agents.html">agents</a> eventually do this.</p>
 </div>
 </div>
 </div>
@@ -741,15 +741,15 @@ user_proxy.initiate_chat(assistant,
 <div class="section-block" id="observability">
 <div class="section-marker">07 — Observability</div>
 <h2>Tracing and Debugging Agents</h2>
-<p>Multi-step agents are hard to debug. Which step failed? Which LLM call was slow? What context caused the wrong decision? Tracing becomes critical in production.</p>
+<p>Multi-step <a class="concept-link" href="agents.html">agents</a> are hard to debug. Which step failed? Which LLM call was slow? What context caused the wrong decision? Tracing becomes critical in production.</p>
 <h3>What to Trace</h3>
 <p><strong>Every LLM call:</strong> input tokens, output tokens, latency, model used. <strong>Every tool call:</strong> tool name, arguments, result, execution duration. <strong>Every state transition:</strong> node entry, node exit, state delta. <strong>Errors:</strong> exception type, stack, recovery action.</p>
 <h3>Recommended Tools</h3>
 <ul style="margin-left: 1.2rem; margin-bottom: 1rem;">
-<li><strong>LangSmith:</strong> Native integration with LangGraph and LangChain. Built-in trace persistence, evaluation framework, dataset management.</li>
-<li><strong>Langfuse:</strong> Open-source, provider-agnostic. Trace any framework. Good for multi-framework shops.</li>
-<li><strong>Arize Phoenix:</strong> Open-source observability. Fast for large trace volumes.</li>
-<li><strong>W&amp;B Traces:</strong> Lightweight integration with Weights &amp; Biases platform.</li>
+<li><strong><a class="concept-link" href="langsmith.html">LangSmith</a>:</strong> Native integration with <a class="concept-link" href="langgraph.html">LangGraph</a> and <a class="concept-link" href="langchain.html">LangChain</a>. Built-in trace persistence, <a class="concept-link" href="eval.html">evaluation</a> framework, dataset management.</li>
+<li><strong><a class="concept-link" href="langfuse.html">Langfuse</a>:</strong> Open-source, provider-agnostic. Trace any framework. Good for multi-framework shops.</li>
+<li><strong>Arize Phoenix:</strong> Open-source <a class="concept-link" href="monitoring.html">observability</a>. Fast for large trace volumes.</li>
+<li><strong>W&amp;B Traces:</strong> Lightweight integration with <a class="concept-link" href="wandb.html">Weights &amp; Biases</a> platform.</li>
 </ul>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
@@ -807,21 +807,18 @@ user_proxy.initiate_chat(assistant,
 <li><span class="ref-badge badge-paper">PAPER</span> <a href="https://arxiv.org/abs/2404.11584" target="_blank">LangGraph: Agentic Workflows as Code</a> — arxiv 2404.11584</li>
 <li><span class="ref-badge badge-docs">DOCS</span> <a href="https://docs.crewai.com" target="_blank">CrewAI documentation</a> — role-based agent framework</li>
 <li><span class="ref-badge badge-paper">PAPER</span> <a href="https://arxiv.org/abs/2308.08155" target="_blank">AutoGen: Enabling Next-Gen LLM Applications</a> — arxiv 2308.08155</li>
-<li><span class="ref-badge badge-docs">DOCS</span> <a href="https://ai.pydantic.dev" target="_blank">Pydantic AI documentation</a> — type-safe agents</li>
+<li><span class="ref-badge badge-docs">DOCS</span> <a href="https://ai.pydantic.dev" target="_blank">Pydantic AI documentation</a> — type-safe <a class="concept-link" href="agents.html">agents</a></li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="agent-planning.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Planning</span></a>
-<a href="agent-memory.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Memory</span></a>
-<a href="tool-use.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Tool Use</span></a>
-<a href="multi-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Multi-Agent</span></a>
-<a href="react-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="agent-planning.html" style="--rc-accent:#06b6d4"><span class="rc-label">Planning</span></a>
+<a class="rc-card" href="agent-memory.html" style="--rc-accent:#06b6d4"><span class="rc-label">Memory</span></a>
+<a class="rc-card" href="tool-use.html" style="--rc-accent:#06b6d4"><span class="rc-label">Tool Use</span></a>
+<a class="rc-card" href="multi-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">Multi-Agent</span></a>
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
 </div>
 </div>
 <div class="page-footer">

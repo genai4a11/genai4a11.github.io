@@ -447,7 +447,7 @@
 <div class="section-block" id="why-standards">
 <div class="section-marker">01 — Problem Statement</div>
 <h2>Why Integration Standards Matter</h2>
-<p>Every LLM provider used to have a proprietary API: OpenAI's GPT API format, Anthropic's different format, Google's different again. Switching models meant rewriting your entire application. Standards solve this: they define common interfaces for chat completion, function calling, streaming, and tool use, so you can swap providers or run local models without touching business logic.</p>
+<p>Every LLM provider used to have a proprietary API: OpenAI's GPT API format, Anthropic's different format, Google's different again. Switching models meant rewriting your entire application. Standards solve this: they define common interfaces for chat completion, <a class="concept-link" href="function-calling.html">function calling</a>, <a class="concept-link" href="streaming.html">streaming</a>, and <a class="concept-link" href="tool-use.html">tool use</a>, so you can swap providers or run local models without touching business logic.</p>
 <h3>The Cost of Fragmentation</h3>
 <div class="practice-grid">
 <div class="practice-item">
@@ -493,7 +493,7 @@
 <div class="section-block" id="openai-compat">
 <div class="section-marker">02 — The Standard</div>
 <h2>OpenAI API Compatibility</h2>
-<p>The OpenAI chat/completions API is now the lingua franca. Anthropic's API is 95% compatible. vLLM (local inference) implements it fully. Azure Cognitive Services, Mistral, Groq — all expose OpenAI-compatible endpoints. This means your code works with multiple providers with minimal changes.</p>
+<p>The OpenAI chat/completions API is now the lingua franca. Anthropic's API is 95% compatible. <a class="concept-link" href="vllm.html">vLLM</a> (local inference) implements it fully. Azure Cognitive Services, Mistral, Groq — all expose OpenAI-compatible endpoints. This means your code works with multiple providers with minimal changes.</p>
 <h3>Standard Chat/Completions Schema</h3>
 <div class="example-box"># All these clients use the same schema
 from openai import OpenAI  # OpenAI
@@ -528,11 +528,11 @@ print(response.choices[0].message.content)</div>
 <li><code>POST /chat/completions</code> — Chat-based completions (main endpoint)</li>
 <li><code>POST /completions</code> — Legacy text completion (less common)</li>
 <li><code>POST /embeddings</code> — Embed text for vector search</li>
-<li><code>POST /images/generations</code> — Image generation (some providers)</li>
+<li><code>POST /images/generations</code> — <a class="concept-link" href="image-gen.html">Image generation</a> (some providers)</li>
 <li><code>POST /models</code> — List available models</li>
 </ul>
 <h3>Why Everyone Implements It</h3>
-<p>OpenAI's API succeeded because it's <strong>simple, powerful, and standardized early</strong>. Every new provider implements it to ensure instant compatibility with existing tools. vLLM, Ollama, and Mistral all expose <code>/v1/chat/completions</code> endpoints. This means you can deploy a local model using the same client code as GPT-4.</p>
+<p>OpenAI's API succeeded because it's <strong>simple, powerful, and standardized early</strong>. Every new provider implements it to ensure instant compatibility with existing tools. vLLM, <a class="concept-link" href="ollama.html">Ollama</a>, and Mistral all expose <code>/v1/chat/completions</code> endpoints. This means you can deploy a local model using the same client code as GPT-4.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Instant portability:</strong> Write once against OpenAI API, run against GPT-4, Claude, local Llama, or Mistral with one environment variable change.</span>
@@ -542,7 +542,7 @@ print(response.choices[0].message.content)</div>
 <div class="section-block" id="mcp">
 <div class="section-marker">03 — Context Protocol</div>
 <h2>Model Context Protocol (MCP)</h2>
-<p>MCP is Anthropic's protocol for connecting LLMs to external tools and data sources. It defines a client-server architecture: the LLM (client) can request tools, resources, and prompts from a server (your app or service). Tools are discovered dynamically, not hard-coded.</p>
+<p>MCP is Anthropic's protocol for connecting <a class="concept-link" href="llms.html">LLMs</a> to external tools and data sources. It defines a client-server architecture: the LLM (client) can request tools, resources, and prompts from a server (your app or service). Tools are discovered dynamically, not hard-coded.</p>
 <h3>MCP Primitives</h3>
 <div class="methods-list">
 <div class="method-card">
@@ -596,7 +596,7 @@ Flows:
 <div class="section-block" id="function-calling">
 <div class="section-marker">04 — Tool Use</div>
 <h2>Function Calling &amp; JSON Schema</h2>
-<p>Function calling lets models invoke tools by returning structured JSON. You define tools as JSON Schema; the model decides when to use them and what parameters to pass. The standard is now OpenAI's format, replicated by Anthropic, Mistral, and others.</p>
+<p><a class="concept-link" href="function-calling.html">Function calling</a> lets models invoke tools by returning structured JSON. You define tools as JSON Schema; the model decides when to use them and what parameters to pass. The standard is now OpenAI's format, replicated by Anthropic, Mistral, and others.</p>
 <h3>Define Tools as JSON Schema</h3>
 <div class="example-box"># Define a tool
 tools = [
@@ -669,7 +669,7 @@ while True:
 <div class="section-block" id="streaming">
 <div class="section-marker">05 — Real-time</div>
 <h2>Streaming Protocols (SSE)</h2>
-<p>Streaming returns tokens as they're generated, enabling real-time UIs and lower time-to-first-token. OpenAI uses Server-Sent Events (SSE). Responses arrive as delta chunks; you reconstruct the full message from chunks.</p>
+<p><a class="concept-link" href="streaming.html">Streaming</a> returns tokens as they're generated, enabling real-time UIs and lower time-to-first-token. OpenAI uses Server-Sent Events (SSE). Responses arrive as delta chunks; you reconstruct the full message from chunks.</p>
 <div class="example-box"># Streaming with OpenAI SDK
 response = client.chat.completions.create(
     model="gpt-4-turbo",
@@ -700,7 +700,7 @@ print(f"\nFinish reason: {chunk.choices[0].finish_reason}")</div>
 <div class="section-block" id="structured-output">
 <div class="section-marker">06 — Deterministic Output</div>
 <h2>Structured Output &amp; JSON Mode</h2>
-<p>JSON mode forces models to return valid JSON. Useful for parsing, data extraction, or when you need guaranteed structure. Combine with Pydantic for type-safe outputs.</p>
+<p><a class="concept-link" href="json-mode.html">JSON mode</a> forces models to return valid JSON. Useful for parsing, data extraction, or when you need guaranteed structure. Combine with Pydantic for type-safe outputs.</p>
 <div class="example-box"># JSON mode (returns valid JSON)
 response = client.chat.completions.create(
     model="gpt-4-turbo",
@@ -852,17 +852,14 @@ print(person.name)  # Autocomplete, type-checked</div>
 <li><span class="ref-badge badge-blog">Blog</span> <a href="https://blog.langchain.dev/" target="_blank">LangChain Blog ↗</a></li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="mlops.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">MLOps & Experiment</span></a>
-<a href="dev-frameworks.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Dev Frameworks</span></a>
-<a href="mlflow.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">MLflow</span></a>
-<a href="dvc.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">DVC</span></a>
-<a href="hf-hub.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">HuggingFace Hub</span></a>
+<a class="rc-card" href="mlops.html" style="--rc-accent:#64748b"><span class="rc-label">MLOps &amp; Experiment</span></a>
+<a class="rc-card" href="dev-frameworks.html" style="--rc-accent:#64748b"><span class="rc-label">Dev Frameworks</span></a>
+<a class="rc-card" href="mlflow.html" style="--rc-accent:#64748b"><span class="rc-label">MLflow</span></a>
+<a class="rc-card" href="dvc.html" style="--rc-accent:#64748b"><span class="rc-label">DVC</span></a>
+<a class="rc-card" href="hf-hub.html" style="--rc-accent:#64748b"><span class="rc-label">HuggingFace Hub</span></a>
 </div>
 </div>
 <footer class="page-footer">

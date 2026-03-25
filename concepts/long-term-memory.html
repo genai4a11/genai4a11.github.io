@@ -153,9 +153,9 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Short-term vs long-term memory</h2>
-<p>Short-term (conversation buffer) memory lives in the prompt window and resets when the session ends. Long-term memory persists across sessions in an external store and is retrieved on demand.</p>
-<p>Think of it like human memory: short-term is what you're actively thinking about right now; long-term is everything you've ever learned, retrieved via association ("that reminds me of..."). Agents need both: short-term for the current task, long-term for facts, preferences, and history that span many sessions.</p>
-<p>The core mechanism: when the agent generates something worth remembering, it writes a memory entry to a vector store (embedding the text). On subsequent turns, it retrieves semantically similar memories before generating a response. This gives the model access to a personalised, growing knowledge base.</p>
+<p>Short-term (<a class="concept-link" href="conversation-buffer.html">conversation buffer</a>) <a class="concept-link" href="agent-memory.html">memory</a> lives in the prompt window and resets when the session ends. Long-term memory persists across sessions in an external store and is retrieved on demand.</p>
+<p>Think of it like human memory: short-term is what you're actively thinking about right now; long-term is everything you've ever learned, retrieved via association ("that reminds me of..."). <a class="concept-link" href="agents.html">Agents</a> need both: short-term for the current task, long-term for facts, preferences, and history that span many sessions.</p>
+<p>The core mechanism: when the agent generates something worth remembering, it writes a memory entry to a <a class="concept-link" href="vector-dbs.html">vector store</a> (<a class="concept-link" href="embeddings.html">embedding</a> the text). On subsequent turns, it retrieves semantically similar memories before generating a response. This gives the model access to a personalised, growing knowledge base.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -172,7 +172,7 @@ Memory write decisions:
 - Action history: "Successfully deployed to GitHub Pages on 2024-03-15"
 - Corrections: "User clarified that embeddings should use cosine distance"
 </code></pre>
-<p>The agent can decide what to write explicitly (via a "save_memory" tool) or you can add an automatic memory extraction step after each turn.</p>
+<p>The agent can decide what to write explicitly (via a "save_memory" tool) or you can add an automatic <a class="concept-link" href="agent-memory.html">memory</a> extraction step after each turn.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -243,7 +243,7 @@ def chat_with_memory(user_message: str, user_id: str = "default") -&gt; str:
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Memory retrieval strategies</h2>
-<p><strong>Semantic search</strong> (cosine similarity on embeddings) is the default: retrieve memories whose meaning is close to the current query. Works well for factual retrieval ("what did the user say about X?").</p>
+<p><strong>Semantic search</strong> (cosine similarity on <a class="concept-link" href="embeddings.html">embeddings</a>) is the default: retrieve memories whose meaning is close to the current query. Works well for factual retrieval ("what did the user say about X?").</p>
 <p><strong>Recency weighting</strong>: blend similarity score with recency, so recent memories rank higher. Prevents old, contradicted memories from surfacing over newer ones.</p>
 <pre><code class="language-python">import numpy as np
 from datetime import datetime
@@ -280,7 +280,7 @@ def retrieve_with_recency(query: str, k: int = 5, recency_weight: float = 0.3):
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Mem0: managed memory for agents</h2>
-<p>Mem0 (pip install mem0ai) is a managed memory layer purpose-built for agents. It handles extraction, storage, deduplication, and retrieval automatically:</p>
+<p>Mem0 (pip install mem0ai) is a managed <a class="concept-link" href="agent-memory.html">memory</a> layer purpose-built for <a class="concept-link" href="agents.html">agents</a>. It handles extraction, storage, deduplication, and retrieval automatically:</p>
 <pre><code class="language-python">from mem0 import Memory
 import os
 
@@ -300,12 +300,12 @@ for r in results:
 # Get all memories for a user
 all_memories = memory.get_all(user_id="deepak")
 </code></pre>
-<p>Mem0 uses an LLM to extract structured facts from conversations (rather than just embedding raw messages), deduplicates memories when new information contradicts old, and supports multiple backends (Qdrant, Pinecone, Chroma, etc.).</p>
+<p>Mem0 uses an LLM to extract structured facts from conversations (rather than just <a class="concept-link" href="embeddings.html">embedding</a> raw messages), deduplicates memories when new information contradicts old, and supports multiple backends (<a class="concept-link" href="qdrant.html">Qdrant</a>, <a class="concept-link" href="pinecone.html">Pinecone</a>, <a class="concept-link" href="chroma.html">Chroma</a>, etc.).</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Memory decay and management</h2>
-<p>Without management, memory grows unbounded and retrieval quality degrades as noise accumulates. Three management strategies:</p>
+<p>Without management, <a class="concept-link" href="agent-memory.html">memory</a> grows unbounded and retrieval quality degrades as noise accumulates. Three management strategies:</p>
 <p><strong>Time-based expiry</strong>: delete memories older than N days. Simple, but removes potentially still-valid facts.</p>
 <p><strong>Contradiction detection</strong>: when writing a new memory, search for semantically similar existing ones and resolve conflicts. "User prefers dark mode" supersedes "User prefers light mode".</p>
 <pre><code class="language-python">def smart_save(content: str, user_id: str):
@@ -326,22 +326,19 @@ list the IDs to delete. If not, say "no conflict".'''
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Stale memories cause wrong answers.</strong> If you saved "User's project has 100 nodes" six months ago and it now has 337, the agent might confidently state the old number. Add timestamps to all memories and include the age in the retrieval context: "Memory from 6 months ago: ...". Let the model factor in staleness.</p>
+<p><strong>Stale memories cause wrong answers.</strong> If you saved "User's project has 100 nodes" six months ago and it now has 337, the agent might confidently state the old number. Add timestamps to all memories and include the age in the retrieval context: "<a class="concept-link" href="agent-memory.html">Memory</a> from 6 months ago: ...". Let the model factor in staleness.</p>
 <p><strong>Memory injection bloats the prompt.</strong> Injecting 10 memories at 200 tokens each adds 2,000 tokens to every request. Be selective: retrieve only the top 3-5 most relevant memories, and only inject them if their similarity score exceeds a threshold.</p>
-<p><strong>Embedding model and memory model should be consistent.</strong> If you change the embedding model (e.g., from all-MiniLM to text-embedding-3-small), all existing embeddings become incompatible. Store the embedding model name with each memory and rebuild the index when you upgrade models.</p>
+<p><strong><a class="concept-link" href="embeddings.html">Embedding</a> model and memory model should be consistent.</strong> If you change the embedding model (e.g., from all-MiniLM to text-embedding-3-small), all existing <a class="concept-link" href="embeddings.html">embeddings</a> become incompatible. Store the embedding model name with each memory and rebuild the index when you upgrade models.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="conversation-buffer.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Conversation Buffer</span></a>
-<a href="entity-memory.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Entity Memory</span></a>
-<a href="react-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
-<a href="plan-and-execute.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Plan & Execute</span></a>
-<a href="reflection.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Reflection / Critique</span></a>
+<a class="rc-card" href="conversation-buffer.html" style="--rc-accent:#06b6d4"><span class="rc-label">Conversation Buffer</span></a>
+<a class="rc-card" href="entity-memory.html" style="--rc-accent:#06b6d4"><span class="rc-label">Entity Memory</span></a>
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="plan-and-execute.html" style="--rc-accent:#06b6d4"><span class="rc-label">Plan &amp; Execute</span></a>
+<a class="rc-card" href="reflection.html" style="--rc-accent:#06b6d4"><span class="rc-label">Reflection / Critique</span></a>
 </div>
 </div>
 <footer>

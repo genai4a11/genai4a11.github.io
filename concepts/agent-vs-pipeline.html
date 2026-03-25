@@ -153,7 +153,7 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>The core tradeoff</h2>
-<p>A <strong>pipeline</strong> is a fixed sequence of LLM calls and code steps that you control completely — retrieve, extract, summarise, format. Every step is predictable, fast, and cheap. A <strong>agent</strong> uses an LLM to decide which tools to call and in what order, looping until the task is complete. Agents handle open-ended tasks that don't fit a fixed sequence, but they're slower, more expensive, harder to debug, and can fail in unexpected ways.</p>
+<p>A <strong>pipeline</strong> is a fixed sequence of LLM calls and code steps that you control completely — retrieve, extract, summarise, format. Every step is predictable, fast, and cheap. A <strong>agent</strong> uses an LLM to decide which tools to call and in what order, looping until the task is complete. <a class="concept-link" href="agents.html">Agents</a> handle open-ended tasks that don't fit a fixed sequence, but they're slower, more expensive, harder to debug, and can fail in unexpected ways.</p>
 <p>The practical advice: <em>start with a pipeline and only reach for agents when the task genuinely requires dynamic decision-making that you can't encode in a fixed workflow.</em></p>
 </div>
 <div class="section-block" id="s2">
@@ -163,7 +163,7 @@
 <ul>
 <li><strong>The task structure is known</strong>: Summarise a document, classify a support ticket, extract entities from an invoice. You know exactly what steps are needed.</li>
 <li><strong>Latency matters</strong>: Each agent loop adds 1–3 seconds. A pipeline with 3 steps completes in 3–6 seconds; an equivalent agent might take 15–30 seconds with 5 loops.</li>
-<li><strong>Cost control is critical</strong>: Agents burn unpredictable numbers of tokens. A pipeline has deterministic cost per request.</li>
+<li><strong>Cost control is critical</strong>: <a class="concept-link" href="agents.html">Agents</a> burn unpredictable numbers of tokens. A pipeline has deterministic cost per request.</li>
 <li><strong>Debugging is important</strong>: Pipeline failures have clear stack traces and obvious failure points. Agent failures are subtle — the LLM made a bad decision at step 4 of 9.</li>
 <li><strong>Reliability is required</strong>: Pipelines can be tested with unit tests and monitored with straightforward metrics. Agents are stochastic — the same input can produce different paths on different runs.</li>
 </ul>
@@ -175,8 +175,8 @@
 <ul>
 <li><strong>Unknown number of steps</strong>: "Research this company and write a report" — you don't know how many searches, reads, or summaries are needed upfront.</li>
 <li><strong>Conditional branching is complex</strong>: The next step depends on what was found in the previous step, in ways too varied to hardcode.</li>
-<li><strong>Tool selection is non-trivial</strong>: The agent must choose between a calculator, a search engine, a code interpreter, and a database — and the right choice depends on the query.</li>
-<li><strong>Human-in-the-loop flexibility</strong>: The task involves back-and-forth with a user or approval gates that can't be predicted.</li>
+<li><strong><a class="concept-link" href="tool-selection.html">Tool selection</a> is non-trivial</strong>: The agent must choose between a calculator, a search engine, a code interpreter, and a database — and the right choice depends on the query.</li>
+<li><strong><a class="concept-link" href="human-in-the-loop.html">Human-in-the-loop</a> flexibility</strong>: The task involves back-and-forth with a user or <a class="concept-link" href="approval-gates.html">approval gates</a> that can't be predicted.</li>
 </ul>
 <p>Rule of thumb: if you can write a flowchart for the task in 15 minutes, use a pipeline. If the flowchart has too many branches to draw, consider an agent.</p>
 </div>
@@ -187,7 +187,7 @@
 <ul>
 <li><strong>Agent + pipeline tools</strong>: The agent decides which pipeline to invoke (summarisation pipeline, extraction pipeline, search pipeline) and passes results between them.</li>
 <li><strong>Pipeline with one LLM-routed step</strong>: A mostly deterministic pipeline with a single "if/else" step where an LLM classifies the input to choose between two fixed paths.</li>
-<li><strong>Planner-executor pattern</strong>: A planning LLM call generates a structured plan (a list of steps); a deterministic executor runs each step. Combines agent flexibility with pipeline reliability.</li>
+<li><strong>Planner-executor pattern</strong>: A <a class="concept-link" href="agent-planning.html">planning</a> LLM call generates a structured plan (a list of steps); a deterministic executor runs each step. Combines agent flexibility with pipeline reliability.</li>
 </ul>
 </div>
 <div class="section-block" id="s5">
@@ -220,32 +220,29 @@
 <h2>Cost and latency comparison</h2>
 <p>For a "research and summarise" task:</p>
 <ul>
-<li><strong>Pipeline (fixed 3 steps)</strong>: 3 × gpt-4o-mini calls (~$0.001 each) = ~$0.003, ~3s total</li>
+<li><strong>Pipeline (fixed 3 steps)</strong>: 3 × <a class="concept-link" href="gpt4o.html">gpt-4o</a>-mini calls (~$0.001 each) = ~$0.003, ~3s total</li>
 <li><strong>Agent (variable 5-10 loops)</strong>: 7 × gpt-4o calls (~$0.01 each) = ~$0.07, ~15s total</li>
 </ul>
-<p>For a simple extraction task where a pipeline works perfectly, using an agent is ~23× more expensive and ~5× slower. Over 1M requests/month, that's the difference between $3k and $70k in LLM costs. Use agents only where their dynamic capability is actually needed.</p>
+<p>For a simple extraction task where a pipeline works perfectly, using an agent is ~23× more expensive and ~5× slower. Over 1M requests/month, that's the difference between $3k and $70k in LLM costs. Use <a class="concept-link" href="agents.html">agents</a> only where their dynamic capability is actually needed.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
-<li><strong>Agent scope creep</strong>: Agents that can call tools without bounds will sometimes take surprisingly long paths. Always set a maximum number of iterations/tool calls and a budget cap.</li>
+<li><strong>Agent scope creep</strong>: <a class="concept-link" href="agents.html">Agents</a> that can call tools without bounds will sometimes take surprisingly long paths. Always set a maximum number of iterations/tool calls and a budget cap.</li>
 <li><strong>Pipeline rigidity</strong>: Pipelines fail silently on edge cases — the 1% of inputs that don't fit the assumed structure. Build fallback handlers and log pipeline failures for review.</li>
 <li><strong>Testing agents</strong>: Unit tests on deterministic pipelines are straightforward. Agent testing requires evals on diverse inputs with expected outcomes, not exact output matching. Use pass/fail criteria like "did the agent complete the task?" rather than exact string matching.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="rag-vs-finetuning.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
-<a href="model-selection.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Model Selection</span></a>
-<a href="build-vs-buy.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Build vs Buy vs OSS</span></a>
-<a href="eval-design.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Eval Design</span></a>
-<a href="golden-test-sets.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Golden Test Sets</span></a>
+<a class="rc-card" href="rag-vs-finetuning.html" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
+<a class="rc-card" href="model-selection.html" style="--rc-accent:#64748b"><span class="rc-label">Model Selection</span></a>
+<a class="rc-card" href="build-vs-buy.html" style="--rc-accent:#64748b"><span class="rc-label">Build vs Buy vs OSS</span></a>
+<a class="rc-card" href="eval-design.html" style="--rc-accent:#64748b"><span class="rc-label">Eval Design</span></a>
+<a class="rc-card" href="golden-test-sets.html" style="--rc-accent:#64748b"><span class="rc-label">Golden Test Sets</span></a>
 </div>
 </div>
 <footer>

@@ -153,7 +153,7 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>GPTQ algorithm overview</h2>
-<p>GPTQ (Frantar et al. 2022) quantises a pre-trained model's weights to low-bit integers without any fine-tuning. The key insight: instead of rounding each weight independently, GPTQ uses second-order Hessian information to compensate for quantisation errors — when a weight is rounded, other weights in the same layer are adjusted to cancel out the introduced error.</p>
+<p>GPTQ (Frantar et al. 2022) quantises a pre-trained model's weights to low-bit integers without any <a class="concept-link" href="finetuning.html">fine-tuning</a>. The key insight: instead of rounding each weight independently, GPTQ uses second-order Hessian information to compensate for <a class="concept-link" href="quantization.html">quantisation</a> errors — when a weight is rounded, other weights in the same layer are adjusted to cancel out the introduced error.</p>
 <p>The process works layer by layer. For each layer, GPTQ solves an optimal brain surgeon (OBS) variant problem: given the Hessian matrix computed from calibration data, find the minimal-error quantisation for each weight column, then update remaining unquantised columns to compensate. This runs in O(d²) per layer, feasible in hours on a single GPU even for 70B models.</p>
 <p>The result is a model where each weight is stored as a 4-bit integer, with a separate fp16 scale factor per group (typically 128 weights). The dequantisation to fp16 happens during inference, typically using fused CUDA kernels (ExLlamaV2, AutoGPTQ).</p>
 </div>
@@ -194,7 +194,7 @@ print("Quantisation complete!")
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Serving GPTQ models</h2>
-<p>Most LLM serving frameworks support GPTQ natively. The quantised model is stored on disk in 4-bit, loaded to GPU, and dequantised on-the-fly during the forward pass using optimised CUDA kernels.</p>
+<p>Most <a class="concept-link" href="serving.html">LLM serving</a> <a class="concept-link" href="agent-frameworks.html">frameworks</a> support GPTQ natively. The quantised model is stored on disk in 4-bit, loaded to GPU, and dequantised on-the-fly during the forward pass using optimised CUDA kernels.</p>
 <pre><code class="language-python"># Load a GPTQ model for inference
 from auto_gptq import AutoGPTQForCausalLM
 from transformers import AutoTokenizer, pipeline
@@ -221,26 +221,26 @@ print(result[0]["generated_text"])
 <div class="section-marker">SECTION 04</div>
 <h2>GPTQ vs AWQ vs bitsandbytes</h2>
 <p>All three quantise weights to 4-bit, but differ in algorithm and trade-offs:</p>
-<p><strong>GPTQ</strong>: Second-order Hessian optimisation per layer. Good quality. Takes 1–4 hours to quantise a 7B model. Requires calibration data. Widely supported across serving frameworks. Best for: deploying to production with prebuilt quantised models.</p>
-<p><strong>AWQ</strong> (Activation-aware Weight Quantisation): Identifies which weights are most important by looking at activation magnitudes, then protects them during quantisation. Typically better quality than GPTQ at 4-bit, especially on instruction-following tasks. Quantisation is faster. Best for: highest quality 4-bit inference.</p>
-<p><strong>bitsandbytes</strong>: On-the-fly quantisation during model loading — no separate quantisation step needed. Convenient but slower at inference (no fused kernels). Best for: quick experiments, fine-tuning (QLoRA).</p>
+<p><strong>GPTQ</strong>: Second-order Hessian optimisation per layer. Good quality. Takes 1–4 hours to quantise a 7B model. Requires calibration data. Widely supported across serving <a class="concept-link" href="agent-frameworks.html">frameworks</a>. Best for: deploying to production with prebuilt quantised models.</p>
+<p><strong><a class="concept-link" href="awq.html">AWQ</a></strong> (Activation-aware Weight <a class="concept-link" href="quantization.html">Quantisation</a>): Identifies which weights are most important by looking at activation magnitudes, then protects them during quantisation. Typically better quality than GPTQ at 4-bit, especially on instruction-following tasks. Quantisation is faster. Best for: highest quality 4-bit inference.</p>
+<p><strong><a class="concept-link" href="bitsandbytes.html">bitsandbytes</a></strong>: On-the-fly quantisation during model loading — no separate quantisation step needed. Convenient but slower at inference (no fused kernels). Best for: quick experiments, <a class="concept-link" href="finetuning.html">fine-tuning</a> (<a class="concept-link" href="qlora.html">QLoRA</a>).</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Choosing bit-width and group size</h2>
-<p><strong>Bit-width</strong>: 4-bit is the standard sweet spot — roughly 4× compression vs fp16 with &lt;1% perplexity degradation. 3-bit gives 5.3× compression but noticeable quality loss (2–4% perplexity increase). 8-bit is almost lossless but only 2× compression, better served by bitsandbytes-int8 for simplicity.</p>
+<p><strong>Bit-width</strong>: 4-bit is the standard sweet spot — roughly 4× compression vs fp16 with &lt;1% perplexity degradation. 3-bit gives 5.3× compression but noticeable quality loss (2–4% perplexity increase). 8-bit is almost lossless but only 2× compression, better served by <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a>-int8 for simplicity.</p>
 <p><strong>Group size</strong>: Controls the granularity of scale factors. Smaller group size = more scale factors = better quality but larger file size.</p>
 <ul>
 <li>group_size=128: Standard. Good quality, small overhead.</li>
 <li>group_size=32: Better quality, 4× more scale factors (~4% larger file).</li>
 <li>group_size=-1: One scale per row (column-wise). Lowest overhead, lowest quality.</li>
 </ul>
-<p><strong>desc_act=True</strong>: Activations are sorted by magnitude before quantisation. Better quality but requires reordering during inference — not all kernels support it. Use desc_act=False for maximum compatibility and speed.</p>
+<p><strong>desc_act=True</strong>: <a class="concept-link" href="activations.html">Activations</a> are sorted by magnitude before <a class="concept-link" href="quantization.html">quantisation</a>. Better quality but requires reordering during inference — not all kernels support it. Use desc_act=False for maximum compatibility and speed.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Calibration data</h2>
-<p>GPTQ needs calibration data to compute the Hessian (second-order statistics of activations). This data should be representative of your inference distribution.</p>
+<p>GPTQ needs calibration data to compute the Hessian (second-order statistics of <a class="concept-link" href="activations.html">activations</a>). This data should be representative of your inference distribution.</p>
 <pre><code class="language-python">from datasets import load_dataset
 
 # Standard: use a slice of the pretraining data
@@ -262,23 +262,20 @@ calibration_data = [
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>VRAM during quantisation</strong>: The quantisation process loads the full fp16 model. A 70B model needs ~140GB just to load, requiring multiple GPUs even though the output fits in one. Use <code>--nsamples 128</code> and <code>--wbits 4</code> with the AutoGPTQ CLI for large models.</p>
+<p><strong>VRAM during <a class="concept-link" href="quantization.html">quantisation</a></strong>: The quantisation process loads the full fp16 model. A 70B model needs ~140GB just to load, requiring multiple GPUs even though the output fits in one. Use <code>--nsamples 128</code> and <code>--wbits 4</code> with the AutoGPTQ CLI for large models.</p>
 <p><strong>Pre-quantised models on HF Hub</strong>: For popular models, pre-quantised GPTQ versions are available (search for <code>-GPTQ</code> suffix, e.g. <code>TheBloke/Llama-2-7B-GPTQ</code>). No need to quantise yourself unless you have a custom model.</p>
-<p><strong>Kernel compatibility</strong>: The ExLlamaV2 kernels that make GPTQ fast require specific GPU architectures (Ampere+). On older GPUs, fall back to AutoGPTQ's slower kernels or use a different quantisation scheme.</p>
-<p><strong>Not suitable for fine-tuning</strong>: GPTQ-quantised weights can't be fine-tuned directly (gradients don't flow through integer weights). For fine-tuning, use QLoRA with bitsandbytes instead.</p>
+<p><strong>Kernel compatibility</strong>: The ExLlamaV2 kernels that make GPTQ fast require specific GPU <a class="concept-link" href="transformer-arch.html">architectures</a> (Ampere+). On older GPUs, fall back to AutoGPTQ's slower kernels or use a different quantisation scheme.</p>
+<p><strong>Not suitable for <a class="concept-link" href="finetuning.html">fine-tuning</a></strong>: GPTQ-quantised weights can't be fine-tuned directly (gradients don't flow through integer weights). For fine-tuning, use <a class="concept-link" href="qlora.html">QLoRA</a> with <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a> instead.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="gguf-llamacpp.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">GGUF / llama.cpp</span></a>
-<a href="awq.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">AWQ</span></a>
-<a href="bitsandbytes.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">BitsAndBytes</span></a>
-<a href="vllm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
-<a href="ollama.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
+<a class="rc-card" href="gguf-llamacpp.html" style="--rc-accent:#64748b"><span class="rc-label">GGUF / llama.cpp</span></a>
+<a class="rc-card" href="awq.html" style="--rc-accent:#64748b"><span class="rc-label">AWQ</span></a>
+<a class="rc-card" href="bitsandbytes.html" style="--rc-accent:#64748b"><span class="rc-label">BitsAndBytes</span></a>
+<a class="rc-card" href="vllm.html" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
+<a class="rc-card" href="ollama.html" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
 </div>
 </div>
 <footer>

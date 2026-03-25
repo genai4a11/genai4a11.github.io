@@ -153,17 +153,17 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>MHA vs MQA vs GQA</h2>
-<p>Three variants of multi-head attention differ in how many key-value (KV) head sets they maintain:</p>
+<p>Three variants of <a class="concept-link" href="multi-head-attention.html">multi-head attention</a> differ in how many key-value (KV) head sets they maintain:</p>
 <ul>
-<li><strong>Multi-Head Attention (MHA)</strong>: Original Transformer attention. Each of H query heads has its own K and V projection. KV cache grows with H.</li>
-<li><strong>Multi-Query Attention (MQA)</strong>: All query heads share a single KV head. Extreme KV cache savings but slight quality drop — used in PaLM, early Falcon.</li>
+<li><strong>Multi-Head Attention (MHA)</strong>: Original Transformer attention. Each of H query heads has its own K and V projection. <a class="concept-link" href="kv-cache.html">KV cache</a> grows with H.</li>
+<li><strong><a class="concept-link" href="multi-query-retrieval.html">Multi-Query</a> Attention (MQA)</strong>: All query heads share a single KV head. Extreme KV cache savings but slight quality drop — used in PaLM, early Falcon.</li>
 <li><strong>Grouped Query Attention (GQA)</strong>: Query heads are split into G groups; each group shares one KV head. Interpolates between MHA (G=H) and MQA (G=1). Llama 3 70B uses H=64 query heads and G=8 KV heads.</li>
 </ul>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Why KV cache size matters</h2>
-<p>During autoregressive generation, you cache the K and V tensors for every previously generated token to avoid recomputing them. For a model with H attention heads, d_model dimensions, and context length L, the KV cache size per layer is:</p>
+<p>During autoregressive generation, you cache the K and V tensors for every previously generated token to avoid recomputing them. For a model with H attention heads, d_model dimensions, and context length L, the <a class="concept-link" href="kv-cache.html">KV cache</a> size per layer is:</p>
 <p><code>2 × L × d_head × H_kv × bytes_per_element</code></p>
 <p>For Llama 3 70B (bf16) with 80 layers, 4096 d_head, 8 KV heads, at context length 8192:</p>
 <p><code>2 × 8192 × 128 × 8 × 80 × 2 bytes ≈ 21 GB</code></p>
@@ -225,35 +225,32 @@ print("GQA (8 KV heads): ", kv_cache_gb(80, 8192,  8, 128), "GB")
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>GQA in Llama 3 and Mistral</h2>
-<p>All modern efficient LLMs use GQA. Llama 3 8B uses 8 KV heads and 32 query heads (4:1 ratio). Llama 3 70B uses 8 KV heads and 64 query heads (8:1 ratio). Mistral 7B uses 8 KV heads and 32 query heads. Gemma 2 uses GQA with varying group sizes by layer size.</p>
+<p>All modern efficient <a class="concept-link" href="llms.html">LLMs</a> use GQA. Llama 3 8B uses 8 KV heads and 32 query heads (4:1 ratio). Llama 3 70B uses 8 KV heads and 64 query heads (8:1 ratio). <a class="concept-link" href="mistral.html">Mistral 7B</a> uses 8 KV heads and 32 query heads. <a class="concept-link" href="gemma2.html">Gemma 2</a> uses GQA with varying group sizes by layer size.</p>
 <p>The configuration is in the model's <code>config.json</code>: look for <code>num_key_value_heads</code> vs <code>num_attention_heads</code>. If they differ, it's GQA (or MQA if <code>num_key_value_heads == 1</code>).</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Training and conversion</h2>
-<p>GQA models must be trained (or fine-tuned) with GQA from the start — you can't simply remove KV heads from a trained MHA model without significant quality loss. However, the Ainslie et al. (2023) GQA paper showed that you can convert an MHA checkpoint to GQA by mean-pooling the KV heads of each group and then fine-tuning for a fraction of the original training compute (&lt;5%), recovering most of the original quality.</p>
+<p>GQA models must be trained (or fine-tuned) with GQA from the start — you can't simply remove KV heads from a trained MHA model without significant quality loss. However, the Ainslie et al. (2023) GQA paper showed that you can convert an MHA checkpoint to GQA by mean-pooling the KV heads of each group and then <a class="concept-link" href="finetuning.html">fine-tuning</a> for a fraction of the original training compute (&lt;5%), recovering most of the original quality.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
-<li><strong>repeat_interleave vs expand</strong>: In inference code, you can avoid materialising repeated KV heads by using <code>expand</code> (zero-copy view) instead of <code>repeat_interleave</code> (copies data). Flash Attention 2 handles GQA natively without expansion.</li>
+<li><strong>repeat_interleave vs expand</strong>: In inference code, you can avoid materialising repeated KV heads by using <code>expand</code> (zero-copy view) instead of <code>repeat_interleave</code> (copies data). <a class="concept-link" href="flash-attn.html">Flash Attention 2</a> handles GQA natively without expansion.</li>
 <li><strong>Flash Attention 2 GQA</strong>: Use <code>flash_attn_func</code> with the <code>gqa</code> argument — it handles the group broadcasting internally and is significantly faster than the naive repeat approach.</li>
 <li><strong>Checkpoint loading</strong>: When loading GQA weights with HuggingFace, verify <code>config.num_key_value_heads</code> matches the checkpoint. Mismatches cause silent shape errors.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="paged-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Paged Attention</span></a>
-<a href="speculative-decoding.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Speculative Decoding</span></a>
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
-<a href="multi-head-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
-<a href="flash-attn.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
+<a class="rc-card" href="paged-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Paged Attention</span></a>
+<a class="rc-card" href="speculative-decoding.html" style="--rc-accent:#64748b"><span class="rc-label">Speculative Decoding</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="multi-head-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
+<a class="rc-card" href="flash-attn.html" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
 </div>
 </div>
 <footer>

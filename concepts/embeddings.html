@@ -506,7 +506,7 @@
 <div class="section-marker">01 — Definition</div>
 <h2>What Are Embeddings?</h2>
 <p>Embeddings map text to dense vectors in a continuous space where semantic similarity equals geometric proximity. A sentence becomes a point in 768 or 1024 dimensional space. Sentences that mean the same thing end up close together; unrelated sentences are far apart.</p>
-<p><strong>Use cases:</strong> semantic search (find similar documents), clustering (group documents by meaning), classification (label documents based on vector nearness), RAG (retrieval-augmented generation), cross-lingual matching (find equivalent meanings across languages).</p>
+<p><strong>Use cases:</strong> semantic search (find similar documents), clustering (group documents by meaning), classification (label documents based on vector nearness), <a class="concept-link" href="rag.html">RAG</a> (retrieval-augmented generation), cross-lingual matching (find equivalent meanings across languages).</p>
 <p><strong>Not a language model:</strong> Embeddings come from encoder-only architecture (BERT-style) or late-interaction models. They don't generate text — they compress it into a fixed vector. No autoregressive generation happens here.</p>
 <p><strong>The core insight:</strong> word relationships are algebraic. "king" - "man" + "woman" ≈ "queen". The vector space preserves semantic relationships, making arithmetic on embeddings meaningful.</p>
 <h3>Example: Computing Cosine Similarity</h3>
@@ -655,7 +655,7 @@ print(f"Sentences 0-2: {sim_02:.3f}")</div>
 </table>
 </div>
 <p><strong>Cosine similarity</strong> is the most common. It measures the angle between vectors, not their magnitude. Two vectors pointing in the same direction have cosine similarity of 1, opposite directions give -1, perpendicular gives 0.</p>
-<p><strong>Dot product</strong> is equivalent to cosine when vectors are L2-normalized (unit length). Most production embedding models normalize automatically. Dot product is faster to compute and FAISS/pgvector HNSW support it natively for fast ANN search.</p>
+<p><strong>Dot product</strong> is equivalent to cosine when vectors are L2-normalized (unit length). Most production embedding models normalize automatically. Dot product is faster to compute and FAISS/<a class="concept-link" href="pgvector.html">pgvector</a> HNSW support it natively for fast ANN search.</p>
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Best practice:</strong> Always normalize embeddings at index time and query time. Dot product on normalized vectors equals cosine similarity and enables the fastest ANN algorithms.</span>
@@ -725,17 +725,17 @@ small = client.embeddings.create(
 </tbody>
 </table>
 </div>
-<p>For most RAG systems, 512–1024 dimensions is the sweet spot. You get 95–98% of the quality with a 4–16× storage savings.</p>
+<p>For most <a class="concept-link" href="rag-systems.html">RAG systems</a>, 512–1024 dimensions is the sweet spot. You get 95–98% of the quality with a 4–16× storage savings.</p>
 </div>
 <!-- ── 5. FINE-TUNING ── -->
 <div class="section-block" id="finetuning">
 <div class="section-marker">05 — Customization</div>
 <h2>Fine-Tuning Embeddings</h2>
-<p>Sometimes the best open-source or commercial embeddings aren't domain-specific enough. Fine-tuning customizes them to your data.</p>
+<p>Sometimes the best open-source or commercial embeddings aren't domain-specific enough. <a class="concept-link" href="finetuning.html">Fine-tuning</a> customizes them to your data.</p>
 <p><strong>When to fine-tune:</strong> Your domain has specialized terminology (medical, legal, code), queries are out-of-distribution, or you have labeled query-document pairs to train on.</p>
-<p><strong>Training signals:</strong> (1) Human relevance labels — annotators mark (query, document) pairs as relevant or not. (2) Synthetic pairs via LLM — GPT-4 generates questions from documents. (3) Hard negatives from BM25 — take the top 10 BM25 results and use them as negative examples to distinguish exact match from semantic match.</p>
-<p><strong>Loss functions:</strong> InfoNCE / contrastive loss (push positive, pull negative), triplet loss (anchor, positive, negative), multiple negatives ranking loss (most common with Sentence Transformers). The last one is simple and effective: for each query, you have one positive document and N-1 random negatives; the loss pulls the positive closer and pushes negatives away.</p>
-<p><strong>Frameworks:</strong> Sentence Transformers (Python), Unstructured.io, LlamaIndex fine-tuning, FlagEmbedding (BAAI).</p>
+<p><strong>Training signals:</strong> (1) Human relevance labels — annotators mark (query, document) pairs as relevant or not. (2) Synthetic pairs via LLM — GPT-4 generates questions from documents. (3) Hard negatives from <a class="concept-link" href="bm25.html">BM25</a> — take the top 10 BM25 results and use them as negative examples to distinguish exact match from semantic match.</p>
+<p><strong>Loss functions:</strong> InfoNCE / contrastive loss (push positive, pull negative), triplet loss (anchor, positive, negative), multiple negatives ranking loss (most common with <a class="concept-link" href="sentence-transformers.html">Sentence Transformers</a>). The last one is simple and effective: for each query, you have one positive document and N-1 random negatives; the loss pulls the positive closer and pushes negatives away.</p>
+<p><strong><a class="concept-link" href="agent-frameworks.html">Frameworks</a>:</strong> Sentence Transformers (Python), <a class="concept-link" href="unstructured.html">Unstructured.io</a>, <a class="concept-link" href="llamaindex.html">LlamaIndex</a> fine-tuning, FlagEmbedding (BAAI).</p>
 <h3>Example: Fine-tuning with Sentence Transformers</h3>
 <div class="example-box">from sentence_transformers import SentenceTransformer, InputExample, losses
 from torch.utils.data import DataLoader
@@ -760,7 +760,7 @@ model.save('my-domain-embeddings')</div>
 <div class="section-block" id="reranking">
 <div class="section-marker">06 — Two-Stage Retrieval</div>
 <h2>Cross-Encoder Reranking</h2>
-<p>A bi-encoder retrieves fast by embedding query and documents separately. But it can't capture fine-grained matching — no cross-attention between query and document. Cross-encoders fix this.</p>
+<p>A bi-encoder retrieves fast by embedding query and documents separately. But it can't capture fine-grained matching — no <a class="concept-link" href="cross-attention.html">cross-attention</a> between query and document. Cross-encoders fix this.</p>
 <p><strong>Bi-encoder:</strong> Embed query and doc separately, compute similarity. Fast (dot product on pre-computed vectors), but no query-document interaction. Typical recall: 95–99% of top documents.</p>
 <p><strong>Cross-encoder:</strong> Concatenate query + document, score them jointly in a single forward pass. Much higher quality because it sees the full context, but O(N) forward passes for N candidates. Typical improvement: +5–15% MRR (Mean Reciprocal Rank).</p>
 <p><strong>The two-stage pipeline:</strong> Retrieve top-100 with bi-encoder (fast ANN search) → rerank top-100 with cross-encoder (slower but higher quality) → return top-5 to user.</p>
@@ -818,11 +818,11 @@ final_results = [documents[i] for i, _ in reranked]</div>
 <div class="section-marker">07 — Deployment</div>
 <h2>Production Considerations</h2>
 <p>Moving embeddings from notebook to production introduces practical challenges:</p>
-<p><strong>Embedding index updates:</strong> Add-only is easy (append new vectors to the index). Deletion requires a soft-delete flag + periodic reindex. Many vector databases support incremental updates, but graph-based ANN indices (HNSW) are expensive to rebuild.</p>
+<p><strong>Embedding index updates:</strong> Add-only is easy (append new vectors to the index). Deletion requires a soft-delete flag + periodic reindex. Many <a class="concept-link" href="vector-dbs.html">vector databases</a> support incremental updates, but graph-based ANN indices (HNSW) are expensive to rebuild.</p>
 <p><strong>Chunking affects quality:</strong> Very long chunks (2000+ tokens) dilute the signal — the vector blurs across many concepts. Very short chunks (50 tokens) lose context. The sweet spot is 256–512 tokens per chunk with 50-token overlap. This is a strong baseline; test on your data.</p>
-<p><strong>Multilingual:</strong> bge-m3, multilingual-e5-large, Cohere embed-multilingual-v3. These handle 100+ languages, but retrieval quality varies. Test on your target languages using MTEB multilingual tasks before committing.</p>
+<p><strong>Multilingual:</strong> bge-m3, multilingual-e5-large, <a class="concept-link" href="cohere-embeddings.html">Cohere embed</a>-multilingual-v3. These handle 100+ languages, but retrieval quality varies. Test on your target languages using MTEB multilingual tasks before committing.</p>
 <p><strong>Modality mismatch:</strong> Don't use the same embedding model for code, multilingual text, and general English without testing. Code embeddings, legal documents, and user queries have very different optimal models. Cross-lingual or code-to-natural-language retrieval is especially risky.</p>
-<p><strong>Tools &amp; infrastructure:</strong></p>
+<p><strong>Tools &amp; <a class="concept-link" href="infra.html">infrastructure</a>:</strong></p>
 <div class="tools-grid">
 <div class="tool-card">
 <div class="tool-category">Libraries</div>
@@ -893,7 +893,7 @@ final_results = [documents[i] for i, _ in reranked]</div>
 <div class="section-block" id="learning-path">
 <div class="section-marker">LEARNING PATH</div>
 <h2>Learning Path</h2>
-<p>Embeddings are foundational — they underpin RAG, semantic search, recommendations, and clustering. Start here before building any retrieval system.</p>
+<p>Embeddings are foundational — they underpin <a class="concept-link" href="rag.html">RAG</a>, semantic search, recommendations, and clustering. Start here before building any retrieval system.</p>
 <div class="flow-diagram">
 <div class="flow-box">What is a Vector?<span class="flow-label">cosine similarity</span></div>
 <div class="flow-arrow">→</div>
@@ -908,19 +908,16 @@ final_results = [documents[i] for i, _ in reranked]</div>
 <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Embed one sentence, look at the numbers</h4><p>Call <code>openai.embeddings.create()</code> or <code>sentence_transformers.encode()</code> on "The cat sat on the mat." Print the vector. It's just 1536 (or 384) floats. Demystify the abstraction.</p></div></div>
 <div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Compute cosine similarity by hand</h4><p>Embed "cat on mat" and "feline on rug". Compute <code>np.dot(a, b) / (norm(a)*norm(b))</code>. See that it's ~0.93. Now embed "stock market". See ~0.45. Intuition locked in.</p></div></div>
 <div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Build a 100-doc semantic search system</h4><p>Take any dataset (Wikipedia articles, your own docs), embed them, store in ChromaDB, then query with a question. This is the seed of every RAG system.</p></div></div>
-<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Evaluate your embedding model</h4><p>Run MTEB benchmarks for retrieval (<code>pip install mteb</code>). BGE-M3 and E5-Mistral top the charts; text-embedding-3-large is the best hosted option. Pick based on your language and domain.</p></div></div>
+<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Evaluate your embedding model</h4><p>Run MTEB <a class="concept-link" href="benchmarks.html">benchmarks</a> for retrieval (<code>pip install mteb</code>). BGE-M3 and E5-Mistral top the charts; text-embedding-3-large is the best hosted option. Pick based on your language and domain.</p></div></div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="vector-dbs.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Vector Databases</span></a>
-<a href="retrieval-tech.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Retrieval Techniques</span></a>
-<a href="post-retrieval.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Post-Retrieval</span></a>
-<a href="advanced-rag.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Advanced RAG</span></a>
-<a href="sentence-transformers.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
+<a class="rc-card" href="vector-dbs.html" style="--rc-accent:#3b82f6"><span class="rc-label">Vector Databases</span></a>
+<a class="rc-card" href="retrieval-tech.html" style="--rc-accent:#3b82f6"><span class="rc-label">Retrieval Techniques</span></a>
+<a class="rc-card" href="post-retrieval.html" style="--rc-accent:#3b82f6"><span class="rc-label">Post-Retrieval</span></a>
+<a class="rc-card" href="advanced-rag.html" style="--rc-accent:#3b82f6"><span class="rc-label">Advanced RAG</span></a>
+<a class="rc-card" href="sentence-transformers.html" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
 </div>
 </div>
 <div class="page-footer">

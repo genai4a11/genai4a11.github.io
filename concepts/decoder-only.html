@@ -153,8 +153,8 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>The decoder-only design</h2>
-<p>A decoder-only transformer is a stack of N identical blocks, each containing: <strong>Causal Self-Attention → Add &amp; Norm → FFN → Add &amp; Norm</strong>. There's no encoder, no cross-attention — just causal self-attention and feed-forward layers stacked repeatedly.</p>
-<p>The "decoder-only" name is historical (from the original encoder-decoder transformer for translation). Modern LLMs (GPT-2 through GPT-4, Llama, Mistral, Claude, Gemini) are all decoder-only. The architecture works for generation because: (1) causal masking allows training on all token positions simultaneously via teacher forcing; (2) at inference, the model generates one token at a time, appending each new token to the growing context.</p>
+<p>A decoder-only transformer is a stack of N identical blocks, each containing: <strong>Causal <a class="concept-link" href="self-attention.html">Self-Attention</a> → Add &amp; Norm → FFN → Add &amp; Norm</strong>. There's no encoder, no <a class="concept-link" href="cross-attention.html">cross-attention</a> — just causal self-attention and feed-forward layers stacked repeatedly.</p>
+<p>The "decoder-only" name is historical (from the original encoder-decoder transformer for translation). Modern <a class="concept-link" href="llms.html">LLMs</a> (GPT-2 through GPT-4, Llama, Mistral, Claude, Gemini) are all decoder-only. The architecture works for generation because: (1) causal masking allows training on all token positions simultaneously via teacher forcing; (2) at inference, the model generates one token at a time, appending each new token to the growing context.</p>
 <p>Compared to encoder-only: each token only sees its past, giving it a narrower view. But the model compensates with scale — LLMs have billions of parameters and trillions of training tokens, encoding world knowledge directly into weights rather than relying on bidirectional context within a single forward pass.</p>
 </div>
 <div class="section-block" id="s2">
@@ -267,7 +267,7 @@ def greedy_next(logits): return logits.argmax().item()
 <div class="section-marker">SECTION 05</div>
 <h2>KV cache</h2>
 <p>During autoregressive generation, at each step the model must compute K and V for the entire prefix (all previously generated tokens). Without caching, generating token t requires O(t) attention computation — total generation is O(n²).</p>
-<p>The KV cache stores K and V for all past tokens. At each new step, only compute Q, K, V for the new token; then append K and V to the cache and attend over cached + new K/V. This reduces generation to O(n) total.</p>
+<p>The <a class="concept-link" href="kv-cache.html">KV cache</a> stores K and V for all past tokens. At each new step, only compute Q, K, V for the new token; then append K and V to the cache and attend over cached + new K/V. This reduces generation to O(n) total.</p>
 <pre><code class="language-python">class CachedAttention(nn.Module):
     def __init__(self, d_model, num_heads):
         super().__init__()
@@ -344,22 +344,19 @@ print(f"Params: {sum(p.numel() for p in model.parameters()):,}")  # ~6.5M
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Pre-norm vs post-norm matters.</strong> The original transformer uses post-norm (LayerNorm after the residual add). Modern LLMs (GPT-2+, Llama) use pre-norm (LayerNorm before the attention/FFN). Pre-norm is more stable to train at large scale — gradients flow more cleanly through the residual stream. If you see training instability, check whether you're using post-norm.</p>
-<p><strong>The FFN is the majority of parameters.</strong> For a 7B Llama model, attention is ~25% of parameters, FFN is ~65%, embeddings ~10%. The FFN (two linear layers with a non-linearity, often SwiGLU) is where most of the "factual knowledge" is stored. Don't neglect FFN optimisation when profiling inference speed.</p>
+<p><strong>Pre-norm vs post-norm matters.</strong> The original transformer uses post-norm (LayerNorm after the residual add). Modern <a class="concept-link" href="llms.html">LLMs</a> (GPT-2+, Llama) use pre-norm (LayerNorm before the attention/FFN). Pre-norm is more stable to train at large scale — gradients flow more cleanly through the residual stream. If you see training instability, check whether you're using post-norm.</p>
+<p><strong>The FFN is the majority of parameters.</strong> For a 7B Llama model, attention is ~25% of parameters, FFN is ~65%, <a class="concept-link" href="embeddings.html">embeddings</a> ~10%. The FFN (two linear layers with a non-linearity, often SwiGLU) is where most of the "factual knowledge" is stored. Don't neglect FFN optimisation when profiling inference speed.</p>
 <p><strong>Temperature 0 is not greedy decoding.</strong> Setting temperature to 0 makes all logits divide by 0 (or near-0), producing NaN or all-uniform distributions. Most inference libraries implement "temperature=0" as argmax (true greedy decoding) as a special case. When writing your own sampler, handle temperature≤0 explicitly with argmax rather than the division formula.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="encoder-only.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">BERT / Encoder-only</span></a>
-<a href="enc-dec.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">T5 / Enc-Dec</span></a>
-<a href="mamba-ssm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Mamba SSM</span></a>
-<a href="hybrid-llm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Hybrid LLM Arch</span></a>
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="encoder-only.html" style="--rc-accent:#64748b"><span class="rc-label">BERT / Encoder-only</span></a>
+<a class="rc-card" href="enc-dec.html" style="--rc-accent:#64748b"><span class="rc-label">T5 / Enc-Dec</span></a>
+<a class="rc-card" href="mamba-ssm.html" style="--rc-accent:#64748b"><span class="rc-label">Mamba SSM</span></a>
+<a class="rc-card" href="hybrid-llm.html" style="--rc-accent:#64748b"><span class="rc-label">Hybrid LLM Arch</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
 </div>
 </div>
 <footer>

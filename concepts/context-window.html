@@ -154,15 +154,15 @@
 <div class="section-marker">SECTION 01</div>
 <h2>What the context window is</h2>
 <p>The context window (also called context length) is the maximum number of tokens an LLM can attend to in a single forward pass. Input tokens (your prompt + conversation history) and output tokens (the generated response) together must fit within this limit.</p>
-<p>Tokens are roughly 3/4 of a word in English: "hello world" = 2 tokens, a typical paragraph = 100–150 tokens, a typical A4 page = 400–600 tokens. Common benchmarks: 4K tokens ≈ 3,000 words, 128K tokens ≈ 96,000 words ≈ a short novel, 1M tokens ≈ 750,000 words ≈ the full Harry Potter series.</p>
+<p>Tokens are roughly 3/4 of a word in English: "hello world" = 2 tokens, a typical paragraph = 100–150 tokens, a typical A4 page = 400–600 tokens. Common <a class="concept-link" href="benchmarks.html">benchmarks</a>: 4K tokens ≈ 3,000 words, 128K tokens ≈ 96,000 words ≈ a short novel, 1M tokens ≈ 750,000 words ≈ the full Harry Potter series.</p>
 <p>The context window is not just about length — it's about what the model can reason over. Everything in the context is attended to simultaneously (O(n²) attention), and positions early in the context can affect positions late in the context. This is fundamentally different from a database query or search index.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>KV-cache and memory cost</h2>
-<p>During autoregressive generation, the model computes key and value tensors for every token in the context at every layer. These are cached to avoid recomputation — the KV-cache. Memory cost scales as:</p>
+<p>During autoregressive generation, the model computes key and value tensors for every token in the context at every layer. These are cached to avoid recomputation — the <a class="concept-link" href="kv-cache.html">KV-cache</a>. <a class="concept-link" href="agent-memory.html">Memory</a> cost scales as:</p>
 <p><code>KV-cache bytes = 2 × num_layers × num_kv_heads × head_dim × context_length × bytes_per_element</code></p>
-<p>For Llama 3.1 70B (fp16): 80 layers × 8 KV heads × 128 head_dim × 2 bytes × 2 (K+V) = 328 bytes per token. At 128K tokens: 328 × 128,000 = 42GB of KV-cache alone — more than the model weights.</p>
+<p>For <a class="concept-link" href="llama3.html">Llama 3.1</a> 70B (fp16): 80 layers × 8 KV heads × 128 head_dim × 2 bytes × 2 (K+V) = 328 bytes per token. At 128K tokens: 328 × 128,000 = 42GB of KV-cache alone — more than the model weights.</p>
 <pre><code class="language-python">def kv_cache_gb(num_layers, num_kv_heads, head_dim, seq_len, dtype_bytes=2):
     # Returns KV-cache memory in GB
     kv_per_token = 2 * num_layers * num_kv_heads * head_dim * dtype_bytes
@@ -174,20 +174,20 @@ print(f"8K context:   {kv_cache_gb(80, 8, 128, 8_000):.1f} GB")
 # 128K context: 41.9 GB
 # 8K context:    2.6 GB
 </code></pre>
-<p>This is why serving infrastructure matters: long context requests are memory-hungry and require careful batching to avoid OOM.</p>
+<p>This is why serving <a class="concept-link" href="infra.html">infrastructure</a> matters: long context requests are memory-hungry and require careful batching to avoid OOM.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Position encoding limits</h2>
-<p>LLMs learn position information through positional encodings (RoPE, ALiBi, or absolute). These encodings are trained on sequences up to the training context length. At inference time, extrapolating beyond the training length can degrade quality.</p>
-<p><strong>RoPE (Rotary Position Embedding)</strong>: Used by Llama, Mistral. Can be extrapolated beyond training length using scaling techniques (YaRN, LongRoPE). Models like Llama 3.1 use YaRN scaling to extend 8K training length to 128K inference length.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> learn position information through positional encodings (<a class="concept-link" href="rope.html">RoPE</a>, <a class="concept-link" href="alibi.html">ALiBi</a>, or absolute). These encodings are trained on sequences up to the training context length. At inference time, extrapolating beyond the training length can degrade quality.</p>
+<p><strong>RoPE (Rotary Position <a class="concept-link" href="embeddings.html">Embedding</a>)</strong>: Used by Llama, Mistral. Can be extrapolated beyond training length using scaling techniques (YaRN, LongRoPE). Models like <a class="concept-link" href="llama3.html">Llama 3.1</a> use YaRN scaling to extend 8K training length to 128K inference length.</p>
 <p><strong>ALiBi</strong>: Uses attention biases that scale linearly with distance. Better extrapolation than learned absolute positions, but still degrades for very long contexts.</p>
-<p>The practical implication: a model advertised as "128K context" may actually extrapolate a shorter training context. Check whether quality benchmarks at long context are included in the model card.</p>
+<p>The practical implication: a model advertised as "128K context" may actually extrapolate a shorter training context. Check whether quality <a class="concept-link" href="benchmarks.html">benchmarks</a> at long context are included in the model card.</p>
 </div>
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Lost in the middle</h2>
-<p>A surprising finding (Liu et al. 2023): LLMs perform best when relevant information is at the <em>start</em> or <em>end</em> of the context, and worst when it's in the <em>middle</em>. Performance degrades roughly in a U-shape across position.</p>
+<p>A surprising finding (Liu et al. 2023): <a class="concept-link" href="llms.html">LLMs</a> perform best when relevant information is at the <em>start</em> or <em>end</em> of the context, and worst when it's in the <em>middle</em>. Performance degrades roughly in a U-shape across position.</p>
 <pre><code class="language-python"># Demonstrate "lost in the middle" with a simple test
 import openai
 
@@ -216,7 +216,7 @@ Q: {question}"}],
 <h2>Long context strategies</h2>
 <p>Given the cost and quality trade-offs, here's when to use different approaches:</p>
 <p><strong>Use long context directly when</strong>: you need to reason over the relationships between many parts of a document (not just retrieve a fact), the document is &lt;50K tokens (cost manageable), or you're prototyping and don't want to build a retrieval pipeline.</p>
-<p><strong>Use RAG instead when</strong>: the total corpus is too large to fit in context, you need to search across many documents, cost is a concern (&gt;50K tokens per query gets expensive), or you need to cite specific sources.</p>
+<p><strong>Use <a class="concept-link" href="rag.html">RAG</a> instead when</strong>: the total corpus is too large to fit in context, you need to search across many documents, cost is a concern (&gt;50K tokens per query gets expensive), or you need to cite specific sources.</p>
 <p><strong>Hybrid approach</strong>: retrieve the top-K relevant chunks, then pass them in the context. This combines the scalability of retrieval with the reasoning power of in-context processing.</p>
 <p><strong>Chunk-and-summarise</strong>: For very long documents, recursively summarise chunks and query the summaries. Loses detail but scales to arbitrarily long inputs.</p>
 </div>
@@ -238,7 +238,7 @@ Q: {question}"}],
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Input vs output tokens</strong>: Context windows include both input and output. If your context is 100K tokens, you have little room left for output. Always reserve capacity: if context window = 128K and input = 120K, max output = 8K.</p>
-<p><strong>Counting tokens</strong>: Use the model's tokenizer to count before sending. A request that exceeds the context limit will fail with an API error. For OpenAI models, use the <code>tiktoken</code> library. For others, use the HF tokenizer.</p>
+<p><strong>Counting tokens</strong>: Use the model's <a class="concept-link" href="tokenization.html">tokenizer</a> to count before sending. A request that exceeds the context limit will fail with an API error. For OpenAI models, use the <code>tiktoken</code> library. For others, use the HF tokenizer.</p>
 <pre><code class="language-python">import tiktoken
 enc = tiktoken.encoding_for_model("gpt-4o")
 token_count = len(enc.encode(your_text))
@@ -247,17 +247,14 @@ print(f"Token count: {token_count}")
 <p><strong>Billing</strong>: You pay for the full context on every API call. With a 50K-token system prompt and 128K context models, sending one message costs you 50K input tokens even if the user typed two words.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="tokenization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Tokenization</span></a>
-<a href="scaling-laws.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Scaling Laws</span></a>
-<a href="moe.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Mixture of Experts</span></a>
-<a href="gpt4o.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">GPT-4o</span></a>
-<a href="claude35.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Claude 3.5 Sonnet</span></a>
+<a class="rc-card" href="tokenization.html" style="--rc-accent:#64748b"><span class="rc-label">Tokenization</span></a>
+<a class="rc-card" href="scaling-laws.html" style="--rc-accent:#64748b"><span class="rc-label">Scaling Laws</span></a>
+<a class="rc-card" href="moe.html" style="--rc-accent:#64748b"><span class="rc-label">Mixture of Experts</span></a>
+<a class="rc-card" href="gpt4o.html" style="--rc-accent:#64748b"><span class="rc-label">GPT-4o</span></a>
+<a class="rc-card" href="claude35.html" style="--rc-accent:#64748b"><span class="rc-label">Claude 3.5 Sonnet</span></a>
 </div>
 </div>
 <footer>

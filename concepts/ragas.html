@@ -153,8 +153,8 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>What RAGAS measures</h2>
-<p>Traditional NLP evaluation (BLEU, ROUGE) compares generated text to a reference answer — which requires expensive human-written ground truth for every test case. RAGAS flips this: it uses an LLM judge to evaluate quality dimensions directly, requiring only questions and the retrieved context + generated answer your pipeline produced.</p>
-<p>This means you can evaluate a RAG pipeline with just a list of realistic questions. No need to write expected answers by hand. The LLM judge (GPT-4, Claude, etc.) scores each response on the dimensions that actually matter for RAG: did the answer faithfully use the retrieved context? Was the right context retrieved? Does the answer actually address the question?</p>
+<p>Traditional NLP <a class="concept-link" href="eval.html">evaluation</a> (BLEU, ROUGE) compares generated text to a reference answer — which requires expensive human-written ground truth for every test case. RAGAS flips this: it uses an LLM judge to evaluate quality dimensions directly, requiring only questions and the retrieved context + generated answer your pipeline produced.</p>
+<p>This means you can evaluate a <a class="concept-link" href="rag.html">RAG</a> pipeline with just a list of realistic questions. No need to write expected answers by hand. The LLM judge (GPT-4, Claude, etc.) scores each response on the dimensions that actually matter for RAG: did the answer faithfully use the retrieved context? Was the right context retrieved? Does the answer actually address the question?</p>
 <p>RAGAS works at two levels: <strong>component evaluation</strong> (how good is your retriever? how good is your generator?) and <strong>end-to-end evaluation</strong> (how good is the full pipeline for real user questions?).</p>
 </div>
 <div class="section-block" id="s2">
@@ -164,7 +164,7 @@
 <p><strong>Answer Relevance</strong>: Does the answer actually address the question asked? Measures if the answer is on-topic. Score 0–1. An answer that's factually correct but addresses a different question scores low.</p>
 <p><strong>Context Precision</strong>: Are the retrieved chunks actually relevant to the question? Measures retrieval quality. Score 0–1. If you retrieve 5 chunks but only 1 is relevant, precision is low even if that 1 chunk is enough to answer.</p>
 <p><strong>Context Recall</strong> (requires reference answers): Did the retrieval find all the information needed to answer? Measures retrieval coverage. Needs ground-truth answers to compare against. Score 0–1.</p>
-<p>The three reference-free metrics (Faithfulness + Answer Relevance + Context Precision) form the "RAG Triad" you can run with zero annotation cost.</p>
+<p>The three reference-free metrics (Faithfulness + Answer Relevance + Context Precision) form the "<a class="concept-link" href="rag.html">RAG</a> Triad" you can run with zero annotation cost.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -241,7 +241,7 @@ print(df[["question", "faithfulness", "answer_relevancy", "context_precision"]])
 worst = df.nsmallest(5, "faithfulness")
 print(worst[["question", "faithfulness", "answer_relevancy"]])
 </code></pre>
-<p>For real pipelines, generate the <code>answer</code> and <code>contexts</code> columns by running your actual RAG pipeline on each question before calling <code>evaluate()</code>. This lets you test any retriever/generator combination.</p>
+<p>For real pipelines, generate the <code>answer</code> and <code>contexts</code> columns by running your actual <a class="concept-link" href="rag.html">RAG</a> pipeline on each question before calling <code>evaluate()</code>. This lets you test any retriever/generator combination.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
@@ -249,8 +249,8 @@ print(worst[["question", "faithfulness", "answer_relevancy"]])
 <p>Scores under 0.7 signal a serious problem. Scores 0.7–0.85 are typical for early-stage pipelines with room to improve. Above 0.9 across all metrics is production-ready for most use cases.</p>
 <p><strong>Low Faithfulness</strong> → your generator is hallucinating. Fix: add explicit instructions ("answer only using the provided context"), use a less creative model, or lower temperature. Low faithfulness despite good context means the LLM is ignoring retrieved evidence.</p>
 <p><strong>Low Answer Relevancy</strong> → your generated answers are off-topic or verbose. Fix: tighten your system prompt, add examples of good answers, reduce max_tokens to prevent rambling.</p>
-<p><strong>Low Context Precision</strong> → your retriever returns noisy chunks. Fix: increase similarity threshold, use a better embedding model, try hybrid retrieval (BM25 + vector), or add a re-ranker.</p>
-<p>Always segment your evaluation dataset by question type (factual lookup vs. reasoning vs. comparison). A single average score hides category-specific failures.</p>
+<p><strong>Low Context Precision</strong> → your retriever returns noisy chunks. Fix: increase similarity threshold, use a better <a class="concept-link" href="embeddings.html">embedding</a> model, try hybrid retrieval (<a class="concept-link" href="bm25.html">BM25</a> + vector), or add a re-ranker.</p>
+<p>Always segment your <a class="concept-link" href="eval.html">evaluation</a> dataset by question type (factual lookup vs. reasoning vs. comparison). A single average score hides category-specific failures.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
@@ -294,23 +294,20 @@ results = evaluate(
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>The judge LLM's quality sets the ceiling.</strong> If you use a weak judge (GPT-3.5, a small local model), scores become unreliable — the judge can't distinguish subtle faithfulness violations. Use Claude 3 Haiku or GPT-4o-mini minimum; use Claude 3.5 Sonnet for high-stakes evaluations.</p>
+<p><strong>The judge LLM's quality sets the ceiling.</strong> If you use a weak judge (GPT-3.5, a small local model), scores become unreliable — the judge can't distinguish subtle faithfulness violations. Use Claude 3 Haiku or <a class="concept-link" href="gpt4o.html">GPT-4o</a>-mini minimum; use <a class="concept-link" href="claude35.html">Claude 3.5 Sonnet</a> for high-stakes evaluations.</p>
 <p><strong>Faithfulness doesn't catch all hallucinations.</strong> RAGAS checks if claims in the answer are supported by retrieved context. It doesn't check if the retrieved context itself is accurate. A confident wrong answer backed by wrong retrieved chunks gets a high faithfulness score.</p>
 <p><strong>Context Recall requires good ground truth.</strong> Writing accurate reference answers is the bottleneck. Bad ground truth (incomplete or ambiguous) produces misleading recall scores. Use domain experts to write at least 50–100 reference answers for your most important question types.</p>
-<p><strong>Evaluation cost adds up.</strong> Each metric calls the judge LLM once per sample. 1000 questions × 3 metrics = 3000 LLM calls. Budget for this in your CI/CD pipeline and use cheaper judge models for fast feedback loops.</p>
+<p><strong><a class="concept-link" href="eval.html">Evaluation</a> cost adds up.</strong> Each metric calls the judge LLM once per sample. 1000 questions × 3 metrics = 3000 LLM calls. Budget for this in your CI/CD pipeline and use cheaper judge models for fast feedback loops.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="trulens.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">TruLens</span></a>
-<a href="deepeval.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">DeepEval</span></a>
-<a href="mmlu.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">MMLU</span></a>
-<a href="humaneval.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">HumanEval</span></a>
-<a href="mt-bench.html" class="rc-card" style="--rc-accent:#f59e0b"><span class="rc-label">MT-Bench</span></a>
+<a class="rc-card" href="trulens.html" style="--rc-accent:#f59e0b"><span class="rc-label">TruLens</span></a>
+<a class="rc-card" href="deepeval.html" style="--rc-accent:#f59e0b"><span class="rc-label">DeepEval</span></a>
+<a class="rc-card" href="mmlu.html" style="--rc-accent:#f59e0b"><span class="rc-label">MMLU</span></a>
+<a class="rc-card" href="humaneval.html" style="--rc-accent:#f59e0b"><span class="rc-label">HumanEval</span></a>
+<a class="rc-card" href="mt-bench.html" style="--rc-accent:#f59e0b"><span class="rc-label">MT-Bench</span></a>
 </div>
 </div>
 <footer>

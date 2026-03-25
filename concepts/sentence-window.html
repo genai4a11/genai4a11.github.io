@@ -153,11 +153,11 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>The sentence window idea</h2>
-<p>Sentence window chunking solves a core RAG tension: small chunks are better for retrieval (more precise semantic match) but worse for synthesis (LLM lacks context). The solution: decouple the embedding unit from the context unit.</p>
+<p>Sentence window chunking solves a core <a class="concept-link" href="rag.html">RAG</a> tension: small chunks are better for retrieval (more precise semantic match) but worse for synthesis (LLM lacks context). The solution: decouple the <a class="concept-link" href="embeddings.html">embedding</a> unit from the context unit.</p>
 <p><strong>Indexing</strong>: Split the document into individual sentences. Embed each sentence separately. Store the sentence's position (document + index within document) in metadata.</p>
 <p><strong>Retrieval</strong>: Query returns the most semantically similar <em>sentences</em> — precise matches to the question.</p>
 <p><strong>Context expansion</strong>: Before passing to the LLM, replace each retrieved sentence with a window of sentences around it (e.g., ±3 sentences). The LLM sees coherent paragraphs; retrieval used precise sentence matches.</p>
-<p>This approach consistently outperforms fixed-size chunking by 5–15% on answer quality benchmarks while using less context than large fixed-size chunks.</p>
+<p>This approach consistently outperforms <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> chunking by 5–15% on answer quality <a class="concept-link" href="benchmarks.html">benchmarks</a> while using less context than large fixed-size chunks.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -235,7 +235,7 @@ contexts = retrieve_with_window("What is self-attention?", nodes, embeddings)
 <ul>
 <li><strong>window=1</strong>: Sentence ± 1 sentence (3 sentences total). Tightest context, lowest hallucination risk, but may miss important context from nearby sentences.</li>
 <li><strong>window=3</strong>: Sentence ± 3 sentences (7 sentences total, ~200-400 tokens). The standard recommendation. Covers a full paragraph in most documents.</li>
-<li><strong>window=5</strong>: 11 sentences, ~500-700 tokens. Approaches fixed-size chunk territory. Use when documents have dense, interdependent sentences.</li>
+<li><strong>window=5</strong>: 11 sentences, ~500-700 tokens. Approaches <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> chunk territory. Use when documents have dense, interdependent sentences.</li>
 </ul>
 <p>For technical documentation, window=2 often works well (code examples and their explanations are usually close together). For narrative text or legal documents, window=4 preserves more necessary context.</p>
 </div>
@@ -243,34 +243,31 @@ contexts = retrieve_with_window("What is self-attention?", nodes, embeddings)
 <div class="section-marker">SECTION 05</div>
 <h2>When sentence window beats fixed-size</h2>
 <p>Sentence window is particularly effective when: the query targets a specific fact stated in one sentence (exact retrieval + surrounding context for the LLM), documents have consistent sentence-level structure (technical docs, news articles), you need high precision (avoid returning irrelevant context), and the topic distribution across the document is uniform (no very long sections about one topic).</p>
-<p>Fixed-size is still preferred when: documents lack natural sentence boundaries (code, structured data, tables), computational cost matters (sentence tokenisation + individual embeddings is slower), or the topic is distributed over long multi-sentence passages that need to be retrieved as units.</p>
+<p><a class="concept-link" href="fixed-size-chunking.html">Fixed-size</a> is still preferred when: documents lack natural sentence boundaries (code, structured data, tables), computational cost matters (sentence tokenisation + individual <a class="concept-link" href="embeddings.html">embeddings</a> is slower), or the topic is distributed over long multi-sentence passages that need to be retrieved as units.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Limitations</h2>
 <p><strong>Sentence boundary detection</strong>: NLTK's <code>sent_tokenize</code> and similar tools make mistakes on technical text (abbreviations like "e.g.", "Fig.", "Dr." trigger false boundaries), code mixed with prose, and bullet-pointed lists. Consider a custom sentence splitter for specialised domains.</p>
-<p><strong>Embedding cost</strong>: Embedding every sentence means 3–10× more embeddings than fixed-size chunking. For a 1M-word document corpus, this is significant. Mitigate by using a fast, cheap embedding model (text-embedding-3-small at $0.02/1M tokens).</p>
+<p><strong><a class="concept-link" href="embeddings.html">Embedding</a> cost</strong>: Embedding every sentence means 3–10× more <a class="concept-link" href="embeddings.html">embeddings</a> than <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> chunking. For a 1M-word document corpus, this is significant. Mitigate by using a fast, cheap embedding model (text-embedding-3-small at $0.02/1M tokens).</p>
 <p><strong>Retrieval deduplication</strong>: If two similar sentences are nearby, they may both be retrieved, and their windows will overlap significantly. Add deduplication: if retrieved windows overlap by more than 50%, keep only the higher-scoring one.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Very short sentences score poorly</strong>: Sentence embeddings work poorly for very short sentences ("Yes." "True." "See above."). These will match any query weakly or specifically. Filter out sentences below a minimum length (e.g., 20 characters) before indexing.</p>
-<p><strong>Window storage overhead</strong>: Each node stores both the sentence and the window text. For a 100,000-sentence corpus, this roughly doubles storage vs storing sentences alone. Pre-compute windows at index time (as LlamaIndex does) rather than at retrieval time to keep latency low.</p>
+<p><strong>Very short sentences score poorly</strong>: Sentence <a class="concept-link" href="embeddings.html">embeddings</a> work poorly for very short sentences ("Yes." "True." "See above."). These will match any query weakly or specifically. Filter out sentences below a minimum length (e.g., 20 characters) before indexing.</p>
+<p><strong>Window storage overhead</strong>: Each node stores both the sentence and the window text. For a 100,000-sentence corpus, this roughly doubles storage vs storing sentences alone. Pre-compute windows at index time (as <a class="concept-link" href="llamaindex.html">LlamaIndex</a> does) rather than at retrieval time to keep latency low.</p>
 <p><strong>Cross-section contamination</strong>: If your document has hard section boundaries (chapter breaks, headings), windows should not cross them. A sentence at the end of Chapter 1 should not have a window containing Chapter 2 sentences. Add section-aware window construction that clips at section boundaries.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="fixed-size-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Fixed-size</span></a>
-<a href="semantic-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Semantic Chunking</span></a>
-<a href="parent-child-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Parent-Child</span></a>
-<a href="late-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Late Chunking</span></a>
-<a href="proposition-chunking.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Proposition Chunking</span></a>
+<a class="rc-card" href="fixed-size-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Fixed-size</span></a>
+<a class="rc-card" href="semantic-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Semantic Chunking</span></a>
+<a class="rc-card" href="parent-child-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Parent-Child</span></a>
+<a class="rc-card" href="late-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Late Chunking</span></a>
+<a class="rc-card" href="proposition-chunking.html" style="--rc-accent:#64748b"><span class="rc-label">Proposition Chunking</span></a>
 </div>
 </div>
 <footer>

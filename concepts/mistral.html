@@ -153,16 +153,16 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Why Mistral 7B matters</h2>
-<p>Mistral 7B (released September 2023) was the first open model to clearly beat a larger model of the same generation — outperforming Llama 2 13B on most benchmarks despite being nearly half the size. This established that model architecture and training data quality matter more than raw parameter count.</p>
+<p>Mistral 7B (released September 2023) was the first open model to clearly beat a larger model of the same generation — outperforming Llama 2 13B on most <a class="concept-link" href="benchmarks.html">benchmarks</a> despite being nearly half the size. This established that model architecture and training <a class="concept-link" href="data-quality.html">data quality</a> matter more than raw parameter count.</p>
 <p>Key impact: it shifted the community's expectations of what a 7B model can do, spawned hundreds of fine-tunes (Mistral became the most fine-tuned base model through late 2023), and proved that Apache 2.0 open-weight models could be commercially viable.</p>
-<p>The Apache 2.0 licence is the most permissive available for open LLMs — no attribution requirements beyond keeping the licence file, no restriction on commercial use, no derivative work restrictions. This makes Mistral the default choice when licence terms are a deciding factor.</p>
+<p>The Apache 2.0 licence is the most permissive available for open <a class="concept-link" href="llms.html">LLMs</a> — no attribution requirements beyond keeping the licence file, no restriction on commercial use, no derivative work restrictions. This makes Mistral the default choice when licence terms are a deciding factor.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Architecture innovations</h2>
 <p>Mistral 7B introduced two efficiency innovations that are now standard in most small open models:</p>
-<p><strong>Grouped-Query Attention (GQA)</strong>: Instead of one key-value head per query head (standard MHA), GQA uses fewer KV heads shared across multiple query heads. Mistral 7B uses 8 KV heads for 32 query heads (4:1 ratio). This reduces the KV-cache size by 4× — critical for serving with long contexts or large batches.</p>
-<p><strong>Sliding Window Attention (SWA)</strong>: Each token attends to only the previous W tokens (W=4096 for Mistral 7B), not the full sequence. Combined with multi-layer propagation, effective context is extended to 32K tokens while attention cost stays linear. Later dropped in v0.3 in favour of full attention with rope-scaling.</p>
+<p><strong>Grouped-Query Attention (GQA)</strong>: Instead of one key-value head per query head (standard MHA), GQA uses fewer KV heads shared across multiple query heads. Mistral 7B uses 8 KV heads for 32 query heads (4:1 ratio). This reduces the <a class="concept-link" href="kv-cache.html">KV-cache</a> size by 4× — critical for serving with long contexts or large batches.</p>
+<p><strong>Sliding Window Attention (SWA)</strong>: Each token attends to only the previous W tokens (W=4096 for Mistral 7B), not the full sequence. Combined with multi-layer propagation, effective context is extended to 32K tokens while attention cost stays linear. Later dropped in v0.3 in favour of full attention with <a class="concept-link" href="rope.html">rope</a>-scaling.</p>
 <pre><code class="language-python"># GQA configuration in Mistral's config.json
 {
   "num_attention_heads": 32,   # query heads
@@ -176,9 +176,9 @@
 <h2>Mistral model family</h2>
 <p>Mistral AI has expanded beyond the original 7B:</p>
 <ul>
-<li><strong>Mistral 7B v0.1/v0.3</strong>: Original 7B. v0.3 adds function calling and 32K context.</li>
-<li><strong>Mixtral 8x7B</strong>: Mixture-of-Experts with 8 experts, 2 active per token. Quality ~= Llama 2 70B at 13B active parameters. The breakthrough MoE model that proved sparse models work for text.</li>
-<li><strong>Mixtral 8x22B</strong>: Larger MoE. 141B total, 39B active. Rivals GPT-4 on many benchmarks.</li>
+<li><strong>Mistral 7B v0.1/v0.3</strong>: Original 7B. v0.3 adds <a class="concept-link" href="function-calling.html">function calling</a> and 32K context.</li>
+<li><strong>Mixtral 8x7B</strong>: <a class="concept-link" href="moe.html">Mixture-of-Experts</a> with 8 experts, 2 active per token. Quality ~= Llama 2 70B at 13B active parameters. The breakthrough <a class="concept-link" href="moe.html">MoE</a> model that proved sparse models work for text.</li>
+<li><strong>Mixtral 8x22B</strong>: Larger MoE. 141B total, 39B active. Rivals GPT-4 on many <a class="concept-link" href="benchmarks.html">benchmarks</a>.</li>
 <li><strong>Mistral Small / Medium / Large</strong>: Proprietary API-only models. Not open-weight.</li>
 <li><strong>Codestral</strong>: Code-specialised, 32K context, 80+ programming languages. Available via API and for self-hosting (non-commercial licence).</li>
 <li><strong>Mistral Nemo 12B</strong>: Joint with NVIDIA. 128K context, Apache 2.0.</li>
@@ -220,7 +220,7 @@ response = client.chat.complete(
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Mixtral 8x7B MoE</h2>
-<p>Mixtral 8x7B is a Sparse Mixture-of-Experts model: 8 expert networks, each a standard FFN layer, with a router selecting the 2 best experts for each token. Total parameters: ~47B. Active parameters per token: ~13B. This means quality comparable to a 47B dense model at the compute cost of a 13B model.</p>
+<p>Mixtral 8x7B is a Sparse <a class="concept-link" href="moe.html">Mixture-of-Experts</a> model: 8 expert networks, each a standard FFN layer, with a router selecting the 2 best experts for each token. Total parameters: ~47B. Active parameters per token: ~13B. This means quality comparable to a 47B dense model at the compute cost of a 13B model.</p>
 <pre><code class="language-python">from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
@@ -242,7 +242,7 @@ print("Top 2 experts per token:", top2_experts[0])  # first layer
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Fine-tuning Mistral</h2>
-<p>Mistral 7B is one of the most fine-tuned open models, with thousands of community fine-tunes on HuggingFace. For custom fine-tuning:</p>
+<p>Mistral 7B is one of the most fine-tuned open models, with thousands of community fine-tunes on HuggingFace. For custom <a class="concept-link" href="finetuning.html">fine-tuning</a>:</p>
 <pre><code class="language-python">from datasets import load_dataset
 from trl import SFTTrainer
 from peft import LoraConfig, get_peft_model
@@ -274,20 +274,17 @@ trainer.train()
 <p><strong>Chat template format</strong>: Mistral uses <code>[INST] ... [/INST]</code> tags. Always use <code>tokenizer.apply_chat_template()</code> rather than hardcoding the tags — the exact format has changed between v0.1 and v0.3.</p>
 <p><strong>No system message in v0.1</strong>: Original Mistral 7B Instruct doesn't formally support system messages. The workaround is prepending the system content to the first user message. v0.3 adds proper system message support.</p>
 <p><strong>Sliding window and long context</strong>: Mistral 7B v0.1 with SWA works well up to ~16K tokens. For longer contexts, use v0.3 or Mistral Nemo (128K). Performance degrades beyond the training context length with any position encoding.</p>
-<p><strong>Mixtral memory</strong>: Despite only 13B active parameters, Mixtral 8x7B needs to load all 47B parameters. At fp16 this requires ~90GB VRAM. In practice, use 4-bit (48GB) or access via API for casual use.</p>
+<p><strong>Mixtral <a class="concept-link" href="agent-memory.html">memory</a></strong>: Despite only 13B active parameters, Mixtral 8x7B needs to load all 47B parameters. At fp16 this requires ~90GB VRAM. In practice, use 4-bit (48GB) or access via API for casual use.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="llama3.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Llama 3.1</span></a>
-<a href="phi3.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Phi-3 / Phi-4</span></a>
-<a href="qwen25.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Qwen 2.5</span></a>
-<a href="gemma2.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Gemma 2</span></a>
-<a href="deepseek-r1.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">DeepSeek R1</span></a>
+<a class="rc-card" href="llama3.html" style="--rc-accent:#64748b"><span class="rc-label">Llama 3.1</span></a>
+<a class="rc-card" href="phi3.html" style="--rc-accent:#64748b"><span class="rc-label">Phi-3 / Phi-4</span></a>
+<a class="rc-card" href="qwen25.html" style="--rc-accent:#64748b"><span class="rc-label">Qwen 2.5</span></a>
+<a class="rc-card" href="gemma2.html" style="--rc-accent:#64748b"><span class="rc-label">Gemma 2</span></a>
+<a class="rc-card" href="deepseek-r1.html" style="--rc-accent:#64748b"><span class="rc-label">DeepSeek R1</span></a>
 </div>
 </div>
 <footer>

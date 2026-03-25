@@ -370,8 +370,8 @@
 <div class="section-block">
 <div class="section-marker">SECTION 01</div>
 <h2>The <em>RLHF Bottleneck</em></h2>
-<p>RLHF is proven but complex: train an SFT model, collect a preference dataset, train a separate reward model, then run PPO. Each stage has hyperparameters to tune and failure modes to debug. The reward model can overfit, ignore important signals, or "reward hack"—optimizing for spurious features rather than true preference. PPO training is inherently unstable due to the policy gradient algorithm, and small mistakes in hyperparameter tuning can derail days of training.</p>
-<p>DPO (Direct Preference Optimization), published in 2023 by Rafailov et al., provides an elegant alternative. The key insight: instead of training an intermediate reward model and then using RL to optimize against it, directly optimize the language model itself against preference pairs using a simple supervised loss. This removes an entire pipeline stage, eliminates the reward model bottleneck, and enables training stability comparable to standard fine-tuning.</p>
+<p><a class="concept-link" href="rlhf.html">RLHF</a> is proven but complex: train an SFT model, collect a preference dataset, train a separate reward model, then run PPO. Each stage has hyperparameters to tune and failure modes to debug. The reward model can overfit, ignore important signals, or "reward hack"—optimizing for spurious features rather than true preference. PPO training is inherently unstable due to the policy gradient algorithm, and small mistakes in hyperparameter tuning can derail days of training.</p>
+<p>DPO (Direct Preference <a class="concept-link" href="optimization.html">Optimization</a>), published in 2023 by Rafailov et al., provides an elegant alternative. The key insight: instead of training an intermediate reward model and then using RL to optimize against it, directly optimize the language model itself against preference pairs using a simple supervised loss. This removes an entire pipeline stage, eliminates the reward model bottleneck, and enables training stability comparable to standard <a class="concept-link" href="finetuning.html">fine-tuning</a>.</p>
 <p>The mathematical trick: DPO reparameterizes the reward function in terms of the policy, deriving a closed-form loss that you can optimize directly on preferences without RL algorithms. The result is simpler, faster (2-3× speedup compared to RLHF), and often achieves comparable or better quality.</p>
 <div class="callout success">
 <strong>DPO's Promise</strong>
@@ -382,7 +382,7 @@
 <div class="section-block">
 <div class="section-marker">SECTION 02</div>
 <h2><em>DPO</em> Derivation &amp; Loss</h2>
-<p>DPO starts from the standard RLHF objective: maximize expected reward while staying close to a reference model via KL divergence. The optimal policy is:</p>
+<p>DPO starts from the standard <a class="concept-link" href="rlhf.html">RLHF</a> objective: maximize expected reward while staying close to a reference model via KL divergence. The optimal policy is:</p>
 <p>π*(y|x) = π_ref(y|x) * exp(1/β * r(x, y)) / Z(x)</p>
 <p>where r(x, y) is the reward, β is a temperature parameter, and Z(x) is a partition function (normalizer). Rearranging, the optimal reward function is:</p>
 <p>r*(x, y) = β * log(π*(y|x) / π_ref(y|x))</p>
@@ -464,7 +464,7 @@ with open("dpo_data.jsonl", "w") as f:
     for item in dataset:
         f.write(json.dumps(item) + "\n")
             </div>
-<p><strong>Data Quality Tips:</strong> (1) Ensure diversity in prompts—cover different topics, lengths, and difficulty levels. (2) Avoid trivial preferences (e.g., one response is nonsense)—the model learns more from nuanced comparisons. (3) Validate inter-rater agreement if using humans; discard pairs with low agreement. (4) Balance preferences; don't let 90% favor the same type of response. (5) Include edge cases and adversarial examples.</p>
+<p><strong><a class="concept-link" href="data-quality.html">Data Quality</a> Tips:</strong> (1) Ensure diversity in prompts—cover different topics, lengths, and difficulty levels. (2) Avoid trivial preferences (e.g., one response is nonsense)—the model learns more from nuanced comparisons. (3) Validate inter-rater agreement if using humans; discard pairs with low agreement. (4) Balance preferences; don't let 90% favor the same type of response. (5) Include edge cases and adversarial examples.</p>
 <div class="callout amber">
 <strong>Common Data Pitfall: Proxy Metrics</strong>
                 If preference is based purely on length or formality (not actual quality), the model learns to optimize for those superficial features. Use rubrics or trained raters to ensure preferences reflect genuine helpfulness, correctness, and user intent.
@@ -523,7 +523,7 @@ trainer.model.save_pretrained("./dpo_final_model")
 <p><strong>Key Hyperparameters:</strong></p>
 <p><strong>β (beta):</strong> Controls the strength of the preference signal relative to the reference model. Typical range: 0.05 to 0.5. Higher β emphasizes preference satisfaction; lower β stays closer to the reference. Start with 0.1 and adjust based on eval results.</p>
 <p><strong>Learning Rate:</strong> Start with 5e-4 (higher than SFT, which is usually 2e-4 to 1e-4). DPO is more stable so you can use slightly higher LR. Drop to 1e-5 if loss is unstable.</p>
-<p><strong>Batch Size &amp; Gradient Accumulation:</strong> DPO is memory-efficient compared to PPO. Use batch size 4-8 with gradient accumulation 2-4. Each batch contains preference pairs, so effective batch size is doubled.</p>
+<p><strong>Batch Size &amp; Gradient Accumulation:</strong> DPO is <a class="concept-link" href="agent-memory.html">memory</a>-efficient compared to PPO. Use batch size 4-8 with gradient accumulation 2-4. Each batch contains preference pairs, so effective batch size is doubled.</p>
 <p><strong>Training Duration:</strong> DPO typically converges in 1-3 epochs (compare to PPO which needs 10+ epochs). Early-stop based on held-out validation loss or downstream task performance. A full DPO run on 7B model takes 4-12 hours on a single A100.</p>
 <div class="example-box">Monitoring DPO Training:
 
@@ -597,7 +597,7 @@ trainer.model.save_pretrained("./dpo_final_model")
 </tbody>
 </table>
 </div>
-<p><strong>Online DPO:</strong> A newer extension that continuously collects preferences from the current policy, creating an online learning loop. Instead of training once on a static dataset, online DPO iteratively refines the model by alternating between generation and preference collection. This enables continuous improvement but requires more infrastructure for preference collection at scale.</p>
+<p><strong>Online DPO:</strong> A newer extension that continuously collects preferences from the current policy, creating an online learning loop. Instead of training once on a static dataset, online DPO iteratively refines the model by alternating between generation and preference collection. This enables continuous improvement but requires more <a class="concept-link" href="infra.html">infrastructure</a> for preference collection at scale.</p>
 <div class="callout info">
 <strong>Choosing a Variant</strong>
                 DPO is the safest choice—widely tested and proven. IPO is a drop-in replacement if you encounter stability issues. KTO is excellent if you have access to unary labels (good/bad) instead of pairs. ORPO is interesting for cost reduction (single-stage training). For most use cases, start with DPO.
@@ -607,9 +607,9 @@ trainer.model.save_pretrained("./dpo_final_model")
 <div class="section-block">
 <div class="section-marker">SECTION 06</div>
 <h2><em>Evaluation</em> Strategy for DPO Models</h2>
-<p>Evaluating DPO-trained models requires careful benchmarking. Standard metrics like perplexity don't capture preference quality. Here's a comprehensive evaluation strategy:</p>
+<p>Evaluating DPO-trained models requires careful benchmarking. Standard metrics like perplexity don't capture preference quality. Here's a comprehensive <a class="concept-link" href="eval.html">evaluation</a> strategy:</p>
 <p><strong>Win Rate vs Reference:</strong> For each prompt in your test set, generate outputs from your DPO model and the reference (SFT) model. Have humans or AI judges compare them. Compute win rate: % of cases where DPO output is preferred. A good DPO model achieves 50%+ win rate over the reference.</p>
-<p><strong>MT-Bench &amp; AlpacaEval:</strong> Standard benchmarks for LLM evaluation. MT-Bench uses GPT-4 to score model outputs on diverse prompts. AlpacaEval measures win rate against strong baselines. Both are fast (no human annotation) and provide relative comparisons.</p>
+<p><strong><a class="concept-link" href="mt-bench.html">MT-Bench</a> &amp; AlpacaEval:</strong> Standard <a class="concept-link" href="benchmarks.html">benchmarks</a> for LLM evaluation. MT-Bench uses GPT-4 to score model outputs on diverse prompts. AlpacaEval measures win rate against strong baselines. Both are fast (no human annotation) and provide relative comparisons.</p>
 <p><strong>Domain-Specific Metrics:</strong> Depending on your use case, evaluate on relevant metrics: BLEU/ROUGE for generation, accuracy for QA, precision/recall for classification tasks. DPO indirectly optimizes for these downstream tasks via preference data.</p>
 <div class="example-box">Win Rate Evaluation Code:
 
@@ -656,7 +656,7 @@ print(f"Ties: {ties / len(results):.1%}")
 <div class="section-block">
 <div class="section-marker">SECTION 07</div>
 <h2><em>When to Use</em> DPO vs RLHF</h2>
-<p><strong>Use DPO if:</strong> (1) You have preference data (10k-100k pairs). (2) You want fast training and simple hyperparameter tuning. (3) You need reproducible results (no RL instability). (4) You have limited compute (2-3× faster than RLHF). (5) Your domain is not adversarial (DPO can be gamed if the model learns to exploit imperfect preferences).</p>
+<p><strong>Use DPO if:</strong> (1) You have preference data (10k-100k pairs). (2) You want fast training and simple hyperparameter tuning. (3) You need reproducible results (no RL instability). (4) You have limited compute (2-3× faster than <a class="concept-link" href="rlhf.html">RLHF</a>). (5) Your domain is not adversarial (DPO can be gamed if the model learns to exploit imperfect preferences).</p>
 <p><strong>Use RLHF if:</strong> (1) You want to leverage weak supervision (a reward model can learn from sparse signals). (2) You have domain experts who can define reward functions. (3) You're optimizing for a well-understood metric (e.g., BERTScore, specific task accuracy). (4) You need maximum quality and are willing to invest in tuning. (5) You're in a highly adversarial setting where you need robust, well-calibrated rewards.</p>
 <div class="table-wrap">
 <table>
@@ -708,17 +708,14 @@ print(f"Ties: {ties / len(results):.1%}")
             </div>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="rlhf.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">RLHF</span></a>
-<a href="orpo.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">ORPO</span></a>
-<a href="rlaif.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">RLAIF</span></a>
-<a href="lora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
-<a href="qlora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
+<a class="rc-card" href="rlhf.html" style="--rc-accent:#8b5cf6"><span class="rc-label">RLHF</span></a>
+<a class="rc-card" href="orpo.html" style="--rc-accent:#8b5cf6"><span class="rc-label">ORPO</span></a>
+<a class="rc-card" href="rlaif.html" style="--rc-accent:#8b5cf6"><span class="rc-label">RLAIF</span></a>
+<a class="rc-card" href="lora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
+<a class="rc-card" href="qlora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
 </div>
 </div>
 <footer>

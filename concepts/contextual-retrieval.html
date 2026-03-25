@@ -355,9 +355,9 @@
 <div class="section-block">
 <div class="section-marker">1</div>
 <h2>The Chunk Context Problem</h2>
-<p>Retrieval-Augmented Generation (RAG) systems retrieve text chunks from a knowledge base to augment LLM prompts. However, isolated chunks often lack document-level context that humans would consider obvious. A retrieved sentence "The defendant was found not guilty" is ambiguous without case context. RAG systems then either fail to understand the chunk's meaning or misinterpret it, leading to wrong answers.</p>
-<p>This context loss happens because retrieval systems (vector databases, BM25) retrieve based on similarity to the query, not document structure. A sentence discussing a specific case fact might be retrieved without the case background. The LLM then processes this isolated chunk without understanding what "the defendant" refers to or what case is relevant. Human readers naturally infer this context; RAG systems don't.</p>
-<p>The fundamental problem is that embeddings and keyword matching operate at the chunk level, not document level. Expanding chunks to include full documents is impractical (too long, high cost). Contextual Retrieval solves this elegantly: use an LLM to automatically generate a concise context summary for each chunk that would be obvious to humans.</p>
+<p>Retrieval-Augmented Generation (<a class="concept-link" href="rag.html">RAG</a>) systems retrieve text chunks from a knowledge base to augment LLM prompts. However, isolated chunks often lack document-level context that humans would consider obvious. A retrieved sentence "The defendant was found not guilty" is ambiguous without case context. <a class="concept-link" href="rag-systems.html">RAG systems</a> then either fail to understand the chunk's meaning or misinterpret it, leading to wrong answers.</p>
+<p>This context loss happens because retrieval systems (<a class="concept-link" href="vector-dbs.html">vector databases</a>, <a class="concept-link" href="bm25.html">BM25</a>) retrieve based on similarity to the query, not document structure. A sentence discussing a specific case fact might be retrieved without the case background. The LLM then processes this isolated chunk without understanding what "the defendant" refers to or what case is relevant. Human readers naturally infer this context; RAG systems don't.</p>
+<p>The fundamental problem is that <a class="concept-link" href="embeddings.html">embeddings</a> and keyword matching operate at the chunk level, not document level. Expanding chunks to include full documents is impractical (too long, high cost). Contextual Retrieval solves this elegantly: use an LLM to automatically generate a concise context summary for each chunk that would be obvious to humans.</p>
 <div class="callout blue">
 <p><strong>Context Loss Example:</strong> A legal document discusses three cases. Chunk retrieved: "Evidence showed clear motive." Without document context, the LLM doesn't know which case this refers to or whether the motive supports or undermines the defendant. With context: "In Case #2, evidence showed clear motive to commit fraud," the meaning is unambiguous.</p>
 </div>
@@ -463,11 +463,11 @@ answer = claude(f"{formatted_retrieval}\n\nQuestion: {query}")
 <div class="section-block">
 <div class="section-marker">3</div>
 <h2>Context Generation with Claude</h2>
-<p>Context generation is best done with Claude because it understands nuance and can generate focused, informative summaries. The key is batching: instead of generating context one chunk at a time (expensive API calls), batch multiple chunks in a single request. Combined with prompt caching, this reduces costs dramatically (~90% reduction through caching).</p>
-<p>Prompt caching works by marking stable parts of the prompt as cached. For context generation, the system prompt and document preamble (title, source, metadata) are stable across all chunks from the same document. Only the chunk content changes. Claude's prompt caching feature stores the cached portion and only charges for the first request; subsequent requests reuse the cache at 90% discount.</p>
+<p>Context generation is best done with Claude because it understands nuance and can generate focused, informative summaries. The key is batching: instead of generating context one chunk at a time (expensive API calls), batch multiple chunks in a single request. Combined with <a class="concept-link" href="prompt-caching.html">prompt caching</a>, this reduces costs dramatically (~90% reduction through caching).</p>
+<p><a class="concept-link" href="prompt-caching.html">Prompt caching</a> works by marking stable parts of the prompt as cached. For context generation, the system prompt and document preamble (title, source, metadata) are stable across all chunks from the same document. Only the chunk content changes. Claude's <a class="concept-link" href="prompt-caching.html">prompt caching</a> feature stores the cached portion and only charges for the first request; subsequent requests reuse the cache at 90% discount.</p>
 <p>For a typical document with 100 chunks, context generation costs less than 2x the cost of a single cache query. The first chunk pays full price (~10 tokens cached + 200 tokens for chunk + generation = ~300 tokens). Subsequent 99 chunks pay only for the chunk content (~200 tokens each) since the cache is reused. This is economically viable and maintains quality.</p>
 <div class="callout amber">
-<p><strong>Cost Optimization:</strong> Without caching, 100 chunks × 500 tokens = 50k tokens (~$0.75). With caching: 1 full request (3000 tokens = $0.045) + 99 cached requests (200 tokens × 0.1 = 1980 tokens = $0.03) = total ~$0.08. That's 90% reduction through caching.</p>
+<p><strong>Cost <a class="concept-link" href="optimization.html">Optimization</a>:</strong> Without caching, 100 chunks × 500 tokens = 50k tokens (~$0.75). With caching: 1 full request (3000 tokens = $0.045) + 99 cached requests (200 tokens × 0.1 = 1980 tokens = $0.03) = total ~$0.08. That's 90% reduction through caching.</p>
 </div>
 <div class="example-box"># Context Generation with Prompt Caching
 
@@ -558,9 +558,9 @@ contexts = generate_contexts_batch(document, chunks, batch_size=10)
 <div class="section-block">
 <div class="section-marker">4</div>
 <h2>Implementation Pipeline</h2>
-<p>A complete Contextual Retrieval pipeline involves document ingestion, context generation, dual indexing (both dense embeddings and BM25), and hybrid search. The pipeline is best implemented as a batch ETL process that runs periodically when documents are added to the knowledge base.</p>
-<p>Document ingestion splits documents into chunks. Chunk size is critical: too small and you lose context, too large and retrieval becomes less precise. Research suggests 800-1200 tokens per chunk is optimal, allowing enough context for LLMs to understand meaning while maintaining retrieval precision.</p>
-<p>Dual indexing maintains two separate indices: (1) dense vector embeddings of contextual chunks, and (2) BM25 full-text search on original chunks. Hybrid search queries both indices and combines results. BM25 excels at exact keyword matching (useful for specific facts), while dense embeddings excel at semantic similarity. Combined, they achieve better coverage than either alone.</p>
+<p>A complete Contextual Retrieval pipeline involves document ingestion, context generation, dual indexing (both dense <a class="concept-link" href="embeddings.html">embeddings</a> and <a class="concept-link" href="bm25.html">BM25</a>), and <a class="concept-link" href="hybrid-search.html">hybrid search</a>. The pipeline is best implemented as a batch ETL process that runs periodically when documents are added to the knowledge base.</p>
+<p>Document ingestion splits documents into chunks. Chunk size is critical: too small and you lose context, too large and retrieval becomes less precise. Research suggests 800-1200 tokens per chunk is optimal, allowing enough context for <a class="concept-link" href="llms.html">LLMs</a> to understand meaning while maintaining retrieval precision.</p>
+<p>Dual indexing maintains two separate indices: (1) dense vector <a class="concept-link" href="embeddings.html">embeddings</a> of contextual chunks, and (2) <a class="concept-link" href="bm25.html">BM25</a> full-text search on original chunks. <a class="concept-link" href="hybrid-search.html">Hybrid search</a> queries both indices and combines results. <a class="concept-link" href="bm25.html">BM25</a> excels at exact keyword matching (useful for specific facts), while dense <a class="concept-link" href="embeddings.html">embeddings</a> excel at semantic similarity. Combined, they achieve better coverage than either alone.</p>
 <div class="callout green">
 <p><strong>Pipeline Benefits:</strong> Separating preprocessing from retrieval allows updates without re-querying. Documents can be indexed once, then queried millions of times. Changes to search strategy don't require re-generating context (cacheable part).</p>
 </div>
@@ -704,11 +704,11 @@ answer = rag.answer_query("What is the main topic?")
 <div class="section-block">
 <div class="section-marker">5</div>
 <h2>Reranking Integration</h2>
-<p>Contextual Retrieval pairs well with reranking models (cross-encoders like Cohere's reranker). While retrieval returns the top-k results, reranking performs a more expensive but accurate ranking to reorder them. Contextual Retrieval + BM25 hybrid retrieval + cross-encoder reranking is the current state-of-the-art for RAG.</p>
-<p>Reranking works by scoring each (query, chunk) pair with a neural cross-encoder that sees both simultaneously. This is more expensive than dense retrieval (O(k) instead of O(1)) but more accurate. By combining multiple retrieval methods before reranking, you get diversity (different retrieval methods catch different relevant documents) and then use reranking to pick the best.</p>
-<p>Anthropic's research showed that this three-step pipeline achieves 67% reduction in retrieval failures (compared to baseline dense retrieval). Contextual Retrieval alone provides ~49% reduction; reranking on top provides additional improvement. The combination is particularly effective on complex questions requiring document-level understanding.</p>
+<p>Contextual Retrieval pairs well with <a class="concept-link" href="reranking.html">reranking</a> models (cross-encoders like Cohere's reranker). While retrieval returns the top-k results, <a class="concept-link" href="reranking.html">reranking</a> performs a more expensive but accurate ranking to reorder them. Contextual Retrieval + <a class="concept-link" href="bm25.html">BM25</a> hybrid retrieval + cross-encoder <a class="concept-link" href="reranking.html">reranking</a> is the current state-of-the-art for <a class="concept-link" href="rag.html">RAG</a>.</p>
+<p><a class="concept-link" href="reranking.html">Reranking</a> works by scoring each (query, chunk) pair with a neural cross-encoder that sees both simultaneously. This is more expensive than <a class="concept-link" href="dense-retrieval.html">dense retrieval</a> (O(k) instead of O(1)) but more accurate. By combining multiple retrieval methods before <a class="concept-link" href="reranking.html">reranking</a>, you get diversity (different retrieval methods catch different relevant documents) and then use reranking to pick the best.</p>
+<p>Anthropic's research showed that this three-step pipeline achieves 67% reduction in retrieval failures (compared to baseline <a class="concept-link" href="dense-retrieval.html">dense retrieval</a>). Contextual Retrieval alone provides ~49% reduction; reranking on top provides additional improvement. The combination is particularly effective on complex questions requiring document-level understanding.</p>
 <div class="callout blue">
-<p><strong>Pipeline Comparison:</strong> Dense retrieval alone: 100 failures per 1000 queries. + Contextual info: 51 failures (-49%). + BM25 hybrid: 40 failures (-9% more). + Reranking: 33 failures (-7% more). Final: 67% reduction through combination.</p>
+<p><strong>Pipeline Comparison:</strong> <a class="concept-link" href="dense-retrieval.html">Dense retrieval</a> alone: 100 failures per 1000 queries. + Contextual info: 51 failures (-49%). + BM25 hybrid: 40 failures (-9% more). + Reranking: 33 failures (-7% more). Final: 67% reduction through combination.</p>
 </div>
 <div class="example-box"># Reranking with Cross-Encoder
 
@@ -779,9 +779,9 @@ for i, result in enumerate(results, 1):
 <div class="section-block">
 <div class="section-marker">6</div>
 <h2>Cost Analysis</h2>
-<p>Implementing Contextual Retrieval requires understanding token usage and costs. Context generation during preprocessing uses Claude API, while retrieval and answering also use Claude. With prompt caching, the cost is reasonable and often lower than running dense retrievers continuously.</p>
-<p>One-time preprocessing costs depend on document size and quantity. For a 1GB knowledge base (10,000 documents, 1000 chunks each = 10 million chunks), full context generation costs approximately $2,500-3,000 using prompt caching. This is a one-time cost. Without caching, it would be $25,000+. The amortization is excellent: even serving 100,000 queries against this indexed knowledge base costs less than preprocessing.</p>
-<p>Per-query costs include retrieval (minimal if using vector DB and BM25 locally) and Claude API calls for answering. For a typical query with 3-5 retrieved chunks, context, and response generation: ~1000 input tokens + ~300 output tokens = ~$0.015 per query. With caching on the answer prompt (if using templates), costs drop further.</p>
+<p>Implementing Contextual Retrieval requires understanding token usage and costs. Context generation during preprocessing uses Claude API, while retrieval and answering also use Claude. With <a class="concept-link" href="prompt-caching.html">prompt caching</a>, the cost is reasonable and often lower than running dense retrievers continuously.</p>
+<p>One-time preprocessing costs depend on document size and quantity. For a 1GB knowledge base (10,000 documents, 1000 chunks each = 10 million chunks), full context generation costs approximately $2,500-3,000 using <a class="concept-link" href="prompt-caching.html">prompt caching</a>. This is a one-time cost. Without caching, it would be $25,000+. The amortization is excellent: even serving 100,000 queries against this indexed knowledge base costs less than preprocessing.</p>
+<p>Per-query costs include retrieval (minimal if using <a class="concept-link" href="vector-dbs.html">vector DB</a> and <a class="concept-link" href="bm25.html">BM25</a> locally) and Claude API calls for answering. For a typical query with 3-5 retrieved chunks, context, and response generation: ~1000 input tokens + ~300 output tokens = ~$0.015 per query. With caching on the answer prompt (if using templates), costs drop further.</p>
 <div class="callout amber">
 <p><strong>Cost Breakdown (per query):</strong> Retrieval: ~$0.001 (local). Claude API call: ~$0.015 (1300 tokens). With prompt cache reuse: ~$0.008 (90% discount on stable parts). Total: $0.016-0.024 per query depending on caching strategy.</p>
 </div>
@@ -864,10 +864,10 @@ print(f"Break-even queries (cached): {breakeven_cached:.0f}")
 <div class="section-block">
 <div class="section-marker">7</div>
 <h2>Comparison with Other Approaches</h2>
-<p>Several alternative approaches address the chunk context problem: HyDE (Hypothetical Document Embeddings), late chunking, parent-child chunking, and multi-level hierarchies. Each has different trade-offs in complexity, cost, and effectiveness.</p>
-<p>HyDE (Hyde) generates hypothetical documents from queries, then retrieves similar documents. Instead of searching the knowledge base directly, it generates what a relevant document might look like, then uses that for retrieval. This sometimes improves semantic matching but requires additional LLM calls and doesn't directly address context loss in chunks.</p>
-<p>Late chunking postpones chunk splitting until after embedding. Instead of splitting documents first then embedding chunks, this approach embeds full documents, then splits embeddings. This preserves document-level semantics in embeddings. However, it requires custom embedding models and doesn't scale well to very long documents.</p>
-<p>Parent-child chunking stores both fine-grained chunks (for retrieval) and parent summaries (for context). When a fine chunk is retrieved, its parent summary is also returned. This is similar to contextual retrieval but uses deterministic summaries instead of LLM-generated context. It's simpler but less flexible.</p>
+<p>Several alternative approaches address the chunk context problem: <a class="concept-link" href="hyde.html">HyDE</a> (Hypothetical Document <a class="concept-link" href="embeddings.html">Embeddings</a>), <a class="concept-link" href="late-chunking.html">late chunking</a>, <a class="concept-link" href="parent-child-chunking.html">parent-child</a> chunking, and multi-level hierarchies. Each has different trade-offs in complexity, cost, and effectiveness.</p>
+<p><a class="concept-link" href="hyde.html">HyDE</a> (<a class="concept-link" href="hyde.html">Hyde</a>) generates hypothetical documents from queries, then retrieves similar documents. Instead of searching the knowledge base directly, it generates what a relevant document might look like, then uses that for retrieval. This sometimes improves semantic matching but requires additional LLM calls and doesn't directly address context loss in chunks.</p>
+<p><a class="concept-link" href="late-chunking.html">Late chunking</a> postpones chunk splitting until after <a class="concept-link" href="embeddings.html">embedding</a>. Instead of splitting documents first then <a class="concept-link" href="embeddings.html">embedding</a> chunks, this approach embeds full documents, then splits <a class="concept-link" href="embeddings.html">embeddings</a>. This preserves document-level semantics in <a class="concept-link" href="embeddings.html">embeddings</a>. However, it requires custom <a class="concept-link" href="embeddings.html">embedding</a> models and doesn't scale well to very long documents.</p>
+<p><a class="concept-link" href="parent-child-chunking.html">Parent-child</a> chunking stores both fine-grained chunks (for retrieval) and parent summaries (for context). When a fine chunk is retrieved, its parent summary is also returned. This is similar to contextual retrieval but uses deterministic summaries instead of LLM-generated context. It's simpler but less flexible.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -940,9 +940,9 @@ print(f"Break-even queries (cached): {breakeven_cached:.0f}")
 </tbody>
 </table>
 </div>
-<p>Contextual Retrieval using Claude is the best balance between simplicity, cost, and effectiveness for most use cases. The 49% failure reduction is substantial and beats all other single-method approaches. Combined with BM25 and reranking, the 67% failure reduction is state-of-the-art. For latency-sensitive applications, parent-child chunking is a lightweight alternative offering 18% improvement.</p>
+<p>Contextual Retrieval using Claude is the best balance between simplicity, cost, and effectiveness for most use cases. The 49% failure reduction is substantial and beats all other single-method approaches. Combined with <a class="concept-link" href="bm25.html">BM25</a> and <a class="concept-link" href="reranking.html">reranking</a>, the 67% failure reduction is state-of-the-art. For latency-sensitive applications, <a class="concept-link" href="parent-child-chunking.html">parent-child</a> chunking is a lightweight alternative offering 18% improvement.</p>
 <div class="callout green">
-<p><strong>Decision Framework:</strong> Need simplicity? Parent-child chunking. Need best accuracy? Contextual + reranking. Need balance? Contextual retrieval alone. Need speed? HyDE or late chunking. Need lowest cost? Standard dense with BM25 hybrid.</p>
+<p><strong>Decision Framework:</strong> Need simplicity? <a class="concept-link" href="parent-child-chunking.html">Parent-child</a> chunking. Need best accuracy? Contextual + <a class="concept-link" href="reranking.html">reranking</a>. Need balance? Contextual retrieval alone. Need speed? <a class="concept-link" href="hyde.html">HyDE</a> or <a class="concept-link" href="late-chunking.html">late chunking</a>. Need lowest cost? Standard dense with BM25 hybrid.</p>
 </div>
 <div class="example-box"># Comparative Analysis: Query Performance
 
@@ -976,17 +976,14 @@ ROI calculation:
 - ROI: 1250x per 100 queries
         </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="llamaindex.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">LlamaIndex</span></a>
-<a href="graphrag.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">GraphRAG</span></a>
-<a href="agentic-rag.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Agentic RAG</span></a>
-<a href="sentence-transformers.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
-<a href="openai-embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">OpenAI Embeddings</span></a>
+<a class="rc-card" href="llamaindex.html" style="--rc-accent:#3b82f6"><span class="rc-label">LlamaIndex</span></a>
+<a class="rc-card" href="graphrag.html" style="--rc-accent:#3b82f6"><span class="rc-label">GraphRAG</span></a>
+<a class="rc-card" href="agentic-rag.html" style="--rc-accent:#3b82f6"><span class="rc-label">Agentic RAG</span></a>
+<a class="rc-card" href="sentence-transformers.html" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
+<a class="rc-card" href="openai-embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">OpenAI Embeddings</span></a>
 </div>
 </div>
 <footer>

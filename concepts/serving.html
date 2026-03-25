@@ -462,7 +462,7 @@
 <div class="section-marker">01 — Core Concepts</div>
 <h2>The Two Serving Metrics</h2>
 <p><strong>TTFT (Time to First Token):</strong> Latency from request arrival to the first output token. This is what the user perceives — how responsive the system feels. A 500ms TTFT is acceptable. A 5-second TTFT feels slow.</p>
-<p><strong>TBT (Time Between Tokens) / ITL (Inter-Token Latency):</strong> Latency between each subsequent token. This drives the streaming experience. If TBT is 50ms, the user sees about 20 tokens per second on screen — a natural reading pace. If TBT is 200ms, the text appears in bursts, feeling sluggish.</p>
+<p><strong>TBT (Time Between Tokens) / ITL (Inter-Token Latency):</strong> Latency between each subsequent token. This drives the <a class="concept-link" href="streaming.html">streaming</a> experience. If TBT is 50ms, the user sees about 20 tokens per second on screen — a natural reading pace. If TBT is 200ms, the text appears in bursts, feeling sluggish.</p>
 <p><strong>Throughput:</strong> Total tokens generated per second across all concurrent requests. This drives cost efficiency. Generate 500 tokens/sec/GPU and your GPU is fully utilized. Generate 50 tokens/sec/GPU and you're wasting 90% of its potential.</p>
 <p>The fundamental tension: maximizing throughput requires large batches, which delays responses (high TTFT). Minimizing TTFT requires small batches, which wastes GPU utilization. Production systems must balance all three metrics within SLA bounds.</p>
 <div class="example-box">Target SLAs (typical production):
@@ -480,9 +480,9 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <h2>Continuous Batching</h2>
 <p>Naive batching: collect requests until batch is full (say, 32), run inference together, return all results. Problem: the GPU sits idle while waiting for the batch to fill. Throughput suffers.</p>
 <p><strong>Continuous batching (Orca 2022):</strong> Don't wait. Start processing requests immediately. As one request finishes generating a token, remove it from the active batch. As new requests arrive, add them to fill empty slots. The batch is always full, always moving.</p>
-<p>This is deceptively powerful. All major serving frameworks (vLLM, TGI, TRT-LLM, SGLang) implement continuous batching. Without it, you leave 5–10× throughput on the table.</p>
-<p>Key insight: prefill (processing input tokens) is compute-bound. Decode (generating tokens one-by-one) is memory-bandwidth-bound. Modern systems separate them: prefill on one GPU pool, decode on another. Each optimized independently.</p>
-<p><strong>Disaggregated serving</strong> takes this further: run prefill and decode on completely separate GPU clusters. Prefill gets high-end GPUs with large memory for long prompts. Decode gets bandwidth-optimized GPUs for throughput. Route requests through a scheduler.</p>
+<p>This is deceptively powerful. All major serving <a class="concept-link" href="agent-frameworks.html">frameworks</a> (<a class="concept-link" href="vllm.html">vLLM</a>, TGI, TRT-LLM, <a class="concept-link" href="sglang.html">SGLang</a>) implement continuous batching. Without it, you leave 5–10× throughput on the table.</p>
+<p>Key insight: prefill (processing input tokens) is compute-bound. Decode (generating tokens one-by-one) is <a class="concept-link" href="agent-memory.html">memory</a>-bandwidth-bound. Modern systems separate them: prefill on one GPU pool, decode on another. Each optimized independently.</p>
+<p><strong>Disaggregated serving</strong> takes this further: run prefill and decode on completely separate GPU clusters. Prefill gets high-end GPUs with large <a class="concept-link" href="agent-memory.html">memory</a> for long prompts. Decode gets bandwidth-optimized GPUs for throughput. Route requests through a scheduler.</p>
 <div class="callout green">
 <span class="callout-icon">💡</span>
 <span><strong>Continuous batching is the single highest-leverage optimization for throughput.</strong> Enables 5–10× better GPU utilization vs naive batching. If you're running a custom serving system, implement this first.</span>
@@ -492,9 +492,9 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="section-block" id="paged-attention">
 <div class="section-marker">03 — Memory Optimization</div>
 <h2>PagedAttention and Memory Management</h2>
-<p>The KV cache — stored key and value tensors for each token in the context — is the primary memory consumer during inference. As sequences get longer (and they do — 8K, 32K, 128K contexts are becoming standard), KV cache dominates.</p>
-<p>With fixed-size KV cache pre-allocated per request, varying sequence lengths cause fragmentation. A request with 1K tokens uses 1K of 4K allocated cache — 3K wasted. Multiply across 100 concurrent requests and you've wasted significant memory.</p>
-<p><strong>PagedAttention (vLLM):</strong> Allocate KV cache in fixed-size "pages" (like OS virtual memory). Each token's key and value go into a page. Pages are dynamically allocated. If a sequence needs more pages, allocate more. No internal fragmentation.</p>
+<p>The <a class="concept-link" href="kv-cache.html">KV cache</a> — stored key and value tensors for each token in the context — is the primary <a class="concept-link" href="agent-memory.html">memory</a> consumer during inference. As sequences get longer (and they do — 8K, 32K, 128K contexts are becoming standard), <a class="concept-link" href="kv-cache.html">KV cache</a> dominates.</p>
+<p>With <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> KV cache pre-allocated per request, varying sequence lengths cause fragmentation. A request with 1K tokens uses 1K of 4K allocated cache — 3K wasted. Multiply across 100 concurrent requests and you've wasted significant memory.</p>
+<p><strong>PagedAttention (<a class="concept-link" href="vllm.html">vLLM</a>):</strong> Allocate KV cache in <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> "pages" (like OS virtual memory). Each token's key and value go into a page. Pages are dynamically allocated. If a sequence needs more pages, allocate more. No internal fragmentation.</p>
 <p>Benefits cascade: <strong>Prefix sharing:</strong> requests with the same prompt prefix share the same pages. System prompt appears in every request — save 90% of system prompt cache by sharing. <strong>Beam search:</strong> explore multiple hypotheses without memory blowup — each hypothesis shares the prefix.</p>
 <div class="table-wrap">
 <table>
@@ -515,7 +515,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="section-block" id="parallelism">
 <div class="section-marker">04 — Scaling Across GPUs</div>
 <h2>Parallelism Strategies</h2>
-<p>Most LLMs don't fit on a single GPU. Must split across multiple. Four strategies, each with tradeoffs.</p>
+<p>Most <a class="concept-link" href="llms.html">LLMs</a> don't fit on a single GPU. Must split across multiple. Four strategies, each with tradeoffs.</p>
 <div class="methods-list">
 <div class="method-card">
 <div class="method-num">1</div>
@@ -524,7 +524,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <p>Split individual weight matrices across GPUs. Each GPU holds partial weights. All GPUs process the same batch in parallel. After each layer, all-reduce to combine results.</p>
 <ul>
 <li>Low latency per token (all-reduce happens in parallel)</li>
-<li>High communication cost — must transfer intermediate activations</li>
+<li>High communication cost — must transfer intermediate <a class="concept-link" href="activations.html">activations</a></li>
 <li>Best within a single node (NVLink, very low latency interconnect)</li>
 </ul>
 </div>
@@ -533,7 +533,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="method-num">2</div>
 <div class="method-body">
 <h3>Pipeline Parallelism <em>— split layers</em></h3>
-<p>Split layers across GPUs. GPU 0 does layer 0, GPU 1 does layer 1, etc. Each GPU processes a micro-batch sequentially. Activations flow through the pipeline.</p>
+<p>Split layers across GPUs. GPU 0 does layer 0, GPU 1 does layer 1, etc. Each GPU processes a micro-batch sequentially. <a class="concept-link" href="activations.html">Activations</a> flow through the pipeline.</p>
 <ul>
 <li>High throughput (can overlap computation on different GPUs)</li>
 <li>Pipeline bubble latency — some GPUs idle while waiting for previous stage</li>
@@ -545,7 +545,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="method-num">3</div>
 <div class="method-body">
 <h3>Data Parallelism <em>— replicate model</em></h3>
-<p>Replicate full model on each GPU. Each GPU handles a different request (or batch of requests). No inter-GPU communication during forward pass.</p>
+<p><a class="concept-link" href="replicate.html">Replicate</a> full model on each GPU. Each GPU handles a different request (or batch of requests). No inter-GPU communication during forward pass.</p>
 <ul>
 <li>Scales throughput linearly (each GPU independent)</li>
 <li>Requires model to fit on a single GPU</li>
@@ -557,11 +557,11 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="method-num">4</div>
 <div class="method-body">
 <h3>Expert Parallelism <em>— for MoE</em></h3>
-<p>For Mixture-of-Experts models: route tokens to expert GPUs. Each GPU holds different expert FFN layers. Sparse activation — each token routes to a few experts, not all.</p>
+<p>For <a class="concept-link" href="moe.html">Mixture-of-Experts</a> models: route tokens to expert GPUs. Each GPU holds different expert FFN layers. Sparse activation — each token routes to a few experts, not all.</p>
 <ul>
 <li>Enables very large models with conditional compute</li>
 <li>Load balancing complexity — some experts become bottlenecks</li>
-<li>Specialized for MoE architectures (Mixtral, DeepSeek-MoE)</li>
+<li>Specialized for <a class="concept-link" href="moe.html">MoE</a> <a class="concept-link" href="transformer-arch.html">architectures</a> (Mixtral, DeepSeek-<a class="concept-link" href="moe.html">MoE</a>)</li>
 </ul>
 </div>
 </div>
@@ -585,8 +585,8 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="section-block" id="speculative">
 <div class="section-marker">05 — Inference Speedup</div>
 <h2>Speculative Decoding</h2>
-<p>Decoding is memory-bandwidth-bound: GPU loads weights, generates one token, waits for next batch of requests. The bottleneck is weight transfer, not compute.</p>
-<p><strong>Speculative decoding:</strong> Use a small, fast draft model to propose the next k tokens. The target (main) model verifies all k tokens in parallel. If all k are accepted, you get k tokens in one round-trip instead of k round-trips. In theory, k× speedup.</p>
+<p>Decoding is <a class="concept-link" href="agent-memory.html">memory</a>-bandwidth-bound: GPU loads weights, generates one token, waits for next batch of requests. The bottleneck is weight transfer, not compute.</p>
+<p><strong><a class="concept-link" href="speculative-decoding.html">Speculative decoding</a>:</strong> Use a small, fast draft model to propose the next k tokens. The target (main) model verifies all k tokens in parallel. If all k are accepted, you get k tokens in one round-trip instead of k round-trips. In theory, k× speedup.</p>
 <p>In practice: 70–85% of proposed tokens are accepted (due to distribution mismatch). With N=4 draft tokens and 75% acceptance rate, you get roughly 2–3× speedup with no quality loss (output distribution is identical).</p>
 <p><strong>Variants:</strong> Small draft model (separate model), Medusa (draft heads on the main model, lower overhead), EAGLE (feature-level drafting, higher acceptance rates), prompt lookup decoding (copy from context, minimal compute).</p>
 <div class="table-wrap">
@@ -602,7 +602,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 </tbody>
 </table>
 </div>
-<p>Speculative decoding is especially effective for long outputs. Short completions don't benefit as much. Worth measuring on your workload.</p>
+<p><a class="concept-link" href="speculative-decoding.html">Speculative decoding</a> is especially effective for long outputs. Short completions don't benefit as much. Worth measuring on your workload.</p>
 </div>
 <!-- ── 6. ROUTING AND LOAD BALANCING ── -->
 <div class="section-block" id="routing">
@@ -610,7 +610,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <h2>Routing and Load Balancing</h2>
 <p>Production: deploy multiple replicas of your model. Need intelligent routing to maximize cache hit rates and throughput.</p>
 <p><strong>Strategies:</strong> Round-robin (simple, ignores load), least-connections (tracks active requests per replica), <strong>prefix-aware routing</strong> (send requests with same system prompt to same replica — huge cache hit rate improvement).</p>
-<p>For chatbots, prefix-aware routing is critical. System prompt appears in every request. If 100 requests with the same system prompt hit 100 different replicas, each one recomputes the system prompt's KV cache. Route to same replica, compute once, share across 100 requests.</p>
+<p>For chatbots, prefix-aware routing is critical. System prompt appears in every request. If 100 requests with the same system prompt hit 100 different replicas, each one recomputes the system prompt's <a class="concept-link" href="kv-cache.html">KV cache</a>. Route to same replica, compute once, share across 100 requests.</p>
 <p><strong>Autoscaling:</strong> Scale replicas based on queue depth, not CPU/RAM. GPU serving is queue-depth-driven: requests queue up, replicas drain the queue. When queue depth &gt; threshold, scale up. When queue depth &lt; threshold, scale down.</p>
 <p><strong>Model routing by capability:</strong> Easy queries (classification, factual lookup) route to small, fast model. Hard queries (reasoning, analysis) route to large, slow model. A tiny router model classifies difficulty (&lt;100ms), then routes to appropriate model. Maximizes throughput, minimizes cost.</p>
 <div class="callout amber">
@@ -622,7 +622,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="section-block" id="frameworks">
 <div class="section-marker">07 — Tools &amp; Selection</div>
 <h2>Framework Comparison and Selection</h2>
-<p>Mature open-source and proprietary serving frameworks exist. Each has strengths for different scenarios.</p>
+<p>Mature open-source and proprietary serving <a class="concept-link" href="agent-frameworks.html">frameworks</a> exist. Each has strengths for different scenarios.</p>
 <div class="tools-grid">
 <div class="tool-card">
 <div class="tool-category">Framework</div>
@@ -675,11 +675,11 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 </table>
 </div>
 <h3>Selection Guide</h3>
-<p><strong>Starting point:</strong> vLLM. Default choice. Mature, well-documented, supports most models and quantizations.</p>
-<p><strong>Need structured outputs:</strong> SGLang. Native grammar constraints, agents, tree search.</p>
+<p><strong>Starting point:</strong> <a class="concept-link" href="vllm.html">vLLM</a>. Default choice. Mature, well-documented, supports most models and quantizations.</p>
+<p><strong>Need <a class="concept-link" href="structured-output-app.html">structured outputs</a>:</strong> <a class="concept-link" href="sglang.html">SGLang</a>. Native grammar constraints, <a class="concept-link" href="agents.html">agents</a>, tree search.</p>
 <p><strong>Maximum performance on NVIDIA:</strong> TensorRT-LLM. Complex, but squeezes every bit of performance.</p>
 <p><strong>Already using HuggingFace pipeline:</strong> TGI. Integrates naturally.</p>
-<p><strong>Local development:</strong> Ollama. Easy setup, not for production.</p>
+<p><strong>Local development:</strong> <a class="concept-link" href="ollama.html">Ollama</a>. Easy setup, not for production.</p>
 </div>
 <!-- ── REFERENCES ── -->
 <div class="section-block" id="references">
@@ -697,7 +697,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <li class="ref-item">
 <span class="ref-badge badge-paper">Paper</span>
         Zhou, W. et al. (2023).
-        <em>vLLM: Easy, Fast, and Cheap LLM Serving with PagedAttention.</em>
+        <em><a class="concept-link" href="vllm.html">vLLM</a>: Easy, Fast, and Cheap LLM Serving with PagedAttention.</em>
         arXiv:2309.06180. —
         <a href="https://arxiv.org/abs/2309.06180" target="_blank">arxiv:2309.06180 ↗</a>
 </li>
@@ -705,7 +705,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <span class="ref-badge badge-paper">Paper</span>
         Leviathan, Y. et al. (2022).
         <em>Fast Transformer Decoding: One Write-Head is All You Need.</em>
-        Speculative decoding. arXiv:2211.17192. —
+<a class="concept-link" href="speculative-decoding.html">Speculative decoding</a>. arXiv:2211.17192. —
         <a href="https://arxiv.org/abs/2211.17192" target="_blank">arxiv:2211.17192 ↗</a>
 </li>
 <li class="ref-item">
@@ -718,7 +718,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <li class="ref-item">
 <span class="ref-badge badge-paper">Paper</span>
         Lian, X. et al. (2023).
-        <em>SGLang: Efficient Execution of Structured Language Model Programs.</em>
+        <em><a class="concept-link" href="sglang.html">SGLang</a>: Efficient Execution of Structured Language Model Programs.</em>
         arXiv:2312.07104. —
         <a href="https://arxiv.org/abs/2312.07104" target="_blank">arxiv:2312.07104 ↗</a>
 </li>
@@ -761,21 +761,18 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="flow-box">Multi-GPU / KV cache<span class="flow-label">scale-out</span></div>
 </div>
 <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Start with a managed API</h4><p>OpenAI, Anthropic, or Google for your first 6 months in production. The operational overhead of self-hosting is real; validate the use case first.</p></div></div>
-<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Move to vLLM when cost justifies it</h4><p>At ~$500+/month on APIs for a specific workload, self-hosting Llama or Mistral on a rented A100 typically breaks even. vLLM is the default choice: continuous batching, PagedAttention, easy setup.</p></div></div>
-<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Learn the two serving regimes</h4><p>Prefill-heavy (long prompts, batch jobs): GPU-compute bound. Decode-heavy (interactive, streaming): GPU memory-bandwidth bound. Each has different optimisation levers.</p></div></div>
+<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Move to vLLM when cost justifies it</h4><p>At ~$500+/month on APIs for a specific workload, self-hosting Llama or Mistral on a rented A100 typically breaks even. <a class="concept-link" href="vllm.html">vLLM</a> is the default choice: continuous batching, PagedAttention, easy setup.</p></div></div>
+<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Learn the two serving regimes</h4><p>Prefill-heavy (long prompts, batch jobs): GPU-compute bound. Decode-heavy (interactive, <a class="concept-link" href="streaming.html">streaming</a>): GPU <a class="concept-link" href="agent-memory.html">memory</a>-bandwidth bound. Each has different optimisation levers.</p></div></div>
 <div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Add speculative decoding for latency</h4><p>A small draft model proposes tokens; the large model verifies in parallel. Typical speedup: 2–3x TTFT with same quality. Supported natively in vLLM.</p></div></div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="quantization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Quantization</span></a>
-<a href="hardware.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Hardware</span></a>
-<a href="cloud-deploy.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Cloud & Deployment</span></a>
-<a href="vllm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
-<a href="ollama.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
+<a class="rc-card" href="quantization.html" style="--rc-accent:#64748b"><span class="rc-label">Quantization</span></a>
+<a class="rc-card" href="hardware.html" style="--rc-accent:#64748b"><span class="rc-label">Hardware</span></a>
+<a class="rc-card" href="cloud-deploy.html" style="--rc-accent:#64748b"><span class="rc-label">Cloud &amp; Deployment</span></a>
+<a class="rc-card" href="vllm.html" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
+<a class="rc-card" href="ollama.html" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
 </div>
 </div>
 <footer class="page-footer">

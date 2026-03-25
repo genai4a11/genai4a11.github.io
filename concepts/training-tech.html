@@ -461,7 +461,7 @@
 <div class="section-block" id="memory-problem">
 <div class="section-marker">01 — Challenge</div>
 <h2>The Memory Problem</h2>
-<p>Training a 7B model in FP32 requires: 7B × 4 bytes = 28 GB for weights alone. Add gradients (28 GB) + optimizer states (56 GB for Adam) = 112 GB minimum — exceeding a single A100's 80 GB VRAM. Solutions include mixed precision (halve weight memory), gradient checkpointing (trade compute for activation memory), and distributed training (spread across GPUs).</p>
+<p>Training a 7B model in FP32 requires: 7B × 4 bytes = 28 GB for weights alone. Add gradients (28 GB) + optimizer states (56 GB for Adam) = 112 GB minimum — exceeding a single A100's 80 GB VRAM. Solutions include <a class="concept-link" href="mixed-precision.html">mixed precision</a> (halve weight <a class="concept-link" href="agent-memory.html">memory</a>), gradient <a class="concept-link" href="checkpointing.html">checkpointing</a> (trade compute for activation memory), and distributed training (spread across GPUs).</p>
 <h3>Memory Breakdown for 7B Model Training</h3>
 <div class="table-wrap">
 <table>
@@ -486,8 +486,8 @@
 <div class="section-block" id="mixed-precision">
 <div class="section-marker">02 — Optimization</div>
 <h2>Mixed Precision Training</h2>
-<p><strong>BF16 vs FP16:</strong> BF16 has the same dynamic range as FP32 (8 exponent bits) while FP16 has a smaller range → overflow/underflow more likely. Use BF16 on A100/H100; FP16 on older V100s. FP8 (H100) halves memory again vs BF16 but requires per-tensor scaling.</p>
-<p>The mixed precision recipe: (1) forward pass in BF16, (2) compute loss in FP32, (3) backward pass in BF16, (4) update FP32 master weights, (5) copy BF16 for next forward pass.</p>
+<p><strong>BF16 vs FP16:</strong> BF16 has the same dynamic range as FP32 (8 exponent bits) while FP16 has a smaller range → overflow/underflow more likely. Use BF16 on A100/H100; FP16 on older V100s. FP8 (H100) halves <a class="concept-link" href="agent-memory.html">memory</a> again vs BF16 but requires per-tensor scaling.</p>
+<p>The <a class="concept-link" href="mixed-precision.html">mixed precision</a> recipe: (1) forward pass in BF16, (2) compute loss in FP32, (3) backward pass in BF16, (4) update FP32 master weights, (5) copy BF16 for next forward pass.</p>
 <h3>PyTorch torch.amp Setup</h3>
 <div class="example-box">
 import torch
@@ -518,7 +518,7 @@ for batch in dataloader:
 <div class="section-block" id="checkpointing">
 <div class="section-marker">03 — Memory Trade-off</div>
 <h2>Gradient Checkpointing</h2>
-<p>A transformer's activations (intermediate outputs saved for backward pass) consume 10–40 GB for long sequences. Gradient checkpointing trades 30–40% extra compute for 5–10× less activation memory by recomputing activations during backward instead of saving them.</p>
+<p>A transformer's <a class="concept-link" href="activations.html">activations</a> (intermediate outputs saved for backward pass) consume 10–40 GB for long sequences. Gradient <a class="concept-link" href="checkpointing.html">checkpointing</a> trades 30–40% extra compute for 5–10× less activation <a class="concept-link" href="agent-memory.html">memory</a> by recomputing activations during backward instead of saving them.</p>
 <p>Selective checkpointing works well: only checkpoint expensive layers (attention, MLP). These are the main culprits for memory consumption.</p>
 <h3>Checkpointing Example</h3>
 <div class="example-box">
@@ -556,7 +556,7 @@ def forward(self, x):
 <div class="section-block" id="data-parallel">
 <div class="section-marker">04 — Distribution</div>
 <h2>Data Parallelism: DDP and FSDP</h2>
-<p><strong>Data parallelism:</strong> Each GPU holds a full copy of the model, processes a different mini-batch, gradients are averaged (all-reduce) across GPUs. <strong>DDP (Distributed Data Parallel)</strong> is PyTorch's standard. Each GPU: full model copy + full gradient copy + full optimizer state. Limited by single-GPU memory.</p>
+<p><strong>Data parallelism:</strong> Each GPU holds a full copy of the model, processes a different mini-batch, gradients are averaged (all-reduce) across GPUs. <strong>DDP (Distributed Data Parallel)</strong> is PyTorch's standard. Each GPU: full model copy + full gradient copy + full optimizer state. Limited by single-GPU <a class="concept-link" href="agent-memory.html">memory</a>.</p>
 <p><strong>FSDP (Fully Sharded Data Parallel)</strong> shards model weights + gradients + optimizer states across all GPUs. Each GPU holds 1/N of everything. Enables training models larger than single-GPU memory.</p>
 <h3>FSDP Training Setup</h3>
 <div class="example-box">
@@ -749,7 +749,7 @@ scheduler = get_cosine_schedule_with_warmup(
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Rajbhandari, S. et al. (2019).
-        <em>ZeRO: Memory Optimizations Toward Training Trillion Parameter Models.</em>
+        <em>ZeRO: <a class="concept-link" href="agent-memory.html">Memory</a> Optimizations Toward Training Trillion Parameter Models.</em>
         Microsoft. arXiv:1910.02054. —
         <a href="https://arxiv.org/abs/1910.02054" target="_blank">arxiv:1910.02054 ↗</a>
 </li>
@@ -770,21 +770,21 @@ scheduler = get_cosine_schedule_with_warmup(
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Micikevicius, P. et al. (2017).
-        <em>Mixed Precision Training.</em>
+        <em><a class="concept-link" href="mixed-precision.html">Mixed Precision</a> Training.</em>
         NVIDIA. arXiv:1710.03740. —
         <a href="https://arxiv.org/abs/1710.03740" target="_blank">arxiv:1710.03740 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Schulman, J. et al. (2017).
-        <em>Proximal Policy Optimization Algorithms.</em>
+        <em>Proximal Policy <a class="concept-link" href="optimization.html">Optimization</a> Algorithms.</em>
         OpenAI. arXiv:1707.06347. —
         <a href="https://arxiv.org/abs/1707.06347" target="_blank">arxiv:1707.06347 ↗</a>
 </li>
 </ul>
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
-<li><span class="ref-badge badge-docs">Docs</span> DeepSpeed documentation. <a href="https://deepspeed.ai/docs" target="_blank">deepspeed.ai/docs ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="deepspeed.html">DeepSpeed</a> documentation. <a href="https://deepspeed.ai/docs" target="_blank">deepspeed.ai/docs ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> PyTorch FSDP tutorial. <a href="https://pytorch.org/tutorials" target="_blank">pytorch.org/tutorials ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> Megatron-LM on GitHub. <a href="https://github.com/NVIDIA/Megatron-LM" target="_blank">github.com/NVIDIA/Megatron-LM ↗</a></li>
 <li><span class="ref-badge badge-guide">Guide</span> NVIDIA training guide. <a href="https://docs.nvidia.com/deeplearning/performance" target="_blank">nvidia.com/deeplearning ↗</a></li>
@@ -808,17 +808,14 @@ scheduler = get_cosine_schedule_with_warmup(
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="neural-nets.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Neural Networks</span></a>
-<a href="optimization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Optimization</span></a>
-<a href="regularization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Regularization</span></a>
-<a href="backprop.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Backpropagation</span></a>
-<a href="activations.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Activations</span></a>
+<a class="rc-card" href="neural-nets.html" style="--rc-accent:#64748b"><span class="rc-label">Neural Networks</span></a>
+<a class="rc-card" href="optimization.html" style="--rc-accent:#64748b"><span class="rc-label">Optimization</span></a>
+<a class="rc-card" href="regularization.html" style="--rc-accent:#64748b"><span class="rc-label">Regularization</span></a>
+<a class="rc-card" href="backprop.html" style="--rc-accent:#64748b"><span class="rc-label">Backpropagation</span></a>
+<a class="rc-card" href="activations.html" style="--rc-accent:#64748b"><span class="rc-label">Activations</span></a>
 </div>
 </div>
 <footer class="page-footer">

@@ -153,8 +153,8 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>What TGI does</h2>
-<p>Text Generation Inference (TGI) is Hugging Face's inference server for LLMs. It handles everything between your model weights and production traffic: continuous batching (processing multiple requests simultaneously without padding waste), token streaming via SSE, speculative decoding for faster generation, FlashAttention2 integration, and multi-GPU tensor parallelism. It serves an OpenAI-compatible HTTP API, so existing OpenAI clients work with minimal changes.</p>
-<p>TGI powers the Hugging Face Inference Endpoints product and is widely used for self-hosting open models like Llama, Mistral, and Qwen. It supports bfloat16, float16, GPTQ, AWQ, and EETQ quantisation.</p>
+<p>Text Generation Inference (TGI) is Hugging Face's inference server for <a class="concept-link" href="llms.html">LLMs</a>. It handles everything between your model weights and production traffic: continuous batching (processing multiple requests simultaneously without padding waste), token <a class="concept-link" href="streaming.html">streaming</a> via SSE, <a class="concept-link" href="speculative-decoding.html">speculative decoding</a> for faster generation, FlashAttention2 integration, and multi-GPU tensor parallelism. It serves an OpenAI-compatible HTTP API, so existing OpenAI clients work with minimal changes.</p>
+<p>TGI powers the Hugging Face Inference Endpoints product and is widely used for self-hosting open models like Llama, Mistral, and Qwen. It supports bfloat16, float16, <a class="concept-link" href="gptq.html">GPTQ</a>, <a class="concept-link" href="awq.html">AWQ</a>, and EETQ <a class="concept-link" href="quantization.html">quantisation</a>.</p>
 <pre><code class="language-bash"># Quick start — serve Llama 3 8B on a single GPU
 docker run --gpus all -p 8080:80   -v $HF_HOME:/data   ghcr.io/huggingface/text-generation-inference:latest   --model-id meta-llama/Meta-Llama-3-8B-Instruct   --max-input-length 4096   --max-total-tokens 8192
 </code></pre>
@@ -163,27 +163,27 @@ docker run --gpus all -p 8080:80   -v $HF_HOME:/data   ghcr.io/huggingface/text-
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Deploying with Docker</h2>
-<p>TGI is distributed as a Docker image. The <code>latest</code> tag supports most NVIDIA GPUs (Ampere+). For older GPUs or AMD ROCm, there are separate tags.</p>
+<p>TGI is distributed as a Docker image. The <code>latest</code> tag supports most <a class="concept-link" href="nvidia-gpu.html">NVIDIA GPUs</a> (Ampere+). For older GPUs or <a class="concept-link" href="amd-rocm.html">AMD ROCm</a>, there are separate tags.</p>
 <pre><code class="language-bash"># Multi-GPU with tensor parallelism (2 GPUs)
 docker run --gpus all -p 8080:80   -v $HF_HOME:/data   ghcr.io/huggingface/text-generation-inference:latest   --model-id meta-llama/Meta-Llama-3-70B-Instruct   --num-shard 2   --max-input-length 4096   --max-total-tokens 8192   --quantize bitsandbytes-nf4
 
 # Test the endpoint
 curl http://localhost:8080/v1/chat/completions   -H "Content-Type: application/json"   -d '{"model":"tgi","messages":[{"role":"user","content":"Hello!"}],"max_tokens":100}'
 </code></pre>
-<p>For GPTQ or AWQ models, use <code>--quantize gptq</code> or <code>--quantize awq</code> and ensure you're using a pre-quantised model from the Hub.</p>
+<p>For <a class="concept-link" href="gptq.html">GPTQ</a> or <a class="concept-link" href="awq.html">AWQ</a> models, use <code>--quantize gptq</code> or <code>--quantize awq</code> and ensure you're using a pre-quantised model from the Hub.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Key configuration parameters</h2>
 <p>TGI exposes dozens of flags. The most impactful:</p>
 <ul>
-<li><strong>--max-input-length</strong>: Maximum tokens in the input prompt. Affects KV-cache pre-allocation.</li>
+<li><strong>--max-input-length</strong>: Maximum tokens in the input prompt. Affects <a class="concept-link" href="kv-cache.html">KV-cache</a> pre-allocation.</li>
 <li><strong>--max-total-tokens</strong>: Input + output tokens. Sets the upper bound per request.</li>
-<li><strong>--max-batch-total-tokens</strong>: Maximum total tokens across all active requests in the continuous batch. Tune this to fill GPU memory without OOM.</li>
+<li><strong>--max-batch-total-tokens</strong>: Maximum total tokens across all active requests in the continuous batch. Tune this to fill GPU <a class="concept-link" href="agent-memory.html">memory</a> without OOM.</li>
 <li><strong>--num-shard</strong>: Number of GPUs for tensor parallelism. Must divide the number of attention heads evenly.</li>
-<li><strong>--quantize</strong>: bitsandbytes-nf4, bitsandbytes-fp4, gptq, awq, eetq.</li>
+<li><strong>--quantize</strong>: <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a>-nf4, bitsandbytes-fp4, <a class="concept-link" href="gptq.html">gptq</a>, <a class="concept-link" href="awq.html">awq</a>, eetq.</li>
 <li><strong>--speculate</strong>: Number of tokens the draft model proposes speculatively.</li>
-<li><strong>--rope-scaling</strong> / <strong>--rope-factor</strong>: Extend context window beyond training length.</li>
+<li><strong>--<a class="concept-link" href="rope.html">rope</a>-scaling</strong> / <strong>--rope-factor</strong>: Extend <a class="concept-link" href="context-window.html">context window</a> beyond training length.</li>
 </ul>
 <pre><code class="language-python">import openai
 
@@ -207,13 +207,13 @@ for chunk in response:
 <div class="section-marker">SECTION 04</div>
 <h2>Continuous batching explained</h2>
 <p>Traditional static batching waits to fill a batch, then runs all requests together to completion. This wastes GPU time: early-finishing sequences idle while long ones continue. TGI uses <strong>continuous batching</strong> (also called in-flight batching): when any sequence finishes, a new request immediately joins the active batch without waiting.</p>
-<p>The KV-cache is managed dynamically using <strong>PagedAttention</strong> (borrowed from vLLM). Memory is allocated in fixed-size pages rather than per-sequence, allowing efficient sharing and reuse. This means TGI can sustain high throughput even with highly variable sequence lengths — a critical property for production APIs where users send everything from 10-token queries to 4000-token documents.</p>
+<p>The <a class="concept-link" href="kv-cache.html">KV-cache</a> is managed dynamically using <strong>PagedAttention</strong> (borrowed from <a class="concept-link" href="vllm.html">vLLM</a>). <a class="concept-link" href="agent-memory.html">Memory</a> is allocated in <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> pages rather than per-sequence, allowing efficient sharing and reuse. This means TGI can sustain high throughput even with highly variable sequence lengths — a critical property for production APIs where users send everything from 10-token queries to 4000-token documents.</p>
 <p>In practice, continuous batching gives 2–10× higher throughput than static batching for typical API workloads with mixed sequence lengths.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Tensor parallelism</h2>
-<p>For models that don't fit on a single GPU, TGI supports tensor parallelism via <code>--num-shard N</code>. This splits attention heads and MLP layers across N GPUs, with each GPU holding 1/N of each layer. All-reduce operations synchronise activations between forward passes.</p>
+<p>For models that don't fit on a single GPU, TGI supports tensor parallelism via <code>--num-shard N</code>. This splits attention heads and MLP layers across N GPUs, with each GPU holding 1/N of each layer. All-reduce operations synchronise <a class="concept-link" href="activations.html">activations</a> between forward passes.</p>
 <p>Requirements: all GPUs must be on the same node (NVLink preferred for best bandwidth). The number of GPUs must divide the number of attention heads evenly (e.g. 32 heads → 1, 2, 4, 8, or 16 GPUs).</p>
 <pre><code class="language-bash"># Check GPU topology first
 nvidia-smi topo -m
@@ -226,36 +226,33 @@ docker run --gpus '"device=0,1,2,3"' -p 8080:80   -v $HF_HOME:/data   ghcr.io/hu
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Quantisation support</h2>
-<p>TGI supports several quantisation schemes, each with different trade-offs:</p>
+<p>TGI supports several <a class="concept-link" href="quantization.html">quantisation</a> schemes, each with different trade-offs:</p>
 <ul>
-<li><strong>bitsandbytes-nf4</strong>: 4-bit NF4 quantisation on the fly. Easiest to use — works with any bf16/fp16 model. ~25% quality degradation vs fp16, but 4× memory reduction.</li>
-<li><strong>GPTQ</strong>: Post-training quantisation that calibrates per-layer. Requires a pre-quantised model (many available on HF Hub with <code>-GPTQ</code> suffix). Better quality than bnb at same bit-width.</li>
-<li><strong>AWQ</strong>: Activation-aware Weight Quantisation. State-of-the-art 4-bit method. Better than GPTQ on most benchmarks. Requires AWQ-quantised model.</li>
-<li><strong>EETQ</strong>: 8-bit quantisation, good for inference on slightly older hardware.</li>
+<li><strong><a class="concept-link" href="bitsandbytes.html">bitsandbytes</a>-nf4</strong>: 4-bit NF4 quantisation on the fly. Easiest to use — works with any bf16/fp16 model. ~25% quality degradation vs fp16, but 4× <a class="concept-link" href="agent-memory.html">memory</a> reduction.</li>
+<li><strong><a class="concept-link" href="gptq.html">GPTQ</a></strong>: Post-training quantisation that calibrates per-layer. Requires a pre-quantised model (many available on HF Hub with <code>-GPTQ</code> suffix). Better quality than bnb at same bit-width.</li>
+<li><strong><a class="concept-link" href="awq.html">AWQ</a></strong>: Activation-aware Weight Quantisation. State-of-the-art 4-bit method. Better than GPTQ on most <a class="concept-link" href="benchmarks.html">benchmarks</a>. Requires AWQ-quantised model.</li>
+<li><strong>EETQ</strong>: 8-bit quantisation, good for inference on slightly older <a class="concept-link" href="hardware.html">hardware</a>.</li>
 </ul>
 <p>Recommendation: use AWQ for best quality-size trade-off, bnb-nf4 for flexibility when no pre-quantised model exists.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>OOM during startup</strong>: TGI pre-allocates KV-cache based on <code>--max-batch-total-tokens</code>. If you set this too high for your GPU, it OOMs at startup rather than at runtime. Start with a lower value and increase until you see OOM.</p>
+<p><strong>OOM during startup</strong>: TGI pre-allocates <a class="concept-link" href="kv-cache.html">KV-cache</a> based on <code>--max-batch-total-tokens</code>. If you set this too high for your GPU, it OOMs at startup rather than at runtime. Start with a lower value and increase until you see OOM.</p>
 <p><strong>Model gates</strong>: Llama and some other models require accepting a HuggingFace license before downloading. Set <code>HUGGING_FACE_HUB_TOKEN</code> env var with a token that has accepted the license.</p>
 <p><strong>Version pinning</strong>: The <code>latest</code> tag changes frequently. Pin to a specific version (e.g. <code>2.4.0</code>) in production.</p>
 <p><strong>Max tokens asymmetry</strong>: <code>--max-input-length</code> and <code>--max-total-tokens</code> must both be set. Total must be &gt; input. A common mistake: setting input=4096 and total=4096, leaving zero room for output.</p>
-<p><strong>Tokenizer mismatch</strong>: If you use a chat template, TGI applies it automatically from the model's tokenizer config. If you pass already-formatted prompts AND enable the chat completions endpoint, you may get double-formatting.</p>
+<p><strong><a class="concept-link" href="tokenization.html">Tokenizer</a> mismatch</strong>: If you use a chat template, TGI applies it automatically from the model's tokenizer config. If you pass already-formatted prompts AND enable the chat completions endpoint, you may get double-formatting.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="vllm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
-<a href="ollama.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
-<a href="sglang.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">SGLang</span></a>
-<a href="llm-router.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">LLM Router</span></a>
-<a href="semantic-cache.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Semantic Cache</span></a>
+<a class="rc-card" href="vllm.html" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
+<a class="rc-card" href="ollama.html" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
+<a class="rc-card" href="sglang.html" style="--rc-accent:#64748b"><span class="rc-label">SGLang</span></a>
+<a class="rc-card" href="llm-router.html" style="--rc-accent:#64748b"><span class="rc-label">LLM Router</span></a>
+<a class="rc-card" href="semantic-cache.html" style="--rc-accent:#64748b"><span class="rc-label">Semantic Cache</span></a>
 </div>
 </div>
 <footer>

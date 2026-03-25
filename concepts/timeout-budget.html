@@ -152,12 +152,12 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Why Timeouts Matter</h2>
-<p>Without timeouts, a single slow model call blocks a thread indefinitely, exhausting connection pools and bringing down entire services. LLM latency is highly variable: p50 may be 1 s, p99 may be 30 s. Every stage of your pipeline (retrieval, reranking, generation) needs an independent timeout that fits within the overall user-facing budget.</p>
+<p>Without timeouts, a single slow model call blocks a thread indefinitely, exhausting connection pools and bringing down entire services. LLM latency is highly variable: p50 may be 1 s, p99 may be 30 s. Every stage of your pipeline (retrieval, <a class="concept-link" href="reranking.html">reranking</a>, generation) needs an independent timeout that fits within the overall user-facing budget.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Budget Allocation Strategy</h2>
-<p>Start with your end-to-end SLA (e.g. 8 s). Allocate across stages with headroom: retrieval 0.5 s, reranking 0.3 s, generation 5 s, post-processing 0.2 s, network/overhead 2 s. The generation budget should be ~60–70% of the total. Never allocate the full budget to a single stage — you need slack for retries.</p>
+<p>Start with your end-to-end SLA (e.g. 8 s). Allocate across stages with headroom: retrieval 0.5 s, <a class="concept-link" href="reranking.html">reranking</a> 0.3 s, generation 5 s, post-processing 0.2 s, network/overhead 2 s. The generation budget should be ~60–70% of the total. Never allocate the full budget to a single stage — you need slack for retries.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -192,7 +192,7 @@ async def pipeline(query: str, ctx: RequestContext) -&gt; str:
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Streaming as Mitigation</h2>
-<p>Streaming responses change the user's perception of latency: the first token at 500 ms feels fast even if the full response takes 8 s. Implement streaming with a token-level timeout (abort if no new token arrives in 3 s) rather than an absolute response timeout. This catches hung generations without cutting short fast ones.</p>
+<p><a class="concept-link" href="streaming.html">Streaming</a> responses change the user's perception of latency: the first token at 500 ms feels fast even if the full response takes 8 s. Implement streaming with a token-level timeout (abort if no new token arrives in 3 s) rather than an absolute response timeout. This catches hung generations without cutting short fast ones.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
@@ -200,17 +200,14 @@ async def pipeline(query: str, ctx: RequestContext) -&gt; str:
 <p>Track: timeout_rate by stage (retrieval/generation/total), p50/p95/p99 latency per stage, and partial_fallback_rate. Alert if timeout_rate exceeds 1% — it usually indicates a provider issue or a prompt change that inflated output length. Correlate timeout spikes with deployment events and model version changes.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="retry-backoff.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Retry & Backoff</span></a>
-<a href="circuit-breaker.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Circuit Breaker</span></a>
-<a href="sync-async-serving.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Sync vs Async</span></a>
-<a href="streaming-arch.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Streaming Architecture</span></a>
-<a href="batch-execution.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Batch Execution</span></a>
+<a class="rc-card" href="retry-backoff.html" style="--rc-accent:#ef4444"><span class="rc-label">Retry &amp; Backoff</span></a>
+<a class="rc-card" href="circuit-breaker.html" style="--rc-accent:#ef4444"><span class="rc-label">Circuit Breaker</span></a>
+<a class="rc-card" href="sync-async-serving.html" style="--rc-accent:#ef4444"><span class="rc-label">Sync vs Async</span></a>
+<a class="rc-card" href="streaming-arch.html" style="--rc-accent:#ef4444"><span class="rc-label">Streaming Architecture</span></a>
+<a class="rc-card" href="batch-execution.html" style="--rc-accent:#ef4444"><span class="rc-label">Batch Execution</span></a>
 </div>
 </div>
 <footer>

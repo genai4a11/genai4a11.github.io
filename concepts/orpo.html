@@ -153,10 +153,10 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>ORPO vs DPO vs RLHF</h2>
-<p><strong>RLHF (full)</strong>: SFT → train reward model → PPO RL fine-tuning. Gold standard for quality but requires a separate reward model, PPO tuning (notoriously unstable), and 3–4 separate training stages. Used by OpenAI and Anthropic for frontier models.</p>
-<p><strong>DPO</strong>: SFT → DPO on chosen/rejected pairs. Eliminates the reward model and RL training loop. Still requires a separate SFT stage first — DPO needs a good base policy to align. Two-stage pipeline.</p>
-<p><strong>ORPO</strong> (Hong et al. 2024): single training stage. The ORPO loss combines supervised fine-tuning on chosen responses with a penalty for rejected responses in one unified objective. No SFT pre-step needed — you train directly from a base model to an aligned model. Simpler pipeline, comparable quality to DPO on most benchmarks.</p>
-<p>In practice: ORPO is the best default when you have a preference dataset and want the simplest possible pipeline. Use DPO when you already have a well-tuned SFT model you want to align. Use full RLHF only when you have the infrastructure and need frontier-quality alignment.</p>
+<p><strong><a class="concept-link" href="rlhf.html">RLHF</a> (full)</strong>: SFT → train reward model → PPO RL <a class="concept-link" href="finetuning.html">fine-tuning</a>. Gold standard for quality but requires a separate reward model, PPO tuning (notoriously unstable), and 3–4 separate training stages. Used by OpenAI and Anthropic for <a class="concept-link" href="frontier-models.html">frontier models</a>.</p>
+<p><strong><a class="concept-link" href="dpo.html">DPO</a></strong>: SFT → DPO on chosen/rejected pairs. Eliminates the reward model and RL training loop. Still requires a separate SFT stage first — DPO needs a good base policy to align. Two-stage pipeline.</p>
+<p><strong>ORPO</strong> (Hong et al. 2024): single training stage. The ORPO loss combines supervised fine-tuning on chosen responses with a penalty for rejected responses in one unified objective. No SFT pre-step needed — you train directly from a base model to an aligned model. Simpler pipeline, comparable quality to DPO on most <a class="concept-link" href="benchmarks.html">benchmarks</a>.</p>
+<p>In practice: ORPO is the best default when you have a preference dataset and want the simplest possible pipeline. Use DPO when you already have a well-tuned SFT model you want to align. Use full RLHF only when you have the <a class="concept-link" href="infra.html">infrastructure</a> and need frontier-quality alignment.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -169,7 +169,7 @@ OR = odds(chosen) / odds(rejected)
 L_OR = -log(sigmoid(log(OR)))
 </code></pre>
 <p>Total loss: <strong>L_ORPO = L_SFT + λ · L_OR</strong></p>
-<p>The odds ratio formulation is more stable than directly comparing log-probabilities (as in DPO) because it's bounded and less sensitive to the absolute probability scale. When the model assigns much higher probability to chosen than rejected, OR is large and L_OR is small — the penalty disappears. When the model prefers rejected, OR &lt; 1 and the penalty is large.</p>
+<p>The odds ratio formulation is more stable than directly comparing log-probabilities (as in <a class="concept-link" href="dpo.html">DPO</a>) because it's bounded and less sensitive to the absolute probability scale. When the model assigns much higher probability to chosen than rejected, OR is large and L_OR is small — the penalty disappears. When the model prefers rejected, OR &lt; 1 and the penalty is large.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -291,29 +291,26 @@ def format_for_orpo(example):
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>When to choose ORPO</h2>
-<p><strong>Choose ORPO when</strong>: you want the simplest pipeline (one training job instead of two), you're starting from a base model, you have a preference dataset with clear chosen/rejected pairs, or you're resource-constrained and can't run a two-stage SFT + DPO pipeline.</p>
+<p><strong>Choose ORPO when</strong>: you want the simplest pipeline (one training job instead of two), you're starting from a base model, you have a preference dataset with clear chosen/rejected pairs, or you're resource-constrained and can't run a two-stage SFT + <a class="concept-link" href="dpo.html">DPO</a> pipeline.</p>
 <p><strong>Choose DPO when</strong>: you already have a high-quality SFT model and want to align it without retraining from scratch. DPO fine-tunes only the alignment; ORPO fine-tunes both instruction following and alignment simultaneously — if your SFT model is already very good, DPO may preserve more of that tuning.</p>
-<p><strong>Quality comparison</strong>: on most benchmarks (MT-Bench, AlpacaEval), ORPO produces comparable or slightly lower quality than SFT+DPO. The difference is small enough that the pipeline simplicity often justifies choosing ORPO. For frontier-quality models, full RLHF with a reward model still produces better results than both.</p>
+<p><strong>Quality comparison</strong>: on most <a class="concept-link" href="benchmarks.html">benchmarks</a> (<a class="concept-link" href="mt-bench.html">MT-Bench</a>, AlpacaEval), ORPO produces comparable or slightly lower quality than SFT+DPO. The difference is small enough that the pipeline simplicity often justifies choosing ORPO. For frontier-quality models, full <a class="concept-link" href="rlhf.html">RLHF</a> with a reward model still produces better results than both.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>ORPO's lambda (beta) needs tuning.</strong> Too small (0.01): the OR penalty is negligible and you get near-SFT behaviour. Too large (1.0): the OR penalty dominates and the model collapses to always outputting the minimum necessary to score higher than rejected, losing helpfulness. Start with beta=0.1 and tune based on win rate on a held-out eval set.</p>
 <p><strong>Chosen and rejected must differ meaningfully.</strong> If chosen and rejected responses are very similar (minor wording differences), the odds ratio provides almost no training signal. The most effective preference pairs have clear quality differences — correct vs. incorrect, specific vs. vague, safe vs. unsafe. Build datasets where a naive observer can immediately tell which response is better.</p>
-<p><strong>Base model matters more for ORPO than DPO.</strong> DPO starts from an SFT model that already knows how to follow instructions. ORPO starts from a base model and must learn instruction following and preference alignment simultaneously. Using a weak base model (e.g., a very small model or a domain-specific model without instruction tuning) produces worse results with ORPO than DPO.</p>
+<p><strong>Base model matters more for ORPO than <a class="concept-link" href="dpo.html">DPO</a>.</strong> DPO starts from an SFT model that already knows how to follow instructions. ORPO starts from a base model and must learn instruction following and preference alignment simultaneously. Using a weak base model (e.g., a very small model or a domain-specific model without instruction tuning) produces worse results with ORPO than DPO.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="rlhf.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">RLHF</span></a>
-<a href="dpo.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">DPO</span></a>
-<a href="rlaif.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">RLAIF</span></a>
-<a href="lora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
-<a href="qlora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
+<a class="rc-card" href="rlhf.html" style="--rc-accent:#8b5cf6"><span class="rc-label">RLHF</span></a>
+<a class="rc-card" href="dpo.html" style="--rc-accent:#8b5cf6"><span class="rc-label">DPO</span></a>
+<a class="rc-card" href="rlaif.html" style="--rc-accent:#8b5cf6"><span class="rc-label">RLAIF</span></a>
+<a class="rc-card" href="lora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
+<a class="rc-card" href="qlora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
 </div>
 </div>
 <footer>

@@ -154,7 +154,7 @@
 <div class="section-marker">SECTION 01</div>
 <h2>Why parallelism matters for agents</h2>
 <p>A sequential agent that calls three tools one-by-one, each taking 2 seconds, takes 6 seconds total. If those tool calls are independent (the result of tool A doesn't affect what you pass to tool B), running them in parallel takes 2 seconds — a 3× latency improvement. As workflows grow, this difference compounds dramatically.</p>
-<p>Modern LLMs are expensive to call but fast in parallel: you can fan out 10 simultaneous API calls and pay the same wall-clock time as a single call. This is one of the biggest practical optimisations in production agent systems.</p>
+<p>Modern <a class="concept-link" href="llms.html">LLMs</a> are expensive to call but fast in parallel: you can fan out 10 simultaneous API calls and pay the same wall-clock time as a single call. This is one of the biggest practical optimisations in production agent systems.</p>
 <p>The rule is simple: <strong>serialise tasks that depend on each other; parallelise everything else.</strong></p>
 </div>
 <div class="section-block" id="s2">
@@ -162,7 +162,7 @@
 <h2>Identifying parallelisable subtasks</h2>
 <p>A subtask can run in parallel if it doesn't consume output from any other subtask in the same fan-out group. Common patterns:</p>
 <p><strong>Data gathering</strong>: search five different sources simultaneously instead of one-by-one. Each search is independent.</p>
-<p><strong>Multi-perspective analysis</strong>: ask three different specialist agents to evaluate the same document from different angles (legal, technical, financial). None needs the others' output to start.</p>
+<p><strong>Multi-perspective analysis</strong>: ask three different specialist <a class="concept-link" href="agents.html">agents</a> to evaluate the same document from different angles (legal, technical, financial). None needs the others' output to start.</p>
 <p><strong>Batch processing</strong>: summarise 20 documents in parallel rather than sequentially.</p>
 <p><strong>Validation</strong>: run multiple quality checks on a generated output simultaneously — grammar, factual accuracy, tone — and merge feedback.</p>
 <p>Anything with a DAG dependency (A feeds B feeds C) cannot be parallelised within that chain, but independent chains within the DAG can run concurrently.</p>
@@ -253,7 +253,7 @@ ordered = [summaries[i] for i in range(len(documents))]
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Parallel agents with LangGraph</h2>
-<p>LangGraph supports parallel node execution natively via fan-out edges — when multiple nodes connect from the same source, LangGraph runs them in parallel:</p>
+<p><a class="concept-link" href="langgraph.html">LangGraph</a> supports parallel node execution natively via fan-out edges — when multiple nodes connect from the same source, LangGraph runs them in parallel:</p>
 <pre><code class="language-python">from langgraph.graph import StateGraph, END
 from typing import TypedDict, Annotated
 import operator
@@ -328,21 +328,18 @@ async def limited_call(text: str):
     async with sem:
         return await analyse_from_perspective(text, "legal")
 </code></pre>
-<p><strong>Cost scales linearly with parallelism.</strong> Running 20 agents in parallel costs 20× as much as running one. The latency improves but the total token cost stays the same. Monitor costs and only parallelise where latency genuinely matters to the user.</p>
+<p><strong>Cost scales linearly with parallelism.</strong> Running 20 <a class="concept-link" href="agents.html">agents</a> in parallel costs 20× as much as running one. The latency improves but the total token cost stays the same. Monitor costs and only parallelise where latency genuinely matters to the user.</p>
 <p><strong>Order is not guaranteed.</strong> <code>asyncio.gather()</code> returns results in the same order as the input coroutines, but <code>as_completed()</code> returns in completion order. Be explicit about which you need — using <code>as_completed</code> when you need ordering will produce subtle bugs.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="orchestrator-pattern.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Orchestrator Pattern</span></a>
-<a href="human-in-the-loop.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Human-in-the-Loop</span></a>
-<a href="sequential-chain.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Sequential Chain</span></a>
-<a href="event-driven-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Event-Driven Agent</span></a>
-<a href="react-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="orchestrator-pattern.html" style="--rc-accent:#06b6d4"><span class="rc-label">Orchestrator Pattern</span></a>
+<a class="rc-card" href="human-in-the-loop.html" style="--rc-accent:#06b6d4"><span class="rc-label">Human-in-the-Loop</span></a>
+<a class="rc-card" href="sequential-chain.html" style="--rc-accent:#06b6d4"><span class="rc-label">Sequential Chain</span></a>
+<a class="rc-card" href="event-driven-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">Event-Driven Agent</span></a>
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
 </div>
 </div>
 <footer>

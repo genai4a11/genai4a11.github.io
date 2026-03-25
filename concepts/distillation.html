@@ -152,12 +152,12 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>What Is Distillation?</h2>
-<p>Distillation (Hinton 2015) trains a small student model to match the outputs of a large teacher model. For LLMs, the most practical form is behavioural cloning: generate high-quality (query, response) pairs from the teacher, then fine-tune the student on those pairs. The student learns the teacher's reasoning style without having the teacher's scale.</p>
+<p>Distillation (Hinton 2015) trains a small student model to match the outputs of a large teacher model. For <a class="concept-link" href="llms.html">LLMs</a>, the most practical form is behavioural cloning: generate high-quality (query, response) pairs from the teacher, then fine-tune the student on those pairs. The student learns the teacher's reasoning style without having the teacher's scale.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Teacher Data Generation</h2>
-<p>Use the teacher (GPT-4o, Claude Opus) to generate responses to your task-specific queries. " "Key considerations: diverse query coverage, rejection sampling (keep only teacher responses that pass quality checks), " "and sufficient volume (10K minimum, 100K for strong results).</p>
+<p>Use the teacher (<a class="concept-link" href="gpt4o.html">GPT-4o</a>, Claude Opus) to generate responses to your task-specific queries. " "Key considerations: diverse query coverage, rejection sampling (keep only teacher responses that pass quality checks), " "and sufficient volume (10K minimum, 100K for strong results).</p>
 <pre><code>from openai import OpenAI
 import json, tqdm
 client = OpenAI()
@@ -180,7 +180,7 @@ def generate_teacher_data(queries: list[str], output_file: str):
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Training the Student</h2>
-<p>Fine-tune a small model (Llama 3.2 3B, Phi-3 mini) on the teacher data using standard SFT. " "Use LoRA for parameter efficiency. Learning rate 2e-5, 3 epochs, cosine schedule. " "Eval on a held-out 10% of the teacher-generated data + your golden test set.</p>
+<p>Fine-tune a small model (Llama 3.2 3B, Phi-3 mini) on the teacher data using standard SFT. " "Use <a class="concept-link" href="lora.html">LoRA</a> for parameter efficiency. Learning rate 2e-5, 3 epochs, cosine schedule. " "Eval on a held-out 10% of the teacher-generated data + your golden test set.</p>
 <pre><code>from trl import SFTTrainer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig
@@ -204,25 +204,22 @@ trainer.train()</code></pre>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Speculative Decoding Link</h2>
-<p>Distilled small models are excellent draft models for speculative decoding with the original large teacher. The student generates candidate tokens cheaply; the teacher verifies and accepts/rejects. This gives teacher-quality output at near-student-speed — the best of both worlds.</p>
+<p>Distilled small models are excellent draft models for <a class="concept-link" href="speculative-decoding.html">speculative decoding</a> with the original large teacher. The student generates candidate tokens cheaply; the teacher verifies and accepts/rejects. This gives teacher-quality output at near-student-speed — the best of both worlds.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Production Recipe</h2>
-<p>1. Identify your highest-volume task (e.g. classification, extraction, summarisation). 2. Generate 50K teacher examples with diversity sampling. 3. Fine-tune a 3B–7B student model with LoRA. 4. A/B test student vs teacher on 5% of live traffic. 5. If quality delta &lt; 5%, fully migrate to student. 6. Use teacher as fallback for low-confidence student outputs.</p>
+<p>1. Identify your highest-volume task (e.g. classification, extraction, summarisation). 2. Generate 50K teacher examples with diversity sampling. 3. Fine-tune a 3B–7B student model with <a class="concept-link" href="lora.html">LoRA</a>. 4. A/B test student vs teacher on 5% of live traffic. 5. If quality delta &lt; 5%, fully migrate to student. 6. Use teacher as fallback for low-confidence student outputs.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="test-time-compute.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Test-Time Compute</span></a>
-<a href="long-ctx-impact.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Long Context Impact</span></a>
-<a href="multimodal-native.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Multimodal Native</span></a>
-<a href="rag-vs-finetuning.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
-<a href="model-selection.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Model Selection</span></a>
+<a class="rc-card" href="test-time-compute.html" style="--rc-accent:#64748b"><span class="rc-label">Test-Time Compute</span></a>
+<a class="rc-card" href="long-ctx-impact.html" style="--rc-accent:#64748b"><span class="rc-label">Long Context Impact</span></a>
+<a class="rc-card" href="multimodal-native.html" style="--rc-accent:#64748b"><span class="rc-label">Multimodal Native</span></a>
+<a class="rc-card" href="rag-vs-finetuning.html" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
+<a class="rc-card" href="model-selection.html" style="--rc-accent:#64748b"><span class="rc-label">Model Selection</span></a>
 </div>
 </div>
 <footer>

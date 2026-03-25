@@ -497,7 +497,7 @@
 <div class="section-block" id="why-peft">
 <div class="section-marker">01 — The Problem</div>
 <h2>Why PEFT Exists</h2>
-<p>Full fine-tuning requires updating all weights — for a 7B model that's ~28GB of gradients in FP32, plus optimizer states (Adam stores 2 copies), pushing total training memory above 100GB. PEFT methods freeze the base model and train only a small number of additional parameters. The base model weights never change — you train an adapter on top.</p>
+<p>Full <a class="concept-link" href="finetuning.html">fine-tuning</a> requires updating all weights — for a 7B model that's ~28GB of gradients in FP32, plus optimizer states (Adam stores 2 copies), pushing total training <a class="concept-link" href="agent-memory.html">memory</a> above 100GB. PEFT methods freeze the base model and train only a small number of additional parameters. The base model weights never change — you train an adapter on top.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Key insight:</strong> A LoRA adapter for a 7B model can be as small as 30MB. You can swap adapters at serve time without reloading the base model — one GPU, many specialized behaviours.</span>
@@ -520,13 +520,13 @@
 </tbody>
 </table>
 </div>
-<p>All PEFT methods maintain the same inference quality as LoRA-merged adapters, but trade off parameter efficiency against serving flexibility. LoRA dominates for single-task deployment; adapters excel in multi-task scenarios.</p>
+<p>All PEFT methods maintain the same inference quality as <a class="concept-link" href="lora.html">LoRA</a>-merged adapters, but trade off parameter efficiency against serving flexibility. LoRA dominates for single-task deployment; adapters excel in multi-task scenarios.</p>
 </div>
 <!-- ── 3. LoRA IN DEPTH ── -->
 <div class="section-block" id="lora-depth">
 <div class="section-marker">03 — Core Technique</div>
 <h2>LoRA in Depth</h2>
-<p>LoRA (Low-Rank Adaptation) decomposes the weight update ΔW into two low-rank matrices: <strong>ΔW = B × A</strong>, where A ∈ ℝ^(r×d) and B ∈ ℝ^(d×r). Only A and B are trained. At inference, BA is merged back into the original weight — zero overhead.</p>
+<p><a class="concept-link" href="lora.html">LoRA</a> (Low-Rank Adaptation) decomposes the weight update ΔW into two low-rank matrices: <strong>ΔW = B × A</strong>, where A ∈ ℝ^(r×d) and B ∈ ℝ^(d×r). Only A and B are trained. At inference, BA is merged back into the original weight — zero overhead.</p>
 <h3>Rank Selection Guide</h3>
 <div class="methods-list">
 <div class="method-card">
@@ -554,7 +554,7 @@
 <div class="method-num">4</div>
 <div class="method-body">
 <h3>Rank 128+ <em>— rare</em></h3>
-<p>Rarely needed. Diminishing returns; approaching full fine-tune cost. Only if you've validated that quality improves and memory is unconstrained.</p>
+<p>Rarely needed. Diminishing returns; approaching full fine-tune cost. Only if you've validated that quality improves and <a class="concept-link" href="agent-memory.html">memory</a> is unconstrained.</p>
 </div>
 </div>
 </div>
@@ -567,13 +567,13 @@
 <div class="section-block" id="qlora">
 <div class="section-marker">04 — Extreme Efficiency</div>
 <h2>QLoRA: 4-bit + LoRA</h2>
-<p>QLoRA quantizes the frozen base model to NF4 (4-bit NormalFloat) and trains LoRA adapters on top in BF16. A 65B model that required 780GB in FP32 fits on a single 48GB GPU. Three key innovations: NF4 quantization, double quantization (quantizing the quantization constants), and paged optimizers.</p>
+<p><a class="concept-link" href="qlora.html">QLoRA</a> quantizes the frozen base model to NF4 (4-bit NormalFloat) and trains <a class="concept-link" href="lora.html">LoRA</a> adapters on top in BF16. A 65B model that required 780GB in FP32 fits on a single 48GB GPU. Three key innovations: NF4 <a class="concept-link" href="quantization.html">quantization</a>, double quantization (quantizing the quantization constants), and paged optimizers.</p>
 <h3>Memory Comparison</h3>
 <div class="example-box">Model      Full FT (FP32)    LoRA (BF16)    QLoRA (NF4)
 7B         112 GB            ~28 GB         ~6 GB
 13B        208 GB            ~52 GB         ~10 GB
 70B        1,120 GB          ~280 GB        ~48 GB</div>
-<p>QLoRA trades a small loss in convergence speed and final quality (~5%) for the ability to fine-tune billion-parameter models on consumer hardware. It's the most practical PEFT method for researchers without enterprise budgets.</p>
+<p>QLoRA trades a small loss in convergence speed and final quality (~5%) for the ability to fine-tune billion-parameter models on consumer <a class="concept-link" href="hardware.html">hardware</a>. It's the most practical PEFT method for researchers without enterprise budgets.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>When to use QLoRA:</strong> You have a 13B+ model and a single GPU under 48GB VRAM. Quality loss is minimal; feasibility gain is massive.</span>
@@ -587,15 +587,15 @@
 <div class="practice-item">
 <h3><span class="badge">💻</span> Consumer GPU (&lt; 24GB)</h3>
 <ul>
-<li>QLoRA — only practical option for large models</li>
-<li>Enables fine-tuning 13B+ on a 3090/4090</li>
+<li><a class="concept-link" href="qlora.html">QLoRA</a> — only practical option for large models</li>
+<li>Enables <a class="concept-link" href="finetuning.html">fine-tuning</a> 13B+ on a 3090/4090</li>
 <li>Minimal quality penalty</li>
 </ul>
 </div>
 <div class="practice-item">
 <h3><span class="badge">🚀</span> Production Serving</h3>
 <ul>
-<li>LoRA merged — zero inference overhead after merge</li>
+<li><a class="concept-link" href="lora.html">LoRA</a> merged — zero inference overhead after merge</li>
 <li>Clearest performance characteristics</li>
 <li>Simplest deployment pipeline</li>
 </ul>
@@ -611,14 +611,14 @@
 <div class="practice-item">
 <h3><span class="badge">✏️</span> Style/Tone Only</h3>
 <ul>
-<li>Prefix tuning — fewest params, fastest to train</li>
+<li><a class="concept-link" href="prefix-tuning.html">Prefix tuning</a> — fewest params, fastest to train</li>
 <li>Good for instruction following tweaks</li>
 <li>Skip if you need knowledge injection</li>
 </ul>
 </div>
 </div>
 <h3>Decision Tree</h3>
-<p><strong>Start with LoRA rank 16.</strong> If you hit GPU memory limits, use QLoRA. If you need to serve multiple specialized models simultaneously without reloading, use adapter layers. For cosmetic changes only (style, tone, instruction format), try prefix tuning first.</p>
+<p><strong>Start with LoRA rank 16.</strong> If you hit GPU <a class="concept-link" href="agent-memory.html">memory</a> limits, use QLoRA. If you need to serve multiple specialized models simultaneously without reloading, use adapter layers. For cosmetic changes only (style, tone, instruction format), try prefix tuning first.</p>
 </div>
 <!-- ── 6. TOOLS ── -->
 <div class="section-block" id="tools">
@@ -666,14 +666,14 @@
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Hu, E.J. et al. (2022).
-        <em>LoRA: Low-Rank Adaptation of Large Language Models.</em>
+        <em><a class="concept-link" href="lora.html">LoRA</a>: Low-Rank Adaptation of Large Language Models.</em>
         arXiv:2106.09685. —
         <a href="https://arxiv.org/abs/2106.09685" target="_blank">arxiv:2106.09685 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Dettmers, T. et al. (2023).
-        <em>QLoRA: Efficient Finetuning of Quantized LLMs.</em>
+        <em><a class="concept-link" href="qlora.html">QLoRA</a>: Efficient <a class="concept-link" href="finetuning.html">Finetuning</a> of Quantized <a class="concept-link" href="llms.html">LLMs</a>.</em>
         arXiv:2305.14314. —
         <a href="https://arxiv.org/abs/2305.14314" target="_blank">arxiv:2305.14314 ↗</a>
 </li>
@@ -688,9 +688,9 @@
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
 <li><span class="ref-badge badge-docs">Docs</span> HuggingFace PEFT Library. <a href="https://github.com/huggingface/peft" target="_blank">github.com/huggingface/peft ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> Unsloth Documentation. <a href="https://github.com/unslothai/unsloth" target="_blank">github.com/unslothai/unsloth ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> Axolotl — Fine-tuning Framework. <a href="https://github.com/openaccess-ai-collective/axolotl" target="_blank">github.com/openaccess-ai-collective/axolotl ↗</a></li>
-<li><span class="ref-badge badge-guide">Guide</span> LLaMA-Factory Web UI. <a href="https://github.com/hiyouga/LLaMA-Factory" target="_blank">github.com/hiyouga/LLaMA-Factory ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="unsloth.html">Unsloth</a> Documentation. <a href="https://github.com/unslothai/unsloth" target="_blank">github.com/unslothai/unsloth ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="axolotl.html">Axolotl</a> — <a class="concept-link" href="finetuning.html">Fine-tuning</a> Framework. <a href="https://github.com/openaccess-ai-collective/axolotl" target="_blank">github.com/openaccess-ai-collective/axolotl ↗</a></li>
+<li><span class="ref-badge badge-guide">Guide</span> <a class="concept-link" href="llama-factory.html">LLaMA-Factory</a> Web UI. <a href="https://github.com/hiyouga/LLaMA-Factory" target="_blank">github.com/hiyouga/LLaMA-Factory ↗</a></li>
 </ul>
 <div class="ref-group-title">Practitioner Writing</div>
 <ul class="ref-list">
@@ -706,17 +706,14 @@
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="alignment.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Alignment & RLHF</span></a>
-<a href="ft-tools.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Training Tools</span></a>
-<a href="data-prep.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Data Preparation</span></a>
-<a href="lora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
-<a href="qlora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
+<a class="rc-card" href="alignment.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Alignment &amp; RLHF</span></a>
+<a class="rc-card" href="ft-tools.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Training Tools</span></a>
+<a class="rc-card" href="data-prep.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Data Preparation</span></a>
+<a class="rc-card" href="lora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
+<a class="rc-card" href="qlora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
 </div>
 </div>
 <footer class="page-footer">

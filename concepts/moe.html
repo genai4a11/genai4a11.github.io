@@ -357,7 +357,7 @@
 <h2>The Core Idea</h2>
 <p>Mixture of Experts (MoE) is a sparse activation architecture that enables efficient scaling of large language models by only activating a subset of network parameters for each token. Rather than passing every token through all layers (as in dense models), MoE models route tokens to different specialized expert networks based on input-dependent routing decisions. This approach dramatically reduces compute requirements while maintaining or exceeding the performance of larger dense models.</p>
 <p>The fundamental insight driving MoE is that not every token needs the same processing. Different tokens may benefit from different types of computation. By maintaining multiple specialized experts (typically Feed-Forward Networks) and learning which expert is best for each token, MoE models achieve what's called "compute-efficient scaling." A model with billions of parameters can run with substantially lower per-token compute by ensuring only a fraction of parameters are active for any given token.</p>
-<p>This contrasts sharply with dense models where compute scales linearly with model size. With MoE, you can have a model with 200B parameters where only 15B are active per token, making inference faster while maintaining competitive quality. The trade-off is added complexity in architecture design, training, and inference infrastructure.</p>
+<p>This contrasts sharply with dense models where compute scales linearly with model size. With MoE, you can have a model with 200B parameters where only 15B are active per token, making inference faster while maintaining competitive quality. The trade-off is added complexity in architecture design, training, and inference <a class="concept-link" href="infra.html">infrastructure</a>.</p>
 <div class="callout blue">
 <p><strong>Key Efficiency Insight:</strong> Sparse activation means computation is proportional to the number of active parameters, not total parameters. A 200B MoE model with 8 experts and top-2 routing may only activate ~25B parameters per token, making it substantially faster than a 70B dense model.</p>
 </div>
@@ -461,7 +461,7 @@ def moe_routing(x, router, num_experts=8, k=2):
     return top_k_indices, top_k_weights, aux_loss</div>
 <p>The auxiliary load balancing loss operates on router probabilities averaged over tokens. It penalizes configurations where some experts receive high importance (token probability) but low load (few tokens routed), or vice versa. This encourages the router to distribute tokens evenly across experts, preventing collapse to a single expert.</p>
 <div class="callout green">
-<p><strong>Expert Collapse Prevention:</strong> The auxiliary loss is essential. Without it, routers in all-to-all communication architectures tend to assign probability mass to just 1-2 experts. The auxiliary loss maintains diversity by rewarding balanced utilization across all experts.</p>
+<p><strong>Expert Collapse Prevention:</strong> The auxiliary loss is essential. Without it, routers in all-to-all communication <a class="concept-link" href="transformer-arch.html">architectures</a> tend to assign probability mass to just 1-2 experts. The auxiliary loss maintains diversity by rewarding balanced utilization across all experts.</p>
 </div>
 <div class="example-box"># Load Balancing Loss Detail
 
@@ -488,7 +488,7 @@ def aux_loss_computation(router_probs, num_experts=8):
 <div class="section-marker">4</div>
 <h2>Mixtral 8x7B Deep Dive</h2>
 <p>Mixtral 8x7B is Mistral AI's implementation of MoE that achieved state-of-the-art performance when released in 2023. It consists of 8 expert FFN layers with top-2 gating and 32 transformer attention layers. The model has 46.7B total parameters but only 12.9B active per token, making it computationally equivalent to a dense 13B model while often matching or exceeding the performance of Llama 2 70B.</p>
-<p>The architecture details are crucial for understanding its efficiency. Each layer has: a shared self-attention component (~200M parameters), 8 expert FFN blocks (~7B parameters each), and a router network (~100M parameters). Tokens are routed to exactly 2 experts per MoE layer, with routing decisions made independently at each layer. This means a single token might use different expert combinations in different layers, providing diverse processing pathways.</p>
+<p>The architecture details are crucial for understanding its efficiency. Each layer has: a shared <a class="concept-link" href="self-attention.html">self-attention</a> component (~200M parameters), 8 expert FFN blocks (~7B parameters each), and a router network (~100M parameters). Tokens are routed to exactly 2 experts per MoE layer, with routing decisions made independently at each layer. This means a single token might use different expert combinations in different layers, providing diverse processing pathways.</p>
 <div class="example-box"># Mixtral 8x7B Architecture Overview
 
 Model: Mixtral 8x7B
@@ -515,7 +515,7 @@ Performance vs Llama 2 70B:
   - ~5.5x faster inference (12.9B vs 70B active)
   - Better in coding, reasoning tasks</div>
 <p>One important architectural detail is how Mixtral handles the shared attention. Unlike some other MoE designs, Mixtral shares the attention computation across all tokens regardless of expert routing. This is because attention has quadratic complexity and benefits more from batching than from sparsity. Only the FFN layers are sparsified with MoE.</p>
-<p>Mixtral was trained on the same high-quality data as Mistral 7B, achieving approximately the same downstream performance while being faster and using less memory per token. It's particularly strong at code generation and mathematical reasoning, likely because the expert specialization allows different experts to develop distinct reasoning patterns.</p>
+<p>Mixtral was trained on the same high-quality data as <a class="concept-link" href="mistral.html">Mistral 7B</a>, achieving approximately the same downstream performance while being faster and using less <a class="concept-link" href="agent-memory.html">memory</a> per token. It's particularly strong at code generation and mathematical reasoning, likely because the expert specialization allows different experts to develop distinct reasoning patterns.</p>
 <div class="callout rose">
 <p><strong>Important Trade-off:</strong> Mixtral's top-2 routing means each token is processed by 2 experts, not 1. This doubles the FFN compute compared to a single expert. The efficiency comes from having many experts to choose from (8), so each expert is smaller and more specialized than in a dense model.</p>
 </div>
@@ -560,7 +560,7 @@ total_loss = primary_loss + 0.01 * aux_loss
 <p>Expert parallelism (also called "expert model parallelism") distributes experts across devices. With 8 experts on 8 devices, each device holds one expert. When a token needs to be processed by an expert on a different device, it must be communicated over the network. This all-to-all communication pattern is fundamentally different from the point-to-point communication in pipeline parallelism.</p>
 <p>A related challenge is sequence length sensitivity. Longer sequences generate more tokens, which increases load on devices. With dynamic routing, load imbalance across devices becomes more severe with longer sequences, potentially causing device stalls where some devices finish their local computation but must wait for tokens to arrive from other devices.</p>
 <div class="callout blue">
-<p><strong>Communication Optimization:</strong> Modern MoE implementations use grouped all-to-all reduction, where multiple tokens are batched into one communication operation. This reduces communication overhead but requires careful tuning of group size to balance memory usage with communication efficiency.</p>
+<p><strong>Communication <a class="concept-link" href="optimization.html">Optimization</a>:</strong> Modern MoE implementations use grouped all-to-all reduction, where multiple tokens are batched into one communication operation. This reduces communication overhead but requires careful tuning of group size to balance <a class="concept-link" href="agent-memory.html">memory</a> usage with communication efficiency.</p>
 </div>
 <div class="example-box"># Training Loop with Auxiliary Loss
 
@@ -593,7 +593,7 @@ def train_step(batch, model, optimizer):
 <div class="section-block">
 <div class="section-marker">6</div>
 <h2>Inference Considerations</h2>
-<p>Inference with MoE models requires different optimization strategies than training. The primary concerns are expert caching (to avoid recomputing expert activations), batch size sensitivity (MoE throughput varies significantly with batch size), and memory requirements (which are lower per token than dense models but depend on how many experts must be loaded).</p>
+<p>Inference with MoE models requires different <a class="concept-link" href="optimization.html">optimization</a> strategies than training. The primary concerns are expert caching (to avoid recomputing expert <a class="concept-link" href="activations.html">activations</a>), batch size sensitivity (MoE throughput varies significantly with batch size), and <a class="concept-link" href="agent-memory.html">memory</a> requirements (which are lower per token than dense models but depend on how many experts must be loaded).</p>
 <p>Expert caching becomes important when serving multiple requests. If different requests' tokens route to the same expert, those expert computations could theoretically be shared. However, practical implementations often don't exploit this opportunity because tokens have different attention contexts that make naive sharing difficult. Some advanced serving systems explore "prompt prefix caching" where commonly requested prefixes are cached.</p>
 <p>Batch size dramatically affects MoE inference throughput. Small batches (batch_size=1) mean tokens are processed individually, and the probability of different tokens routing to the same expert becomes low. Each expert might process only one token per layer, leading to poor GPU utilization. Larger batches increase the probability of expert load balancing, allowing better parallelization across GPU cores.</p>
 <div class="example-box"># Batch Size Impact on Throughput
@@ -611,8 +611,8 @@ Batch Size | Tokens/sec | Avg Expert Load | GPU Util | Memory
 → Sweet spot: batch_size=32
 → Small batches severely limit throughput
 → Large batches (&gt;64) hit memory limits</div>
-<p>Memory requirements for MoE inference are nuanced. You must load all experts into GPU memory (for Mixtral 8x7B, that's ~46.7B parameters = ~93GB in float16). However, only 2 experts are active per token, so you don't need to compute activations for all 8. Advanced serving systems like vLLM implement "expert model parallelism" where experts are distributed across multiple GPUs, allowing inference on systems with less GPU memory per device.</p>
-<p>Another consideration is prompt caching and prefix sharing. For long-context applications, caching attention KV values is similar to dense models. However, MoE-specific caching might cache per-expert intermediate states, which requires tracking which experts processed which tokens. This adds complexity to the serving system but can improve latency for repeated queries.</p>
+<p>Memory requirements for MoE inference are nuanced. You must load all experts into GPU memory (for Mixtral 8x7B, that's ~46.7B parameters = ~93GB in float16). However, only 2 experts are active per token, so you don't need to compute activations for all 8. Advanced serving systems like <a class="concept-link" href="vllm.html">vLLM</a> implement "expert model parallelism" where experts are distributed across multiple GPUs, allowing inference on systems with less GPU memory per device.</p>
+<p>Another consideration is <a class="concept-link" href="prompt-caching.html">prompt caching</a> and prefix sharing. For long-context applications, caching attention KV values is similar to dense models. However, MoE-specific caching might cache per-expert intermediate states, which requires tracking which experts processed which tokens. This adds complexity to the serving system but can improve latency for repeated queries.</p>
 <div class="callout green">
 <p><strong>Serving Strategy:</strong> For production Mixtral deployments, using systems like vLLM with tensor parallelism (8 GPUs, 1 expert per GPU) is common. This allows reasonable batch sizes and throughput despite the memory requirements of loading all experts.</p>
 </div>
@@ -649,9 +649,9 @@ for prompt, result in zip(prompts, results):
 <div class="section-block">
 <div class="section-marker">7</div>
 <h2>MoE vs Dense Models</h2>
-<p>Comparing MoE and dense architectures requires looking at multiple dimensions: computational efficiency, memory requirements, throughput, task specialization, and ease of implementation. There's no universally better approach; the choice depends on deployment context and constraints.</p>
+<p>Comparing MoE and dense <a class="concept-link" href="transformer-arch.html">architectures</a> requires looking at multiple dimensions: computational efficiency, <a class="concept-link" href="agent-memory.html">memory</a> requirements, throughput, task specialization, and ease of implementation. There's no universally better approach; the choice depends on deployment context and constraints.</p>
 <p>MoE models excel at compute efficiency. A 46.7B MoE model with 12.9B active parameters uses about as much compute as a 13B dense model but often achieves performance comparable to a 70B dense model. This efficiency comes from the specialization enabled by multiple experts and dynamic routing. However, this assumes inference in a batched setting where expert load is reasonably balanced.</p>
-<p>Dense models are simpler to train and deploy. They require no load balancing tuning, no auxiliary loss weighting, and no expert parallelism infrastructure. A dense model's performance scales more predictably with size, following established scaling laws. For research and smaller deployments, dense models often make sense.</p>
+<p>Dense models are simpler to train and deploy. They require no load balancing tuning, no auxiliary loss weighting, and no expert parallelism <a class="concept-link" href="infra.html">infrastructure</a>. A dense model's performance scales more predictably with size, following established <a class="concept-link" href="scaling-laws.html">scaling laws</a>. For research and smaller deployments, dense models often make sense.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -721,7 +721,7 @@ for prompt, result in zip(prompts, results):
 </table>
 </div>
 <p>For production systems, the decision often comes down to: are you optimizing for latency or throughput? If you're serving low-latency requests (batch_size=1), dense models may be better. If you're running batch inference or long-context processing where you can batch many requests, MoE's efficiency advantage becomes compelling.</p>
-<p>Another consideration is model development and fine-tuning. Fine-tuning a dense model is straightforward. Fine-tuning an MoE model requires care with the auxiliary loss weight and expert load balancing. Some organizations have found that fine-tuning MoE models on domain-specific data can lead to expert specialization on different aspects of the domain, improving performance beyond dense model fine-tuning.</p>
+<p>Another consideration is model development and <a class="concept-link" href="finetuning.html">fine-tuning</a>. Fine-tuning a dense model is straightforward. Fine-tuning an MoE model requires care with the auxiliary loss weight and expert load balancing. Some organizations have found that fine-tuning MoE models on domain-specific data can lead to expert specialization on different aspects of the domain, improving performance beyond dense model fine-tuning.</p>
 <div class="callout blue">
 <p><strong>Current Trends:</strong> As of 2024, MoE is gaining adoption for large-scale models (70B+) where compute efficiency at scale becomes critical. Llama 3 MoE (405B) and other recent releases show industry interest. However, for small models (&lt;10B) and research, dense architectures still dominate due to simplicity.</p>
 </div>
@@ -744,17 +744,14 @@ Use Dense if:
   ✓ You want predictable scaling behavior</div>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="tokenization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Tokenization</span></a>
-<a href="context-window.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Context Window</span></a>
-<a href="scaling-laws.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Scaling Laws</span></a>
-<a href="gpt4o.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">GPT-4o</span></a>
-<a href="claude35.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Claude 3.5 Sonnet</span></a>
+<a class="rc-card" href="tokenization.html" style="--rc-accent:#64748b"><span class="rc-label">Tokenization</span></a>
+<a class="rc-card" href="context-window.html" style="--rc-accent:#64748b"><span class="rc-label">Context Window</span></a>
+<a class="rc-card" href="scaling-laws.html" style="--rc-accent:#64748b"><span class="rc-label">Scaling Laws</span></a>
+<a class="rc-card" href="gpt4o.html" style="--rc-accent:#64748b"><span class="rc-label">GPT-4o</span></a>
+<a class="rc-card" href="claude35.html" style="--rc-accent:#64748b"><span class="rc-label">Claude 3.5 Sonnet</span></a>
 </div>
 </div>
 <footer>

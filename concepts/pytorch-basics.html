@@ -500,7 +500,7 @@
 <h2>Tensors: The Core Data Structure</h2>
 <p>Tensors are multidimensional arrays — the atomic unit of PyTorch computation. Everything flows through tensors: inputs, weights, gradients, outputs. Understanding tensor operations is the foundation of PyTorch proficiency.</p>
 <h3>Creation and Basic Properties</h3>
-<p>Tensors can be created from Python lists, NumPy arrays, or generated directly. The three properties you must understand are <strong>shape</strong> (dimensions), <strong>dtype</strong> (data type), and <strong>device</strong> (CPU or GPU).</p>
+<p>Tensors can be created from Python lists, <a class="concept-link" href="numpy.html">NumPy</a> arrays, or generated directly. The three properties you must understand are <strong>shape</strong> (dimensions), <strong>dtype</strong> (data type), and <strong>device</strong> (CPU or GPU).</p>
 <div class="example-box">import torch
 
 # Create from list
@@ -558,7 +558,7 @@ gathered = x[indices]         # select rows 0, 2, 4</div>
 <div class="section-block" id="autograd">
 <div class="section-marker">02 — Automatic Differentiation</div>
 <h2>Autograd: Computing Gradients</h2>
-<p>Autograd is PyTorch's automatic differentiation system. It tracks operations on tensors and computes gradients via backpropagation. Every tensor has a <code>requires_grad</code> flag that tells PyTorch to record operations on it for the backward pass.</p>
+<p><a class="concept-link" href="autograd.html">Autograd</a> is PyTorch's automatic differentiation system. It tracks operations on tensors and computes gradients via <a class="concept-link" href="backprop.html">backpropagation</a>. Every tensor has a <code>requires_grad</code> flag that tells PyTorch to record operations on it for the backward pass.</p>
 <h3>Gradient Tracking and Backward</h3>
 <p>When you set <code>requires_grad=True</code>, PyTorch builds a computation graph. Calling <code>.backward()</code> triggers backpropagation, computing gradients for all tensors in the graph. Gradients accumulate in the <code>.grad</code> attribute.</p>
 <div class="example-box">import torch
@@ -597,7 +597,7 @@ for i in range(3):
     y.backward()
 print(x.grad)  # 6.0 (correct)</div>
 <h3>no_grad Context and Inference</h3>
-<p>Use <code>torch.no_grad()</code> context to disable gradient tracking during inference or when you need to modify tensors without affecting gradients. This saves memory and computation.</p>
+<p>Use <code>torch.no_grad()</code> context to disable gradient tracking during inference or when you need to modify tensors without affecting gradients. This saves <a class="concept-link" href="agent-memory.html">memory</a> and computation.</p>
 <div class="example-box"># Inference: disable gradient tracking
 model.eval()
 with torch.no_grad():
@@ -619,7 +619,7 @@ z = (y.detach()) ** 2  # z won't flow gradients back to x</div>
 <h2>nn.Module: Building Model Layers</h2>
 <p>nn.Module is the base class for all PyTorch models. It organizes parameters, buffers, and submodules. When you define a custom model, inherit from nn.Module, initialize layers in <code>__init__</code>, and implement <code>forward()</code>.</p>
 <h3>Basic Module Structure</h3>
-<p>Every module tracks its parameters and submodules automatically. When you call model(x), it invokes the forward() method. Parameters become attributes and are automatically registered for optimization.</p>
+<p>Every module tracks its parameters and submodules automatically. When you call model(x), it invokes the forward() method. Parameters become attributes and are automatically registered for <a class="concept-link" href="optimization.html">optimization</a>.</p>
 <div class="example-box">import torch
 import torch.nn as nn
 
@@ -648,7 +648,7 @@ x = torch.randn(32, 128)  # batch_size=32, features=128
 output = model(x)          # calls forward()
 print(output.shape)        # [32, 10]</div>
 <h3>Parameter Management and state_dict</h3>
-<p>Models store learned parameters as nn.Parameter objects. Use <code>state_dict()</code> to get all parameters and buffers as a dictionary — essential for checkpointing and distributed training.</p>
+<p>Models store learned parameters as nn.Parameter objects. Use <code>state_dict()</code> to get all parameters and buffers as a dictionary — essential for <a class="concept-link" href="checkpointing.html">checkpointing</a> and distributed training.</p>
 <div class="example-box"># Save and load model state
 torch.save(model.state_dict(), 'checkpoint.pt')
 
@@ -720,7 +720,7 @@ for batch_inputs, batch_labels in dataloader:
     print(batch_labels.shape)  # [32]
     break</div>
 <h3>Collate Functions and Custom Batching</h3>
-<p>The collate_fn merges samples into a batch. Default stacking works for fixed-size tensors. For variable-length data (e.g., sequences), implement custom collate functions to pad or truncate.</p>
+<p>The collate_fn merges samples into a batch. Default stacking works for <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> tensors. For variable-length data (e.g., sequences), implement custom collate functions to pad or truncate.</p>
 <div class="example-box">def pad_collate_fn(batch):
     """Pad sequences to the same length in a batch."""
     inputs, labels = zip(*batch)
@@ -741,7 +741,7 @@ dataloader = DataLoader(
     num_workers=0  # Custom collate often requires num_workers=0
 )</div>
 <h3>Optimization: num_workers and pin_memory</h3>
-<p><code>num_workers &gt; 0</code> spawns background processes to load data in parallel while the GPU trains. <code>pin_memory=True</code> pre-allocates pinned CPU memory for faster GPU transfers. Use both for maximum throughput.</p>
+<p><code>num_workers &gt; 0</code> spawns background processes to load data in parallel while the GPU trains. <code>pin_memory=True</code> pre-allocates pinned CPU <a class="concept-link" href="agent-memory.html">memory</a> for faster GPU transfers. Use both for maximum throughput.</p>
 <div class="example-box"># Optimal DataLoader for GPU training
 train_loader = DataLoader(
     train_dataset,
@@ -811,7 +811,7 @@ for epoch in range(num_epochs):
     
     print(f"Epoch {epoch+1}: train_loss={epoch_loss/len(train_loader):.4f}, val_loss={val_loss/len(val_loader):.4f}")</div>
 <h3>Advanced: Gradient Accumulation and Mixed Precision</h3>
-<p>For large models that don't fit with large batches, accumulate gradients over multiple forward passes before stepping the optimizer. Mixed precision training uses float16 for speed and float32 for stability.</p>
+<p>For large models that don't fit with large batches, accumulate gradients over multiple forward passes before stepping the optimizer. <a class="concept-link" href="mixed-precision.html">Mixed precision</a> training uses float16 for speed and float32 for stability.</p>
 <div class="example-box"># Gradient accumulation for larger effective batch size
 accumulation_steps = 4
 optimizer.zero_grad()
@@ -881,7 +881,7 @@ model.load_state_dict(checkpoint['model_state_dict'])</div>
 <h2>GPU Acceleration: Moving to CUDA</h2>
 <p>PyTorch runs on CPU by default. GPU (CUDA) training is 10–100× faster. The pattern is simple: move tensors and models to device, compute, move results back if needed. Device-agnostic code makes switching easy.</p>
 <h3>Device Management</h3>
-<p>Always write device-agnostic code using a <code>device</code> variable. Call <code>.to(device)</code> on models and tensors. Check CUDA availability and manage memory with <code>torch.cuda.empty_cache()</code>.</p>
+<p>Always write device-agnostic code using a <code>device</code> variable. Call <code>.to(device)</code> on models and tensors. Check CUDA availability and manage <a class="concept-link" href="agent-memory.html">memory</a> with <code>torch.cuda.empty_cache()</code>.</p>
 <div class="example-box">import torch
 
 # Check CUDA
@@ -933,7 +933,7 @@ sampler = torch.utils.data.distributed.DistributedSampler(
 )
 dataloader = DataLoader(dataset, sampler=sampler, batch_size=32)</div>
 <h3>Memory Management</h3>
-<p>GPU memory is limited. Monitor usage with <code>nvidia-smi</code> or PyTorch APIs. Use gradient checkpointing to trade computation for memory (recompute activations instead of storing them).</p>
+<p>GPU memory is limited. Monitor usage with <code>nvidia-smi</code> or PyTorch APIs. Use gradient <a class="concept-link" href="checkpointing.html">checkpointing</a> to trade computation for memory (recompute <a class="concept-link" href="activations.html">activations</a> instead of storing them).</p>
 <div class="example-box"># Gradient checkpointing: trades memory for compute
 from torch.utils.checkpoint import checkpoint
 
@@ -990,7 +990,7 @@ model.load_state_dict(checkpoint['model_state_dict'])
 optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 start_epoch = checkpoint['epoch']</div>
 <h3>ONNX Export for Inference</h3>
-<p>Convert PyTorch models to ONNX (Open Neural Network Exchange) for deployment to production systems, mobile, or other frameworks. ONNX decouples the model from PyTorch.</p>
+<p>Convert PyTorch models to ONNX (Open Neural Network Exchange) for deployment to production systems, mobile, or other <a class="concept-link" href="agent-frameworks.html">frameworks</a>. ONNX decouples the model from PyTorch.</p>
 <div class="example-box">import torch.onnx
 
 # Export to ONNX
@@ -1033,7 +1033,7 @@ class ScriptedModel(torch.nn.Module):
 scripted = torch.jit.script(ScriptedModel())
 scripted.save('model_scripted.pt')</div>
 <h3>HuggingFace Integration</h3>
-<p>For transformer models, HuggingFace provides high-level APIs for saving/loading. Models include config, weights, and tokenizer. Integrates seamlessly with PyTorch ecosystem.</p>
+<p>For transformer models, HuggingFace provides high-level APIs for saving/loading. Models include config, weights, and <a class="concept-link" href="tokenization.html">tokenizer</a>. Integrates seamlessly with PyTorch ecosystem.</p>
 <div class="example-box">from transformers import AutoModel, AutoTokenizer
 
 # Load pretrained model
@@ -1112,7 +1112,7 @@ tokenizer = AutoTokenizer.from_pretrained('./my_model')</div>
 <div class="ref-group-title">Research Papers</div>
 <ul class="ref-list">
 <li><span class="ref-badge badge-paper">Paper</span> Paszke, A. et al. (2019). <em>PyTorch: An Imperative Style, High-Performance Deep Learning Library.</em> NeurIPS. arXiv:1912.01703. — <a href="https://arxiv.org/abs/1912.01703" target="_blank">arxiv:1912.01703 ↗</a></li>
-<li><span class="ref-badge badge-paper">Paper</span> Autograd mechanics. <a href="https://pytorch.org/docs/stable/notes/autograd.html" target="_blank">pytorch.org/docs/notes/autograd ↗</a></li>
+<li><span class="ref-badge badge-paper">Paper</span> <a class="concept-link" href="autograd.html">Autograd</a> mechanics. <a href="https://pytorch.org/docs/stable/notes/autograd.html" target="_blank">pytorch.org/docs/notes/autograd ↗</a></li>
 </ul>
 <div class="ref-group-title">Practitioner Guides</div>
 <ul class="ref-list">
@@ -1126,17 +1126,14 @@ tokenizer = AutoTokenizer.from_pretrained('./my_model')</div>
 <li><span class="ref-badge badge-guide">Guide</span> <a href="https://discuss.pytorch.org/" target="_blank">PyTorch Forums ↗</a> — Community Q&amp;A and support</li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="math-foundations.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Math Foundations</span></a>
-<a href="python-ecosystem.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Python Ecosystem</span></a>
-<a href="linear-algebra.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Linear Algebra</span></a>
-<a href="calculus.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Calculus & Autodiff</span></a>
-<a href="probability.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Probability & Stats</span></a>
+<a class="rc-card" href="math-foundations.html" style="--rc-accent:#64748b"><span class="rc-label">Math Foundations</span></a>
+<a class="rc-card" href="python-ecosystem.html" style="--rc-accent:#64748b"><span class="rc-label">Python Ecosystem</span></a>
+<a class="rc-card" href="linear-algebra.html" style="--rc-accent:#64748b"><span class="rc-label">Linear Algebra</span></a>
+<a class="rc-card" href="calculus.html" style="--rc-accent:#64748b"><span class="rc-label">Calculus &amp; Autodiff</span></a>
+<a class="rc-card" href="probability.html" style="--rc-accent:#64748b"><span class="rc-label">Probability &amp; Stats</span></a>
 </div>
 </div>
 <footer class="page-footer">

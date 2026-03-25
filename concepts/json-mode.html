@@ -160,8 +160,8 @@
 <div class="section-marker">SECTION 02</div>
 <h2>How JSON mode works</h2>
 <p>Under the hood, JSON mode uses one of two techniques depending on the provider:</p>
-<p><strong>Logit masking</strong> (used by some local frameworks): at each token step, tokens that would produce invalid JSON are assigned probability 0. The model can only extend a valid JSON prefix.</p>
-<p><strong>Fine-tuning + RLHF instruction following</strong> (used by OpenAI/Anthropic): the model is trained to comply with a "respond in JSON" instruction with very high reliability, combined with a post-processing check that retries if the output isn't valid.</p>
+<p><strong>Logit masking</strong> (used by some local <a class="concept-link" href="agent-frameworks.html">frameworks</a>): at each token step, tokens that would produce invalid JSON are assigned probability 0. The model can only extend a valid JSON prefix.</p>
+<p><strong><a class="concept-link" href="finetuning.html">Fine-tuning</a> + <a class="concept-link" href="rlhf.html">RLHF</a> instruction following</strong> (used by OpenAI/Anthropic): the model is trained to comply with a "respond in JSON" instruction with very high reliability, combined with a post-processing check that retries if the output isn't valid.</p>
 <p>For practical purposes: both approaches give you <em>effectively guaranteed</em> valid JSON syntax (not schema correctness — just syntactic validity).</p>
 </div>
 <div class="section-block" id="s3">
@@ -235,7 +235,7 @@ person = response.choices[0].message.parsed
 print(person.age)  # 28, type: int — schema enforced
 </code></pre>
 <p><strong>JSON mode</strong>: valid syntax, but the model decides keys/types. Good for exploratory extraction.</p>
-<p><strong>Structured outputs</strong>: enforced schema. The model cannot deviate from the Pydantic model definition. Use this for production pipelines.</p>
+<p><strong><a class="concept-link" href="structured-output-app.html">Structured outputs</a></strong>: enforced schema. The model cannot deviate from the Pydantic model definition. Use this for production pipelines.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
@@ -295,22 +295,19 @@ If no people mentioned, return: {"people": []}
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>JSON mode ≠ schema mode.</strong> The model can return syntactically valid JSON with entirely wrong keys or types. Always validate with Pydantic or jsonschema after parsing.</p>
-<p><strong>Streaming + JSON is awkward.</strong> Streaming emits tokens one at a time — you can't parse JSON until the stream ends. Buffer the full response before parsing, or use structured streaming if your provider supports it.</p>
+<p><strong><a class="concept-link" href="streaming.html">Streaming</a> + JSON is awkward.</strong> Streaming emits tokens one at a time — you can't parse JSON until the stream ends. Buffer the full response before parsing, or use structured streaming if your provider supports it.</p>
 <p><strong>Large JSON = truncation risk.</strong> If <code>max_tokens</code> is too low, the JSON will be cut mid-object and fail to parse. For large extractions, increase <code>max_tokens</code> generously or chunk the input.</p>
 <p><strong>The prefill trick and stop sequences.</strong> When using the prefill trick with Anthropic, don't add a stop sequence that could trigger mid-JSON. Also, the response object won't include the <code>{</code> you prefilled — always prepend it manually.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="instructor.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Instructor</span></a>
-<a href="code-output-validation.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Code Validation</span></a>
-<a href="outlines.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Outlines</span></a>
-<a href="zero-shot.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Zero-shot</span></a>
-<a href="few-shot.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Few-shot</span></a>
+<a class="rc-card" href="instructor.html" style="--rc-accent:#64748b"><span class="rc-label">Instructor</span></a>
+<a class="rc-card" href="code-output-validation.html" style="--rc-accent:#64748b"><span class="rc-label">Code Validation</span></a>
+<a class="rc-card" href="outlines.html" style="--rc-accent:#64748b"><span class="rc-label">Outlines</span></a>
+<a class="rc-card" href="zero-shot.html" style="--rc-accent:#64748b"><span class="rc-label">Zero-shot</span></a>
+<a class="rc-card" href="few-shot.html" style="--rc-accent:#64748b"><span class="rc-label">Few-shot</span></a>
 </div>
 </div>
 <footer>

@@ -508,20 +508,20 @@
 <div class="section-block" id="sft-foundation">
 <div class="section-marker">02 — Prerequisite</div>
 <h2>SFT: The Foundation</h2>
-<p>Supervised Fine-Tuning on demonstration data always comes first. You show the model (prompt, ideal response) pairs. It's the cheapest alignment step and gives the biggest quality jump. Every downstream alignment technique builds on a well-SFT'd model.</p>
-<p>SFT shifts the base model's entire distribution toward assistant-like outputs. It teaches format, style, instruction following, and reasoning chains. Without good SFT, RLHF or DPO training becomes noisy — you're optimizing on top of a weak foundation.</p>
+<p>Supervised <a class="concept-link" href="finetuning.html">Fine-Tuning</a> on demonstration data always comes first. You show the model (prompt, ideal response) pairs. It's the cheapest alignment step and gives the biggest quality jump. Every downstream alignment technique builds on a well-SFT'd model.</p>
+<p>SFT shifts the base model's entire distribution toward assistant-like outputs. It teaches format, style, instruction following, and reasoning chains. Without good SFT, <a class="concept-link" href="rlhf.html">RLHF</a> or <a class="concept-link" href="dpo.html">DPO</a> training becomes noisy — you're optimizing on top of a weak foundation.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Never skip SFT.</strong> RLHF or DPO applied to a raw pretrained model is significantly less effective than applied to an SFT checkpoint. Start here always.</span>
 </div>
 <h3>SFT Best Practices</h3>
-<p><strong>Data quality:</strong> Even 10,000 high-quality SFT examples beat 100,000 noisy ones. Focus on diversity and clarity. <strong>Diversity:</strong> Cover instruction types, reasoning styles, and edge cases. <strong>Iteration:</strong> SFT early and often — each refinement compounds.</p>
+<p><strong><a class="concept-link" href="data-quality.html">Data quality</a>:</strong> Even 10,000 high-quality SFT examples beat 100,000 noisy ones. Focus on diversity and clarity. <strong>Diversity:</strong> Cover instruction types, reasoning styles, and edge cases. <strong>Iteration:</strong> SFT early and often — each refinement compounds.</p>
 </div>
 <!-- ── 3. RLHF WORKFLOW ── -->
 <div class="section-block" id="rlhf-workflow">
 <div class="section-marker">03 — Most Complete</div>
 <h2>RLHF Workflow</h2>
-<p><strong>RLHF (Reinforcement Learning from Human Feedback)</strong> is the alignment method behind ChatGPT, Claude, and GPT-4. It maximizes a learned reward model via PPO (Proximal Policy Optimization) while penalizing divergence from the SFT checkpoint using KL divergence.</p>
+<p><strong><a class="concept-link" href="rlhf.html">RLHF</a> (Reinforcement Learning from Human Feedback)</strong> is the alignment method behind ChatGPT, Claude, and GPT-4. It maximizes a learned reward model via PPO (Proximal Policy <a class="concept-link" href="optimization.html">Optimization</a>) while penalizing divergence from the SFT checkpoint using KL divergence.</p>
 <h3>The RLHF Pipeline</h3>
 <div class="methods-list">
 <div class="method-card">
@@ -530,7 +530,7 @@
 <h3>Collect Human Preferences <em>— the data</em></h3>
 <p>Annotators rank model responses (typically A vs B). This is expensive — usually 50–100 examples per prompt, across thousands of prompts, annotated by multiple annotators to ensure quality.</p>
 <ul>
-<li>Clear preference definitions (helpfulness, factuality, safety)</li>
+<li>Clear preference definitions (helpfulness, factuality, <a class="concept-link" href="safety.html">safety</a>)</li>
 <li>Multiple annotators per example to measure agreement</li>
 <li>Iterative calibration sessions to align annotator standards</li>
 </ul>
@@ -582,8 +582,8 @@
 <div class="section-block" id="dpo-path">
 <div class="section-marker">04 — Modern Simpler</div>
 <h2>DPO: The Simpler Path</h2>
-<p><strong>Direct Preference Optimization (DPO)</strong> reformulates RLHF as a classification problem. Instead of training a reward model and running PPO, DPO directly optimizes the policy on preference pairs: given (prompt, chosen, rejected), update the policy to assign higher probability to chosen over rejected.</p>
-<p>No reward model. No PPO. No reference model calls during training. Roughly 2× faster to implement and 2× faster to run. Empirically, DPO matches RLHF quality on many benchmarks.</p>
+<p><strong>Direct Preference <a class="concept-link" href="optimization.html">Optimization</a> (<a class="concept-link" href="dpo.html">DPO</a>)</strong> reformulates <a class="concept-link" href="rlhf.html">RLHF</a> as a classification problem. Instead of training a reward model and running PPO, DPO directly optimizes the policy on preference pairs: given (prompt, chosen, rejected), update the policy to assign higher probability to chosen over rejected.</p>
+<p>No reward model. No PPO. No reference model calls during training. Roughly 2× faster to implement and 2× faster to run. Empirically, DPO matches RLHF quality on many <a class="concept-link" href="benchmarks.html">benchmarks</a>.</p>
 <h3>DPO vs RLHF Pipeline</h3>
 <div class="example-box">RLHF pipeline:           DPO pipeline:
 SFT checkpoint           SFT checkpoint
@@ -593,7 +593,7 @@ SFT checkpoint           SFT checkpoint
 → Final policy           → Final policy
 
 Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
-<p>DPO uses implicit reward modeling — the reward is hidden in the loss function. This simplicity comes with tradeoffs: DPO may be less stable than RLHF on very large models, and reward model evaluation is opaque. But for teams without massive annotation budgets or GPU fleets, DPO is often the pragmatic choice.</p>
+<p>DPO uses implicit reward modeling — the reward is hidden in the loss function. This simplicity comes with tradeoffs: DPO may be less stable than RLHF on very large models, and reward model <a class="concept-link" href="eval.html">evaluation</a> is opaque. But for teams without massive annotation budgets or GPU fleets, DPO is often the pragmatic choice.</p>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>When to use DPO:</strong> You have preference data, limited compute, and want to align quickly. Quality is ~95% of RLHF with significantly lower complexity.</span>
@@ -603,7 +603,7 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 <div class="section-block" id="constitutional-ai">
 <div class="section-marker">05 — Scalable</div>
 <h2>Constitutional AI</h2>
-<p><strong>Constitutional AI (CAI)</strong> is Anthropic's approach to replacing human preference labels with AI-generated feedback. A set of principles — the "constitution" — guides a capable model to critique and revise its own outputs. The revised outputs become training data for alignment.</p>
+<p><strong><a class="concept-link" href="constitutional-ai.html">Constitutional AI</a> (CAI)</strong> is Anthropic's approach to replacing human preference labels with AI-generated feedback. A set of principles — the "constitution" — guides a capable model to critique and revise its own outputs. The revised outputs become training data for alignment.</p>
 <p>This scales without human annotation. Instead of paying annotators to rank responses, you craft a constitution and let the model self-improve. But it requires a capable enough base model to self-critique reliably — weak models will generate poor feedback.</p>
 <h3>The CAI Process</h3>
 <ol style="padding-left: 1.2rem; margin: 1rem 0;">
@@ -640,7 +640,7 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 <div class="practice-item">
 <h3><span class="badge">🎯</span> Goal: Maximum Quality</h3>
 <ul>
-<li>Use RLHF if budget allows</li>
+<li>Use <a class="concept-link" href="rlhf.html">RLHF</a> if budget allows</li>
 <li>Invest in diverse preference data</li>
 <li>Run 3–4 iterations</li>
 </ul>
@@ -648,7 +648,7 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 <div class="practice-item">
 <h3><span class="badge">⚡</span> Goal: Fast Iteration</h3>
 <ul>
-<li>Start with DPO</li>
+<li>Start with <a class="concept-link" href="dpo.html">DPO</a></li>
 <li>Requires preference data (existing or synthetic)</li>
 <li>Faster feedback loop</li>
 </ul>
@@ -656,7 +656,7 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 <div class="practice-item">
 <h3><span class="badge">💰</span> Goal: Minimize Labelling</h3>
 <ul>
-<li>Constitutional AI if model is strong</li>
+<li><a class="concept-link" href="constitutional-ai.html">Constitutional AI</a> if model is strong</li>
 <li>Write clear constitution</li>
 <li>Use synthetic preferences for DPO</li>
 </ul>
@@ -689,14 +689,14 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Rafailov, R. et al. (2023).
-        <em>Direct Preference Optimization: Your Language Model is Secretly a Reward Model.</em>
+        <em>Direct Preference <a class="concept-link" href="optimization.html">Optimization</a>: Your Language Model is Secretly a Reward Model.</em>
         arXiv:2305.18290. —
         <a href="https://arxiv.org/abs/2305.18290" target="_blank">arxiv:2305.18290 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Bai, Y. et al. (2022).
-        <em>Constitutional AI: Harmlessness from AI Feedback.</em>
+        <em><a class="concept-link" href="constitutional-ai.html">Constitutional AI</a>: Harmlessness from AI Feedback.</em>
         Anthropic. arXiv:2212.08073. —
         <a href="https://arxiv.org/abs/2212.08073" target="_blank">arxiv:2212.08073 ↗</a>
 </li>
@@ -710,8 +710,8 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 </ul>
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
-<li><span class="ref-badge badge-docs">Docs</span> HuggingFace TRL — DPO Trainer. <a href="https://huggingface.co/docs/trl/dpo_trainer" target="_blank">huggingface.co/docs/trl ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> HuggingFace TRL — PPO Trainer (RLHF). <a href="https://huggingface.co/docs/trl/ppo" target="_blank">huggingface.co/docs/trl ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> HuggingFace TRL — <a class="concept-link" href="dpo.html">DPO</a> Trainer. <a href="https://huggingface.co/docs/trl/dpo_trainer" target="_blank">huggingface.co/docs/trl ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> HuggingFace TRL — PPO Trainer (<a class="concept-link" href="rlhf.html">RLHF</a>). <a href="https://huggingface.co/docs/trl/ppo" target="_blank">huggingface.co/docs/trl ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> HuggingFace TRL — SFT Trainer. <a href="https://huggingface.co/docs/trl/sft_trainer" target="_blank">huggingface.co/docs/trl ↗</a></li>
 <li><span class="ref-badge badge-guide">Guide</span> Cohere — Introduction to RLHF. <a href="https://cohere.ai/blog/rlhf-research-summary" target="_blank">cohere.ai ↗</a></li>
 </ul>
@@ -734,17 +734,14 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="peft-methods.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">PEFT Methods</span></a>
-<a href="ft-tools.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Training Tools</span></a>
-<a href="data-prep.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Data Preparation</span></a>
-<a href="lora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
-<a href="qlora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
+<a class="rc-card" href="peft-methods.html" style="--rc-accent:#8b5cf6"><span class="rc-label">PEFT Methods</span></a>
+<a class="rc-card" href="ft-tools.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Training Tools</span></a>
+<a class="rc-card" href="data-prep.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Data Preparation</span></a>
+<a class="rc-card" href="lora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
+<a class="rc-card" href="qlora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
 </div>
 </div>
 <footer class="page-footer">

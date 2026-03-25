@@ -358,16 +358,16 @@
 <div class="section-block" id="section-1">
 <div class="section-marker">SECTION 01</div>
 <h2>Beyond Naive RAG</h2>
-<p>Traditional RAG (Retrieval-Augmented Generation) is simple: take a user question, retrieve documents, pass documents + question to an LLM, get an answer. This works for straightforward queries but fails on complex questions that require reasoning, multi-hop retrieval, or adaptive strategies.</p>
+<p>Traditional <a class="concept-link" href="rag.html">RAG</a> (Retrieval-Augmented Generation) is simple: take a user question, retrieve documents, pass documents + question to an LLM, get an answer. This works for straightforward queries but fails on complex questions that require reasoning, multi-hop retrieval, or adaptive strategies.</p>
 <p><strong>Limitations of Naive RAG:</strong></p>
 <ul>
 <li><strong>Single retrieval pass:</strong> If the first retrieval misses relevant docs, the model can't recover. No feedback loop.</li>
 <li><strong>No query understanding:</strong> Complex questions with multiple sub-queries are treated as monolithic. "What are the causes, symptoms, and treatments of diabetes?" is a single retrieval, missing the fact that each part might need different docs.</li>
 <li><strong>No self-correction:</strong> If the model realizes retrieved docs are irrelevant, it can't re-query. It has to work with what it got.</li>
-<li><strong>Context window limits:</strong> Large document collections don't fit in context. Retrieving top-k docs is a bet that top-k is sufficient.</li>
-<li><strong>No tool use:</strong> The model can only read; it can't run calculations, code, or access real-time data dynamically.</li>
+<li><strong><a class="concept-link" href="context-window.html">Context window</a> limits:</strong> Large document collections don't fit in context. Retrieving top-k docs is a bet that top-k is sufficient.</li>
+<li><strong>No <a class="concept-link" href="tool-use.html">tool use</a>:</strong> The model can only read; it can't run calculations, code, or access real-time data dynamically.</li>
 </ul>
-<p>Agentic RAG solves these by adding <strong>planning, tool use, and iterative refinement</strong>. Instead of retrieve-once, agentic RAG decomposes questions, retrieves adaptively, evaluates results, and refines as needed.</p>
+<p>Agentic RAG solves these by adding <strong><a class="concept-link" href="agent-planning.html">planning</a>, tool use, and iterative refinement</strong>. Instead of retrieve-once, agentic RAG decomposes questions, retrieves adaptively, evaluates results, and refines as needed.</p>
 <p><strong>Core Idea:</strong> Treat the LLM as an agent with tools. Tools include retrievers, web searchers, calculators, code executors, etc. The agent decides which tools to use and when, creating multi-step workflows that adapt to the question.</p>
 <div class="callout callout-blue">
 <strong>Why Agentic?</strong> An agent is an LLM that can take actions (use tools), observe outcomes, and decide next steps. Agentic RAG applies this to retrieval: the model doesn't passively read docs; it actively explores, evaluates, and refines.
@@ -412,7 +412,7 @@ Result: Multi-hop reasoning without explicit prompting.
 <ul>
 <li>Question: "What's 2+2?" → Skip retrieval, answer directly</li>
 <li>Question: "Who was the first president of France?" → Retrieve</li>
-<li>Question: "Why is 2+2=4?" → Mix retrieval (math foundations) with reasoning</li>
+<li>Question: "Why is 2+2=4?" → Mix retrieval (<a class="concept-link" href="math-foundations.html">math foundations</a>) with reasoning</li>
 </ul>
 <div class="callout callout-green">
 <strong>Pattern Advantage:</strong> These patterns are composable. Use query decomposition + iterative refinement + self-reflection for maximum coverage. Or use just one pattern if the question is simple.
@@ -438,7 +438,7 @@ Model output:
 
 Action: Retrieve on each sub-question separately.
       </div>
-<p><strong>2. Step-Back Prompting</strong> — Ask more abstract questions first to capture broader context:</p>
+<p><strong>2. Step-Back <a class="concept-link" href="prompting.html">Prompting</a></strong> — Ask more abstract questions first to capture broader context:</p>
 <ul>
 <li>Original: "What's the impact of federal interest rate decisions on housing prices in California?"</li>
 <li>Step-back questions:</li>
@@ -448,8 +448,8 @@ Action: Retrieve on each sub-question separately.
 </ul>
 <li>Then retrieve on both abstract and original questions</li>
 </ul>
-<p><strong>3. HyDE (Hypothetical Document Embeddings)</strong></p>
-<p>Generate a hypothetical document answering the question, use its embedding to retrieve similar real documents:</p>
+<p><strong>3. <a class="concept-link" href="hyde.html">HyDE</a> (Hypothetical Document <a class="concept-link" href="embeddings.html">Embeddings</a>)</strong></p>
+<p>Generate a hypothetical document answering the question, use its <a class="concept-link" href="embeddings.html">embedding</a> to retrieve similar real documents:</p>
 <div class="example-box">
 Query: "Best practices for distributed training of LLMs"
 
@@ -514,7 +514,7 @@ def retrieve_for_decomposed_query(user_question: str, retriever) -&gt; dict:
 <div class="section-block" id="section-4">
 <div class="section-marker">SECTION 04</div>
 <h2>Corrective RAG (CRAG)</h2>
-<p>Corrective RAG is a structured approach to handle retrieval failures. If retrieved documents don't answer the question, fall back to web search or knowledge expansion.</p>
+<p>Corrective <a class="concept-link" href="rag.html">RAG</a> is a structured approach to handle retrieval failures. If retrieved documents don't answer the question, fall back to web search or knowledge expansion.</p>
 <p><strong>CRAG Flow</strong></p>
 <div class="example-box">
 1. User question: "Latest breakthroughs in quantum computing 2026"
@@ -526,7 +526,7 @@ def retrieve_for_decomposed_query(user_question: str, retriever) -&gt; dict:
 5. Generate answer from best sources
 6. Return with source attribution
       </div>
-<p><strong>Retrieval Evaluation</strong></p>
+<p><strong>Retrieval <a class="concept-link" href="eval.html">Evaluation</a></strong></p>
 <p>Key: How do we judge if retrieved docs are relevant? Three approaches:</p>
 <ul>
 <li><strong>LLM evaluator:</strong> Use Claude/GPT to rate relevance (slow but accurate)</li>
@@ -602,7 +602,7 @@ def corrective_rag(question: str, retriever, web_searcher):
 <div class="section-block" id="section-5">
 <div class="section-marker">SECTION 05</div>
 <h2>Self-RAG</h2>
-<p>Self-RAG extends the model with special tokens that control when to retrieve, evaluate relevance, and judge output quality. The model learns to use these tokens during fine-tuning.</p>
+<p>Self-<a class="concept-link" href="rag.html">RAG</a> extends the model with special tokens that control when to retrieve, evaluate relevance, and judge output quality. The model learns to use these tokens during <a class="concept-link" href="finetuning.html">fine-tuning</a>.</p>
 <p><strong>Special Tokens in Self-RAG</strong></p>
 <ul>
 <li><strong>[Retrieve]:</strong> Signals that retrieval is needed</li>
@@ -652,11 +652,11 @@ Final answer synthesized from generation + retrieval steps.
 <div class="section-block" id="section-6">
 <div class="section-marker">SECTION 06</div>
 <h2>Building Agentic RAG with LangGraph</h2>
-<p>LangGraph is a framework for building agentic systems. It models workflows as graphs with nodes (compute steps) and edges (transitions). Here's how to build agentic RAG:</p>
+<p><a class="concept-link" href="langgraph.html">LangGraph</a> is a framework for building agentic systems. It models workflows as graphs with nodes (compute steps) and edges (transitions). Here's how to build agentic RAG:</p>
 <p><strong>Architecture</strong></p>
 <ul>
 <li><strong>Nodes:</strong> Retrieve, Generate, Evaluate, Refine</li>
-<li><strong>Edges:</strong> Conditional transitions based on evaluation</li>
+<li><strong>Edges:</strong> Conditional transitions based on <a class="concept-link" href="eval.html">evaluation</a></li>
 <li><strong>State:</strong> Shared context (question, docs, answer)</li>
 </ul>
 <p><strong>Implementation Example</strong></p>
@@ -780,8 +780,8 @@ print(result["answer"])
 <div class="section-block" id="section-7">
 <div class="section-marker">SECTION 07</div>
 <h2>Evaluation &amp; Tracing</h2>
-<p>Evaluating agentic RAG systems is more complex than naive RAG because multi-hop reasoning makes ground truth harder to define.</p>
-<p><strong>RAGAS Metrics (Adapted for Agentic)</strong></p>
+<p>Evaluating agentic RAG systems is more complex than naive <a class="concept-link" href="rag.html">RAG</a> because multi-hop reasoning makes ground truth harder to define.</p>
+<p><strong><a class="concept-link" href="ragas.html">RAGAS</a> Metrics (Adapted for Agentic)</strong></p>
 <div class="table-wrap">
 <table>
 <tr>
@@ -875,7 +875,7 @@ For high-stakes (medical, legal): worth it. For customer chat: maybe not.
 <p><strong>Debugging Agentic Pipelines</strong></p>
 <ul>
 <li><strong>Trace logs:</strong> Which step failed? Was retrieval insufficient? Was generation poor?</li>
-<li><strong>Human evaluation:</strong> Sample 100 outputs; have humans rate 0-5 (incorrect, partially correct, correct, excellent)</li>
+<li><strong>Human <a class="concept-link" href="eval.html">evaluation</a>:</strong> Sample 100 outputs; have humans rate 0-5 (incorrect, partially correct, correct, excellent)</li>
 <li><strong>Failure analysis:</strong> Group failures by type (retrieval miss, reasoning error, hallucination)</li>
 <li><strong>A/B tests:</strong> Compare agentic vs naive RAG on same questions</li>
 </ul>
@@ -884,17 +884,14 @@ For high-stakes (medical, legal): worth it. For customer chat: maybe not.
       </div>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="llamaindex.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">LlamaIndex</span></a>
-<a href="graphrag.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">GraphRAG</span></a>
-<a href="contextual-retrieval.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Contextual Retrieval</span></a>
-<a href="sentence-transformers.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
-<a href="openai-embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">OpenAI Embeddings</span></a>
+<a class="rc-card" href="llamaindex.html" style="--rc-accent:#3b82f6"><span class="rc-label">LlamaIndex</span></a>
+<a class="rc-card" href="graphrag.html" style="--rc-accent:#3b82f6"><span class="rc-label">GraphRAG</span></a>
+<a class="rc-card" href="contextual-retrieval.html" style="--rc-accent:#3b82f6"><span class="rc-label">Contextual Retrieval</span></a>
+<a class="rc-card" href="sentence-transformers.html" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
+<a class="rc-card" href="openai-embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">OpenAI Embeddings</span></a>
 </div>
 </div>
 <footer>

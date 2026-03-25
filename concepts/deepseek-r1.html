@@ -153,18 +153,18 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Why R1 matters</h2>
-<p>DeepSeek R1 achieved near-parity with OpenAI's o1 on key reasoning benchmarks (AIME 2024, Codeforces, MATH-500) while being open-weight and MIT licensed. This was a landmark moment: previously, frontier reasoning capabilities were exclusively locked behind proprietary APIs. R1 proved that open-source models could match the best commercial reasoning models.</p>
-<p>The cost difference is dramatic. DeepSeek's API charges roughly $0.55 per 1M input tokens — compared to $15/1M for o1. For high-volume reasoning tasks, this is a 27× cost reduction. And since the weights are open, you can run R1 locally with no per-token cost at all (just hardware).</p>
-<p>R1 was trained using <strong>GRPO</strong> (Group Relative Policy Optimization), a variant of reinforcement learning that rewards the model for correct final answers on verifiable tasks (math, code). The model developed explicit chain-of-thought reasoning as an emergent behaviour during RL training — it wasn't explicitly trained to show reasoning steps, it learned this spontaneously.</p>
+<p>DeepSeek R1 achieved near-parity with OpenAI's o1 on key reasoning <a class="concept-link" href="benchmarks.html">benchmarks</a> (AIME 2024, Codeforces, MATH-500) while being open-weight and MIT licensed. This was a landmark moment: previously, frontier reasoning capabilities were exclusively locked behind proprietary APIs. R1 proved that open-source models could match the best commercial reasoning models.</p>
+<p>The cost difference is dramatic. DeepSeek's API charges roughly $0.55 per 1M input tokens — compared to $15/1M for o1. For high-volume reasoning tasks, this is a 27× cost reduction. And since the weights are open, you can run R1 locally with no per-token cost at all (just <a class="concept-link" href="hardware.html">hardware</a>).</p>
+<p>R1 was trained using <strong>GRPO</strong> (Group Relative Policy <a class="concept-link" href="optimization.html">Optimization</a>), a variant of reinforcement learning that rewards the model for correct final answers on verifiable tasks (math, code). The model developed explicit <a class="concept-link" href="chain-of-thought.html">chain-of-thought</a> reasoning as an emergent behaviour during RL training — it wasn't explicitly trained to show reasoning steps, it learned this spontaneously.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>R1 model variants</h2>
 <p>DeepSeek released the full model family:</p>
-<p><strong>DeepSeek-R1</strong> (671B parameters, MoE architecture): the full model. Matches o1 on benchmarks. Requires significant hardware to run locally (impractical without a multi-GPU server). Available via DeepSeek API.</p>
+<p><strong>DeepSeek-R1</strong> (671B parameters, <a class="concept-link" href="moe.html">MoE</a> architecture): the full model. Matches o1 on <a class="concept-link" href="benchmarks.html">benchmarks</a>. Requires significant <a class="concept-link" href="hardware.html">hardware</a> to run locally (impractical without a multi-GPU server). Available via DeepSeek API.</p>
 <p><strong>DeepSeek-R1-Distill-Qwen-32B</strong>: distilled version trained on R1's reasoning traces. 32B parameters — runs on a single A100 80GB or two A6000s. Scores close to o1-mini on most tasks. Best balance of quality and local runnability.</p>
 <p><strong>DeepSeek-R1-Distill-Qwen-7B</strong>: 7B version, runs on consumer GPUs (RTX 3090/4090) or fast CPU inference. Quality drops noticeably on hard math but remains strong for coding tasks.</p>
-<p><strong>DeepSeek-R1-Distill-Llama-8B / 70B</strong>: same distillation process but using Llama 3 as the base model. Useful if you need Llama 3's license terms rather than Qwen's.</p>
+<p><strong>DeepSeek-R1-Distill-Llama-8B / 70B</strong>: same <a class="concept-link" href="distillation.html">distillation</a> process but using Llama 3 as the base model. Useful if you need Llama 3's license terms rather than Qwen's.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -242,7 +242,7 @@ print(response.choices[0].message.content)
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Visible chain-of-thought</h2>
-<p>R1's most distinctive feature: it shows its reasoning in <code>&lt;think&gt;...&lt;/think&gt;</code> tags before the final answer. This is valuable for debugging (why did the model reach this conclusion?), building user trust (show the reasoning process), and distillation (use R1's thinking traces to train smaller models).</p>
+<p>R1's most distinctive feature: it shows its reasoning in <code>&lt;think&gt;...&lt;/think&gt;</code> tags before the final answer. This is valuable for debugging (why did the model reach this conclusion?), building user trust (show the reasoning process), and <a class="concept-link" href="distillation.html">distillation</a> (use R1's thinking traces to train smaller models).</p>
 <pre><code class="language-python">def parse_r1_response(text: str) -&gt; tuple[str, str]:
     '''Separate thinking from final answer.'''
     import re
@@ -307,21 +307,18 @@ print(response)
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>R1's reasoning traces can be very long.</strong> For hard problems, R1 may generate thousands of tokens of thinking before the final answer. This is fine for quality but can be jarring for users. In production, either hide the thinking display by default (reveal on demand), or use a distilled model with shorter reasoning chains.</p>
-<p><strong>R1 struggles with non-reasoning tasks.</strong> Creative writing, conversational chat, and instruction following are weaker compared to models like Claude or GPT-4o that were specifically trained for these. Use R1 for its strengths (math, coding, logical reasoning) and a different model for generation-heavy tasks.</p>
+<p><strong>R1 struggles with non-reasoning tasks.</strong> Creative writing, conversational chat, and instruction following are weaker compared to models like Claude or <a class="concept-link" href="gpt4o.html">GPT-4o</a> that were specifically trained for these. Use R1 for its strengths (math, coding, logical reasoning) and a different model for generation-heavy tasks.</p>
 <p><strong>Local quantised R1 has significant quality degradation on hard tasks.</strong> The 4-bit quantised 7B distil model and the full 671B model are not comparable — the smaller model may fail on competition math problems the full model handles easily. Benchmark on your actual task before committing to a particular model size.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="llama3.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Llama 3.1</span></a>
-<a href="mistral.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Mistral 7B</span></a>
-<a href="phi3.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Phi-3 / Phi-4</span></a>
-<a href="qwen25.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Qwen 2.5</span></a>
-<a href="gemma2.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Gemma 2</span></a>
+<a class="rc-card" href="llama3.html" style="--rc-accent:#64748b"><span class="rc-label">Llama 3.1</span></a>
+<a class="rc-card" href="mistral.html" style="--rc-accent:#64748b"><span class="rc-label">Mistral 7B</span></a>
+<a class="rc-card" href="phi3.html" style="--rc-accent:#64748b"><span class="rc-label">Phi-3 / Phi-4</span></a>
+<a class="rc-card" href="qwen25.html" style="--rc-accent:#64748b"><span class="rc-label">Qwen 2.5</span></a>
+<a class="rc-card" href="gemma2.html" style="--rc-accent:#64748b"><span class="rc-label">Gemma 2</span></a>
 </div>
 </div>
 <footer>

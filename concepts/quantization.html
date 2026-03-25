@@ -482,7 +482,7 @@
 <div class="section-marker">01 — Motivation</div>
 <h2>Why Quantize?</h2>
 <p>Floating-point weights are the default in deep learning. A 7B parameter model in FP32 (32-bit floats) weighs 28 GB — too large for most consumer GPUs and expensive to serve. Even FP16 (16-bit, the current standard) is 14 GB for 7B, 140 GB for 70B.</p>
-<p>Quantization reduces precision: convert FP32/FP16 weights to INT8, INT4, or custom formats like NF4. This cuts memory 2–8× with surprisingly small quality loss. The tradeoff: reduced precision costs some accuracy, and inference requires dequantization (fast but not free).</p>
+<p>Quantization reduces precision: convert FP32/FP16 weights to INT8, INT4, or custom formats like NF4. This cuts <a class="concept-link" href="agent-memory.html">memory</a> 2–8× with surprisingly small quality loss. The tradeoff: reduced precision costs some accuracy, and inference requires dequantization (fast but not free).</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -509,8 +509,8 @@
 <div class="section-marker">02 — No Retraining</div>
 <h2>Post-Training Quantization (PTQ)</h2>
 <p>Apply quantization after a model is fully trained. No retraining, no modification of the training loop. This is the default approach for open-source models: take a released weight file, convert it to INT4/INT8, and use it.</p>
-<p><strong>Weight-only quantization:</strong> quantize weights to INT4/INT8, keep activations (intermediate values) in FP16 during inference. The model dequantizes weights on the fly — slightly slower than native inference but much smaller.</p>
-<p><strong>Weight + activation quantization (W8A8):</strong> quantize both weights and activations to INT8. Requires hardware support (e.g., NVIDIA H100 has INT8 tensor cores) but can be significantly faster than weight-only on modern GPUs.</p>
+<p><strong>Weight-only quantization:</strong> quantize weights to INT4/INT8, keep <a class="concept-link" href="activations.html">activations</a> (intermediate values) in FP16 during inference. The model dequantizes weights on the fly — slightly slower than native inference but much smaller.</p>
+<p><strong>Weight + activation quantization (W8A8):</strong> quantize both weights and activations to INT8. Requires <a class="concept-link" href="hardware.html">hardware</a> support (e.g., NVIDIA H100 has INT8 tensor cores) but can be significantly faster than weight-only on modern GPUs.</p>
 <div class="methods-list">
 <div class="method-card">
 <div class="method-num">1</div>
@@ -528,7 +528,7 @@
 <div class="method-num">2</div>
 <div class="method-body">
 <h3>AWQ <em>— activation-aware</em></h3>
-<p>Protect salient weights (those with high activation magnitudes) by quantizing less aggressively. Faster to quantize than GPTQ while maintaining similar quality. Becoming more common.</p>
+<p>Protect salient weights (those with high activation magnitudes) by quantizing less aggressively. Faster to quantize than <a class="concept-link" href="gptq.html">GPTQ</a> while maintaining similar quality. Becoming more common.</p>
 <ul>
 <li>~3–4× faster quantization than GPTQ</li>
 <li>Comparable or slightly better quality than GPTQ</li>
@@ -591,7 +591,7 @@
 <h3>When QAT is Worth It</h3>
 <ul style="padding-left: 1.2rem; margin: 1rem 0;">
 <li style="margin: 0.5rem 0;">You're training a new model from scratch and want to ship quantized.</li>
-<li style="margin: 0.5rem 0;">You're fine-tuning a very large model and want the best quality at INT4.</li>
+<li style="margin: 0.5rem 0;">You're <a class="concept-link" href="finetuning.html">fine-tuning</a> a very large model and want the best quality at INT4.</li>
 <li style="margin: 0.5rem 0;">You have compute budget (multiple TPU/GPU clusters) and months to spare.</li>
 <li style="margin: 0.5rem 0;">You're a model lab producing a public release.</li>
 </ul>
@@ -612,8 +612,8 @@ INT4 AWQ:    PPL = 7.5  <span class="verdict-pass">+5.6% loss</span>
 INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span></div>
 <h3>Quality Metrics</h3>
 <p><strong>Perplexity (PPL):</strong> Standard metric on WikiText-2 or C4. Lower is better. A 5–10% PPL increase is acceptable; &gt;20% indicates poor quantization.</p>
-<p><strong>Downstream tasks:</strong> Run MMLU, HellaSwag, ARC to measure end-to-end impact. Some quantized models lose 1–2% accuracy on reasoning tasks but remain usable.</p>
-<p><strong>Human evaluation:</strong> For critical applications, have humans rate responses from the quantized model vs. baseline. This catches issues that PPL misses.</p>
+<p><strong>Downstream tasks:</strong> Run <a class="concept-link" href="mmlu.html">MMLU</a>, HellaSwag, ARC to measure end-to-end impact. Some quantized models lose 1–2% accuracy on reasoning tasks but remain usable.</p>
+<p><strong>Human <a class="concept-link" href="eval.html">evaluation</a>:</strong> For critical applications, have humans rate responses from the quantized model vs. baseline. This catches issues that PPL misses.</p>
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Rule of thumb: INT4 GPTQ/AWQ with good calibration data loses &lt;7% PPL.</strong> If you're seeing &gt;10% loss, your calibration data is bad or your model is particularly sensitive. Try different calibration sets.</span>
@@ -623,7 +623,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 <div class="section-block" id="mixed-precision">
 <div class="section-marker">05 — Selective Quantization</div>
 <h2>Mixed Precision and Layer Sensitivity</h2>
-<p>Not all layers are equally sensitive to quantization. Embedding layers and LM head (output projection) are very sensitive; MLPs are less so. A smart strategy: quantize robust layers to INT4, keep sensitive layers in INT8 or even FP16.</p>
+<p>Not all layers are equally sensitive to quantization. <a class="concept-link" href="embeddings.html">Embedding</a> layers and LM head (output projection) are very sensitive; MLPs are less so. A smart strategy: quantize robust layers to INT4, keep sensitive layers in INT8 or even FP16.</p>
 <p>This is called mixed-precision quantization. GGUF's K-quant variants (Q4_K_M, Q5_K_M, etc.) do this automatically — important layers get higher precision, unimportant ones get lower.</p>
 <div class="table-wrap">
 <table>
@@ -641,7 +641,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 </table>
 </div>
 <h3>Mixed-Precision Strategy</h3>
-<p>Start with uniform INT4, measure PPL loss. If it's &gt;10%, switch sensitive layers (embedding, attention outputs) to INT8. This typically recovers 50% of the quality loss. Most practical frameworks support this directly; you just specify which layers to quantize to which bit width.</p>
+<p>Start with uniform INT4, measure PPL loss. If it's &gt;10%, switch sensitive layers (embedding, attention outputs) to INT8. This typically recovers 50% of the quality loss. Most practical <a class="concept-link" href="agent-frameworks.html">frameworks</a> support this directly; you just specify which layers to quantize to which bit width.</p>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>LayerNorm should never be quantized.</strong> These layers normalize activations and are extremely sensitive; even INT8 causes quality degradation. Always keep them in FP16 or FP32.</span>
@@ -651,7 +651,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 <div class="section-block" id="hardware">
 <div class="section-marker">06 — GPU &amp; CPU Support</div>
 <h2>Hardware Acceleration</h2>
-<p>Not all quantization formats run fast on all hardware. Some GPUs have native INT8 tensor cores; others require software emulation. Choosing the right format for your hardware matters.</p>
+<p>Not all quantization formats run fast on all <a class="concept-link" href="hardware.html">hardware</a>. Some GPUs have native INT8 tensor cores; others require software emulation. Choosing the right format for your hardware matters.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -666,7 +666,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 </tbody>
 </table>
 </div>
-<p><strong>FP8 on H100:</strong> Both training and inference support FP8 natively. This is becoming the new frontier-model standard — Llama 3.1, GPT-4o, and others use FP8 internally for efficiency.</p>
+<p><strong>FP8 on H100:</strong> Both training and inference support FP8 natively. This is becoming the new frontier-model standard — <a class="concept-link" href="llama3.html">Llama 3.1</a>, <a class="concept-link" href="gpt4o.html">GPT-4o</a>, and others use FP8 internally for efficiency.</p>
 <p><strong>INT4 inference:</strong> NVIDIA A100 doesn't have INT4 tensor cores, so INT4 inference uses software dequantization (float multiply). Still fast because dequantization is simple, but not as fast as hardware-native formats.</p>
 <div class="callout green">
 <span class="callout-icon">✓</span>
@@ -677,7 +677,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 <div class="section-block" id="decision-guide">
 <div class="section-marker">07 — When and How</div>
 <h2>Practical Decision Guide</h2>
-<p>Quantization decisions depend on your constraints: VRAM, latency, quality requirements, and available hardware. Here's a framework to decide what to quantize and how.</p>
+<p>Quantization decisions depend on your constraints: VRAM, latency, quality requirements, and available <a class="concept-link" href="hardware.html">hardware</a>. Here's a framework to decide what to quantize and how.</p>
 <div class="tools-grid">
 <div class="tool-card">
 <div class="tool-name">llama.cpp</div>
@@ -728,10 +728,10 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 → Focus on cache optimization (prefix caching, paging)
 → Quantization helps less here <span class="verdict-pass">✓ manage cache first</span></div>
 <h3>Common Scenarios</h3>
-<p><strong>Consumer deployment (1×consumer GPU, 24GB VRAM):</strong> INT4 GPTQ or Q4_K_M GGUF. Perplexity loss ~7%, acceptable for most tasks. Throughput: 5–10 tokens/sec.</p>
-<p><strong>Production API (1×A100, 80GB, 20 concurrent requests):</strong> INT4 AWQ weights with INT8 activations (SmoothQuant if you have H100). Calibrate on your actual data. Throughput: 50–100 tokens/sec across batch.</p>
-<p><strong>Cost-optimal (multiple smaller GPUs):</strong> Mixed quantization. Heavy layers INT8, lightweight INT4. Reduces memory vs. INT4 uniform, quality between INT4 and INT8.</p>
-<p><strong>Research / evaluation:</strong> Start with GPTQ (standard baseline). If quality is insufficient, try AWQ or move to QAT if budget allows. Measure on your eval set, not defaults.</p>
+<p><strong>Consumer deployment (1×consumer GPU, 24GB VRAM):</strong> INT4 <a class="concept-link" href="gptq.html">GPTQ</a> or Q4_K_M GGUF. Perplexity loss ~7%, acceptable for most tasks. Throughput: 5–10 tokens/sec.</p>
+<p><strong>Production API (1×A100, 80GB, 20 concurrent requests):</strong> INT4 <a class="concept-link" href="awq.html">AWQ</a> weights with INT8 <a class="concept-link" href="activations.html">activations</a> (SmoothQuant if you have H100). Calibrate on your actual data. Throughput: 50–100 tokens/sec across batch.</p>
+<p><strong>Cost-optimal (multiple smaller GPUs):</strong> Mixed quantization. Heavy layers INT8, lightweight INT4. Reduces <a class="concept-link" href="agent-memory.html">memory</a> vs. INT4 uniform, quality between INT4 and INT8.</p>
+<p><strong>Research / <a class="concept-link" href="eval.html">evaluation</a>:</strong> Start with GPTQ (standard baseline). If quality is insufficient, try AWQ or move to QAT if budget allows. Measure on your eval set, not defaults.</p>
 <div class="callout rose">
 <span class="callout-icon">⚠️</span>
 <span><strong>Quantized models are not drop-in replacements.</strong> Always benchmark quality on your specific use case before deploying to production. Perplexity is useful but may not capture your task's real quality loss.</span>
@@ -746,14 +746,14 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Frantar, C., Ashkboos, S., et al. (2022).
-        <em>GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers.</em>
+        <em><a class="concept-link" href="gptq.html">GPTQ</a>: Accurate Post-Training Quantization for Generative Pre-trained <a class="concept-link" href="transformers.html">Transformers</a>.</em>
         arXiv:2210.17323. —
         <a href="https://arxiv.org/abs/2210.17323" target="_blank">arxiv:2210.17323 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Lin, J., Tang, J., et al. (2023).
-        <em>AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration.</em>
+        <em><a class="concept-link" href="awq.html">AWQ</a>: Activation-aware Weight Quantization for LLM Compression and Acceleration.</em>
         arXiv:2306.00978. —
         <a href="https://arxiv.org/abs/2306.00978" target="_blank">arxiv:2306.00978 ↗</a>
 </li>
@@ -767,7 +767,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Jacob, B., et al. (2018).
-        <em>Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference.</em>
+        <em>Quantization and Training of <a class="concept-link" href="neural-nets.html">Neural Networks</a> for Efficient Integer-Arithmetic-Only Inference.</em>
         CVPR 2018. arXiv:1806.08342. —
         <a href="https://arxiv.org/abs/1806.08342" target="_blank">arxiv:1806.08342 ↗</a>
 </li>
@@ -777,7 +777,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 <li><span class="ref-badge badge-docs">Docs</span> llama.cpp GGUF Format Quantization. <a href="https://github.com/ggerganov/llama.cpp/blob/master/README.md" target="_blank">github.com/ggerganov ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> HuggingFace AutoGPTQ. <a href="https://huggingface.co/docs/transformers/main/en/quantization/gptq" target="_blank">huggingface.co/docs ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> HuggingFace AutoAWQ. <a href="https://huggingface.co/docs/transformers/main/en/quantization/awq" target="_blank">huggingface.co/docs ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> bitsandbytes Quantization and QLoRA. <a href="https://huggingface.co/docs/bitsandbytes/main/en/index" target="_blank">huggingface.co/docs/bitsandbytes ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a> Quantization and <a class="concept-link" href="qlora.html">QLoRA</a>. <a href="https://huggingface.co/docs/bitsandbytes/main/en/index" target="_blank">huggingface.co/docs/bitsandbytes ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> TensorRT-LLM Quantization. <a href="https://nvidia-opentask-lm.readthedocs.io/" target="_blank">nvidia-opentask-lm.readthedocs.io ↗</a></li>
 </ul>
 <div class="ref-group-title">Practitioner Writing</div>
@@ -789,7 +789,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 </li>
 <li>
 <span class="ref-badge badge-blog">Blog</span>
-        Huyen Chip. (2024). <em>Quantization for LLMs: From Theory to Practice.</em> —
+        Huyen Chip. (2024). <em>Quantization for <a class="concept-link" href="llms.html">LLMs</a>: From Theory to Practice.</em> —
         <a href="https://huyenchip.com/2024/04/18/quantization.html" target="_blank">huyenchip.com ↗</a>
 </li>
 <li>
@@ -806,7 +806,7 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 <div class="section-block" id="learning-path">
 <div class="section-marker">LEARNING PATH</div>
 <h2>Learning Path</h2>
-<p>Quantization sits at the intersection of deep learning math and GPU hardware. Here's how to build up to it:</p>
+<p>Quantization sits at the intersection of deep learning math and GPU <a class="concept-link" href="hardware.html">hardware</a>. Here's how to build up to it:</p>
 <div class="flow-diagram">
 <div class="flow-box">Float Formats<span class="flow-label">FP32, FP16, BF16</span></div>
 <div class="flow-arrow">→</div>
@@ -819,21 +819,18 @@ INT2:        PPL = 14.3 <span class="verdict-fail">+101% loss (unusable)</span><
 <div class="flow-box">Serving<span class="flow-label">vLLM + quant</span></div>
 </div>
 <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Load a model in 4-bit first</h4><p>Use <code>BitsAndBytesConfig(load_in_4bit=True)</code> with a Llama 3 8B model. Confirm it fits on your GPU and produces coherent output. Takes 15 minutes.</p></div></div>
-<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Measure the quality cost</h4><p>Run a simple benchmark (MMLU sample or your task) at FP16 vs. 4-bit. The gap will usually be &lt;2% on general tasks, larger on math-heavy ones.</p></div></div>
-<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Learn AWQ for production</h4><p>AWQ calibrates quantization on a small dataset to minimise the accuracy loss. Use <code>autoawq</code>. This is the recommended path for serving.</p></div></div>
+<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Measure the quality cost</h4><p>Run a simple benchmark (<a class="concept-link" href="mmlu.html">MMLU</a> sample or your task) at FP16 vs. 4-bit. The gap will usually be &lt;2% on general tasks, larger on math-heavy ones.</p></div></div>
+<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Learn AWQ for production</h4><p><a class="concept-link" href="awq.html">AWQ</a> calibrates quantization on a small dataset to minimise the accuracy loss. Use <code>autoawq</code>. This is the recommended path for serving.</p></div></div>
 <div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Use GGUF for local / edge</h4><p><code>llama.cpp</code> with GGUF models is the fastest path to running models on Mac (Metal) or CPU. Q4_K_M is the best quality/size tradeoff for most use cases.</p></div></div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="serving.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">LLM Serving</span></a>
-<a href="hardware.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Hardware</span></a>
-<a href="cloud-deploy.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Cloud & Deployment</span></a>
-<a href="vllm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
-<a href="ollama.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
+<a class="rc-card" href="serving.html" style="--rc-accent:#64748b"><span class="rc-label">LLM Serving</span></a>
+<a class="rc-card" href="hardware.html" style="--rc-accent:#64748b"><span class="rc-label">Hardware</span></a>
+<a class="rc-card" href="cloud-deploy.html" style="--rc-accent:#64748b"><span class="rc-label">Cloud &amp; Deployment</span></a>
+<a class="rc-card" href="vllm.html" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
+<a class="rc-card" href="ollama.html" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
 </div>
 </div>
 <footer class="page-footer">

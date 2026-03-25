@@ -153,18 +153,18 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Why hybrid architectures</h2>
-<p>Pure transformer models excel at precise in-context retrieval (attention can directly look up any token in the context), but their O(L²) complexity and growing KV cache make long-context inference expensive. Pure SSM models (Mamba) are efficient at long contexts but struggle with tasks requiring precise retrieval and exact copying. Hybrid architectures interleave the two, getting efficiency from SSM layers and precision from attention layers in the same model.</p>
+<p>Pure transformer models excel at precise in-context retrieval (attention can directly look up any token in the context), but their O(L²) complexity and growing <a class="concept-link" href="kv-cache.html">KV cache</a> make long-context inference expensive. Pure SSM models (Mamba) are efficient at long contexts but struggle with tasks requiring precise retrieval and exact copying. Hybrid <a class="concept-link" href="transformer-arch.html">architectures</a> interleave the two, getting efficiency from SSM layers and precision from attention layers in the same model.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Attention vs SSM: what each does well</h2>
-<p><strong>Attention excels at</strong>: Precise retrieval ("find the entity mentioned 5000 tokens ago"), copying patterns, in-context learning from few examples, tasks with clear key-value structure. <strong>SSMs excel at</strong>: Compressing long histories efficiently, recurrent state with O(1) per-step memory, tasks where gradual accumulation of context matters more than precise retrieval.</p>
+<p><strong>Attention excels at</strong>: Precise retrieval ("find the entity mentioned 5000 tokens ago"), copying patterns, in-context learning from few examples, tasks with clear key-value structure. <strong>SSMs excel at</strong>: Compressing long histories efficiently, recurrent state with O(1) per-step <a class="concept-link" href="agent-memory.html">memory</a>, tasks where gradual accumulation of context matters more than precise retrieval.</p>
 <p>This complementarity is well-established in ablation studies. Adding even 1–2 attention layers to an otherwise-SSM model recovers most of the retrieval capability, while keeping the bulk of layers as SSM preserves efficiency.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Jamba architecture deep dive</h2>
-<p>Jamba (AI21 Labs, 2024) is a 52B hybrid model built on alternating Mamba and transformer blocks. Architecture details: 1 attention layer per 6 Mamba layers, each "Jamba block" contains [Mamba → Mamba → Attention → Mamba → Mamba → Mamba]. MoE (Mixture of Experts) FFN layers replace standard FFN, activating 2 of 16 experts per token to keep compute proportional to a 12B active parameter model despite 52B total parameters. Context window: 256k tokens — feasible because most layers are Mamba (linear memory).</p>
+<p>Jamba (AI21 Labs, 2024) is a 52B hybrid model built on alternating Mamba and transformer blocks. Architecture details: 1 attention layer per 6 Mamba layers, each "Jamba block" contains [Mamba → Mamba → Attention → Mamba → Mamba → Mamba]. <a class="concept-link" href="moe.html">MoE</a> (<a class="concept-link" href="moe.html">Mixture of Experts</a>) FFN layers replace standard FFN, activating 2 of 16 experts per token to keep compute proportional to a 12B active parameter model despite 52B total parameters. <a class="concept-link" href="context-window.html">Context window</a>: 256k tokens — feasible because most layers are Mamba (linear <a class="concept-link" href="agent-memory.html">memory</a>).</p>
 </div>
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
@@ -210,8 +210,8 @@ class HybridBlock(nn.Module):
 <h2>Performance benchmarks</h2>
 <p>From published results as of early 2025:</p>
 <ul>
-<li><strong>Jamba 52B</strong>: Matches Mixtral 8×7B on MMLU (67.4% vs 70.5%) while processing 256k context. 3× higher throughput on long-context tasks vs transformers.</li>
-<li><strong>OLMo-Hybrid</strong>: At 7B scale, beats pure Mamba-7B by 2–3% on downstream tasks and matches pure transformer on most benchmarks — at lower inference cost.</li>
+<li><strong>Jamba 52B</strong>: Matches Mixtral 8×7B on <a class="concept-link" href="mmlu.html">MMLU</a> (67.4% vs 70.5%) while processing 256k context. 3× higher throughput on long-context tasks vs <a class="concept-link" href="transformers.html">transformers</a>.</li>
+<li><strong>OLMo-Hybrid</strong>: At 7B scale, beats pure Mamba-7B by 2–3% on downstream tasks and matches pure transformer on most <a class="concept-link" href="benchmarks.html">benchmarks</a> — at lower inference cost.</li>
 <li><strong>Zamba2-7B</strong>: Top-performing 7B model on several benchmarks; hybrid with 1 attention per 6 Mamba layers plus shared attention weights.</li>
 </ul>
 </div>
@@ -219,23 +219,20 @@ class HybridBlock(nn.Module):
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
-<li><strong>Mixed parallelism</strong>: Attention layers need different parallelism strategies than SSM layers. SSM layers parallelize well with tensor parallelism; attention needs KV cache sharding. Hybrid serving infrastructure is more complex.</li>
+<li><strong>Mixed parallelism</strong>: Attention layers need different parallelism strategies than SSM layers. SSM layers parallelize well with tensor parallelism; attention needs <a class="concept-link" href="kv-cache.html">KV cache</a> sharding. Hybrid serving <a class="concept-link" href="infra.html">infrastructure</a> is more complex.</li>
 <li><strong>Pretraining from scratch</strong>: You can't easily convert a trained transformer to a hybrid by replacing some layers with SSM — the weight distributions are different. Hybrid models must be trained from scratch or from a compatible checkpoint.</li>
-<li><strong>Still maturing</strong>: Hybrid architecture research is moving fast (2024–2025). Best layer ratios, placement strategies, and scaling laws are still being established. Treat published results as reference points, not final answers.</li>
+<li><strong>Still maturing</strong>: Hybrid architecture research is moving fast (2024–2025). Best layer ratios, placement strategies, and <a class="concept-link" href="scaling-laws.html">scaling laws</a> are still being established. Treat published results as reference points, not final answers.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="encoder-only.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">BERT / Encoder-only</span></a>
-<a href="decoder-only.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">GPT / Decoder-only</span></a>
-<a href="enc-dec.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">T5 / Enc-Dec</span></a>
-<a href="mamba-ssm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Mamba SSM</span></a>
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="encoder-only.html" style="--rc-accent:#64748b"><span class="rc-label">BERT / Encoder-only</span></a>
+<a class="rc-card" href="decoder-only.html" style="--rc-accent:#64748b"><span class="rc-label">GPT / Decoder-only</span></a>
+<a class="rc-card" href="enc-dec.html" style="--rc-accent:#64748b"><span class="rc-label">T5 / Enc-Dec</span></a>
+<a class="rc-card" href="mamba-ssm.html" style="--rc-accent:#64748b"><span class="rc-label">Mamba SSM</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
 </div>
 </div>
 <footer>

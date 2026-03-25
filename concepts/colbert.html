@@ -153,9 +153,9 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>The bi-encoder vs cross-encoder dilemma</h2>
-<p>Standard dense retrieval (bi-encoder) encodes query and document separately into single vectors. It's fast because you pre-compute document vectors, but it loses fine-grained word-level matching — the entire document gets compressed into one number.</p>
+<p>Standard <a class="concept-link" href="dense-retrieval.html">dense retrieval</a> (bi-encoder) encodes query and document separately into single vectors. It's fast because you pre-compute document vectors, but it loses fine-grained word-level matching — the entire document gets compressed into one number.</p>
 <p>Cross-encoders see query and document tokens together in full attention, giving much better accuracy. But you can't pre-compute anything — you must run the full model for every (query, candidate) pair at query time, which is O(N) and too slow for large corpora.</p>
-<p><strong>ColBERT's insight</strong>: what if we pre-compute token embeddings for documents (like bi-encoders) but defer the interaction to query time using a cheap operation (like cross-encoders)? That's "late interaction" — and it achieves near cross-encoder accuracy at near bi-encoder speed.</p>
+<p><strong>ColBERT's insight</strong>: what if we pre-compute token <a class="concept-link" href="embeddings.html">embeddings</a> for documents (like bi-encoders) but defer the interaction to query time using a cheap operation (like cross-encoders)? That's "late interaction" — and it achieves near cross-encoder accuracy at near bi-encoder speed.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -236,30 +236,27 @@ docs = retriever.invoke("Python 3.11 performance")
 <p><strong>Skip ColBERT when:</strong></p>
 <ul>
 <li>Index size is a hard constraint — ColBERT indices are 5–10× larger than bi-encoder indices.</li>
-<li>Your corpus is small (&lt;100k docs) — standard bi-encoders + reranking achieves similar quality at lower complexity.</li>
-<li>You need to update the corpus frequently — re-indexing ColBERT is slower than updating a standard vector DB.</li>
+<li>Your corpus is small (&lt;100k docs) — standard bi-encoders + <a class="concept-link" href="reranking.html">reranking</a> achieves similar quality at lower complexity.</li>
+<li>You need to update the corpus frequently — re-indexing ColBERT is slower than updating a standard <a class="concept-link" href="vector-dbs.html">vector DB</a>.</li>
 </ul>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Index size.</strong> A ColBERT index for 1M documents with average 200 tokens each stores 200M vectors. At 128 dims (ColBERTv2 uses 128-dim compressed vectors), that's ~100GB. Plan storage accordingly.</p>
-<p><strong>RAGatouille requires a PLAID index on disk.</strong> Unlike standard vector DBs, the index isn't in-memory — it's stored as a set of files. Loading an existing index is fast, but the first indexing pass requires GPU for reasonable speed.</p>
+<p><strong>RAGatouille requires a PLAID index on disk.</strong> Unlike standard <a class="concept-link" href="vector-dbs.html">vector DBs</a>, the index isn't in-<a class="concept-link" href="agent-memory.html">memory</a> — it's stored as a set of files. Loading an existing index is fast, but the first indexing pass requires GPU for reasonable speed.</p>
 <p><strong>Query encoder is cheap; document encoder is expensive.</strong> At indexing time, encoding documents takes significant compute. At query time, only the query is encoded (fast). For static corpora, the indexing cost is a one-time investment.</p>
 <p><strong>ColBERTv2 vs v1.</strong> Always use ColBERTv2 (<code>colbert-ir/colbertv2.0</code>). It uses residual compression to reduce storage from ~GB per 1M docs to much smaller, with no quality loss over v1.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="dense-retrieval.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Dense Retrieval</span></a>
-<a href="bm25.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">BM25</span></a>
-<a href="hybrid-search.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Hybrid Search</span></a>
-<a href="hyde.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">HyDE</span></a>
-<a href="multi-query-retrieval.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Multi-Query</span></a>
+<a class="rc-card" href="dense-retrieval.html" style="--rc-accent:#3b82f6"><span class="rc-label">Dense Retrieval</span></a>
+<a class="rc-card" href="bm25.html" style="--rc-accent:#3b82f6"><span class="rc-label">BM25</span></a>
+<a class="rc-card" href="hybrid-search.html" style="--rc-accent:#3b82f6"><span class="rc-label">Hybrid Search</span></a>
+<a class="rc-card" href="hyde.html" style="--rc-accent:#3b82f6"><span class="rc-label">HyDE</span></a>
+<a class="rc-card" href="multi-query-retrieval.html" style="--rc-accent:#3b82f6"><span class="rc-label">Multi-Query</span></a>
 </div>
 </div>
 <footer>

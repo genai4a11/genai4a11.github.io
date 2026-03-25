@@ -153,14 +153,14 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>From interactive to event-driven agents</h2>
-<p>Most agent examples are interactive: a user sends a message, the agent responds. Event-driven agents flip this model: the agent sits idle until triggered by something happening in the world — a new email arrives, a GitHub PR is opened, a monitoring alert fires, a daily schedule ticks over.</p>
+<p>Most agent examples are interactive: a user sends a message, the agent responds. Event-driven <a class="concept-link" href="agents.html">agents</a> flip this model: the agent sits idle until triggered by something happening in the world — a new email arrives, a GitHub PR is opened, a monitoring alert fires, a daily schedule ticks over.</p>
 <p>This is the foundation of automation: agents that do useful work in the background without a human initiating each run. Examples include: automatically summarising incoming support tickets and routing them, monitoring a news feed and alerting on specific topics, processing overnight batch jobs, or responding to webhooks from payment processors.</p>
 <p>Event-driven agents are often long-running processes (not serverless functions) that maintain persistent connections to queues or webhook endpoints. Their reliability requirements are higher than interactive agents — a crash means missed events.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Trigger patterns</h2>
-<p>Three primary trigger patterns for event-driven agents:</p>
+<p>Three primary trigger patterns for event-driven <a class="concept-link" href="agents.html">agents</a>:</p>
 <p><strong>Webhooks</strong>: an external service calls your HTTP endpoint when something happens. GitHub sends a webhook on PR events; Stripe sends one on payment completion; Twilio sends one on incoming SMS. Fast, push-based, no polling needed.</p>
 <p><strong>Message queues</strong>: events are written to a queue (Redis, RabbitMQ, SQS, Kafka) and the agent consumes them. Decouples event producer from consumer, handles backpressure, supports retry and dead-letter queues. Best for high-volume or unreliable producers.</p>
 <p><strong>Scheduled triggers</strong>: a cron job or scheduler (APScheduler, Celery Beat, GitHub Actions) wakes the agent on a fixed schedule. Simplest for regular batch processing: "every night at 2am, process yesterday's logs".</p>
@@ -323,7 +323,7 @@ scheduler.start()
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Idempotency and reliability</h2>
-<p>Event-driven agents must handle failures gracefully. Key patterns:</p>
+<p>Event-driven <a class="concept-link" href="agents.html">agents</a> must handle failures gracefully. Key patterns:</p>
 <p><strong>Idempotent processing</strong>: if an event is processed twice (e.g., due to a retry after a crash), the result should be the same as processing it once. Add a deduplication key (event ID) and check it before processing:</p>
 <pre><code class="language-python">def process_event_idempotently(event_id: str, event: dict):
     # Check if already processed
@@ -336,27 +336,24 @@ scheduler.start()
     return result
 </code></pre>
 <p><strong>Dead-letter queues</strong>: events that fail repeatedly should go to a DLQ for manual inspection, not silently dropped. Set a max retry count (3-5) before routing to DLQ.</p>
-<p><strong>Observability</strong>: log event ID, processing start/end time, success/failure, and token usage for every agent run. Without this, debugging production failures is nearly impossible.</p>
+<p><strong><a class="concept-link" href="monitoring.html">Observability</a></strong>: log event ID, processing start/end time, success/failure, and token usage for every agent run. Without this, debugging production failures is nearly impossible.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Webhook endpoints must return 200 quickly.</strong> Most webhook providers (GitHub, Stripe, Twilio) timeout in 5-30 seconds. If your agent takes longer, acknowledge the webhook immediately and process in a background task or queue. A timeout causes the provider to retry — leading to duplicate processing if you're not idempotent.</p>
 <p><strong>Queue consumers need heartbeats.</strong> A worker that takes 10 minutes on a task might look "dead" to the queue, which reassigns the task to another worker — causing double processing. Set visibility timeouts longer than your longest expected task, or send periodic heartbeat extensions.</p>
-<p><strong>LLM cost surprises in batch jobs.</strong> A scheduled agent that processes 1,000 items/night might cost pennies in testing but dollars in production when the items are large. Always estimate token cost before deploying batch agents — multiply (average tokens per item) × (items per run) × (cost per 1M tokens) × (runs per month).</p>
+<p><strong>LLM cost surprises in batch jobs.</strong> A scheduled agent that processes 1,000 items/night might cost pennies in testing but dollars in production when the items are large. Always estimate token cost before deploying batch <a class="concept-link" href="agents.html">agents</a> — multiply (average tokens per item) × (items per run) × (cost per 1M tokens) × (runs per month).</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="orchestrator-pattern.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Orchestrator Pattern</span></a>
-<a href="parallel-execution.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Parallel Execution</span></a>
-<a href="human-in-the-loop.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Human-in-the-Loop</span></a>
-<a href="sequential-chain.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Sequential Chain</span></a>
-<a href="react-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="orchestrator-pattern.html" style="--rc-accent:#06b6d4"><span class="rc-label">Orchestrator Pattern</span></a>
+<a class="rc-card" href="parallel-execution.html" style="--rc-accent:#06b6d4"><span class="rc-label">Parallel Execution</span></a>
+<a class="rc-card" href="human-in-the-loop.html" style="--rc-accent:#06b6d4"><span class="rc-label">Human-in-the-Loop</span></a>
+<a class="rc-card" href="sequential-chain.html" style="--rc-accent:#06b6d4"><span class="rc-label">Sequential Chain</span></a>
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
 </div>
 </div>
 <footer>

@@ -153,8 +153,8 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>What TRL provides</h2>
-<p>TRL (Transformer Reinforcement Learning) is HuggingFace's library for fine-tuning LLMs beyond standard next-token prediction. It wraps the HuggingFace Trainer with LLM-specific additions: chat template handling, completions-only loss masking, preference dataset formats, and RL training loops.</p>
-<p>Core trainers: <strong>SFTTrainer</strong> (Supervised Fine-Tuning — instruction following), <strong>DPOTrainer</strong> (Direct Preference Optimisation — align to preferred responses without RL), <strong>ORPOTrainer</strong> (single-stage SFT + preference), <strong>PPOTrainer</strong> (full RLHF with a reward model — rarely needed now that DPO exists), and <strong>RewardTrainer</strong> (train a reward model for RLHF).</p>
+<p>TRL (Transformer Reinforcement Learning) is HuggingFace's library for <a class="concept-link" href="finetuning.html">fine-tuning</a> <a class="concept-link" href="llms.html">LLMs</a> beyond standard next-token prediction. It wraps the HuggingFace Trainer with LLM-specific additions: chat template handling, completions-only loss masking, preference dataset formats, and RL training loops.</p>
+<p>Core trainers: <strong>SFTTrainer</strong> (Supervised Fine-Tuning — instruction following), <strong>DPOTrainer</strong> (Direct Preference Optimisation — align to preferred responses without RL), <strong>ORPOTrainer</strong> (single-stage SFT + preference), <strong>PPOTrainer</strong> (full <a class="concept-link" href="rlhf.html">RLHF</a> with a reward model — rarely needed now that <a class="concept-link" href="dpo.html">DPO</a> exists), and <strong>RewardTrainer</strong> (train a reward model for RLHF).</p>
 <p>For most fine-tuning tasks: use SFTTrainer for instruction following, DPOTrainer when you have chosen/rejected pairs. PPOTrainer is complex to tune and only justified when you have a reliable reward model and need iterative online training.</p>
 </div>
 <div class="section-block" id="s2">
@@ -203,7 +203,7 @@ trainer.train()
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Chat templates and data formats</h2>
-<p>SFTTrainer applies the model's chat template to convert message lists into training strings. This ensures the model learns to produce outputs in the exact format expected at inference (system prompts, user/assistant tags, EOS tokens).</p>
+<p>SFTTrainer applies the model's chat template to convert message lists into training strings. This ensures the model learns to produce outputs in the exact format expected at inference (<a class="concept-link" href="system-prompts.html">system prompts</a>, user/assistant tags, EOS tokens).</p>
 <pre><code class="language-python"># Preview what the chat template produces
 messages = [
     {"role": "system", "content": "You are a helpful assistant."},
@@ -269,7 +269,7 @@ trainer = DPOTrainer(
 )
 trainer.train()
 </code></pre>
-<p>DPO requires a model already instruction-tuned (via SFT). Don't run DPO on a raw base model — the reference point needs to be a helpful model, not a next-token predictor.</p>
+<p><a class="concept-link" href="dpo.html">DPO</a> requires a model already instruction-tuned (via SFT). Don't run DPO on a raw base model — the reference point needs to be a helpful model, not a next-token predictor.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
@@ -350,22 +350,19 @@ args = SFTConfig(
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>DPO needs a much smaller learning rate than SFT.</strong> SFT uses 1e-5 to 2e-4. DPO typically needs 5e-7 to 5e-6 — about 100× smaller. Using SFT learning rates for DPO causes catastrophic forgetting: the model completely loses its instruction-following ability while "aligning" to the preference data.</p>
+<p><strong><a class="concept-link" href="dpo.html">DPO</a> needs a much smaller learning rate than SFT.</strong> SFT uses 1e-5 to 2e-4. DPO typically needs 5e-7 to 5e-6 — about 100× smaller. Using SFT learning rates for DPO causes catastrophic forgetting: the model completely loses its instruction-following ability while "aligning" to the preference data.</p>
 <p><strong>Pack sequences for faster training.</strong> By default, each training example is padded to max_seq_length, wasting compute on padding tokens. Set <code>packing=True</code> in SFTConfig to pack multiple short examples into each sequence up to max_seq_length. This can 2–4× your training throughput for datasets with short examples.</p>
-<p><strong>DPO with ref_model=None saves memory but requires care.</strong> When ref_model=None, TRL uses the training model's initial state as the reference. This works but the reference gets stale as the model trains. For high-quality alignment, pass a frozen copy of the SFT model as ref_model — at the cost of 2× memory.</p>
+<p><strong>DPO with ref_model=None saves <a class="concept-link" href="agent-memory.html">memory</a> but requires care.</strong> When ref_model=None, TRL uses the training model's initial state as the reference. This works but the reference gets stale as the model trains. For high-quality alignment, pass a frozen copy of the SFT model as ref_model — at the cost of 2× memory.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="unsloth.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Unsloth</span></a>
-<a href="axolotl.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Axolotl</span></a>
-<a href="llama-factory.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LLaMA-Factory</span></a>
-<a href="lora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
-<a href="qlora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
+<a class="rc-card" href="unsloth.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Unsloth</span></a>
+<a class="rc-card" href="axolotl.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Axolotl</span></a>
+<a class="rc-card" href="llama-factory.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LLaMA-Factory</span></a>
+<a class="rc-card" href="lora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">LoRA</span></a>
+<a class="rc-card" href="qlora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
 </div>
 </div>
 <footer>

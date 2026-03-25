@@ -505,10 +505,10 @@
 <div class="section-block" id="why-naive-fails">
 <div class="section-marker">01 — Foundation</div>
 <h2>Why Naive RAG Fails</h2>
-<p>Naive RAG follows a simple linear pattern: chunk document → embed → store in vector DB → retrieve top-k → send to LLM. This works for straightforward factual Q&amp;A, but production systems expose critical failure modes.</p>
+<p>Naive <a class="concept-link" href="rag.html">RAG</a> follows a simple linear pattern: chunk document → embed → store in <a class="concept-link" href="vector-dbs.html">vector DB</a> → retrieve top-k → send to LLM. This works for straightforward factual Q&amp;A, but production systems expose critical failure modes.</p>
 <p>The naive assumption is that one query → one retrieval → answer. But real-world tasks rarely work this way. Users ask multi-hop questions, the best answer spans multiple documents, or the user's phrasing drifts far from the actual concept in your documents.</p>
 <h3>Failure Modes</h3>
-<p><strong>Poor recall:</strong> Relevant chunks are missed because semantic drift in embeddings causes them to have low dot-product with the query. <strong>Poor precision:</strong> Top-k retrieval floods the context with borderline-relevant chunks that confuse the LLM. <strong>Lost context:</strong> Fixed chunk sizes break paragraphs, splitting concepts across boundaries. <strong>Context window overload:</strong> Sending too many chunks to the LLM increases latency and confusion.</p>
+<p><strong>Poor recall:</strong> Relevant chunks are missed because semantic drift in <a class="concept-link" href="embeddings.html">embeddings</a> causes them to have low dot-product with the query. <strong>Poor precision:</strong> Top-k retrieval floods the context with borderline-relevant chunks that confuse the LLM. <strong>Lost context:</strong> Fixed chunk sizes break paragraphs, splitting concepts across boundaries. <strong><a class="concept-link" href="context-window.html">Context window</a> overload:</strong> Sending too many chunks to the LLM increases latency and confusion.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -532,14 +532,14 @@
 <div class="section-block" id="query-transform">
 <div class="section-marker">02 — Retrieval</div>
 <h2>Query Transformation</h2>
-<p>The user's query is not always the best form of the question for retrieval. Your embedding model was trained on diverse text; the user's question is just one phrasing. Query transformation bridges that gap by regenerating the query in forms more similar to your documents.</p>
+<p>The user's query is not always the best form of the question for retrieval. Your <a class="concept-link" href="embeddings.html">embedding</a> model was trained on diverse text; the user's question is just one phrasing. Query transformation bridges that gap by regenerating the query in forms more similar to your documents.</p>
 <h3>Transformation Methods</h3>
 <div class="methods-list">
 <div class="method-card">
 <div class="method-num">1</div>
 <div class="method-body">
 <h3>HyDE <em>— Hypothetical Document Embeddings</em></h3>
-<p>Generate a hypothetical answer to the query, embed that → closer to document embeddings than the question itself.</p>
+<p>Generate a hypothetical answer to the query, embed that → closer to document <a class="concept-link" href="embeddings.html">embeddings</a> than the question itself.</p>
 <ul>
 <li>LLM generates a plausible 150-token answer to the query</li>
 <li>Embed the hypothetical answer</li>
@@ -655,7 +655,7 @@ to your hypothetical answer than to the question itself.
 <div class="method-num">4</div>
 <div class="method-body">
 <h3>Late Chunking <em>— Preserve cross-chunk context</em></h3>
-<p>Embed full document first, then pool embeddings per chunk. Preserves cross-chunk context in embeddings.</p>
+<p>Embed full document first, then pool <a class="concept-link" href="embeddings.html">embeddings</a> per chunk. Preserves cross-chunk context in embeddings.</p>
 <ul>
 <li>Embed full document as sequence</li>
 <li>Pool embeddings by chunk boundary</li>
@@ -683,9 +683,9 @@ to your hypothetical answer than to the question itself.
 <div class="section-block" id="reranking">
 <div class="section-marker">04 — Ranking</div>
 <h2>Reranking</h2>
-<p>Vector similarity is a fast but imprecise proxy for relevance. Reranking solves this: after retrieving top-k candidates (e.g., 50), score each against the query using a cross-encoder → re-sort → send top-n (e.g., 5) to LLM. This two-stage approach combines speed and quality.</p>
+<p>Vector similarity is a fast but imprecise proxy for relevance. <a class="concept-link" href="reranking.html">Reranking</a> solves this: after retrieving top-k candidates (e.g., 50), score each against the query using a cross-encoder → re-sort → send top-n (e.g., 5) to LLM. This two-stage approach combines speed and quality.</p>
 <h3>Retrieval Models Comparison</h3>
-<p><strong>Bi-encoder (FAISS):</strong> Embed query and passages separately in parallel. Very fast initial retrieval but coarse similarity. <strong>ColBERT:</strong> Compute token-level embeddings for both, max-sim pooling. Faster than cross-encoder, better than bi-encoder. <strong>Cross-encoder:</strong> See (query, passage) together → much more accurate but too slow for large corpora. Perfect for reranking.</p>
+<p><strong>Bi-encoder (FAISS):</strong> Embed query and passages separately in parallel. Very fast initial retrieval but coarse similarity. <strong><a class="concept-link" href="colbert.html">ColBERT</a>:</strong> Compute token-level <a class="concept-link" href="embeddings.html">embeddings</a> for both, max-sim pooling. Faster than cross-encoder, better than bi-encoder. <strong>Cross-encoder:</strong> See (query, passage) together → much more accurate but too slow for large corpora. Perfect for reranking.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -735,7 +735,7 @@ to your hypothetical answer than to the question itself.
 <div class="section-block" id="fusion-hybrid">
 <div class="section-marker">05 — Fusion</div>
 <h2>Fusion and Hybrid Search</h2>
-<p>Dense retrieval (embeddings) excels at semantic similarity but misses keyword-exact matches. Sparse retrieval (BM25) catches exact matches but misses semantic similarity. Hybrid search combines both rankings via fusion — typically Reciprocal Rank Fusion (RRF).</p>
+<p><a class="concept-link" href="dense-retrieval.html">Dense retrieval</a> (<a class="concept-link" href="embeddings.html">embeddings</a>) excels at semantic similarity but misses keyword-exact matches. <a class="concept-link" href="retrieval-tech.html">Sparse retrieval</a> (<a class="concept-link" href="bm25.html">BM25</a>) catches exact matches but misses semantic similarity. <a class="concept-link" href="hybrid-search.html">Hybrid search</a> combines both rankings via fusion — typically Reciprocal Rank Fusion (RRF).</p>
 <p>RRF (Reciprocal Rank Fusion) is a parameter-free fusion method: <code>RRF_score = Σ 1/(k + rank_i)</code>. It's simple, robust, and works well in practice. No need to normalize scores or tune weights.</p>
 <div class="example-box">Query: "RLHF instability"
 
@@ -758,8 +758,8 @@ Final order: doc_A &gt; doc_B &gt; doc_C &gt; doc_D</div>
 <div class="section-block" id="multi-hop">
 <div class="section-marker">06 — Reasoning</div>
 <h2>Multi-Hop and Agentic RAG</h2>
-<p>Some questions require chaining multiple retrievals: "What did the author of X say about Y?" You must retrieve X, identify the author, then retrieve on the author's name. Multi-hop RAG handles this by iterating: retrieve → read → formulate follow-up query → retrieve again → synthesize.</p>
-<p>Agentic RAG goes further: the LLM decides when to retrieve, what to query, whether to search again, whether to use a calculator or code execution. Retrieval is just one tool in a larger decision-making loop.</p>
+<p>Some questions require chaining multiple retrievals: "What did the author of X say about Y?" You must retrieve X, identify the author, then retrieve on the author's name. Multi-hop <a class="concept-link" href="rag.html">RAG</a> handles this by iterating: retrieve → read → formulate follow-up query → retrieve again → synthesize.</p>
+<p><a class="concept-link" href="agentic-rag.html">Agentic RAG</a> goes further: the LLM decides when to retrieve, what to query, whether to search again, whether to use a calculator or code execution. Retrieval is just one tool in a larger decision-making loop.</p>
 <h3>Architectural Patterns</h3>
 <div class="table-wrap">
 <table>
@@ -785,7 +785,7 @@ Final order: doc_A &gt; doc_B &gt; doc_C &gt; doc_D</div>
 <div class="section-block" id="eval-framework">
 <div class="section-marker">07 — Quality</div>
 <h2>Evaluation Framework</h2>
-<p>RAG quality has multiple dimensions: retrieval quality (did we get relevant documents?), answer quality (is the final answer correct?), grounding (is the answer supported by context?). A single metric doesn't capture all three.</p>
+<p><a class="concept-link" href="rag.html">RAG</a> quality has multiple dimensions: retrieval quality (did we get relevant documents?), answer quality (is the final answer correct?), grounding (is the answer supported by context?). A single metric doesn't capture all three.</p>
 <h3>Evaluation Tools &amp; Frameworks</h3>
 <div class="tools-grid">
 <div class="tool-card">
@@ -842,35 +842,35 @@ Context Recall = # ground-truth facts covered by context / total facts</div>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Gao, L. et al. (2023).
-        <em>Hypothetical Document Embeddings (HyDE).</em>
+        <em>Hypothetical Document <a class="concept-link" href="embeddings.html">Embeddings</a> (<a class="concept-link" href="hyde.html">HyDE</a>).</em>
         arXiv:2212.10496. —
         <a href="https://arxiv.org/abs/2212.10496" target="_blank">arxiv:2212.10496 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Es, S. et al. (2023).
-        <em>RAGAS: A Reference-Free Evaluation Metric for Retrieval-Augmented Generation.</em>
+        <em><a class="concept-link" href="ragas.html">RAGAS</a>: A Reference-Free <a class="concept-link" href="eval.html">Evaluation</a> Metric for Retrieval-Augmented Generation.</em>
         arXiv:2309.15217. —
         <a href="https://arxiv.org/abs/2309.15217" target="_blank">arxiv:2309.15217 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Khattab, O. et al. (2021).
-        <em>ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction.</em>
+        <em><a class="concept-link" href="colbert.html">ColBERT</a>: Efficient and Effective Passage Search via Contextualized Late Interaction.</em>
         arXiv:2004.12832. —
         <a href="https://arxiv.org/abs/2004.12832" target="_blank">arxiv:2004.12832 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Trivedi, H. et al. (2022).
-        <em>Interleaving Retrieval with Chain-of-Thought Reasoning (IRCoT).</em>
+        <em>Interleaving Retrieval with <a class="concept-link" href="chain-of-thought.html">Chain-of-Thought</a> Reasoning (IRCoT).</em>
         arXiv:2212.10509. —
         <a href="https://arxiv.org/abs/2212.10509" target="_blank">arxiv:2212.10509 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-blog">Blog</span>
         JinaAI. (2024).
-        <em>Late Chunking: Embedding Long Documents with Large Context Windows.</em> —
+        <em><a class="concept-link" href="late-chunking.html">Late Chunking</a>: <a class="concept-link" href="embeddings.html">Embedding</a> Long Documents with Large Context Windows.</em> —
         <a href="https://jina.ai/blog/late-chunking/" target="_blank">jina.ai/blog ↗</a>
 </li>
 </ul>
@@ -878,7 +878,7 @@ Context Recall = # ground-truth facts covered by context / total facts</div>
 <div class="section-block" id="learning-path">
 <div class="section-marker">LEARNING PATH</div>
 <h2>Learning Path</h2>
-<p>Advanced RAG is for when basic RAG already works but you need better accuracy, recall, or latency. Always start with basic RAG and measure before applying these techniques.</p>
+<p>Advanced RAG is for when basic <a class="concept-link" href="rag.html">RAG</a> already works but you need better accuracy, recall, or latency. Always start with basic RAG and measure before applying these techniques.</p>
 <div class="flow-diagram">
 <div class="flow-box">Basic RAG<span class="flow-label">working baseline</span></div>
 <div class="flow-arrow">→</div>
@@ -892,22 +892,19 @@ Context Recall = # ground-truth facts covered by context / total facts</div>
 <div class="flow-arrow">→</div>
 <div class="flow-box">Re-eval<span class="flow-label">did it help?</span></div>
 </div>
-<div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Diagnose before you optimise</h4><p>Use RAGAS or LlamaIndex evals to separate retrieval problems (low context recall) from generation problems (low faithfulness). Each requires different fixes.</p></div></div>
-<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Try hybrid search first</h4><p>Add BM25 to your dense retrieval (Weaviate / Elasticsearch hybrid mode). If recall goes up, you had keyword-matchable queries. This is often the highest-ROI fix.</p></div></div>
+<div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Diagnose before you optimise</h4><p>Use <a class="concept-link" href="ragas.html">RAGAS</a> or <a class="concept-link" href="llamaindex.html">LlamaIndex</a> evals to separate retrieval problems (low context recall) from generation problems (low faithfulness). Each requires different fixes.</p></div></div>
+<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Try hybrid search first</h4><p>Add <a class="concept-link" href="bm25.html">BM25</a> to your <a class="concept-link" href="dense-retrieval.html">dense retrieval</a> (<a class="concept-link" href="weaviate.html">Weaviate</a> / Elasticsearch hybrid mode). If recall goes up, you had keyword-matchable queries. This is often the highest-ROI fix.</p></div></div>
 <div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Add a reranker for precision</h4><p>Cohere Rerank or BGE-Reranker takes your top-20 chunks and reorders them. Common pattern: retrieve 20, rerank to 5. Precision usually jumps 10–20%.</p></div></div>
-<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Contextual retrieval for large corpora</h4><p>Anthropic's contextual retrieval prepends a short document summary to each chunk before embedding. Dramatically improves recall for large corpora (&gt;100K chunks).</p></div></div>
+<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Contextual retrieval for large corpora</h4><p>Anthropic's <a class="concept-link" href="contextual-retrieval.html">contextual retrieval</a> prepends a short document summary to each chunk before <a class="concept-link" href="embeddings.html">embedding</a>. Dramatically improves recall for large corpora (&gt;100K chunks).</p></div></div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Embeddings</span></a>
-<a href="vector-dbs.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Vector Databases</span></a>
-<a href="retrieval-tech.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Retrieval Techniques</span></a>
-<a href="post-retrieval.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Post-Retrieval</span></a>
-<a href="sentence-transformers.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
+<a class="rc-card" href="embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">Embeddings</span></a>
+<a class="rc-card" href="vector-dbs.html" style="--rc-accent:#3b82f6"><span class="rc-label">Vector Databases</span></a>
+<a class="rc-card" href="retrieval-tech.html" style="--rc-accent:#3b82f6"><span class="rc-label">Retrieval Techniques</span></a>
+<a class="rc-card" href="post-retrieval.html" style="--rc-accent:#3b82f6"><span class="rc-label">Post-Retrieval</span></a>
+<a class="rc-card" href="sentence-transformers.html" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
 </div>
 </div>
 <footer class="page-footer">

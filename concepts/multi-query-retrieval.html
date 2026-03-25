@@ -153,7 +153,7 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>The single-query blind spot</h2>
-<p>You ask "How do I cancel my subscription?" and the most relevant document says "To terminate your account, visit Account Settings." Standard dense retrieval embeds your query as a single vector and looks for nearby documents — but "cancel subscription" and "terminate account" may not be close enough in embedding space to score highly.</p>
+<p>You ask "How do I cancel my subscription?" and the most relevant document says "To terminate your account, visit Account Settings." Standard <a class="concept-link" href="dense-retrieval.html">dense retrieval</a> embeds your query as a single vector and looks for nearby documents — but "cancel subscription" and "terminate account" may not be close enough in <a class="concept-link" href="embeddings.html">embedding</a> space to score highly.</p>
 <p>This is the vocabulary mismatch problem: your phrasing differs from the document's phrasing, and a single query embedding can only cover one "view" of the semantic space.</p>
 <p><strong>Multi-query retrieval</strong> solves this by generating 3–5 paraphrased versions of the original query, retrieving documents for each, and merging the results. Each paraphrase covers a different corner of the semantic space, dramatically improving recall.</p>
 </div>
@@ -162,7 +162,7 @@
 <h2>How multi-query retrieval works</h2>
 <ol>
 <li><strong>Expand</strong>: send the original query to an LLM with a prompt asking for N diverse paraphrases ("Generate 4 different phrasings of this question").</li>
-<li><strong>Retrieve</strong>: run a standard retrieval (dense, BM25, or hybrid) for each paraphrase independently. Get top-k results for each.</li>
+<li><strong>Retrieve</strong>: run a standard retrieval (dense, <a class="concept-link" href="bm25.html">BM25</a>, or hybrid) for each paraphrase independently. Get top-k results for each.</li>
 <li><strong>Merge and deduplicate</strong>: combine all result sets. If the same document appears in multiple result lists, keep it once (Reciprocal Rank Fusion handles ranking).</li>
 <li><strong>Rerank optionally</strong>: apply a cross-encoder reranker on the merged set to get the final top-N before passing to the LLM.</li>
 </ol>
@@ -322,23 +322,20 @@ async def multi_query_async(variants: list[str]) -&gt; list:
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Generated queries can be off-target.</strong> LLMs occasionally produce variants that drift from the original intent. Use a lower temperature (0.0–0.3) for query generation and include the original query in the result set unconditionally.</p>
+<p><strong>Generated queries can be off-target.</strong> <a class="concept-link" href="llms.html">LLMs</a> occasionally produce variants that drift from the original intent. Use a lower temperature (0.0–0.3) for query generation and include the original query in the result set unconditionally.</p>
 <p><strong>Deduplication is essential.</strong> Multiple variants often retrieve the same documents. Without deduplication, you'll pass the same chunk to the LLM multiple times, wasting context tokens. Use document IDs or content hashing to deduplicate.</p>
-<p><strong>Combining with HyDE is powerful.</strong> Multi-query generates diverse question phrasings; HyDE generates document-style hypothetical answers. Combining both (generate 3 HyDE documents + 3 query variants = 6 retrieval passes) can push recall above 95% on most benchmarks — at the cost of 7 LLM calls per query.</p>
+<p><strong>Combining with <a class="concept-link" href="hyde.html">HyDE</a> is powerful.</strong> Multi-query generates diverse question phrasings; HyDE generates document-style hypothetical answers. Combining both (generate 3 HyDE documents + 3 query variants = 6 retrieval passes) can push recall above 95% on most <a class="concept-link" href="benchmarks.html">benchmarks</a> — at the cost of 7 LLM calls per query.</p>
 <p><strong>Don't use multi-query for simple keyword lookups.</strong> If the user types an exact product code or error message, generating paraphrases introduces noise. Apply multi-query selectively for natural-language questions, not for exact-match lookups.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="dense-retrieval.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Dense Retrieval</span></a>
-<a href="bm25.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">BM25</span></a>
-<a href="hybrid-search.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Hybrid Search</span></a>
-<a href="hyde.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">HyDE</span></a>
-<a href="colbert.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">ColBERT</span></a>
+<a class="rc-card" href="dense-retrieval.html" style="--rc-accent:#3b82f6"><span class="rc-label">Dense Retrieval</span></a>
+<a class="rc-card" href="bm25.html" style="--rc-accent:#3b82f6"><span class="rc-label">BM25</span></a>
+<a class="rc-card" href="hybrid-search.html" style="--rc-accent:#3b82f6"><span class="rc-label">Hybrid Search</span></a>
+<a class="rc-card" href="hyde.html" style="--rc-accent:#3b82f6"><span class="rc-label">HyDE</span></a>
+<a class="rc-card" href="colbert.html" style="--rc-accent:#3b82f6"><span class="rc-label">ColBERT</span></a>
 </div>
 </div>
 <footer>

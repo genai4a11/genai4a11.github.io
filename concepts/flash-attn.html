@@ -355,7 +355,7 @@
 <div class="section-block">
 <div class="section-marker">1</div>
 <h2>The Attention Bottleneck</h2>
-<p>Standard attention mechanism has computational complexity of O(N²) where N is sequence length. This is manageable in compute (GPUs are fast at matrix operations), but the memory bottleneck is severe. During attention computation, the algorithm materializes the full N×N attention matrix in high-bandwidth memory (HBM), requiring O(N²) memory. For a sequence length of 4096 tokens with 12,288-dimensional embeddings, the attention matrix alone requires gigabytes of memory.</p>
+<p>Standard attention mechanism has computational complexity of O(N²) where N is sequence length. This is manageable in compute (GPUs are fast at matrix operations), but the <a class="concept-link" href="agent-memory.html">memory</a> bottleneck is severe. During attention computation, the algorithm materializes the full N×N attention matrix in high-bandwidth memory (HBM), requiring O(N²) memory. For a sequence length of 4096 tokens with 12,288-dimensional <a class="concept-link" href="embeddings.html">embeddings</a>, the attention matrix alone requires gigabytes of memory.</p>
 <p>The real bottleneck isn't compute FLOPs; it's data movement. Modern GPUs have substantial compute capacity but limited memory bandwidth. The V100 GPU can do ~7 TFLOPS (trillion float operations per second) but only has ~900 GB/s memory bandwidth. This means reading and writing data to HBM dominates execution time. Standard attention requires multiple passes through HBM: reading Q, K, V from HBM, computing attention scores, reading/writing intermediate matrices, and writing the output.</p>
 <p>Flash Attention solves this by using tiling and online softmax computation, eliminating the need to materialize the full N×N matrix. Instead, the algorithm processes attention in blocks, computing partial sums and max values on-the-fly. This dramatically reduces memory bandwidth requirements and allows sequences that were previously impossible to fit in GPU memory.</p>
 <div class="callout blue">
@@ -420,8 +420,8 @@ output = flash_attn_func(q, k, v, dropout_p=0.1, causal=True)
 <div class="section-block">
 <div class="section-marker">3</div>
 <h2>IO-Aware Analysis</h2>
-<p>Flash Attention's core innovation is IO-awareness: designing the algorithm with memory access patterns as a first-class optimization target. Traditional algorithms optimize for FLOPs, but Flash Attention optimizes for bytes transferred (IO). This requires detailed understanding of GPU memory hierarchy: fast but small SRAM (Shared Memory), larger but slower HBM, and how data flows between them.</p>
-<p>The original Flash Attention paper proved that by using optimal block sizes, you can reduce HBM reads/writes to O(N d log(d)) where d is the head dimension. This is provably optimal for computing exact attention with only SRAM as fast memory. The practical speedup varies from 2x to 10x depending on sequence length and hardware.</p>
+<p>Flash Attention's core innovation is IO-awareness: designing the algorithm with <a class="concept-link" href="agent-memory.html">memory</a> access patterns as a first-class <a class="concept-link" href="optimization.html">optimization</a> target. Traditional algorithms optimize for FLOPs, but Flash Attention optimizes for bytes transferred (IO). This requires detailed understanding of GPU memory hierarchy: fast but small SRAM (Shared Memory), larger but slower HBM, and how data flows between them.</p>
+<p>The original Flash Attention paper proved that by using optimal block sizes, you can reduce HBM reads/writes to O(N d log(d)) where d is the head dimension. This is provably optimal for computing exact attention with only SRAM as fast memory. The practical speedup varies from 2x to 10x depending on sequence length and <a class="concept-link" href="hardware.html">hardware</a>.</p>
 <div class="callout blue">
 <p><strong>Key Metrics:</strong> Standard attention: 465MB HBM traffic per forward pass. Flash Attention: 400MB. Speedup: ~4x through better tiling and fused kernels.</p>
 </div>
@@ -443,7 +443,7 @@ output = flash_attn_func(q, k, v, dropout_p=0.1, causal=True)
 <div class="section-block">
 <div class="section-marker">4</div>
 <h2>Using Flash Attention in PyTorch</h2>
-<p>PyTorch 2.0+ includes a scaled_dot_product_attention function that automatically uses Flash Attention when available on compatible hardware. For maximum performance, use the flash-attn library directly.</p>
+<p>PyTorch 2.0+ includes a scaled_dot_product_attention function that automatically uses Flash Attention when available on compatible <a class="concept-link" href="hardware.html">hardware</a>. For maximum performance, use the flash-attn library directly.</p>
 <div class="example-box"># PyTorch Built-in Flash Attention
 
 import torch
@@ -479,24 +479,21 @@ output = F.scaled_dot_product_attention(
 <div class="section-block">
 <div class="section-marker">7</div>
 <h2>Impact on Model Training</h2>
-<p>Flash Attention enables long context windows (100k+ tokens), faster training throughput (3-4x for 4k-8k sequences), and better memory efficiency allowing larger batch sizes. This has been crucial for improvements in model quality over 2023-2024.</p>
+<p>Flash Attention enables long context windows (100k+ tokens), faster training throughput (3-4x for 4k-8k sequences), and better <a class="concept-link" href="agent-memory.html">memory</a> efficiency allowing larger batch sizes. This has been crucial for improvements in model quality over 2023-2024.</p>
 <p>Memory savings enable larger batches, which improve training efficiency and gradient stability. Combined with context length scaling, Flash Attention has fundamentally changed what's possible in LLM training and inference.</p>
 <div class="callout amber">
-<p><strong>Training Note:</strong> Requires CUDA 8.0+ (A100 or newer). Older GPUs get no benefit or may be slower. Always profile on your target hardware.</p>
+<p><strong>Training Note:</strong> Requires CUDA 8.0+ (A100 or newer). Older GPUs get no benefit or may be slower. Always profile on your target <a class="concept-link" href="hardware.html">hardware</a>.</p>
 </div>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
-<a href="multi-head-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
-<a href="cross-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Cross-Attention</span></a>
-<a href="rope.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RoPE</span></a>
-<a href="alibi.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">ALiBi</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="multi-head-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
+<a class="rc-card" href="cross-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Cross-Attention</span></a>
+<a class="rc-card" href="rope.html" style="--rc-accent:#64748b"><span class="rc-label">RoPE</span></a>
+<a class="rc-card" href="alibi.html" style="--rc-accent:#64748b"><span class="rc-label">ALiBi</span></a>
 </div>
 </div>
 <footer>

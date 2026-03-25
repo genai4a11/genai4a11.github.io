@@ -452,7 +452,7 @@
 <div class="section-marker">01 — Foundation</div>
 <h2>What Is Reasoning in LLMs?</h2>
 <p>A standard LLM operates in one forward pass: input → output. No intermediate deliberation. The model generates the final answer directly, token by token, in a single left-to-right pass.</p>
-<p>Reasoning LLMs fundamentally change this: they generate explicit intermediate steps (tokens) before the final answer. These intermediate tokens represent "thinking" — the model shows its work, explores paths, checks assumptions, and validates logic before committing to a conclusion.</p>
+<p>Reasoning <a class="concept-link" href="llms.html">LLMs</a> fundamentally change this: they generate explicit intermediate steps (tokens) before the final answer. These intermediate tokens represent "thinking" — the model shows its work, explores paths, checks assumptions, and validates logic before committing to a conclusion.</p>
 <p>Two axes define reasoning approaches: <strong>where it happens</strong> (in the prompt via CoT, in model weights from training, or via search algorithms) and <strong>when it happens</strong> (during training time with special loss functions, or at inference time with compute budget).</p>
 <p>The key insight: <strong>more thinking tokens = better answers on hard tasks, at the cost of latency and token spend.</strong> This trades inference compute for quality — a new scaling dimension beyond just model size and pretraining tokens.</p>
 <div class="callout amber">
@@ -464,10 +464,10 @@
 <div class="section-block" id="chain-thought">
 <div class="section-marker">02 — Prompting Method</div>
 <h2>Chain-of-Thought Prompting</h2>
-<p>Wei et al. 2022 showed a simple discovery: appending "Let's think step by step" to a prompt unlocks multi-step reasoning in large models. This cost nearly nothing — no retraining, no new data. Just better prompting.</p>
-<p><strong>Zero-shot CoT:</strong> Append "Let's think step by step" to any prompt. Works reliably on models ≥ ~100B parameters. The model's training has naturally learned reasoning, just not by default.</p>
-<p><strong>Few-shot CoT:</strong> Provide worked examples showing explicit reasoning chains. More expensive to construct, but more reliable. Show the model a question, then step-by-step reasoning, then the answer. Few-shot versions reliably outperform zero-shot.</p>
-<p><strong>Self-consistency:</strong> Don't just sample one CoT chain. Sample multiple independent chains (typically 5–10), let the model reason differently each time, then take a majority vote on the final answer. Adds 3–5% accuracy on math benchmarks with just sampling cost.</p>
+<p>Wei et al. 2022 showed a simple discovery: appending "Let's think step by step" to a prompt unlocks multi-step reasoning in large models. This cost nearly nothing — no retraining, no new data. Just better <a class="concept-link" href="prompting.html">prompting</a>.</p>
+<p><strong><a class="concept-link" href="zero-shot.html">Zero-shot</a> CoT:</strong> Append "Let's think step by step" to any prompt. Works reliably on models ≥ ~100B parameters. The model's training has naturally learned reasoning, just not by default.</p>
+<p><strong><a class="concept-link" href="few-shot.html">Few-shot</a> CoT:</strong> Provide worked examples showing explicit reasoning chains. More expensive to construct, but more reliable. Show the model a question, then step-by-step reasoning, then the answer. Few-shot versions reliably outperform zero-shot.</p>
+<p><strong><a class="concept-link" href="self-consistency.html">Self-consistency</a>:</strong> Don't just sample one CoT chain. Sample multiple independent chains (typically 5–10), let the model reason differently each time, then take a majority vote on the final answer. Adds 3–5% accuracy on math <a class="concept-link" href="benchmarks.html">benchmarks</a> with just sampling cost.</p>
 <div class="example-box">Direct answer vs CoT:
 
 Direct: Q: If 3 items cost $4.50 each and you have $20, what's left?
@@ -486,7 +486,7 @@ CoT:    Q: [same question] Let's think step by step.
 <div class="section-block" id="scratchpad">
 <div class="section-marker">03 — Training Method</div>
 <h2>Scratchpad Training and Process Reward Models</h2>
-<p>Instead of prompting for CoT, train the model to produce reasoning as part of its learned output distribution. OpenAI's o1 approach: train on long CoT traces, then hide the reasoning scratchpad from users at inference time.</p>
+<p>Instead of <a class="concept-link" href="prompting.html">prompting</a> for CoT, train the model to produce reasoning as part of its learned output distribution. OpenAI's o1 approach: train on long CoT traces, then hide the reasoning scratchpad from users at inference time.</p>
 <p>This shifts reasoning from a prompting trick to a learned behavior. The model learns when to reason, how deep to reason, and how to validate its own work.</p>
 <p>Two reward modeling approaches exist: <strong>Outcome Reward Model (ORM)</strong> scores only the final answer — correct or incorrect. Simple to label. But it can't distinguish between wrong-answer steps that luckily arrive at the right conclusion.</p>
 <p><strong>Process Reward Model (PRM)</strong> annotates every reasoning step, scoring each independently. Much more expensive to label (each solution requires dozens of step annotations). But dramatically better for hard math — it teaches the model which intermediate reasoning paths are sound, not just whether the final answer is right.</p>
@@ -537,7 +537,7 @@ CoT:    Q: [same question] Let's think step by step.
 <div class="section-marker">05 — Pure RL Approach</div>
 <h2>DeepSeek-R1 and GRPO</h2>
 <p>DeepSeek-R1 demonstrated a profound finding: you can train reasoning capability via pure reinforcement learning, <strong>without</strong> supervised CoT traces. Start from a base model. Apply a simple RL algorithm. Reasoning emerges.</p>
-<p><strong>GRPO (Group Relative Policy Optimization):</strong> Sample a group of G responses. Score each with a rule-based reward (e.g., 1 if final answer correct). Compute advantage for each response relative to the group mean, not global baseline. Update policy to increase likelihood of high-advantage responses.</p>
+<p><strong>GRPO (Group Relative Policy <a class="concept-link" href="optimization.html">Optimization</a>):</strong> Sample a group of G responses. Score each with a rule-based reward (e.g., 1 if final answer correct). Compute advantage for each response relative to the group mean, not global baseline. Update policy to increase likelihood of high-advantage responses.</p>
 <p>GRPO avoids reward model collapse seen in PPO — where the reward model starts overfitting and giving inflated scores. It's simpler: no separate reward model, no reference model, just group-relative advantage. And empirically, it works: DeepSeek-R1 shows reasoning ability without ever seeing annotated CoT data during training.</p>
 <p>A key emergent phenomenon: the model develops an "aha moment" behavior — spontaneously re-examining its work mid-chain when it notices a mistake, then correcting course. This self-correction emerges purely from the RL signal, not from explicit training.</p>
 <div class="example-box">GRPO update rule (pseudocode):
@@ -563,8 +563,8 @@ loss = -E[advantage_i * log π(r_i | p)]    <div class="table-wrap">
 <div class="section-block" id="test-time-compute">
 <div class="section-marker">06 — Scaling Laws</div>
 <h2>Test-Time Compute Scaling</h2>
-<p>Historical scaling laws focused on training compute: more parameters, more tokens, better model. But for reasoning tasks, scaling inference compute yields a different curve.</p>
-<p>Snell et al. 2024 showed: a smaller model with 16× more inference compute can match a much larger model on math benchmarks. You can spend compute at inference time to compensate for model size. This creates a new product dimension.</p>
+<p>Historical <a class="concept-link" href="scaling-laws.html">scaling laws</a> focused on training compute: more parameters, more tokens, better model. But for reasoning tasks, scaling inference compute yields a different curve.</p>
+<p>Snell et al. 2024 showed: a smaller model with 16× more inference compute can match a much larger model on math <a class="concept-link" href="benchmarks.html">benchmarks</a>. You can spend compute at inference time to compensate for model size. This creates a new product dimension.</p>
 <p>Instead of training one massive model, train a smaller base and route queries intelligently: easy queries go to a cheap, fast model. Hard queries route to a reasoning-heavy path with more thinking tokens. High-stakes queries get maximum compute. Each query's difficulty is matched to appropriate resources.</p>
 <div class="table-wrap">
 <table>
@@ -629,7 +629,7 @@ loss = -E[advantage_i * log π(r_i | p)]    <div class="table-wrap">
 <h3>When NOT to Use</h3>
 <p><strong>Simple retrieval:</strong> "What is the capital of France?" No reasoning needed. 100ms model beats 10s reasoning model.</p>
 <p><strong>Summarization:</strong> Reasoning adds latency with no quality gain. SFT-optimized models are faster and sufficient.</p>
-<p><strong>Classification:</strong> Is this email spam? Reasoning is overkill. A small classifier or few-shot prompt is faster and cheaper.</p>
+<p><strong>Classification:</strong> Is this email spam? Reasoning is overkill. A small classifier or <a class="concept-link" href="few-shot.html">few-shot</a> prompt is faster and cheaper.</p>
 <p>Measure the impact: add reasoning only where it measurably improves accuracy or enables capabilities you can't otherwise achieve.</p>
 </div>
 <!-- ── REFERENCES ── -->
@@ -641,28 +641,28 @@ loss = -E[advantage_i * log π(r_i | p)]    <div class="table-wrap">
 <li class="ref-item">
 <span class="ref-badge badge-paper">Paper</span>
         Wei, J. et al. (2022).
-        <em>Chain-of-Thought Prompting Elicits Reasoning in Large Language Models.</em>
+        <em><a class="concept-link" href="chain-of-thought.html">Chain-of-Thought</a> <a class="concept-link" href="prompting.html">Prompting</a> Elicits Reasoning in Large Language Models.</em>
         arXiv:2201.11903. —
         <a href="https://arxiv.org/abs/2201.11903" target="_blank">arxiv:2201.11903 ↗</a>
 </li>
 <li class="ref-item">
 <span class="ref-badge badge-paper">Paper</span>
         Wang, X. et al. (2022).
-        <em>Self-Consistency Improves Chain of Thought Reasoning in Language Models.</em>
+        <em><a class="concept-link" href="self-consistency.html">Self-Consistency</a> Improves Chain of Thought Reasoning in Language Models.</em>
         arXiv:2203.11171. —
         <a href="https://arxiv.org/abs/2203.11171" target="_blank">arxiv:2203.11171 ↗</a>
 </li>
 <li class="ref-item">
 <span class="ref-badge badge-paper">Paper</span>
         DeepSeek-AI. (2025).
-        <em>DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning.</em>
+        <em>DeepSeek-R1: Incentivizing Reasoning Capability in <a class="concept-link" href="llms.html">LLMs</a> via Reinforcement Learning.</em>
         arXiv:2501.12948. —
         <a href="https://arxiv.org/abs/2501.12948" target="_blank">arxiv:2501.12948 ↗</a>
 </li>
 <li class="ref-item">
 <span class="ref-badge badge-paper">Paper</span>
         Snell, C. et al. (2024).
-        <em>Scaling LLM Test-Time Compute Optimally can Mitigate Loss of In-Context Learning.</em>
+        <em>Scaling LLM <a class="concept-link" href="test-time-compute.html">Test-Time Compute</a> Optimally can Mitigate Loss of In-Context Learning.</em>
         arXiv:2408.03314. —
         <a href="https://arxiv.org/abs/2408.03314" target="_blank">arxiv:2408.03314 ↗</a>
 </li>
@@ -678,8 +678,8 @@ loss = -E[advantage_i * log π(r_i | p)]    <div class="table-wrap">
 <ul class="refs-list">
 <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> OpenAI. o1 Model Documentation. <a href="https://platform.openai.com/docs/models" target="_blank">platform.openai.com/docs ↗</a></li>
 <li class="ref-item"><span class="ref-badge badge-docs">Docs</span> DeepSeek. R1 API Reference. <a href="https://api-docs.deepseek.com" target="_blank">api-docs.deepseek.com ↗</a></li>
-<li class="ref-item"><span class="ref-badge badge-docs">Docs</span> vLLM Documentation. <a href="https://docs.vllm.ai" target="_blank">docs.vllm.ai ↗</a></li>
-<li class="ref-item"><span class="ref-badge badge-docs">Docs</span> SGLang. Structured Generation Language. <a href="https://sgl-project.github.io" target="_blank">sgl-project.github.io ↗</a></li>
+<li class="ref-item"><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="vllm.html">vLLM</a> Documentation. <a href="https://docs.vllm.ai" target="_blank">docs.vllm.ai ↗</a></li>
+<li class="ref-item"><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="sglang.html">SGLang</a>. Structured Generation Language. <a href="https://sgl-project.github.io" target="_blank">sgl-project.github.io ↗</a></li>
 </ul>
 <div class="ref-group-title">Practitioner Resources</div>
 <ul class="refs-list">
@@ -695,17 +695,14 @@ loss = -E[advantage_i * log π(r_i | p)]    <div class="table-wrap">
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="basic-prompting.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Basic Techniques</span></a>
-<a href="programmatic-prompting.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Programmatic</span></a>
-<a href="output-control.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Output Control</span></a>
-<a href="zero-shot.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Zero-shot</span></a>
-<a href="few-shot.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Few-shot</span></a>
+<a class="rc-card" href="basic-prompting.html" style="--rc-accent:#64748b"><span class="rc-label">Basic Techniques</span></a>
+<a class="rc-card" href="programmatic-prompting.html" style="--rc-accent:#64748b"><span class="rc-label">Programmatic</span></a>
+<a class="rc-card" href="output-control.html" style="--rc-accent:#64748b"><span class="rc-label">Output Control</span></a>
+<a class="rc-card" href="zero-shot.html" style="--rc-accent:#64748b"><span class="rc-label">Zero-shot</span></a>
+<a class="rc-card" href="few-shot.html" style="--rc-accent:#64748b"><span class="rc-label">Few-shot</span></a>
 </div>
 </div>
 <footer class="page-footer">

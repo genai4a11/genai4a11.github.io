@@ -381,16 +381,16 @@
 <div class="section-block" id="section-1">
 <div class="section-marker">SECTION 01</div>
 <h2>The Fine-tuning Paradox</h2>
-<p>Modern LLMs are massive. A 70B parameter model requires ~140GB of VRAM just to store weights (float16). Training requires gradients (~140GB) + optimizer states (~280GB). Total: ~560GB. Only 8× H100 GPUs (192GB each) or TPv4 pods can handle it.</p>
+<p>Modern <a class="concept-link" href="llms.html">LLMs</a> are massive. A 70B parameter model requires ~140GB of VRAM just to store weights (float16). Training requires gradients (~140GB) + optimizer states (~280GB). Total: ~560GB. Only 8× H100 GPUs (192GB each) or TPv4 pods can handle it.</p>
 <p><strong>The Problem</strong></p>
 <ul>
 <li><strong>GPU requirements:</strong> 8× H100 = ~$160K upfront, or $12K+/month on cloud</li>
 <li><strong>Access:</strong> Most researchers/companies can't afford this</li>
 <li><strong>Iteration speed:</strong> 8-GPU training takes hours. Slow feedback loops.</li>
-<li><strong>Parameter efficiency:</strong> Full fine-tuning updates ALL 70B params. Overkill for most tasks.</li>
+<li><strong>Parameter efficiency:</strong> Full <a class="concept-link" href="finetuning.html">fine-tuning</a> updates ALL 70B params. Overkill for most tasks.</li>
 </ul>
 <p><strong>Key Insight</strong> Most of a pre-trained model's knowledge is frozen. You're fine-tuning to adapt to a specific task (e.g., "answer like a doctor" or "write like Shakespeare"). You don't need to update all parameters—just a small adaptor.</p>
-<p><strong>The LoRA Solution</strong> Instead of updating W (70B parameters), train two small matrices A and B such that ΔW = AB^T. If A is (70K × r) and B is (70K × r) where r=8, you train only 1.1M parameters (0.0016% of 70B). Memory drops from 560GB to ~4GB.</p>
+<p><strong>The LoRA Solution</strong> Instead of updating W (70B parameters), train two small matrices A and B such that ΔW = AB^T. If A is (70K × r) and B is (70K × r) where r=8, you train only 1.1M parameters (0.0016% of 70B). <a class="concept-link" href="agent-memory.html">Memory</a> drops from 560GB to ~4GB.</p>
 <div class="callout blue">
 <strong>Game Changer:</strong> LoRA brought fine-tuning from PhD-researcher-exclusive to consumer-GPU territory. Now you can fine-tune on a single RTX 4090 (24GB) instead of 8× H100.
       </div>
@@ -398,7 +398,7 @@
 <div class="section-block" id="section-2">
 <div class="section-marker">SECTION 02</div>
 <h2>LoRA Math</h2>
-<p>The elegance of LoRA is simple linear algebra. No architectural changes—just parameter efficiency.</p>
+<p>The elegance of LoRA is simple <a class="concept-link" href="linear-algebra.html">linear algebra</a>. No architectural changes—just parameter efficiency.</p>
 <p><strong>Low-Rank Decomposition</strong></p>
 <p>Instead of updating weight matrix W (d × k dimensions) directly, decompose the update:</p>
 <div class="example-box">
@@ -416,7 +416,7 @@ output = W @ x + (B @ A^T) @ x
 <p><strong>Parameter Count Comparison</strong></p>
 <p>Example: Llama 70B, we're adapting attention layers:</p>
 <ul>
-<li><strong>Full fine-tuning:</strong> ~70B parameters to train</li>
+<li><strong>Full <a class="concept-link" href="finetuning.html">fine-tuning</a>:</strong> ~70B parameters to train</li>
 <li><strong>LoRA with rank=8:</strong> Attention layers only (~10B params total), so 2 × (d × r + k × r). For typical sizes, ~1.1M trainable params</li>
 <li><strong>Savings:</strong> 70B / 1.1M = 64,000× fewer parameters!</li>
 </ul>
@@ -463,7 +463,7 @@ output = W @ x + (B @ A^T) @ x
       </div>
 <p><strong>When to Adapt More Layers</strong></p>
 <ul>
-<li><strong>Complex domain adaptation:</strong> Fine-tuning to specialized domain (legal, medical). Adapt Q, K, V, output projection, maybe MLP</li>
+<li><strong>Complex domain adaptation:</strong> <a class="concept-link" href="finetuning.html">Fine-tuning</a> to specialized domain (legal, medical). Adapt Q, K, V, output projection, maybe MLP</li>
 <li><strong>Language generation:</strong> Generate in new style (poetry, technical writing). Attention layers usually sufficient</li>
 <li><strong>Classification:</strong> Categorize domain-specific content. Q, K, V usually enough</li>
 </ul>
@@ -482,12 +482,12 @@ output = W @ x + (B @ A^T) @ x
 <div class="section-block" id="section-4">
 <div class="section-marker">SECTION 04</div>
 <h2>QLoRA</h2>
-<p>QLoRA (Quantization + LoRA) is a breakthrough: fine-tune 70B models on a single GPU with 4-bit quantization.</p>
+<p><a class="concept-link" href="qlora.html">QLoRA</a> (<a class="concept-link" href="quantization.html">Quantization</a> + LoRA) is a breakthrough: fine-tune 70B models on a single GPU with 4-bit quantization.</p>
 <p><strong>The Technique</strong></p>
 <ul>
 <li><strong>Quantize base model to 4-bit NF4:</strong> 70B model → ~14GB (4× compression)</li>
 <li><strong>Add LoRA adapters in float32:</strong> ~1M params = ~4MB</li>
-<li><strong>Train using gradient checkpointing:</strong> Save memory during backprop</li>
+<li><strong>Train using gradient <a class="concept-link" href="checkpointing.html">checkpointing</a>:</strong> Save <a class="concept-link" href="agent-memory.html">memory</a> during backprop</li>
 <li><strong>Result:</strong> 70B model training on RTX 4090 (24GB) with room to spare</li>
 </ul>
 <p><strong>NF4 Quantization</strong></p>
@@ -544,7 +544,7 @@ trainer.train()
       </div>
 <p><strong>Memory Usage: Before &amp; After</strong></p>
 <ul>
-<li><strong>Full 70B fine-tuning:</strong> 560GB+ (impossible on consumer hardware)</li>
+<li><strong>Full 70B <a class="concept-link" href="finetuning.html">fine-tuning</a>:</strong> 560GB+ (impossible on consumer <a class="concept-link" href="hardware.html">hardware</a>)</li>
 <li><strong>LoRA only:</strong> ~80GB (still needs 8× H100)</li>
 <li><strong>QLoRA:</strong> ~24GB (single RTX 4090!)</li>
 </ul>
@@ -812,17 +812,14 @@ response = llm.generate(
       </div>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="qlora.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
-<a href="prefix-tuning.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">Prefix Tuning</span></a>
-<a href="ia3.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">IA³</span></a>
-<a href="rlhf.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">RLHF</span></a>
-<a href="dpo.html" class="rc-card" style="--rc-accent:#8b5cf6"><span class="rc-label">DPO</span></a>
+<a class="rc-card" href="qlora.html" style="--rc-accent:#8b5cf6"><span class="rc-label">QLoRA</span></a>
+<a class="rc-card" href="prefix-tuning.html" style="--rc-accent:#8b5cf6"><span class="rc-label">Prefix Tuning</span></a>
+<a class="rc-card" href="ia3.html" style="--rc-accent:#8b5cf6"><span class="rc-label">IA³</span></a>
+<a class="rc-card" href="rlhf.html" style="--rc-accent:#8b5cf6"><span class="rc-label">RLHF</span></a>
+<a class="rc-card" href="dpo.html" style="--rc-accent:#8b5cf6"><span class="rc-label">DPO</span></a>
 </div>
 </div>
 <footer>

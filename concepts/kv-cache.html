@@ -483,7 +483,7 @@
 <h2>What Is the KV Cache?</h2>
 <p>In transformer attention, every token computes Q (query), K (key), and V (value) matrices. On each decoding step, the model must compute attention over all previous tokens and the current token. Without caching, this means recomputing K and V for every token that has already been processed — O(n²) computation for a sequence of length n.</p>
 <p>The KV cache stores pre-computed K and V matrices from all previous tokens. When a new token arrives, the model only computes its K and V, then attends over the cached KV from all past steps. This reduces the second and subsequent decoding steps from O(n) complexity to O(1) per token, making the amortized cost O(n).</p>
-<p>The cache lives in GPU VRAM and is evicted when the context window fills or memory runs out. It is the primary bottleneck for long-context inference, often consuming more memory than the model weights themselves.</p>
+<p>The cache lives in GPU VRAM and is evicted when the <a class="concept-link" href="context-window.html">context window</a> fills or <a class="concept-link" href="agent-memory.html">memory</a> runs out. It is the primary bottleneck for long-context inference, often consuming more memory than the model weights themselves.</p>
 <div class="example-box"><span class="verdict-dim">## KV Cache in Action</span>
 <span class="verdict-dim">## Prefill phase (all input tokens at once):</span>
 keys   = []
@@ -508,7 +508,7 @@ for each new_token:
 <div class="section-block" id="cache-growth">
 <div class="section-marker">02 — Memory Scaling</div>
 <h2>Cache Growth and Memory Budget</h2>
-<p>The KV cache grows linearly with sequence length. The formula for cache memory is:</p>
+<p>The KV cache grows linearly with sequence length. The formula for cache <a class="concept-link" href="agent-memory.html">memory</a> is:</p>
 <p style="font-family: 'Fira Code', monospace; margin: 1rem 0; padding: 0.8rem; background: #f8fafc; border-left: 3px solid #4f46e5;">cache_bytes = 2 × layers × heads × head_dim × seq_len × 2 (for fp16)</p>
 <p>The 2× factor accounts for both K and V. The final 2 is the byte size of fp16. For a 7B model with 32 layers, 32 heads, and 128-dim heads, caching a 2K-token sequence costs ~0.5 GB. At 128K tokens, it's 32 GB — larger than the model weights.</p>
 <div class="table-wrap">
@@ -534,8 +534,8 @@ for each new_token:
 <div class="section-block" id="gqa-mla">
 <div class="section-marker">03 — Attention Compression</div>
 <h2>Grouped Query Attention and MLA</h2>
-<p><strong>Grouped Query Attention (GQA)</strong> reduces cache size by sharing K and V heads across multiple Q heads. Instead of one K/V head per Q head (Full Multi-Head Attention), GQA uses one K/V head per group of Q heads — typically a group size of 8. This shrinks cache by 8×.</p>
-<p><strong>Multi-Query Attention (MQA)</strong> is the extreme case: a single K/V head shared by all Q heads. Early models like Falcon and PaLM used MQA and saw modest quality drops but dramatic cache savings.</p>
+<p><strong>Grouped Query Attention (GQA)</strong> reduces cache size by sharing K and V heads across multiple Q heads. Instead of one K/V head per Q head (Full <a class="concept-link" href="multi-head-attention.html">Multi-Head Attention</a>), GQA uses one K/V head per group of Q heads — typically a group size of 8. This shrinks cache by 8×.</p>
+<p><strong><a class="concept-link" href="multi-query-retrieval.html">Multi-Query</a> Attention (MQA)</strong> is the extreme case: a single K/V head shared by all Q heads. Early models like Falcon and PaLM used MQA and saw modest quality drops but dramatic cache savings.</p>
 <p><strong>MLA (Multi-Head Latent Attention, DeepSeek)</strong> takes compression further by projecting K/V into a low-rank latent space before caching. Only the compressed latent is stored, then decompressed at attention time. This can achieve 2–4× additional cache reduction compared to GQA.</p>
 <div class="table-wrap">
 <table>
@@ -565,7 +565,7 @@ for each new_token:
 <div class="method-num">1</div>
 <div class="method-body">
 <h3>FIFO / Sliding Window <em>— oldest out</em></h3>
-<p>When cache fills, discard the oldest tokens. Simplest to implement: just a circular buffer. But you lose document history and system prompts evaporate quickly.</p>
+<p>When cache fills, discard the oldest tokens. Simplest to implement: just a circular buffer. But you lose document history and <a class="concept-link" href="system-prompts.html">system prompts</a> evaporate quickly.</p>
 <ul>
 <li>Pros: Trivial to implement, minimal overhead</li>
 <li>Cons: Loses system prompt, hurts long-context tasks</li>
@@ -598,7 +598,7 @@ for each new_token:
 <div class="method-num">4</div>
 <div class="method-body">
 <h3>PagedAttention (vLLM) <em>— virtual memory</em></h3>
-<p>Treat cache as virtual memory, organizing it into logical blocks that map to physical GPU/CPU memory. Supports swapping, sharing between requests, and zero-copy transfers.</p>
+<p>Treat cache as virtual <a class="concept-link" href="agent-memory.html">memory</a>, organizing it into logical blocks that map to physical GPU/CPU memory. Supports swapping, sharing between requests, and zero-copy transfers.</p>
 <ul>
 <li>Pros: No fragmentation, enables prefix sharing, efficient batch packing</li>
 <li>Cons: Implementation complexity, requires special software support</li>
@@ -620,14 +620,14 @@ for each new_token:
 </tbody>
 </table>
 </div>
-<p>PagedAttention (vLLM) is now the industry standard. Its virtual memory approach eliminates fragmentation and enables sharing of cache blocks across concurrent requests — crucial for batching efficiency.</p>
+<p>PagedAttention (<a class="concept-link" href="vllm.html">vLLM</a>) is now the industry standard. Its virtual memory approach eliminates fragmentation and enables sharing of cache blocks across concurrent requests — crucial for batching efficiency.</p>
 </div>
 <!-- ── 5. PREFIX CACHING AND PROMPT REUSE ── -->
 <div class="section-block" id="prefix-cache">
 <div class="section-marker">05 — Amortization</div>
 <h2>Prefix Caching and Prompt Reuse</h2>
-<p>When many requests share an identical prefix (system prompt, few-shot examples, shared document), compute K/V once and reuse it across all requests. This amortizes the prefill cost and can reduce total tokens processed by 50–90% depending on prefix length.</p>
-<p>SGLang, vLLM, and TensorRT-LLM all implement prefix cache (SGLang calls it "radix cache"). At scale, the savings are dramatic: a 100-token system prompt at 1000 requests/sec = 100K free tokens/sec that never need recomputation.</p>
+<p>When many requests share an identical prefix (system prompt, <a class="concept-link" href="few-shot.html">few-shot</a> examples, shared document), compute K/V once and reuse it across all requests. This amortizes the prefill cost and can reduce total tokens processed by 50–90% depending on prefix length.</p>
+<p><a class="concept-link" href="sglang.html">SGLang</a>, <a class="concept-link" href="vllm.html">vLLM</a>, and TensorRT-LLM all implement prefix cache (SGLang calls it "radix cache"). At scale, the savings are dramatic: a 100-token system prompt at 1000 requests/sec = 100K free tokens/sec that never need recomputation.</p>
 <div class="example-box"><span class="verdict-dim">## Prefix Cache Hit Example</span>
 <span class="verdict-dim">Request 1:</span>
 System prompt (100 tokens) → compute K/V → cache hash
@@ -646,13 +646,13 @@ Output: 150 tokens
 <span><strong>Prefix cache hit rate depends on prefix consistency:</strong> vary the suffix (user query), keep the prefix identical. A system prompt that changes per request ruins caching. Design your prompts to maximize reusable prefixes.</span>
 </div>
 <h3>Prefix Cache Implementation</h3>
-<p>The cache is keyed by a hash of the token sequence (e.g., SHA256 of concatenated embeddings). When a new prefix arrives, compute the hash; if it matches a prior request, retrieve the cached K/V blocks directly. Prefix caches are stored in a distributed KV store (Redis, Memcached) or local GPU cache depending on scale.</p>
+<p>The cache is keyed by a hash of the token sequence (e.g., SHA256 of concatenated <a class="concept-link" href="embeddings.html">embeddings</a>). When a new prefix arrives, compute the hash; if it matches a prior request, retrieve the cached K/V blocks directly. Prefix caches are stored in a distributed KV store (Redis, Memcached) or local GPU cache depending on scale.</p>
 </div>
 <!-- ── 6. SPECULATIVE DECODING AND CACHE INTERACTION ── -->
 <div class="section-block" id="speculative">
 <div class="section-marker">06 — Latency Reduction</div>
 <h2>Speculative Decoding and Cache Interaction</h2>
-<p>Speculative decoding uses a smaller, faster draft model to propose k tokens. The target model then verifies all k+1 tokens (k proposed + 1 from the target) in a single forward pass. Tokens that match the draft are accepted; those that don't are discarded and resampled.</p>
+<p><a class="concept-link" href="speculative-decoding.html">Speculative decoding</a> uses a smaller, faster draft model to propose k tokens. The target model then verifies all k+1 tokens (k proposed + 1 from the target) in a single forward pass. Tokens that match the draft are accepted; those that don't are discarded and resampled.</p>
 <p>The KV cache interacts subtly: during the verification pass, the target model processes k+1 tokens in parallel, building cache for all of them. Accepted tokens' cache gets written; rejected tokens' cache is thrown away. This means you compute forward passes on tokens you ultimately discard, but the verification batch processes multiple tokens at once (higher GPU utilization).</p>
 <div class="table-wrap">
 <table>
@@ -667,7 +667,7 @@ Output: 150 tokens
 </tbody>
 </table>
 </div>
-<p>Speculative decoding trades a small increase in compute (wasted on rejected tokens) for much lower latency. It's effective when the draft model is fast (e.g., a 1B model as draft, 70B as target) and when the acceptance rate is high (&gt;70%, which happens with well-calibrated models). Streaming applications benefit significantly.</p>
+<p>Speculative decoding trades a small increase in compute (wasted on rejected tokens) for much lower latency. It's effective when the draft model is fast (e.g., a 1B model as draft, 70B as target) and when the acceptance rate is high (&gt;70%, which happens with well-calibrated models). <a class="concept-link" href="streaming.html">Streaming</a> applications benefit significantly.</p>
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Speculative decoding is production-ready in vLLM, SGLang, and LM Studio.</strong> Use it for latency-sensitive workloads (chatbots, real-time APIs) with compatible model pairs (both models must share the same tokenizer).</span>
@@ -712,8 +712,8 @@ Output: 150 tokens
 </div>
 <h3>Key Tuning Parameters</h3>
 <p><strong>--max-model-len:</strong> The maximum sequence length. Larger values allow longer contexts but consume more cache. Set based on your longest expected request + prefill buffer.</p>
-<p><strong>--gpu-memory-utilization:</strong> Fraction of GPU VRAM to allocate to cache (typically 0.8–0.95). Higher = more concurrent requests, but risks OOM on bursts.</p>
-<p><strong>--enable-prefix-caching:</strong> Enable automatic caching and reuse of identical prefixes. Essential for workloads with shared system prompts.</p>
+<p><strong>--gpu-<a class="concept-link" href="agent-memory.html">memory</a>-utilization:</strong> Fraction of GPU VRAM to allocate to cache (typically 0.8–0.95). Higher = more concurrent requests, but risks OOM on bursts.</p>
+<p><strong>--enable-prefix-caching:</strong> Enable automatic caching and reuse of identical prefixes. Essential for workloads with shared <a class="concept-link" href="system-prompts.html">system prompts</a>.</p>
 <p><strong>--num-gpu-blocks-override:</strong> Manually specify cache block count. Useful for tuning to your VRAM constraints.</p>
 <div class="callout rose">
 <span class="callout-icon">⚠️</span>
@@ -736,21 +736,21 @@ Output: 150 tokens
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Zhou, Y. et al. (2023).
-        <em>Efficient Memory Management for Large Language Model Serving with PagedAttention.</em>
+        <em>Efficient <a class="concept-link" href="agent-memory.html">Memory</a> Management for Large Language Model Serving with PagedAttention.</em>
         arXiv:2309.06180. —
         <a href="https://arxiv.org/abs/2309.06180" target="_blank">arxiv:2309.06180 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Dao, T., Fu, D., et al. (2023).
-        <em>FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning.</em>
+        <em><a class="concept-link" href="flash-attn.html">FlashAttention</a>-2: Faster Attention with Better Parallelism and Work Partitioning.</em>
         arXiv:2307.08691. —
         <a href="https://arxiv.org/abs/2307.08691" target="_blank">arxiv:2307.08691 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Xiao, G., et al. (2024).
-        <em>Streaming LLM: Efficient Streaming Language Models with Attention Sinks.</em>
+        <em><a class="concept-link" href="streaming.html">Streaming</a> LLM: Efficient Streaming Language Models with Attention Sinks.</em>
         arXiv:2309.17453. —
         <a href="https://arxiv.org/abs/2309.17453" target="_blank">arxiv:2309.17453 ↗</a>
 </li>
@@ -771,10 +771,10 @@ Output: 150 tokens
 </ul>
 <div class="ref-group-title">Documentation &amp; Blogs</div>
 <ul class="ref-list">
-<li><span class="ref-badge badge-docs">Docs</span> vLLM PagedAttention. <a href="https://docs.vllm.ai/en/latest/models/supported_models.html" target="_blank">vllm.ai ↗</a></li>
-<li><span class="ref-badge badge-blog">Blog</span> SGLang RadixAttention: Efficient Prefix Caching. <a href="https://lmsys.org/blog/2024-01-17-sglang/" target="_blank">lmsys.org ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="vllm.html">vLLM</a> PagedAttention. <a href="https://docs.vllm.ai/en/latest/models/supported_models.html" target="_blank">vllm.ai ↗</a></li>
+<li><span class="ref-badge badge-blog">Blog</span> <a class="concept-link" href="sglang.html">SGLang</a> RadixAttention: Efficient Prefix Caching. <a href="https://lmsys.org/blog/2024-01-17-sglang/" target="_blank">lmsys.org ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> HuggingFace Text Generation Inference KV Cache. <a href="https://huggingface.co/docs/text-generation-inference/conceptual/kvcache" target="_blank">huggingface.co ↗</a></li>
-<li><span class="ref-badge badge-blog">Blog</span> Together AI: KV Cache Quantization for Efficient Serving. <a href="https://www.together.ai/blog/kv-cache-quantization" target="_blank">together.ai ↗</a></li>
+<li><span class="ref-badge badge-blog">Blog</span> Together AI: KV Cache <a class="concept-link" href="quantization.html">Quantization</a> for Efficient Serving. <a href="https://www.together.ai/blog/kv-cache-quantization" target="_blank">together.ai ↗</a></li>
 </ul>
 <div class="ref-group-title">Open Source Tools</div>
 <ul class="ref-list">
@@ -800,19 +800,16 @@ Output: 150 tokens
 </div>
 <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Understand autoregressive decoding first</h4><p>In transformer decoding, every new token attends to all previous tokens. Without caching, that's O(n²) work per token. See <a href="transformers.html">Transformers</a> for the attention mechanics.</p></div></div>
 <div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Understand the memory-bandwidth tradeoff</h4><p>KV cache trades VRAM for speed. At 70B with FP16, the KV cache for a 32K context uses ~32GB. This is why quantised KV cache (FP8 or INT4) matters for long contexts.</p></div></div>
-<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Use vLLM — it handles all of this</h4><p>vLLM implements PagedAttention (non-contiguous KV blocks) and prefix caching out of the box. For most teams, "use vLLM" is the entire KV cache strategy.</p></div></div>
+<div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Use vLLM — it handles all of this</h4><p><a class="concept-link" href="vllm.html">vLLM</a> implements PagedAttention (non-contiguous KV blocks) and prefix caching out of the box. For most teams, "use vLLM" is the entire KV cache strategy.</p></div></div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Attention Mechanisms</span></a>
-<a href="pos-encoding.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Positional Encoding</span></a>
-<a href="transformer-arch.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Architectures</span></a>
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
-<a href="multi-head-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
+<a class="rc-card" href="attention.html" style="--rc-accent:#64748b"><span class="rc-label">Attention Mechanisms</span></a>
+<a class="rc-card" href="pos-encoding.html" style="--rc-accent:#64748b"><span class="rc-label">Positional Encoding</span></a>
+<a class="rc-card" href="transformer-arch.html" style="--rc-accent:#64748b"><span class="rc-label">Architectures</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="multi-head-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
 </div>
 </div>
 <footer class="page-footer">

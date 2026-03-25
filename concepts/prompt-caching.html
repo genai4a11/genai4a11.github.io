@@ -154,12 +154,12 @@
 <div class="section-marker">SECTION 01</div>
 <h2>The repeated-context problem</h2>
 <p>Picture a legal-research assistant. Every query starts: "You are a legal analyst. Here are the 200 pages of the contract…" followed by the user's actual question. Without caching, those 200 pages are tokenised, processed through all attention layers, and billed — on every single request. With 100 users sending 10 queries each, you pay for that document 1,000 times.</p>
-<p><strong>Prompt caching</strong> solves this by storing the KV-cache (the internal attention state) for the stable prefix on the provider's servers. Subsequent requests that share the same prefix skip the expensive prefill computation and go straight to generation — faster and cheaper.</p>
+<p><strong>Prompt caching</strong> solves this by storing the <a class="concept-link" href="kv-cache.html">KV-cache</a> (the internal attention state) for the stable prefix on the provider's servers. Subsequent requests that share the same prefix skip the expensive prefill computation and go straight to generation — faster and cheaper.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>How prompt caching works</h2>
-<p>LLM inference has two phases: <strong>prefill</strong> (processing the prompt tokens, building the KV-cache) and <strong>generation</strong> (autoregressively producing the output tokens). Prefill is the expensive part for long contexts.</p>
+<p>LLM inference has two phases: <strong>prefill</strong> (processing the prompt tokens, building the <a class="concept-link" href="kv-cache.html">KV-cache</a>) and <strong>generation</strong> (autoregressively producing the output tokens). Prefill is the expensive part for long contexts.</p>
 <p>When you mark a prompt prefix for caching, the provider saves the KV-cache state at that breakpoint. If the next request's prefix matches exactly up to that breakpoint, prefill is skipped — the saved state is loaded instead. You pay a lower "cache read" price rather than full input-token price.</p>
 <p>The cache is keyed on the exact byte sequence up to the breakpoint. A single character difference = cache miss.</p>
 </div>
@@ -229,7 +229,7 @@ User turn 2 (NOT cached)
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Patterns: RAG, multi-turn, tool definitions</h2>
-<p><strong>Pattern 1 — Long document Q&amp;A (RAG replacement for stable docs):</strong></p>
+<p><strong>Pattern 1 — Long document Q&amp;A (<a class="concept-link" href="rag.html">RAG</a> replacement for stable docs):</strong></p>
 <pre><code class="language-python"># Cache the entire document; only the question changes
 response = client.messages.create(
     model="claude-3-5-sonnet-20241022",
@@ -261,20 +261,17 @@ for user_input in conversation:
 <p><strong>Exact prefix matching.</strong> A single byte difference = full cache miss. Make sure your system prompt template renders identically across calls (watch out for dynamic timestamps, user IDs, or random seeds injected into the "stable" prefix).</p>
 <p><strong>Minimum cacheable length.</strong> Anthropic requires the cacheable content to be at least 1,024 tokens (claude-3-haiku) or 2,048 tokens (larger models). Shorter prefixes are silently not cached — you'll see <code>cache_creation_input_tokens: 0</code>.</p>
 <p><strong>Cache doesn't persist across model upgrades.</strong> Switching from <code>claude-3-5-sonnet-20241022</code> to a newer version invalidates all cached prefixes — plan major model upgrades during low-traffic windows.</p>
-<p><strong>Context window still counts.</strong> Cached tokens still count toward the model's context window limit. Caching reduces cost and latency, not context consumption.</p>
+<p><strong><a class="concept-link" href="context-window.html">Context window</a> still counts.</strong> Cached tokens still count toward the model's context window limit. Caching reduces cost and latency, not context consumption.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="dspy.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">DSPy</span></a>
-<a href="lmql.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">LMQL</span></a>
-<a href="prompt-versioning.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Prompt Versioning</span></a>
-<a href="zero-shot.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Zero-shot</span></a>
-<a href="few-shot.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Few-shot</span></a>
+<a class="rc-card" href="dspy.html" style="--rc-accent:#64748b"><span class="rc-label">DSPy</span></a>
+<a class="rc-card" href="lmql.html" style="--rc-accent:#64748b"><span class="rc-label">LMQL</span></a>
+<a class="rc-card" href="prompt-versioning.html" style="--rc-accent:#64748b"><span class="rc-label">Prompt Versioning</span></a>
+<a class="rc-card" href="zero-shot.html" style="--rc-accent:#64748b"><span class="rc-label">Zero-shot</span></a>
+<a class="rc-card" href="few-shot.html" style="--rc-accent:#64748b"><span class="rc-label">Few-shot</span></a>
 </div>
 </div>
 <footer>

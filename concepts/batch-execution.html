@@ -153,8 +153,8 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>When to use batch execution</h2>
-<p>Batch execution is for workloads where you have many independent requests and don't need the result immediately — within minutes, not seconds. Classic use cases: annotating a training dataset, computing embeddings for a document corpus, running nightly evaluations, generating synthetic data.</p>
-<p>The tradeoff: you get 50% lower cost and a separate rate-limit quota (doesn't count against your real-time tier), but you accept up to 24-hour turnaround and no streaming. If you need results in &lt;60 seconds, use the real-time API instead.</p>
+<p>Batch execution is for workloads where you have many independent requests and don't need the result immediately — within minutes, not seconds. Classic use cases: annotating a training dataset, computing <a class="concept-link" href="embeddings.html">embeddings</a> for a document corpus, running nightly evaluations, generating <a class="concept-link" href="synthetic-data.html">synthetic data</a>.</p>
+<p>The tradeoff: you get 50% lower cost and a separate rate-limit quota (doesn't count against your real-time tier), but you accept up to 24-hour turnaround and no <a class="concept-link" href="streaming.html">streaming</a>. If you need results in &lt;60 seconds, use the real-time API instead.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -252,9 +252,9 @@ if errors:
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Cost and throughput estimation</h2>
-<p>OpenAI Batch API pricing is 50% of real-time API rates. For a corpus of 100k documents at ~1k tokens each:</p>
+<p>OpenAI <a class="concept-link" href="batch-api.html">Batch API</a> pricing is 50% of real-time API rates. For a corpus of 100k documents at ~1k tokens each:</p>
 <ul>
-<li>Real-time: 100M tokens × $0.15/1M (gpt-4o-mini input) = <strong>$15</strong></li>
+<li>Real-time: 100M tokens × $0.15/1M (<a class="concept-link" href="gpt4o.html">gpt-4o</a>-mini input) = <strong>$15</strong></li>
 <li>Batch API: same tokens × $0.075/1M = <strong>$7.50</strong></li>
 </ul>
 <p>Throughput: The batch API processes in parallel. A 10k-request batch typically completes in 1–4 hours. For nightly jobs, this is fine. The separate quota means batch jobs don't interfere with your real-time serving quota.</p>
@@ -262,7 +262,7 @@ if errors:
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Alternatives: local batching</h2>
-<p>For models you host yourself (vLLM, TGI), continuous batching is handled automatically — the engine batches concurrent requests at the GPU level. For truly offline batch jobs on self-hosted models:</p>
+<p>For models you host yourself (<a class="concept-link" href="vllm.html">vLLM</a>, TGI), continuous batching is handled automatically — the engine batches concurrent requests at the GPU level. For truly offline batch jobs on self-hosted models:</p>
 <pre><code class="language-python">from vllm import LLM, SamplingParams
 
 llm = LLM(model="meta-llama/Llama-3-8B-Instruct")
@@ -281,22 +281,19 @@ for output in outputs:
 <ul>
 <li><strong>24h is an SLA, not a guarantee</strong>: OpenAI may complete jobs faster or slower. Design your pipeline to tolerate variance.</li>
 <li><strong>File size limits</strong>: The input JSONL file must be &lt;200MB and contain &lt;50k requests per batch. Split large jobs into multiple batches.</li>
-<li><strong>No streaming</strong>: Batch API responses are complete — you can't stream partial results as requests finish. If you need incremental results, poll the batch and process the output file incrementally.</li>
+<li><strong>No <a class="concept-link" href="streaming.html">streaming</a></strong>: <a class="concept-link" href="batch-api.html">Batch API</a> responses are complete — you can't stream partial results as requests finish. If you need incremental results, poll the batch and process the output file incrementally.</li>
 <li><strong>custom_id collisions</strong>: Each custom_id must be unique within a batch. Use UUIDs or hash the input content.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="sync-async-serving.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Sync vs Async</span></a>
-<a href="streaming-arch.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Streaming Architecture</span></a>
-<a href="retry-backoff.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Retry & Backoff</span></a>
-<a href="circuit-breaker.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Circuit Breaker</span></a>
-<a href="timeout-budget.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Timeout Budget</span></a>
+<a class="rc-card" href="sync-async-serving.html" style="--rc-accent:#ef4444"><span class="rc-label">Sync vs Async</span></a>
+<a class="rc-card" href="streaming-arch.html" style="--rc-accent:#ef4444"><span class="rc-label">Streaming Architecture</span></a>
+<a class="rc-card" href="retry-backoff.html" style="--rc-accent:#ef4444"><span class="rc-label">Retry &amp; Backoff</span></a>
+<a class="rc-card" href="circuit-breaker.html" style="--rc-accent:#ef4444"><span class="rc-label">Circuit Breaker</span></a>
+<a class="rc-card" href="timeout-budget.html" style="--rc-accent:#ef4444"><span class="rc-label">Timeout Budget</span></a>
 </div>
 </div>
 <footer>

@@ -495,7 +495,7 @@
 <div class="section-block" id="why-evals-hard">
 <div class="section-marker">01 — The Challenge</div>
 <h2>Why Evals Are Hard</h2>
-<p>Classic software testing is deterministic and binary: a function either returns the correct value or it doesn't. LLM evaluation is fundamentally different. Model outputs are non-deterministic, open-ended, and contextual. A response can be correct in multiple ways, and "correctness" itself is often subjective.</p>
+<p>Classic software testing is deterministic and binary: a function either returns the correct value or it doesn't. LLM <a class="concept-link" href="eval.html">evaluation</a> is fundamentally different. Model outputs are non-deterministic, open-ended, and contextual. A response can be correct in multiple ways, and "correctness" itself is often subjective.</p>
 <p>The eval trilemma defines the core tension: <strong>accuracy</strong> (does your metric actually measure what matters?), <strong>cost</strong> (can you run it frequently without bankrupt budget?), and <strong>speed</strong> (do you get feedback before your next deployment?). You can usually achieve only two.</p>
 <p>No single eval covers all failure modes. You need a suite. Common mistakes: evaluating only on benchmark datasets (train-test contamination and narrow coverage), using BLEU/ROUGE for generation (poor correlation with human judgment), and ignoring regression testing over time. These shortcuts feel fast until production fails.</p>
 <div class="callout rose">
@@ -539,7 +539,7 @@ Online evals (A/B test, 5% traffic):
 <div class="section-block" id="metrics-quality">
 <div class="section-marker">03 — Measuring Output</div>
 <h2>Metrics for Generation Quality</h2>
-<p><strong>Exact match:</strong> For classification and extraction tasks. Not useful for open-ended generation. <strong>BLEU / ROUGE:</strong> n-gram overlap with a reference answer. Still used for translation and summarization but poorly correlates with actual quality. <strong>BERTScore:</strong> Embedding-based semantic similarity. Better than BLEU, still requires a reference. <strong>G-Eval:</strong> Use GPT-4 to score responses on rubric dimensions (fluency, coherence, relevance, accuracy). High correlation with human judgments.</p>
+<p><strong>Exact match:</strong> For classification and extraction tasks. Not useful for open-ended generation. <strong>BLEU / ROUGE:</strong> n-gram overlap with a reference answer. Still used for translation and summarization but poorly correlates with actual quality. <strong>BERTScore:</strong> <a class="concept-link" href="embeddings.html">Embedding</a>-based semantic similarity. Better than BLEU, still requires a reference. <strong>G-Eval:</strong> Use GPT-4 to score responses on rubric dimensions (fluency, coherence, relevance, accuracy). High correlation with human judgments.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -560,11 +560,11 @@ Online evals (A/B test, 5% traffic):
 <div class="section-block" id="llm-judge">
 <div class="section-marker">04 — Automated Preference</div>
 <h2>LLM-as-Judge</h2>
-<p>Use a capable LLM (GPT-4o, Claude) to evaluate outputs on custom rubrics. This scales human judgment without re-hiring annotators. But it introduces new failure modes: position bias (preferring the first response), verbosity bias (preferring longer answers), and self-serving bias (models prefer their own outputs).</p>
+<p>Use a capable LLM (<a class="concept-link" href="gpt4o.html">GPT-4o</a>, Claude) to evaluate outputs on custom rubrics. This scales human judgment without re-hiring annotators. But it introduces new failure modes: position bias (preferring the first response), verbosity bias (preferring longer answers), and self-serving bias (models prefer their own outputs).</p>
 <h3>Point-wise vs Pair-wise</h3>
 <p><strong>Point-wise:</strong> Score each response independently on a 1–5 scale per dimension. Faster, easier to parallelize, but noisier. <strong>Pair-wise:</strong> Compare two responses, pick the better one. More reliable than point-wise because the relative comparison is clearer. Requires more judge calls but produces higher-quality signals.</p>
 <h3>Reference-free Evaluation</h3>
-<p>You don't need a ground-truth reference to use LLM-as-judge. The judge can evaluate coherence, safety, and helpfulness from first principles. This is more expensive than metrics but works for open-ended tasks where multiple correct answers exist.</p>
+<p>You don't need a ground-truth reference to use <a class="concept-link" href="llm-judge.html">LLM-as-judge</a>. The judge can evaluate coherence, <a class="concept-link" href="safety.html">safety</a>, and helpfulness from first principles. This is more expensive than metrics but works for open-ended tasks where multiple correct answers exist.</p>
 <div class="example-box">You are evaluating an AI assistant's response.
 
 [TASK]: {task_description}
@@ -603,7 +603,7 @@ Return JSON: {"accuracy": N, "completeness": N, "safety": N, "reasoning": "..."}
 <div class="section-block" id="eval-frameworks">
 <div class="section-marker">06 — Tools Landscape</div>
 <h2>Eval Frameworks and Infrastructure</h2>
-<p>Many frameworks exist to manage eval pipelines. Choose based on your team's preferences and your existing stack. The key is integrating evals into CI/CD so they block bad deployments automatically.</p>
+<p>Many <a class="concept-link" href="agent-frameworks.html">frameworks</a> exist to manage eval pipelines. Choose based on your team's preferences and your existing stack. The key is integrating evals into CI/CD so they block bad deployments automatically.</p>
 <div class="tools-grid">
 <div class="tool-card">
 <div class="tool-category">Framework</div>
@@ -647,7 +647,7 @@ Return JSON: {"accuracy": N, "completeness": N, "safety": N, "reasoning": "..."}
 </div>
 </div>
 <h3>CI/CD Integration</h3>
-<p>Run offline evals on every PR. Block merge if score drops below threshold. Log every eval run with model version, prompt version, and dataset version — this enables trend analysis and bisecting regressions to specific changes. Use smaller judge models for fast CI runs (Llama 2, Mistral). Reserve GPT-4o for weekly deep evals.</p>
+<p>Run offline evals on every PR. Block merge if score drops below threshold. Log every eval run with model version, prompt version, and dataset version — this enables trend analysis and bisecting regressions to specific changes. Use smaller judge models for fast CI runs (Llama 2, Mistral). Reserve <a class="concept-link" href="gpt4o.html">GPT-4o</a> for weekly deep evals.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -673,14 +673,14 @@ Return JSON: {"accuracy": N, "completeness": N, "safety": N, "reasoning": "..."}
 <div class="method-num">1</div>
 <div class="method-body">
 <h3>Teaching to the test <em>— benchmark overfitting</em></h3>
-<p>Using benchmark datasets (MMLU, HumanEval) as your only eval. Models can overfit to benchmarks without improving on real tasks. Benchmarks are coarse signals of general capability, not product metrics.</p>
+<p>Using benchmark datasets (<a class="concept-link" href="mmlu.html">MMLU</a>, <a class="concept-link" href="humaneval.html">HumanEval</a>) as your only eval. Models can overfit to <a class="concept-link" href="benchmarks.html">benchmarks</a> without improving on real tasks. Benchmarks are coarse signals of general capability, not product metrics.</p>
 </div>
 </div>
 <div class="method-card">
 <div class="method-num">2</div>
 <div class="method-body">
 <h3>Single-metric obsession <em>— hidden regressions</em></h3>
-<p>Optimizing one number (e.g., helpfulness) while degrading others (safety, factuality). Always track a metric suite. Monitor at least: accuracy, safety, latency, and cost.</p>
+<p>Optimizing one number (e.g., helpfulness) while degrading others (<a class="concept-link" href="safety.html">safety</a>, factuality). Always track a metric suite. Monitor at least: accuracy, safety, latency, and cost.</p>
 </div>
 </div>
 <div class="method-card">
@@ -707,19 +707,19 @@ Return JSON: {"accuracy": N, "completeness": N, "safety": N, "reasoning": "..."}
 <ul class="ref-list">
 <li>
 <span class="ref-badge badge-paper">Paper</span>
-<em>G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment.</em>
+<em>G-Eval: NLG <a class="concept-link" href="eval.html">Evaluation</a> using GPT-4 with Better Human Alignment.</em>
         Liu et al. (2023). arXiv:2303.16634. —
         <a href="https://arxiv.org/abs/2303.16634" target="_blank">arxiv:2303.16634 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
-<em>Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference.</em>
+<em><a class="concept-link" href="chatbot-arena.html">Chatbot Arena</a>: An Open Platform for Evaluating <a class="concept-link" href="llms.html">LLMs</a> by Human Preference.</em>
         LMSYS (2024). arXiv:2306.05685. —
         <a href="https://arxiv.org/abs/2306.05685" target="_blank">arxiv:2306.05685 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
-<em>Judging LLM-as-Judge with an LLM-as-Judge.</em>
+<em>Judging <a class="concept-link" href="llm-judge.html">LLM-as-Judge</a> with an LLM-as-Judge.</em>
         Dubois et al. (2024). arXiv:2310.05470. —
         <a href="https://arxiv.org/abs/2310.05470" target="_blank">arxiv:2310.05470 ↗</a>
 </li>
@@ -727,8 +727,8 @@ Return JSON: {"accuracy": N, "completeness": N, "safety": N, "reasoning": "..."}
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
 <li><span class="ref-badge badge-docs">Docs</span> OpenAI Evals — GitHub. <a href="https://github.com/openai/evals" target="_blank">github.com/openai/evals ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> DeepEval — GitHub. <a href="https://github.com/confident-ai/deepeval" target="_blank">github.com/confident-ai/deepeval ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> LangSmith — Eval Docs. <a href="https://docs.smith.langchain.com" target="_blank">docs.smith.langchain.com ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="deepeval.html">DeepEval</a> — GitHub. <a href="https://github.com/confident-ai/deepeval" target="_blank">github.com/confident-ai/deepeval ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="langsmith.html">LangSmith</a> — Eval Docs. <a href="https://docs.smith.langchain.com" target="_blank">docs.smith.langchain.com ↗</a></li>
 <li><span class="ref-badge badge-guide">Guide</span> Braintrust — Eval Best Practices. <a href="https://www.braintrust.dev" target="_blank">braintrust.dev ↗</a></li>
 </ul>
 <div class="ref-group-title">Practitioner Writing</div>
@@ -743,17 +743,14 @@ Return JSON: {"accuracy": N, "completeness": N, "safety": N, "reasoning": "..."}
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="decision-frameworks.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Decision Frameworks</span></a>
-<a href="compound-ai.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Compound AI Systems</span></a>
-<a href="frontier-implications.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Frontier Implications</span></a>
-<a href="rag-vs-finetuning.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
-<a href="model-selection.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Model Selection</span></a>
+<a class="rc-card" href="decision-frameworks.html" style="--rc-accent:#64748b"><span class="rc-label">Decision Frameworks</span></a>
+<a class="rc-card" href="compound-ai.html" style="--rc-accent:#64748b"><span class="rc-label">Compound AI Systems</span></a>
+<a class="rc-card" href="frontier-implications.html" style="--rc-accent:#64748b"><span class="rc-label">Frontier Implications</span></a>
+<a class="rc-card" href="rag-vs-finetuning.html" style="--rc-accent:#64748b"><span class="rc-label">RAG vs Fine-tuning</span></a>
+<a class="rc-card" href="model-selection.html" style="--rc-accent:#64748b"><span class="rc-label">Model Selection</span></a>
 </div>
 </div>
 <footer class="page-footer">

@@ -229,8 +229,8 @@ print(f"Params: {sum(p.numel() for p in model.parameters()):,}")  # ~1M
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>GQA and MQA</h2>
-<p>Standard MHA uses h distinct K and V projections — one per head. This means the KV cache (stored during inference for each previously-generated token) scales as O(n × h × 2 × d_k) — expensive for long contexts.</p>
-<p><strong>Multi-Query Attention (MQA)</strong>: all heads share a single K and V projection. Only Q has h separate projections. Reduces KV cache by h×, but can hurt quality on some tasks.</p>
+<p>Standard MHA uses h distinct K and V projections — one per head. This means the <a class="concept-link" href="kv-cache.html">KV cache</a> (stored during inference for each previously-generated token) scales as O(n × h × 2 × d_k) — expensive for long contexts.</p>
+<p><strong><a class="concept-link" href="multi-query-retrieval.html">Multi-Query</a> Attention (MQA)</strong>: all heads share a single K and V projection. Only Q has h separate projections. Reduces KV cache by h×, but can hurt quality on some tasks.</p>
 <p><strong>Grouped-Query Attention (GQA)</strong>: compromise between MHA and MQA. g groups of heads share K/V. Llama 3 uses GQA with g=8 groups for 70B, giving an 8× KV cache reduction vs full MHA with minimal quality loss.</p>
 <pre><code class="language-python">class GQA(nn.Module):
     def __init__(self, d_model, num_heads, num_kv_heads):
@@ -294,20 +294,17 @@ output, _ = mha(dec_in, enc_out, enc_out)  # Q from dec, K/V from enc
 <h2>Gotchas</h2>
 <p><strong>num_heads must divide d_model evenly.</strong> d_k = d_model / num_heads must be an integer. A common mistake: using num_heads=6 with d_model=512 gives d_k=85.3. Standard choices: 8 heads with d_model=512 (d_k=64), 12 heads with d_model=768 (d_k=64), 32 heads with d_model=4096 (d_k=128).</p>
 <p><strong>W_O is often forgotten.</strong> The output projection W_O is essential — it's what allows different heads' information to be mixed. Implementing MHA without W_O (just concatenating and returning) loses the model's ability to combine cross-head information and produces significantly worse results.</p>
-<p><strong>Attention dropout is applied to weights, not values.</strong> Dropout in attention zeroes out entire attention edges (rows in the weight matrix), forcing the model to route information through different paths. It's applied after softmax, before the weighted sum of V — not to the output.</p>
+<p><strong>Attention <a class="concept-link" href="dropout.html">dropout</a> is applied to weights, not values.</strong> Dropout in attention zeroes out entire attention edges (rows in the weight matrix), forcing the model to route information through different paths. It's applied after softmax, before the weighted sum of V — not to the output.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
-<a href="flash-attn.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
-<a href="cross-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Cross-Attention</span></a>
-<a href="rope.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RoPE</span></a>
-<a href="alibi.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">ALiBi</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="flash-attn.html" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
+<a class="rc-card" href="cross-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Cross-Attention</span></a>
+<a class="rc-card" href="rope.html" style="--rc-accent:#64748b"><span class="rc-label">RoPE</span></a>
+<a class="rc-card" href="alibi.html" style="--rc-accent:#64748b"><span class="rc-label">ALiBi</span></a>
 </div>
 </div>
 <footer>

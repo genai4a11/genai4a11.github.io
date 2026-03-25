@@ -157,7 +157,7 @@
 <p>Three levels of rate limiting for LLM applications:</p>
 <p><strong>Per-user rate limiting</strong>: each user gets their own quota (e.g., 100 requests/hour). Prevents individual abuse. Implemented in your API layer.</p>
 <p><strong>Per-tenant rate limiting</strong>: for B2B SaaS, each customer organisation gets a quota. Usually tied to their subscription tier (starter: 1000 req/day, pro: 10,000, enterprise: unlimited). More coarse-grained than per-user.</p>
-<p><strong>Global budget guards</strong>: a hard ceiling on total spend across all users. Implemented as a daily/monthly token counter — when the budget is hit, all requests are blocked until the next period. Prevents runaway costs from bugs or attacks.</p>
+<p><strong>Global <a class="concept-link" href="budget-guards.html">budget guards</a></strong>: a hard ceiling on total spend across all users. Implemented as a daily/monthly token counter — when the budget is hit, all requests are blocked until the next period. Prevents runaway costs from bugs or attacks.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -386,21 +386,18 @@ def enforce_limits(user_id: str, plan: Plan, token_count: int) -&gt; bool:
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Rate limiting by IP is easy to bypass and unfair.</strong> Behind a corporate NAT or shared WiFi, hundreds of users share one IP. Limiting by IP either over-limits legitimate users or provides too easy a bypass (just switch networks). Always rate limit by authenticated user ID or API key once users are logged in.</p>
-<p><strong>Sliding window is more accurate than fixed window but uses more memory.</strong> Fixed window counters (just increment a counter each minute, reset on the minute) allow double the limit at window boundaries (burst at the end of minute 1 + start of minute 2). Sliding window is more accurate but stores timestamps for every request. For most applications, sliding window with Redis TTL-based cleanup is the right choice.</p>
+<p><strong>Sliding window is more accurate than fixed window but uses more <a class="concept-link" href="agent-memory.html">memory</a>.</strong> Fixed window counters (just increment a counter each minute, reset on the minute) allow double the limit at window boundaries (burst at the end of minute 1 + start of minute 2). Sliding window is more accurate but stores timestamps for every request. For most applications, sliding window with Redis TTL-based cleanup is the right choice.</p>
 <p><strong>Count tokens, not just requests, for LLM rate limiting.</strong> A single request with a 100K-token prompt uses 1000× the upstream API quota of a 100-token request. Counting requests equally is unfair and ineffective at protecting your budget. Track token usage per user alongside request counts, especially if you expose long-context capabilities.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="cost-routing.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Cost-Aware Routing</span></a>
-<a href="budget-guards.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Budget Guards</span></a>
-<a href="sync-async-serving.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Sync vs Async</span></a>
-<a href="streaming-arch.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Streaming Architecture</span></a>
-<a href="batch-execution.html" class="rc-card" style="--rc-accent:#ef4444"><span class="rc-label">Batch Execution</span></a>
+<a class="rc-card" href="cost-routing.html" style="--rc-accent:#ef4444"><span class="rc-label">Cost-Aware Routing</span></a>
+<a class="rc-card" href="budget-guards.html" style="--rc-accent:#ef4444"><span class="rc-label">Budget Guards</span></a>
+<a class="rc-card" href="sync-async-serving.html" style="--rc-accent:#ef4444"><span class="rc-label">Sync vs Async</span></a>
+<a class="rc-card" href="streaming-arch.html" style="--rc-accent:#ef4444"><span class="rc-label">Streaming Architecture</span></a>
+<a class="rc-card" href="batch-execution.html" style="--rc-accent:#ef4444"><span class="rc-label">Batch Execution</span></a>
 </div>
 </div>
 <footer>

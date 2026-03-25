@@ -475,8 +475,8 @@ print(f"Bias shape: {layer.bias.shape}")</div>
 </table>
 </div>
 <h3>Why Activation Matters</h3>
-<p><strong>ReLU</strong> is fast but suffers from dying units: neurons that output 0 permanently stop learning. <strong>GELU</strong> (smooth approximation to ReLU) avoids this; standard in transformers. <strong>SiLU/Swish</strong> are modern alternatives with slightly better empirical performance on large models.</p>
-<p>LLMs use GELU or SiLU in feedforward layers. Both allow gradients to flow through inactive regions and have negative outputs for small x, preventing output collapse.</p>
+<p><strong>ReLU</strong> is fast but suffers from dying units: neurons that output 0 permanently stop learning. <strong>GELU</strong> (smooth approximation to ReLU) avoids this; standard in <a class="concept-link" href="transformers.html">transformers</a>. <strong>SiLU/Swish</strong> are modern alternatives with slightly better empirical performance on large models.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> use GELU or SiLU in feedforward layers. Both allow gradients to flow through inactive regions and have negative outputs for small x, preventing output collapse.</p>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Dying ReLU problem:</strong> If many neurons output 0, they don't update weights. Leaky ReLU (allows small negative slope) mitigates this. For LLMs, use GELU or SiLU; don't use vanilla ReLU.</span>
@@ -485,7 +485,7 @@ print(f"Bias shape: {layer.bias.shape}")</div>
 <div class="section-block" id="backprop">
 <div class="section-marker">03 — Learning</div>
 <h2>Backpropagation</h2>
-<p>Backpropagation computes gradients via the chain rule. Loss L depends on output y, which depends on hidden layer h, which depends on input x and weights W. Chain rule: dL/dW = dL/dy * dy/dh * dh/dW. PyTorch's autograd automates this; you call backward() and gradients are computed end-to-end.</p>
+<p><a class="concept-link" href="backprop.html">Backpropagation</a> computes gradients via the chain rule. Loss L depends on output y, which depends on hidden layer h, which depends on input x and weights W. Chain rule: dL/dW = dL/dy * dy/dh * dh/dW. PyTorch's <a class="concept-link" href="autograd.html">autograd</a> automates this; you call backward() and gradients are computed end-to-end.</p>
 <h3>Autograd Concept</h3>
 <div class="example-box">import torch
 
@@ -498,7 +498,7 @@ print(f"dx: {x.grad}")
 # At x=2: dy/dx = 2*x + 3 = 7</div>
 <h3>Computation Graph</h3>
 <p>PyTorch builds a dynamic computation graph during forward pass. Each operation records how to compute its gradient. backward() traverses the graph, computing gradients at each node. This is efficient: gradients are computed only for nodes needed to reach the loss.</p>
-<p><strong>Key insight:</strong> Backprop is automatic differentiation. No hand-coded gradients needed. This enables rapid experimentation and complex architectures.</p>
+<p><strong>Key insight:</strong> Backprop is automatic differentiation. No hand-coded gradients needed. This enables rapid experimentation and complex <a class="concept-link" href="transformer-arch.html">architectures</a>.</p>
 </div>
 <div class="section-block" id="normalisation">
 <div class="section-marker">04 — Stability</div>
@@ -517,7 +517,7 @@ print(f"dx: {x.grad}")
 </table>
 </div>
 <h3>Why LayerNorm for LLMs</h3>
-<p>LLMs use LayerNorm (or RMSNorm) because: (1) sequence length varies, so batch statistics are unstable; (2) normalizing per sample (not batch) prevents inter-example coupling; (3) applied before attention/FFN, stabilizes training. Applied post-activation in LLaMA-style architecture.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> use LayerNorm (or RMSNorm) because: (1) sequence length varies, so batch statistics are unstable; (2) normalizing per sample (not batch) prevents inter-example coupling; (3) applied before attention/FFN, stabilizes training. Applied post-activation in LLaMA-style architecture.</p>
 <h3>PyTorch Example</h3>
 <div class="example-box">import torch
 from torch import nn
@@ -549,13 +549,13 @@ print(f"Weight std: {layer.weight.std().item():.4f}")
 # Manual Xavier
 nn.init.xavier_uniform_(layer.weight)
 print(f"After Xavier: {layer.weight.std().item():.4f}")</div>
-<p>LLMs use careful initialization: weights drawn from a narrow distribution, then scaled by 1/sqrt(N) where N is layer width. This keeps activation variance stable during forward and backward pass. See GPT/LLaMA codebases for exact formulas.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> use careful initialization: weights drawn from a narrow distribution, then scaled by 1/sqrt(N) where N is layer width. This keeps activation variance stable during forward and backward pass. See GPT/LLaMA codebases for exact formulas.</p>
 </div>
 <div class="section-block" id="stability">
 <div class="section-marker">06 — Training Dynamics</div>
 <h2>Training Stability</h2>
 <h3>Gradient Clipping</h3>
-<p>If gradient norm exceeds threshold, scale down. Prevents exploding gradients from large loss spike. Standard: clip gradients to norm 1.0 during training. Essential for transformers; less critical for modern optimizers (AdamW with weight decay).</p>
+<p>If gradient norm exceeds threshold, scale down. Prevents exploding gradients from large loss spike. Standard: clip gradients to norm 1.0 during training. Essential for <a class="concept-link" href="transformers.html">transformers</a>; less critical for modern optimizers (AdamW with <a class="concept-link" href="weight-decay.html">weight decay</a>).</p>
 <h3>Learning Rate Warmup</h3>
 <p>Start with tiny learning rate, gradually increase over first 10K steps, then decay. Warmup stabilizes early training when loss landscape is rough. Common: linear warmup to peak LR, then cosine decay.</p>
 <h3>Loss Spikes &amp; Fixes</h3>
@@ -571,7 +571,7 @@ print(f"After Xavier: {layer.weight.std().item():.4f}")</div>
 <div class="tools-grid">
 <div class="tool-card">
 <h3>PyTorch</h3>
-<p>Dynamic computation graphs, autograd, GPU support. Industry standard for research and production LLMs.</p>
+<p>Dynamic computation graphs, <a class="concept-link" href="autograd.html">autograd</a>, GPU support. Industry standard for research and production <a class="concept-link" href="llms.html">LLMs</a>.</p>
 </div>
 <div class="tool-card">
 <h3>JAX</h3>
@@ -642,17 +642,14 @@ print(f"After Xavier: {layer.weight.std().item():.4f}")</div>
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="optimization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Optimization</span></a>
-<a href="training-tech.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Training Techniques</span></a>
-<a href="regularization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Regularization</span></a>
-<a href="backprop.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Backpropagation</span></a>
-<a href="activations.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Activations</span></a>
+<a class="rc-card" href="optimization.html" style="--rc-accent:#64748b"><span class="rc-label">Optimization</span></a>
+<a class="rc-card" href="training-tech.html" style="--rc-accent:#64748b"><span class="rc-label">Training Techniques</span></a>
+<a class="rc-card" href="regularization.html" style="--rc-accent:#64748b"><span class="rc-label">Regularization</span></a>
+<a class="rc-card" href="backprop.html" style="--rc-accent:#64748b"><span class="rc-label">Backpropagation</span></a>
+<a class="rc-card" href="activations.html" style="--rc-accent:#64748b"><span class="rc-label">Activations</span></a>
 </div>
 </div>
 <footer class="page-footer">

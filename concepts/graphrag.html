@@ -370,9 +370,9 @@
 <div class="section-block">
 <div class="section-marker">SECTION 01</div>
 <h2>Why <em>GraphRAG</em></h2>
-<p>Standard RAG chunksthe documents, embeds each chunk independently, retrieves the k most similar chunks for a query, and passes them to an LLM for synthesis. This works well for factual lookup—"What is the capital of France?"—but struggles with complex, cross-document reasoning—"What are the relationships between Company A's executives and Company B's competitors, across all 500 documents?" because the relevant information is scattered across many chunks, and flat semantic similarity cannot capture the interconnected structure.</p>
+<p>Standard <a class="concept-link" href="rag.html">RAG</a> chunksthe documents, embeds each chunk independently, retrieves the k most similar chunks for a query, and passes them to an LLM for synthesis. This works well for factual lookup—"What is the capital of France?"—but struggles with complex, cross-document reasoning—"What are the relationships between Company A's executives and Company B's competitors, across all 500 documents?" because the relevant information is scattered across many chunks, and flat semantic similarity cannot capture the interconnected structure.</p>
 <p>GraphRAG solves this by building a knowledge graph of entities (persons, organizations, concepts) and their relationships (works_at, competes_with, founded). This graph preserves the semantic structure of the corpus, making it possible to answer questions that require connecting facts across documents. Furthermore, GraphRAG applies community detection algorithms (like the Leiden algorithm) to identify clusters of tightly connected entities, and generates summaries for each community. During retrieval, both local (entity-centric) and global (community-level) search modes are available, enabling better coverage of relevant context.</p>
-<p>In Microsoft's benchmarks, GraphRAG achieves 40% better accuracy on multi-hop questions and 15% on single-hop questions compared to standard dense retrieval RAG, with lower hallucination rates.</p>
+<p>In Microsoft's <a class="concept-link" href="benchmarks.html">benchmarks</a>, GraphRAG achieves 40% better accuracy on multi-hop questions and 15% on single-hop questions compared to standard <a class="concept-link" href="dense-retrieval.html">dense retrieval</a> RAG, with lower hallucination rates.</p>
 <div class="callout success">
 <strong>Core Insight</strong>
                 Knowledge graphs + hierarchical community detection enable "retrieval by relationship" rather than "retrieval by similarity." The result: better coverage of relevant context, stronger support for multi-hop reasoning, and fewer hallucinations.
@@ -385,7 +385,7 @@
 <p>GraphRAG consists of two phases: indexing (offline) and querying (online).</p>
 <p><strong>Indexing Phase:</strong> (1) Split documents into chunks. (2) For each chunk, extract entities (named entity recognition) and relationships (using an LLM or extractor). (3) Construct a knowledge graph: nodes are entities, edges are relationships with metadata. (4) Apply community detection (Leiden algorithm) to partition the graph into hierarchical levels. (5) For each community, generate a summary (using an LLM). (6) Store the graph, communities, and summaries in a database.</p>
 <p><strong>Query Phase:</strong> (1) Parse the user's query. (2) Extract query entities and determine the appropriate search mode (local or global). (3) Local search: find entities mentioned in the query, retrieve their 1-hop and 2-hop neighbors in the graph, and collect their summaries. (4) Global search: retrieve summaries of relevant communities based on the query topic. (5) Aggregate retrieved summaries into context. (6) Pass context to the LLM for synthesis.</p>
-<p>The key innovation: instead of embedding and matching raw text, the system works with structured graph relationships and hierarchical communities. This preserves meaning across large document spans and enables more sophisticated retrieval logic.</p>
+<p>The key innovation: instead of <a class="concept-link" href="embeddings.html">embedding</a> and matching raw text, the system works with structured graph relationships and hierarchical communities. This preserves meaning across large document spans and enables more sophisticated retrieval logic.</p>
 <div class="callout info">
 <strong>Hierarchy Levels</strong>
                 The Leiden algorithm produces hierarchical communities: Level 0 (finest) has small, tightly-knit clusters; Level 1 has larger communities (collections of Level 0 clusters); etc. Queries can search at the appropriate level—fine-grained for specific entity relationships, coarse-grained for high-level topic discovery.
@@ -396,7 +396,7 @@
 <div class="section-marker">SECTION 03</div>
 <h2>Indexing <em>Pipeline</em> in Depth</h2>
 <p><strong>Step 1: Document Chunking</strong><br/>Split documents into overlapping chunks (e.g., 1200 tokens with 100-token overlap) to preserve local context and enable entity references that span chunks.</p>
-<p><strong>Step 2: Entity Extraction</strong><br/>For each chunk, use an LLM (e.g., GPT-4 with few-shot examples) to extract entities and their types (PERSON, ORGANIZATION, LOCATION, CONCEPT). The LLM is prompted: "Extract all entities of type [type] from this text." Named Entity Recognition (NER) models can also be used for faster, lighter extraction, though LLMs achieve better precision in multi-hop relationships.</p>
+<p><strong>Step 2: Entity Extraction</strong><br/>For each chunk, use an LLM (e.g., GPT-4 with <a class="concept-link" href="few-shot.html">few-shot</a> examples) to extract entities and their types (PERSON, ORGANIZATION, LOCATION, CONCEPT). The LLM is prompted: "Extract all entities of type [type] from this text." Named Entity Recognition (NER) models can also be used for faster, lighter extraction, though <a class="concept-link" href="llms.html">LLMs</a> achieve better precision in multi-hop relationships.</p>
 <p><strong>Step 3: Relationship Extraction</strong><br/>For each chunk, prompt an LLM to extract relationships: "What relationships exist between the extracted entities? List them as (source, relationship_type, target)." Examples: (Alice, WORKS_AT, Acme Corp), (Acme Corp, COMPETES_WITH, TechCorp). This produces a list of edges for the graph.</p>
 <p><strong>Step 4: Graph Construction</strong><br/>Combine entity and relationship data across all chunks into a single knowledge graph. Nodes are deduplicated by entity name (with optional fuzzy matching to handle synonyms). Edges are weighted by frequency (if an entity relationship appears in 5 chunks, the edge weight is higher). The result is a potentially large graph (thousands to millions of nodes for large corpora).</p>
 <div class="example-box">Entity and Relationship Extraction Prompt:
@@ -612,7 +612,7 @@ asyncio.run(query_corpus())
 </tbody>
 </table>
 </div>
-<p><strong>Cost-Benefit Analysis:</strong> GraphRAG's higher indexing cost (LLM extraction and summarization) is justified for corpora where multi-hop reasoning and coverage are critical (e.g., legal documents, scientific literature, enterprise knowledge bases). For simple fact lookup or small corpora, standard RAG is faster and cheaper. Many organizations use GraphRAG as a second-pass system: standard RAG retrieves initial candidates, then GraphRAG refines with graph-based reasoning.</p>
+<p><strong>Cost-Benefit Analysis:</strong> GraphRAG's higher indexing cost (LLM extraction and summarization) is justified for corpora where multi-hop reasoning and coverage are critical (e.g., legal documents, scientific literature, enterprise knowledge bases). For simple fact lookup or small corpora, standard <a class="concept-link" href="rag.html">RAG</a> is faster and cheaper. Many organizations use GraphRAG as a second-pass system: standard RAG retrieves initial candidates, then GraphRAG refines with graph-based reasoning.</p>
 <div class="callout success">
 <strong>Hybrid Approach</strong>
                 Combine standard RAG (fast, baseline) with GraphRAG (slower, higher-quality) in a two-stage pipeline. For straightforward queries, return standard RAG results. For complex queries, augment or replace with GraphRAG results. This balances cost and quality.
@@ -623,7 +623,7 @@ asyncio.run(query_corpus())
 <div class="section-marker">SECTION 07</div>
 <h2>When to Use <em>GraphRAG</em></h2>
 <p><strong>GraphRAG is ideal when:</strong> (1) Your queries require multi-hop reasoning across documents (e.g., "What is the relationship between entities in document A and entities in document B?"). (2) The corpus is large and diverse, with interconnected entities and relationships. (3) Accuracy and low hallucination are critical. (4) Interpretability matters—stakeholders want to know why a particular answer was retrieved. (5) You have the budget for LLM-based indexing (entity and relationship extraction).</p>
-<p><strong>Standard RAG is sufficient when:</strong> (1) Queries are factual lookups or single-document questions. (2) The corpus is small or homogeneous. (3) Speed and cost are paramount. (4) Chunk-level retrieval provides sufficient context. (5) Your embedding model is well-aligned with your domain.</p>
+<p><strong>Standard <a class="concept-link" href="rag.html">RAG</a> is sufficient when:</strong> (1) Queries are factual lookups or single-document questions. (2) The corpus is small or homogeneous. (3) Speed and cost are paramount. (4) Chunk-level retrieval provides sufficient context. (5) Your <a class="concept-link" href="embeddings.html">embedding</a> model is well-aligned with your domain.</p>
 <p><strong>Concrete Use Cases:</strong><br/>GraphRAG excels in: legal document analysis (cross-referencing contracts, precedents, parties), scientific literature synthesis (connecting research across papers and labs), enterprise knowledge management (connecting people, projects, and organizational relationships), competitive intelligence (tracking company relationships, partnerships, market dynamics), and investigative journalism (finding connections between actors, events, and organizations).</p>
 <div class="example-box">Decision Tree:
 
@@ -646,17 +646,14 @@ Question: How critical is hallucination reduction?
             </div>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="llamaindex.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">LlamaIndex</span></a>
-<a href="agentic-rag.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Agentic RAG</span></a>
-<a href="contextual-retrieval.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Contextual Retrieval</span></a>
-<a href="sentence-transformers.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
-<a href="openai-embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">OpenAI Embeddings</span></a>
+<a class="rc-card" href="llamaindex.html" style="--rc-accent:#3b82f6"><span class="rc-label">LlamaIndex</span></a>
+<a class="rc-card" href="agentic-rag.html" style="--rc-accent:#3b82f6"><span class="rc-label">Agentic RAG</span></a>
+<a class="rc-card" href="contextual-retrieval.html" style="--rc-accent:#3b82f6"><span class="rc-label">Contextual Retrieval</span></a>
+<a class="rc-card" href="sentence-transformers.html" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
+<a class="rc-card" href="openai-embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">OpenAI Embeddings</span></a>
 </div>
 </div>
 <footer>

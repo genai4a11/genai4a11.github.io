@@ -153,13 +153,13 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Why reranking exists</h2>
-<p>Initial retrieval (BM25 or dense) optimises for <em>recall</em> — finding most of the relevant documents in the top-N results. But it sacrifices <em>precision</em> — position 1 might not be the most relevant document, and irrelevant documents might sneak into the top-5.</p>
-<p>For RAG, you pass the top-k retrieved chunks as context to the LLM. Passing 20 chunks is expensive (tokens) and noisy (irrelevant context confuses the model). A reranker acts as a second-stage filter: retrieve 20 candidates cheaply, rerank with a slower but more accurate model, pass only the top-3 to the LLM.</p>
+<p>Initial retrieval (<a class="concept-link" href="bm25.html">BM25</a> or dense) optimises for <em>recall</em> — finding most of the relevant documents in the top-N results. But it sacrifices <em>precision</em> — position 1 might not be the most relevant document, and irrelevant documents might sneak into the top-5.</p>
+<p>For <a class="concept-link" href="rag.html">RAG</a>, you pass the top-k retrieved chunks as context to the LLM. Passing 20 chunks is expensive (tokens) and noisy (irrelevant context confuses the model). A reranker acts as a second-stage filter: retrieve 20 candidates cheaply, rerank with a slower but more accurate model, pass only the top-3 to the LLM.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Bi-encoder vs cross-encoder</h2>
-<p>Retrieval uses a <strong>bi-encoder</strong>: query and documents are encoded independently, enabling pre-indexing. Reranking uses a <strong>cross-encoder</strong>: query and document are concatenated and fed through the model <em>together</em>, so the model can compute fine-grained cross-attention between every query token and every document token.</p>
+<p>Retrieval uses a <strong>bi-encoder</strong>: query and documents are encoded independently, enabling pre-indexing. Reranking uses a <strong>cross-encoder</strong>: query and document are concatenated and fed through the model <em>together</em>, so the model can compute fine-grained <a class="concept-link" href="cross-attention.html">cross-attention</a> between every query token and every document token.</p>
 <p>This joint encoding is far more accurate but O(n) in inference cost — you can't pre-encode documents, so you can only apply it to a small set of candidates (typically top-20 to top-100). That's the two-stage design:</p>
 <pre><code>Query → Fast retrieval (top-100) → Slow reranker (top-5) → LLM
 </code></pre>
@@ -290,22 +290,19 @@ def rag_with_reranking(query: str) -&gt; str:
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Reranker max input length.</strong> Cross-encoders have a token limit (typically 512 tokens for the combined query+document). Long chunks get truncated. Either chunk smaller or use a reranker with a larger context window (e.g., <code>bge-reranker-large</code> supports up to 512 tokens per chunk).</p>
+<p><strong>Reranker max input length.</strong> Cross-encoders have a token limit (typically 512 tokens for the combined query+document). Long chunks get truncated. Either chunk smaller or use a reranker with a larger <a class="concept-link" href="context-window.html">context window</a> (e.g., <code>bge-reranker-large</code> supports up to 512 tokens per chunk).</p>
 <p><strong>Retrieve more than you think you need.</strong> If you ultimately want top-5 for the LLM, retrieve top-50 to top-100 before reranking. The reranker needs a diverse candidate set to work effectively — reranking top-5 from retrieval produces minimal improvement.</p>
-<p><strong>Don't rerank in a tight latency budget.</strong> A cross-encoder adds 100–500ms per query depending on hardware. For sub-100ms response requirements, use a smaller cross-encoder model or skip reranking for high-confidence queries.</p>
+<p><strong>Don't rerank in a tight <a class="concept-link" href="latency-budget.html">latency budget</a>.</strong> A cross-encoder adds 100–500ms per query depending on <a class="concept-link" href="hardware.html">hardware</a>. For sub-100ms response requirements, use a smaller cross-encoder model or skip reranking for high-confidence queries.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="context-compression.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Context Compression</span></a>
-<a href="sentence-transformers.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
-<a href="openai-embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">OpenAI Embeddings</span></a>
-<a href="bge-embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">BGE / E5 Models</span></a>
-<a href="cohere-embeddings.html" class="rc-card" style="--rc-accent:#3b82f6"><span class="rc-label">Cohere Embed</span></a>
+<a class="rc-card" href="context-compression.html" style="--rc-accent:#3b82f6"><span class="rc-label">Context Compression</span></a>
+<a class="rc-card" href="sentence-transformers.html" style="--rc-accent:#3b82f6"><span class="rc-label">Sentence Transformers</span></a>
+<a class="rc-card" href="openai-embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">OpenAI Embeddings</span></a>
+<a class="rc-card" href="bge-embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">BGE / E5 Models</span></a>
+<a class="rc-card" href="cohere-embeddings.html" style="--rc-accent:#3b82f6"><span class="rc-label">Cohere Embed</span></a>
 </div>
 </div>
 <footer>

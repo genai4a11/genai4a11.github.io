@@ -472,9 +472,9 @@
 <div class="section-block" id="why-hardware-matters">
 <div class="section-marker">01 — Fundamentals</div>
 <h2>Why Hardware Matters for LLMs</h2>
-<p><strong>Critical insight: LLM inference is memory-bandwidth bound, not compute bound.</strong> The bottleneck is moving weights from HBM to compute cores, not doing the multiplications.</p>
+<p><strong>Critical insight: LLM inference is <a class="concept-link" href="agent-memory.html">memory</a>-bandwidth bound, not compute bound.</strong> The bottleneck is moving weights from HBM to compute cores, not doing the multiplications.</p>
 <p><strong>Memory bandwidth determines tokens/second:</strong> more bandwidth = faster inference. This is why H100 SXM (3.35 TB/s) is ~3× faster at inference than A100 (2 TB/s) for the same model.</p>
-<p><strong>VRAM determines maximum model size:</strong> model weights + KV cache + activations must fit in GPU memory. An A100 (80 GB) can serve a 40B model in FP16; H100 has the same capacity but more bandwidth.</p>
+<p><strong>VRAM determines maximum model size:</strong> model weights + <a class="concept-link" href="kv-cache.html">KV cache</a> + <a class="concept-link" href="activations.html">activations</a> must fit in GPU memory. An A100 (80 GB) can serve a 40B model in FP16; H100 has the same capacity but more bandwidth.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -503,7 +503,7 @@
 <h3>Key Features</h3>
 <p><strong>Transformer Engine:</strong> hardware-accelerated FP8 matrix multiply — 2× throughput vs FP16 at near-identical quality with per-tensor scaling.</p>
 <p><strong>NVLink 4.0:</strong> 900 GB/s GPU-to-GPU bandwidth within a node (8 GPUs). Critical for tensor parallelism.</p>
-<p><strong>FlashAttention-3 optimized:</strong> uses async tensor cores + warp specialization for maximum utilization on Hopper architecture.</p>
+<p><strong><a class="concept-link" href="flash-attn.html">FlashAttention</a>-3 optimized:</strong> uses async tensor cores + warp specialization for maximum utilization on Hopper architecture.</p>
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>H100 SXM is the standard for serious training and high-throughput inference.</strong> H100 PCIe is 30–40% slower due to PCIe bandwidth bottleneck — avoid for large models or high QPS.</span>
@@ -539,9 +539,9 @@
 <div class="section-marker">04 — Competition</div>
 <h2>AMD MI300X and Alternatives</h2>
 <h3>AMD MI300X</h3>
-<p><strong>192 GB HBM3</strong> (largest VRAM of any GPU), <strong>5.3 TB/s</strong> memory bandwidth, competitive FP16 throughput (383 TFLOPS theoretical vs H100's 989 — but bandwidth often limits inference anyway).</p>
+<p><strong>192 GB HBM3</strong> (largest VRAM of any GPU), <strong>5.3 TB/s</strong> <a class="concept-link" href="agent-memory.html">memory</a> bandwidth, competitive FP16 throughput (383 TFLOPS theoretical vs H100's 989 — but bandwidth often limits inference anyway).</p>
 <p><strong>MI300X advantage:</strong> fits Llama 3 405B entirely in one 8-GPU node (8 × 192 GB = 1.5 TB). No model parallelism needed.</p>
-<p><strong>Software maturity:</strong> ROCm is improving but still lags CUDA ecosystem. Some libraries (FlashAttention, some kernels) are CUDA-only or slower on ROCm.</p>
+<p><strong>Software maturity:</strong> ROCm is improving but still lags CUDA ecosystem. Some libraries (<a class="concept-link" href="flash-attn.html">FlashAttention</a>, some kernels) are CUDA-only or slower on ROCm.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -594,8 +594,8 @@
 <h2>Memory Math: Sizing Your Deployment</h2>
 <h3>Three Components</h3>
 <p><strong>Model weights:</strong> parameters × bytes per parameter (FP16 = 2, INT4 = 0.5)</p>
-<p><strong>KV cache:</strong> 2 × layers × heads × head_dim × seq_len × batch_size × 2 bytes (FP16)</p>
-<p><strong>Rule of thumb:</strong> for inference at max batch, budget 1.5–2× model weight size for KV cache + activations</p>
+<p><strong><a class="concept-link" href="kv-cache.html">KV cache</a>:</strong> 2 × layers × heads × head_dim × seq_len × batch_size × 2 bytes (FP16)</p>
+<p><strong>Rule of thumb:</strong> for inference at max batch, budget 1.5–2× model weight size for KV cache + <a class="concept-link" href="activations.html">activations</a></p>
 <h3>Memory Calculator</h3>
 <div class="example-box">def estimate_vram(params_B: float, dtype_bytes: float, 
                     seq_len: int, batch_size: int,
@@ -615,7 +615,7 @@ print(f"Estimated: {vram:.1f} GB")  # ~42 GB — fits in 1×H100
 # Same model in FP16:
 vram_fp16 = estimate_vram(70, 2.0, 4096, 4, 80, 64, 128)
 print(f"FP16: {vram_fp16:.1f} GB")  # ~145 GB — needs 2×H100</div>
-<p><strong>Key takeaway:</strong> Quantization (INT4, INT8) dramatically reduces VRAM footprint — often making 2× more models fit in the same hardware.</p>
+<p><strong>Key takeaway:</strong> <a class="concept-link" href="quantization.html">Quantization</a> (INT4, INT8) dramatically reduces VRAM footprint — often making 2× more models fit in the same hardware.</p>
 </div>
 <!-- ── 7. MULTI-GPU TOPOLOGY ── -->
 <div class="section-block" id="topology">
@@ -711,7 +711,7 @@ print(f"FP16: {vram_fp16:.1f} GB")  # ~145 GB — needs 2×H100</div>
 <ul class="ref-list">
 <li>
 <span class="ref-badge badge-paper">Paper</span>
-        MLCommons. MLPerf Training Benchmarks. —
+        MLCommons. MLPerf Training <a class="concept-link" href="benchmarks.html">Benchmarks</a>. —
         <a href="https://www.mlcommons.org/benchmarks/" target="_blank">mlcommons.org/benchmarks ↗</a>
 </li>
 <li>
@@ -733,32 +733,29 @@ print(f"FP16: {vram_fp16:.1f} GB")  # ~145 GB — needs 2×H100</div>
 <ul class="ref-list">
 <li>
 <span class="ref-badge badge-blog">Blog</span>
-        vLLM Team. <em>High-Throughput LLM Serving: Architecture and Implementation.</em> —
+<a class="concept-link" href="vllm.html">vLLM</a> Team. <em>High-Throughput <a class="concept-link" href="serving.html">LLM Serving</a>: Architecture and Implementation.</em> —
         <a href="https://blog.vllm.ai/" target="_blank">blog.vllm.ai ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-blog">Blog</span>
-        Hugging Face. <em>Hardware Optimization for LLM Inference.</em> —
+        Hugging Face. <em>Hardware <a class="concept-link" href="optimization.html">Optimization</a> for LLM Inference.</em> —
         <a href="https://huggingface.co/blog" target="_blank">huggingface.co/blog ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-blog">Blog</span>
-        Together AI. <em>GPU Memory Optimization: A Practical Guide.</em> —
+        Together AI. <em>GPU <a class="concept-link" href="agent-memory.html">Memory</a> Optimization: A Practical Guide.</em> —
         <a href="https://www.together.ai/blog" target="_blank">together.ai/blog ↗</a>
 </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="serving.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">LLM Serving</span></a>
-<a href="quantization.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Quantization</span></a>
-<a href="cloud-deploy.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Cloud & Deployment</span></a>
-<a href="vllm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
-<a href="ollama.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
+<a class="rc-card" href="serving.html" style="--rc-accent:#64748b"><span class="rc-label">LLM Serving</span></a>
+<a class="rc-card" href="quantization.html" style="--rc-accent:#64748b"><span class="rc-label">Quantization</span></a>
+<a class="rc-card" href="cloud-deploy.html" style="--rc-accent:#64748b"><span class="rc-label">Cloud &amp; Deployment</span></a>
+<a class="rc-card" href="vllm.html" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
+<a class="rc-card" href="ollama.html" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
 </div>
 </div>
 <footer class="page-footer">

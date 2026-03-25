@@ -153,7 +153,7 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Why FastAPI for LLM APIs</h2>
-<p>FastAPI (Sebastián Ramírez, 2018) has become the dominant framework for building LLM-backed APIs in Python. Its key advantages for LLM workloads: (1) <strong>Async-native</strong> — built on Starlette/asyncio, handles many concurrent streaming connections efficiently; (2) <strong>Pydantic integration</strong> — automatic request/response validation and serialisation with clear error messages; (3) <strong>Auto-generated docs</strong> — OpenAPI + Swagger UI out of the box, essential when your LLM API is consumed by other teams; (4) <strong>Type hints</strong> — makes the codebase maintainable as it grows.</p>
+<p>FastAPI (Sebastián Ramírez, 2018) has become the dominant framework for building LLM-backed APIs in Python. Its key advantages for LLM workloads: (1) <strong>Async-native</strong> — built on Starlette/asyncio, handles many concurrent <a class="concept-link" href="streaming.html">streaming</a> connections efficiently; (2) <strong>Pydantic integration</strong> — automatic request/response validation and serialisation with clear error messages; (3) <strong>Auto-generated docs</strong> — OpenAPI + Swagger UI out of the box, essential when your LLM API is consumed by other teams; (4) <strong>Type hints</strong> — makes the codebase maintainable as it grows.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -341,23 +341,20 @@ async def generate(req: GenerateRequest):
 <h2>Gotchas</h2>
 <ul>
 <li><strong>Workers for CPU-bound code</strong>: FastAPI/uvicorn is single-threaded per worker. For CPU-bound model inference, use multiple workers: <code>uvicorn app:app --workers 4</code>, or use Gunicorn + uvicorn workers. Without this, one slow request blocks all others.</li>
-<li><strong>Sync vs async mixing</strong>: Calling a synchronous function inside an async endpoint blocks the event loop. Use <code>asyncio.get_event_loop().run_in_executor()</code> for sync inference code.</li>
+<li><strong><a class="concept-link" href="sync-async-serving.html">Sync vs async</a> mixing</strong>: Calling a synchronous function inside an async endpoint blocks the event loop. Use <code>asyncio.get_event_loop().run_in_executor()</code> for sync inference code.</li>
 <li><strong>Pydantic v1 vs v2</strong>: FastAPI 0.100+ uses Pydantic v2 by default. APIs differ — <code>@validator</code> becomes <code>@field_validator</code>, <code>.dict()</code> becomes <code>.model_dump()</code>. Check your FastAPI and Pydantic versions are compatible.</li>
-<li><strong>Connection timeouts for streaming</strong>: Default reverse proxy timeouts (Nginx: 60s, AWS ALB: 60s) will kill long streaming responses. Configure <code>proxy_read_timeout</code> in Nginx and idle timeout in the load balancer.</li>
+<li><strong>Connection timeouts for <a class="concept-link" href="streaming.html">streaming</a></strong>: Default reverse proxy timeouts (Nginx: 60s, AWS ALB: 60s) will kill long streaming responses. Configure <code>proxy_read_timeout</code> in Nginx and idle timeout in the load balancer.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="streamlit.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Streamlit</span></a>
-<a href="gradio.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Gradio</span></a>
-<a href="mlflow.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">MLflow</span></a>
-<a href="dvc.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">DVC</span></a>
-<a href="hf-hub.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">HuggingFace Hub</span></a>
+<a class="rc-card" href="streamlit.html" style="--rc-accent:#64748b"><span class="rc-label">Streamlit</span></a>
+<a class="rc-card" href="gradio.html" style="--rc-accent:#64748b"><span class="rc-label">Gradio</span></a>
+<a class="rc-card" href="mlflow.html" style="--rc-accent:#64748b"><span class="rc-label">MLflow</span></a>
+<a class="rc-card" href="dvc.html" style="--rc-accent:#64748b"><span class="rc-label">DVC</span></a>
+<a class="rc-card" href="hf-hub.html" style="--rc-accent:#64748b"><span class="rc-label">HuggingFace Hub</span></a>
 </div>
 </div>
 <footer>

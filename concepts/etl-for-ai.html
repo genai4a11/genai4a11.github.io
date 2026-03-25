@@ -152,12 +152,12 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>AI ETL vs Traditional ETL</h2>
-<p>Traditional ETL moves structured data between databases. AI ETL handles: unstructured documents (PDFs, HTML, code), extraction of text + structure from arbitrary formats, semantic chunking and embedding, and vector index population. The key difference: every transformation step can degrade quality — a poor PDF parser produces garbled text that no LLM can recover from.</p>
+<p>Traditional ETL moves structured data between databases. AI ETL handles: unstructured documents (PDFs, HTML, code), extraction of text + structure from arbitrary formats, <a class="concept-link" href="semantic-chunking.html">semantic chunking</a> and <a class="concept-link" href="embeddings.html">embedding</a>, and vector index population. The key difference: every transformation step can degrade quality — a poor PDF parser produces garbled text that no LLM can recover from.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Extraction Layer</h2>
-<p>Parse raw documents into clean text + structure. " "Use specialised parsers: Unstructured.io for PDFs/Office/HTML, " "BeautifulSoup for web pages, tree-sitter for code. " "Extract tables as structured data, images as captions (via vision model), " "and preserve heading hierarchy for context.</p>
+<p>Parse raw documents into clean text + structure. " "Use specialised parsers: <a class="concept-link" href="unstructured.html">Unstructured.io</a> for PDFs/Office/HTML, " "BeautifulSoup for web pages, tree-sitter for code. " "Extract tables as structured data, images as captions (via vision model), " "and preserve heading hierarchy for context.</p>
 <pre><code>from unstructured.partition.auto import partition
 def extract_document(file_path: str) -&gt; list[dict]:
     elements = partition(filename=file_path, strategy="hi_res")
@@ -178,12 +178,12 @@ def extract_document(file_path: str) -&gt; list[dict]:
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Transformation Layer</h2>
-<p>Clean: remove boilerplate headers/footers, fix encoding issues, normalise whitespace. Chunk: split into retrieval-sized pieces (200–800 tokens) with overlap (10–20%). Enrich: add metadata (doc title, section, source URL). Embed: convert text to vectors (OpenAI text-embedding-3-small or local model). Each step should be idempotent and independently testable.</p>
+<p>Clean: remove boilerplate headers/footers, fix encoding issues, normalise whitespace. Chunk: split into retrieval-sized pieces (200–800 tokens) with overlap (10–20%). Enrich: add metadata (doc title, section, source URL). Embed: convert text to vectors (OpenAI text-<a class="concept-link" href="embeddings.html">embedding</a>-3-small or local model). Each step should be idempotent and independently testable.</p>
 </div>
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Loading &amp; Indexing</h2>
-<p>Batch-upsert to your vector store with document_id + chunk_index as the unique key. " "Upsert (not insert) so re-runs don't create duplicates. " "Update the metadata catalogue (Postgres/DynamoDB) with ingestion timestamp.</p>
+<p>Batch-upsert to your <a class="concept-link" href="vector-dbs.html">vector store</a> with document_id + chunk_index as the unique key. " "Upsert (not insert) so re-runs don't create duplicates. " "Update the metadata catalogue (Postgres/DynamoDB) with ingestion timestamp.</p>
 <pre><code>from openai import OpenAI
 from qdrant_client import QdrantClient
 from qdrant_client.models import PointStruct
@@ -209,7 +209,7 @@ def embed_and_load(chunks: list[dict], collection: str):
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Orchestration</h2>
-<p>Use a workflow orchestrator (Airflow, Prefect, Dagster) to schedule and monitor ETL runs. Structure as a DAG: extract → validate → chunk → embed → load → verify. Checkpoint each stage so failed runs resume from the last successful step. Monitor: documents processed/hour, embedding cost, index size, and error rate.</p>
+<p>Use a workflow orchestrator (Airflow, Prefect, Dagster) to schedule and monitor ETL runs. Structure as a DAG: extract → validate → chunk → embed → load → verify. Checkpoint each stage so failed runs resume from the last successful step. Monitor: documents processed/hour, <a class="concept-link" href="embeddings.html">embedding</a> cost, index size, and error rate.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
@@ -217,17 +217,14 @@ def embed_and_load(chunks: list[dict], collection: str):
 <p>Full re-ingestion is expensive. For incremental updates: hash each document on ingest, store in a manifest table. On re-run, skip documents whose hash hasn't changed. Delete + re-embed only changed or new documents. For deleted source documents, implement a soft-delete: mark as inactive in the manifest, purge from the index on next cleanup run.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="metadata-design.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Metadata Design</span></a>
-<a href="data-quality.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Data Quality</span></a>
-<a href="annotation-tools.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Annotation Tools</span></a>
-<a href="active-learning.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Active Learning</span></a>
-<a href="label-quality.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Label Quality Control</span></a>
+<a class="rc-card" href="metadata-design.html" style="--rc-accent:#64748b"><span class="rc-label">Metadata Design</span></a>
+<a class="rc-card" href="data-quality.html" style="--rc-accent:#64748b"><span class="rc-label">Data Quality</span></a>
+<a class="rc-card" href="annotation-tools.html" style="--rc-accent:#64748b"><span class="rc-label">Annotation Tools</span></a>
+<a class="rc-card" href="active-learning.html" style="--rc-accent:#64748b"><span class="rc-label">Active Learning</span></a>
+<a class="rc-card" href="label-quality.html" style="--rc-accent:#64748b"><span class="rc-label">Label Quality Control</span></a>
 </div>
 </div>
 <footer>

@@ -370,9 +370,9 @@
 <div class="section-block">
 <div class="section-marker">SECTION 01</div>
 <h2>What is <em>MCP</em></h2>
-<p>The Model Context Protocol (MCP) is an open-source standard developed by Anthropic that enables LLM applications (called "hosts") to securely connect with and invoke capabilities from external servers. Before MCP, each AI application had to implement custom integrations for every tool or data source—a fragmented, difficult-to-scale approach. MCP standardizes this connection layer via JSON-RPC 2.0 over stdio (local) or Server-Sent Events (SSE) over HTTP.</p>
+<p>The <a class="concept-link" href="model-context-protocol.html">Model Context Protocol</a> (MCP) is an open-source standard developed by Anthropic that enables LLM applications (called "hosts") to securely connect with and invoke capabilities from external servers. Before MCP, each AI application had to implement custom integrations for every tool or data source—a fragmented, difficult-to-scale approach. MCP standardizes this connection layer via JSON-RPC 2.0 over stdio (local) or Server-Sent Events (SSE) over HTTP.</p>
 <p>At its core, MCP solves two problems: (1) <strong>capability discovery</strong>—how does an LLM learn what a server can do?—and (2) <strong>secure invocation</strong>—how does the host safely execute server capabilities on behalf of the user? The protocol is transport-agnostic, language-agnostic, and designed for both local and remote scenarios.</p>
-<p>MCP is already integrated into Claude Desktop, Cursor, VS Code, and third-party agents. It represents a shift toward a standardized, composable agent ecosystem where tools and data sources are first-class citizens that LLMs can dynamically invoke without hard-coded integrations.</p>
+<p>MCP is already integrated into Claude Desktop, Cursor, VS Code, and third-party <a class="concept-link" href="agents.html">agents</a>. It represents a shift toward a standardized, composable agent ecosystem where tools and data sources are first-class citizens that <a class="concept-link" href="llms.html">LLMs</a> can dynamically invoke without hard-coded integrations.</p>
 <div class="callout info">
 <strong>Why This Matters</strong>
                 MCP eliminates the need to rebuild integrations for every AI framework. A single MCP server for "read GitHub issues" works with Claude, Cursor, custom agents, and future tools. This dramatically reduces development friction and enables rapid prototyping of AI workflows.
@@ -568,7 +568,7 @@ server.run_stdio()
 </tbody>
 </table>
 </div>
-<p>In practice, MCP shines for tool and data source integrations where you want an LLM to have optional, composable access. Custom APIs remain necessary for stateful protocols (e.g., real-time bidirectional communication) or when performance optimization (e.g., binary protocols) outweighs standardization benefits.</p>
+<p>In practice, MCP shines for tool and data source integrations where you want an LLM to have optional, composable access. Custom APIs remain necessary for stateful protocols (e.g., real-time bidirectional communication) or when performance <a class="concept-link" href="optimization.html">optimization</a> (e.g., binary protocols) outweighs standardization benefits.</p>
 <div class="callout info">
 <strong>When to Use MCP</strong>
                 Use MCP for read/write access to databases, file systems, APIs, or knowledge bases. It's ideal for tools that are invoked occasionally and where the LLM drives the interaction. Custom APIs are better for streaming, WebSocket, or low-latency scenarios.
@@ -579,7 +579,7 @@ server.run_stdio()
 <div class="section-marker">SECTION 06</div>
 <h2><em>Ecosystem</em> &amp; Existing Clients</h2>
 <p><strong>Claude Desktop</strong> is the flagship MCP host, released in early 2024. Users configure MCP servers in a JSON file (`claude_desktop_config.json`) and Claude automatically discovers and uses them. This enabled integrations with filesystem access, web search, code repositories, and more without requiring code changes.</p>
-<p><strong>Cursor</strong>, an AI-powered code editor, integrated MCP support to let developers add custom tools for code generation, testing, and deployment. <strong>VS Code</strong> and community-built agents also support MCP, expanding the ecosystem. The MCP Registry (at modelcontextprotocol.io) lists public servers: filesystem access, GitHub API wrapper, PostgreSQL interface, Brave Search, DuckDuckGo, Puppeteer (web scraping), Stripe API, and many more contributed by the community.</p>
+<p><strong>Cursor</strong>, an AI-powered code editor, integrated MCP support to let developers add custom tools for code generation, testing, and deployment. <strong>VS Code</strong> and community-built <a class="concept-link" href="agents.html">agents</a> also support MCP, expanding the ecosystem. The MCP Registry (at modelcontextprotocol.io) lists public servers: filesystem access, GitHub API wrapper, PostgreSQL interface, Brave Search, DuckDuckGo, Puppeteer (web scraping), Stripe API, and many more contributed by the community.</p>
 <p>This ecosystem growth demonstrates MCP's value: a single "read GitHub issues" server built once can be reused across all MCP-compatible applications, eliminating integration duplication.</p>
 <div class="example-box">Claude Desktop Config Example (claude_desktop_config.json):
 
@@ -617,7 +617,7 @@ After updating this config, Claude Desktop auto-loads all three servers and the 
 <div class="section-block">
 <div class="section-marker">SECTION 07</div>
 <h2><em>Production</em> Patterns &amp; Security</h2>
-<p>Deploying MCP servers in production requires careful consideration of security, reliability, and observability. Here are key patterns:</p>
+<p>Deploying MCP servers in production requires careful consideration of security, reliability, and <a class="concept-link" href="monitoring.html">observability</a>. Here are key patterns:</p>
 <p><strong>Authentication &amp; Authorization:</strong> MCP servers should validate that the connecting host is authorized. For local stdio connections, OS-level process permissions provide baseline isolation. For remote (HTTP) servers, use OAuth 2.0 or API keys. Within tool handlers, implement fine-grained authorization: does the user have permission to execute this tool or read this resource?</p>
 <div class="example-box">Auth Example in Tool Handler:
 
@@ -640,9 +640,9 @@ def handle_tool_call(tool_name: str, params: dict) -&gt; ToolResult:
         isError=False
     )
             </div>
-<p><strong>Rate Limiting:</strong> Prevent abuse by limiting tool invocations per user/time window. Implement token-bucket or sliding-window algorithms. If a tool integrates with a third-party API (e.g., OpenAI, GitHub), respect that service's rate limits and implement exponential backoff.</p>
+<p><strong><a class="concept-link" href="rate-limiting.html">Rate Limiting</a>:</strong> Prevent abuse by limiting tool invocations per user/time window. Implement token-bucket or sliding-window algorithms. If a tool integrates with a third-party API (e.g., OpenAI, GitHub), respect that service's rate limits and implement exponential backoff.</p>
 <p><strong>Server Versioning:</strong> Include a `protocolVersion` in your server's initialization response. When you change tool signatures or resource schemas, increment the version. Hosts can use this to decide whether to continue or upgrade.</p>
-<p><strong>Observability:</strong> Log all tool invocations (inputs, outputs, errors) for auditing and debugging. Use structured logging (JSON) and ship logs to a centralized service. Monitor resource usage (CPU, memory, file handles) to detect resource leaks or misbehaving clients.</p>
+<p><strong>Observability:</strong> Log all tool invocations (inputs, outputs, errors) for auditing and debugging. Use structured logging (JSON) and ship logs to a centralized service. Monitor resource usage (CPU, <a class="concept-link" href="agent-memory.html">memory</a>, file handles) to detect resource leaks or misbehaving clients.</p>
 <p><strong>Error Handling:</strong> Return meaningful error messages in tool results. If a database query fails, include the error reason (not the full stack trace, which leaks information). Use consistent error schemas so hosts can programmatically handle failures.</p>
 <div class="callout amber">
 <strong>Resource Isolation</strong>

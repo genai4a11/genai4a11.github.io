@@ -459,7 +459,7 @@
 <div class="section-block" id="why-replaced-rnns">
 <div class="section-marker">01 — Foundation</div>
 <h2>Why Transformers Replaced RNNs</h2>
-<p>Recurrent Neural Networks (RNNs, LSTMs) process sequences token-by-token, one step at a time. This sequential dependency made them slow to train (no parallelization) and poor at capturing long-range dependencies. Vanishing gradients meant information from early tokens faded by the time you reached token 512.</p>
+<p>Recurrent <a class="concept-link" href="neural-nets.html">Neural Networks</a> (RNNs, LSTMs) process sequences token-by-token, one step at a time. This sequential dependency made them slow to train (no parallelization) and poor at capturing long-range dependencies. Vanishing gradients meant information from early tokens faded by the time you reached token 512.</p>
 <p>Transformers (Vaswani et al., 2017) solved this with a radical insight: <strong>replace sequential processing with parallel attention</strong>. Every token attends to every other token simultaneously, computing relationships in a single pass. This enables massive parallelization and removes the gradient flow bottleneck.</p>
 <h3>Key Advantages Over RNNs</h3>
 <div class="table-wrap">
@@ -489,7 +489,7 @@
 <div class="section-block" id="self-attention">
 <div class="section-marker">02 — Core Mechanism</div>
 <h2>The Self-Attention Mechanism</h2>
-<p>Self-attention computes a weighted sum of token representations, where the weights reflect relevance between pairs of tokens. The mechanism requires three transformations: Query (Q), Key (K), Value (V).</p>
+<p><a class="concept-link" href="self-attention.html">Self-attention</a> computes a weighted sum of token representations, where the weights reflect relevance between pairs of tokens. The mechanism requires three transformations: Query (Q), Key (K), Value (V).</p>
 <h3>The Q, K, V Framework</h3>
 <p>For a sequence of tokens, we project each token into three spaces:</p>
 <div class="example-box">x_i = embedding of token i (dim = 512)
@@ -503,7 +503,7 @@ Attention weights: attn_ij = softmax(scores_ij) over all j
 Output_i = Σ_j attn_ij * V_j  # weighted sum of values</div>
 <p>The division by sqrt(d_k) stabilizes gradients; the softmax ensures weights sum to 1. The result is that each token becomes a weighted blend of all tokens' values, guided by query-key similarity.</p>
 <h3>Multi-Head Attention</h3>
-<p>A single attention head captures one type of relationship. Multi-head attention uses 8–12 parallel heads, each learning different attention patterns (syntax, semantics, long-range, short-range). The outputs are concatenated and projected back to the model dimension.</p>
+<p>A single attention head captures one type of relationship. <a class="concept-link" href="multi-head-attention.html">Multi-head attention</a> uses 8–12 parallel heads, each learning different attention patterns (syntax, semantics, long-range, short-range). The outputs are concatenated and projected back to the model dimension.</p>
 <div class="example-box"># 8 attention heads, each with dimension 64 (512 / 8)
 for h in range(8):
     Q_h, K_h, V_h = project_to_head_dim(Q, K, V, h)
@@ -534,7 +534,7 @@ Output: "brown"  (from contextual representations)
 
 Good for: Text classification, named entity recognition, semantic similarity</div>
 <h3>Decoder-Only (GPT-2, GPT-4, Llama)</h3>
-<p>Causal attention: each token attends only to past tokens. Trained with next-token prediction (given tokens 0..i, predict i+1). Naturally generates sequences autoregressively, one token at a time. All modern LLMs are decoder-only.</p>
+<p>Causal attention: each token attends only to past tokens. Trained with next-token prediction (given tokens 0..i, predict i+1). Naturally generates sequences autoregressively, one token at a time. All modern <a class="concept-link" href="llms.html">LLMs</a> are decoder-only.</p>
 <div class="example-box">Input:  "The quick brown"
 Attend: [position 0] → [0], [position 1] → [0,1], [position 2] → [0,1,2]
 Output: Logits for next token (predicting "fox")</div>
@@ -565,13 +565,13 @@ Decoder output: "Bonjour le monde"</div>
 <div class="section-block" id="positional-encoding">
 <div class="section-marker">04 — Position</div>
 <h2>Positional Encoding</h2>
-<p>Transformers have no notion of sequence order — attention is permutation-invariant. To inject position information, we add positional encodings to token embeddings before feeding them to the first layer.</p>
+<p>Transformers have no notion of sequence order — attention is permutation-invariant. To inject position information, we add positional encodings to token <a class="concept-link" href="embeddings.html">embeddings</a> before feeding them to the first layer.</p>
 <h3>Absolute Positional Encodings</h3>
 <p><strong>Sinusoidal (Vaswani, 2017):</strong> Position p, dimension d_model. Compute sin and cos at different frequencies. Learnable across context length. Still used in many models.</p>
 <div class="example-box">PE(pos, 2i) = sin(pos / 10000^(2i/d_model))
 PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))</div>
 <h3>Relative Positional Encodings: RoPE</h3>
-<p>RoPE (Rotary Position Embeddings, Su et al., 2021) applies rotation matrices in the query-key dot product. More sample-efficient than sinusoidal; naturally extrapolates to longer sequences. Used in Llama, PaLM, modern models.</p>
+<p><a class="concept-link" href="rope.html">RoPE</a> (Rotary Position Embeddings, Su et al., 2021) applies rotation matrices in the query-key dot product. More sample-efficient than sinusoidal; naturally extrapolates to longer sequences. Used in Llama, PaLM, modern models.</p>
 <div class="example-box"># Rotate Q, K by position-dependent angle
 theta_m = base^(-2m/d)
 rotation_angle = pos * theta_m
@@ -579,7 +579,7 @@ rotation_angle = pos * theta_m
 Q_rot = R(pos) * Q
 K_rot = R(pos) * K</div>
 <h3>Relative Positional Encodings: ALiBi</h3>
-<p>Attention with Linear Biases (ALiBi, Press et al., 2022) adds a position-dependent bias directly to attention logits before softmax. Extremely simple; extrapolates well. Used in some smaller models.</p>
+<p>Attention with Linear Biases (<a class="concept-link" href="alibi.html">ALiBi</a>, Press et al., 2022) adds a position-dependent bias directly to attention logits before softmax. Extremely simple; extrapolates well. Used in some smaller models.</p>
 <div class="example-box">scores_ij = Q_i · K_j - |i - j| * alpha
 # Alpha is a small learned coefficient per head</div>
 <div class="callout blue">
@@ -591,9 +591,9 @@ K_rot = R(pos) * K</div>
 <div class="section-block" id="efficiency-innovations">
 <div class="section-marker">05 — Scaling</div>
 <h2>Efficiency Innovations: KV Cache, Flash Attention, and Friends</h2>
-<p>Transformers are powerful but expensive. Three key innovations dramatically reduce computation and memory.</p>
+<p>Transformers are powerful but expensive. Three key innovations dramatically reduce computation and <a class="concept-link" href="agent-memory.html">memory</a>.</p>
 <h3>KV Cache (Key-Value Caching)</h3>
-<p>During inference, we generate tokens one at a time. Without caching, we'd recompute K and V for all previous tokens on every generation step. KV cache stores K, V for all past tokens, reusing them. This cuts attention computation from O(n²) to O(n) during inference.</p>
+<p>During inference, we generate tokens one at a time. Without caching, we'd recompute K and V for all previous tokens on every generation step. <a class="concept-link" href="kv-cache.html">KV cache</a> stores K, V for all past tokens, reusing them. This cuts attention computation from O(n²) to O(n) during inference.</p>
 <div class="example-box"># Without cache: recompute attention for all tokens at each step
 for step in range(max_tokens):
     output = attention(Q_new, K_all, V_all)  # K_all, V_all recomputed
@@ -612,7 +612,7 @@ for step in range(max_tokens):
 <span><strong>Impact:</strong> Flash Attention made long-context training practical. Reduced attention cost from main bottleneck to roughly equal with feed-forward layers.</span>
 </div>
 <h3>Grouped-Query Attention (GQA)</h3>
-<p>Standard multi-head attention has 8–12 separate K, V projections (one per head), ballooning KV cache size. GQA uses a small number of shared K, V heads (e.g., 2) with multiple Q heads attending to them. Reduces KV cache by 8x; minimal quality loss.</p>
+<p>Standard <a class="concept-link" href="multi-head-attention.html">multi-head attention</a> has 8–12 separate K, V projections (one per head), ballooning KV cache size. GQA uses a small number of shared K, V heads (e.g., 2) with multiple Q heads attending to them. Reduces KV cache by 8x; minimal quality loss.</p>
 <h3>Sliding Window Attention</h3>
 <p>Full attention is O(n²); for very long contexts, we can't afford it. Sliding window attention limits each token to attend to the last W tokens (e.g., W=4096). Reduces complexity to O(n*W). Used in Mistral, LLaMA 2 Long.</p>
 <div class="table-wrap">
@@ -637,7 +637,7 @@ for step in range(max_tokens):
 <div class="section-block" id="working-code">
 <div class="section-marker">06 — Practice</div>
 <h2>Working Code Example</h2>
-<p>Let's load a pre-trained transformer and inspect its internal representations, attention weights, and how self-attention works in practice.</p>
+<p>Let's load a pre-trained transformer and inspect its internal representations, attention weights, and how <a class="concept-link" href="self-attention.html">self-attention</a> works in practice.</p>
 <div class="example-box">from transformers import AutoTokenizer, AutoModel
 import torch
 
@@ -663,7 +663,7 @@ print(f"Attention matrix shape: {attn.shape}")
 tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
 print("Tokens:", tokens)</div>
 <h3>Output Breakdown</h3>
-<p><strong>last_hidden_state:</strong> [1, 10, 768] — The final layer representations for each token. 768 is the hidden dimension of GPT-2. <strong>attentions:</strong> Tuple of 12 tensors (one per layer). Each is [batch, num_heads, seq_len, seq_len]. Shows which tokens the model attends to. <strong>tokens:</strong> ["The", "Ġtransformer", "Ġarchitecture", ...] — Note BPE tokenization breaks words; "Ġ" is space.</p>
+<p><strong>last_hidden_state:</strong> [1, 10, 768] — The final layer representations for each token. 768 is the hidden dimension of GPT-2. <strong>attentions:</strong> Tuple of 12 tensors (one per layer). Each is [batch, num_heads, seq_len, seq_len]. Shows which tokens the model attends to. <strong>tokens:</strong> ["The", "Ġtransformer", "Ġarchitecture", ...] — Note BPE <a class="concept-link" href="tokenization.html">tokenization</a> breaks words; "Ġ" is space.</p>
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Takeaway:</strong> Modern transformers are implemented in HuggingFace Transformers with a simple, consistent API across models. The attention mechanism is the core; everything else is engineering (layer norm, residuals, feed-forward, positional encoding).</span>
@@ -679,7 +679,7 @@ print("Tokens:", tokens)</div>
 <div class="method-num">1</div>
 <div class="method-body">
 <h3>Attention Mechanisms <em>— Multi-head, causal, sparse variants</em></h3>
-<p>Dive into self-attention, cross-attention, different mask types, and modern variants like sparse attention and linear attention. Compare trade-offs.</p>
+<p>Dive into <a class="concept-link" href="self-attention.html">self-attention</a>, <a class="concept-link" href="cross-attention.html">cross-attention</a>, different mask types, and modern variants like sparse attention and linear attention. Compare trade-offs.</p>
 <a href="attention.html" style="color: var(--indigo); text-decoration: none; font-weight: 600;">→ Attention Mechanisms</a>
 </div>
 </div>
@@ -695,7 +695,7 @@ print("Tokens:", tokens)</div>
 <div class="method-num">3</div>
 <div class="method-body">
 <h3>Transformer Architectures <em>— Encoder, decoder, encoder-decoder</em></h3>
-<p>Deep dive into encoder-only (BERT), decoder-only (GPT), and encoder-decoder (T5) designs. When to use each. Training objectives and fine-tuning.</p>
+<p>Deep dive into encoder-only (BERT), decoder-only (GPT), and encoder-decoder (T5) designs. When to use each. Training objectives and <a class="concept-link" href="finetuning.html">fine-tuning</a>.</p>
 <a href="transformer-arch.html" style="color: var(--indigo); text-decoration: none; font-weight: 600;">→ Transformer Architectures</a>
 </div>
 </div>
@@ -703,7 +703,7 @@ print("Tokens:", tokens)</div>
 <div class="method-num">4</div>
 <div class="method-body">
 <h3>KV Cache &amp; Efficiency <em>— Inference optimization, sparse attention</em></h3>
-<p>Master key-value caching, grouped-query attention, Flash Attention, speculative decoding. How production systems generate tokens at scale.</p>
+<p>Master key-value caching, grouped-query attention, Flash Attention, <a class="concept-link" href="speculative-decoding.html">speculative decoding</a>. How production systems generate tokens at scale.</p>
 <a href="kv-cache.html" style="color: var(--indigo); text-decoration: none; font-weight: 600;">→ KV Cache &amp; Efficiency</a>
 </div>
 </div>
@@ -729,14 +729,14 @@ print("Tokens:", tokens)</div>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Dao, T. et al. (2022).
-        <em>FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness.</em>
+        <em><a class="concept-link" href="flash-attn.html">FlashAttention</a>: Fast and <a class="concept-link" href="agent-memory.html">Memory</a>-Efficient Exact Attention with IO-Awareness.</em>
         arXiv:2205.14135. —
         <a href="https://arxiv.org/abs/2205.14135" target="_blank">arxiv:2205.14135 ↗</a>
 </li>
 <li>
 <span class="ref-badge badge-paper">Paper</span>
         Su, J. et al. (2021).
-        <em>RoFormer: Enhanced Transformer with Rotary Position Embedding.</em>
+        <em>RoFormer: Enhanced Transformer with Rotary Position <a class="concept-link" href="embeddings.html">Embedding</a>.</em>
         arXiv:2104.09864. —
         <a href="https://arxiv.org/abs/2104.09864" target="_blank">arxiv:2104.09864 ↗</a>
 </li>
@@ -756,11 +756,10 @@ print("Tokens:", tokens)</div>
         <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank">jalammar.github.io ↗</a>
 </li>
 </ul></div>
-
 <div class="section-block" id="learning-path">
 <div class="section-marker">LEARNING PATH</div>
 <h2>Learning Path</h2>
-<p>The transformer is the architectural foundation of all modern LLMs. Build your understanding layer by layer:</p>
+<p>The transformer is the architectural foundation of all modern <a class="concept-link" href="llms.html">LLMs</a>. Build your understanding layer by layer:</p>
 <div class="flow-diagram">
 <div class="flow-box">Linear Algebra<span class="flow-label">matrix multiply</span></div>
 <div class="flow-arrow">→</div>
@@ -773,21 +772,18 @@ print("Tokens:", tokens)</div>
 <div class="flow-box">Training<span class="flow-label">next-token prediction</span></div>
 </div>
 <div class="lp-step"><div class="lp-num">1</div><div class="lp-body"><h4>Implement attention in NumPy</h4><p>Write <code>softmax(Q @ K.T / sqrt(d_k)) @ V</code> from scratch. This 5-line calculation is the entire core of the transformer. Everything else is scaffolding.</p></div></div>
-<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Read "Attention Is All You Need"</h4><p>The 2017 paper is still the clearest description of the architecture. Focus on Figure 1 and Section 3. The math follows directly from your NumPy implementation.</p></div></div>
+<div class="lp-step"><div class="lp-num">2</div><div class="lp-body"><h4>Read "Attention Is All You Need"</h4><p>The 2017 paper is still the clearest description of the architecture. Focus on Figure 1 and Section 3. The math follows directly from your <a class="concept-link" href="numpy.html">NumPy</a> implementation.</p></div></div>
 <div class="lp-step"><div class="lp-num">3</div><div class="lp-body"><h4>Build a tiny GPT in PyTorch</h4><p>Andrej Karpathy's "nanoGPT" (GitHub) is the canonical exercise. Train a character-level model on Shakespeare. You'll see all the components fit together in &lt;300 lines.</p></div></div>
-<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Understand modern variants</h4><p>RoPE (rotary position encoding) replaced sinusoidal in most modern models. GQA (grouped query attention) replaced MHA for memory efficiency. SwiGLU replaced ReLU in the FFN. These are the differences between the original paper and Llama 3.</p></div></div>
+<div class="lp-step"><div class="lp-num">4</div><div class="lp-body"><h4>Understand modern variants</h4><p><a class="concept-link" href="rope.html">RoPE</a> (rotary position encoding) replaced sinusoidal in most modern models. GQA (grouped query attention) replaced MHA for <a class="concept-link" href="agent-memory.html">memory</a> efficiency. SwiGLU replaced ReLU in the FFN. These are the differences between the original paper and Llama 3.</p></div></div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="foundations.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Foundations</span></a>
-<a href="ml-core.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">ML Core</span></a>
-<a href="llms.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">LLMs</span></a>
-<a href="multimodal.html" class="rc-card" style="--rc-accent:#ec4899"><span class="rc-label">Multimodal</span></a>
-<a href="attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Attention Mechanisms</span></a>
+<a class="rc-card" href="foundations.html" style="--rc-accent:#64748b"><span class="rc-label">Foundations</span></a>
+<a class="rc-card" href="ml-core.html" style="--rc-accent:#64748b"><span class="rc-label">ML Core</span></a>
+<a class="rc-card" href="llms.html" style="--rc-accent:#64748b"><span class="rc-label">LLMs</span></a>
+<a class="rc-card" href="multimodal.html" style="--rc-accent:#ec4899"><span class="rc-label">Multimodal</span></a>
+<a class="rc-card" href="attention.html" style="--rc-accent:#64748b"><span class="rc-label">Attention Mechanisms</span></a>
 </div>
 </div>
 <footer class="page-footer">
@@ -806,7 +802,6 @@ print("Tokens:", tokens)</div>
       }
     })();
   </script>
-
 <nav class="concept-nav">
 <span></span>
 <span class="concept-nav-cat">Fundamentals &amp; Architecture</span>

@@ -512,13 +512,13 @@ Step 2 — Thought: I have results, now I should read top 3 abstracts
 Step 3 — Thought: I have enough context to write the summary
           Action: FINISH
           Output: "Here are the top 3 papers..."</div>
-<p>Each step depends on the previous observation. The agent reasons explicitly before acting. The observation updates context. This loop enables agents to recover from failures and adapt.</p>
+<p>Each step depends on the previous observation. The agent reasons explicitly before acting. The observation updates context. This loop enables <a class="concept-link" href="agents.html">agents</a> to recover from failures and adapt.</p>
 </div>
 <!-- ── 2. REACT ── -->
 <div class="section-block" id="react">
 <div class="section-marker">02 — Dominant Pattern</div>
 <h2>ReAct: Reason + Act Interleaved</h2>
-<p><strong>ReAct (Yao et al. 2022):</strong> interleave chain-of-thought reasoning (Thought) with concrete actions (Action/Observation) in the same context. Why it works: explicit Thought forces the model to commit to a plan before acting; Observation updates the context; looping gives recovery from errors.</p>
+<p><strong><a class="concept-link" href="react-prompting.html">ReAct</a> (Yao et al. 2022):</strong> interleave <a class="concept-link" href="chain-of-thought.html">chain-of-thought</a> reasoning (Thought) with concrete actions (Action/Observation) in the same context. Why it works: explicit Thought forces the model to commit to a plan before acting; Observation updates the context; looping gives recovery from errors.</p>
 <h3>Comparison: Naive vs CoT vs ReAct</h3>
 <div class="table-wrap">
 <table>
@@ -587,7 +587,7 @@ Action: finish("France's GDP per capita is approximately $44,853")</div>
 <div class="section-block" id="plan-execute">
 <div class="section-marker">03 — Structured Approach</div>
 <h2>Plan-and-Execute</h2>
-<p>Two-phase: (1) generate a full plan upfront (list of steps), (2) execute each step with a subagent or tool. Planner = LLM call that produces a list of steps; Executor = ReAct agent for each step, passing results forward.</p>
+<p>Two-phase: (1) generate a full plan upfront (list of steps), (2) execute each step with a subagent or tool. Planner = LLM call that produces a list of steps; Executor = <a class="concept-link" href="react-prompting.html">ReAct</a> agent for each step, passing results forward.</p>
 <h3>Advantages and Disadvantages</h3>
 <p><strong>Advantages:</strong> Plan is auditable, explainable, interruptible; enables parallelism (independent steps can run in parallel); stakeholders can review before execution. <strong>Disadvantages:</strong> upfront plan can be wrong; hard to re-plan mid-execution without restarting; rigid step decomposition fails on emerging needs.</p>
 <h3>Plan-Then-Execute Example</h3>
@@ -609,7 +609,7 @@ Step 1 result → Step 2 input → Step 3 input → ... → Step 5</div>
 <div class="section-block" id="reflection">
 <div class="section-marker">04 — Learning from Failure</div>
 <h2>Reflection and Self-Critique</h2>
-<p><strong>Reflexion (Shinn et al. 2023):</strong> after a failed attempt, generate a textual critique, store it in episodic memory, try again. <strong>Self-RAG:</strong> LLM decides whether to retrieve, generates, critiques its own answer for factuality. The reflection loop: generate → critique → refine → generate again.</p>
+<p><strong>Reflexion (Shinn et al. 2023):</strong> after a failed attempt, generate a textual critique, store it in episodic <a class="concept-link" href="agent-memory.html">memory</a>, try again. <strong>Self-<a class="concept-link" href="rag.html">RAG</a>:</strong> LLM decides whether to retrieve, generates, critiques its own answer for factuality. The reflection loop: generate → critique → refine → generate again.</p>
 <h3>Reflexion Loop Example</h3>
 <div class="example-box">Attempt 1: [write Python function]
 Test result: AssertionError — wrong output
@@ -657,9 +657,9 @@ Test result: All tests pass ✓</div>
 <div class="section-block" id="tree-search">
 <div class="section-marker">05 — Advanced Search</div>
 <h2>Tree Search and Monte Carlo Planning</h2>
-<p><strong>Tree of Thoughts (ToT):</strong> explore multiple reasoning paths simultaneously, backtrack from dead ends. <strong>MCTS for agents:</strong> score each candidate action with a value function (another LLM call), expand promising branches. <strong>o1/o3 test-time compute:</strong> a form of learned tree search — model runs internal reasoning traces and scores them.</p>
+<p><strong><a class="concept-link" href="tree-of-thoughts.html">Tree of Thoughts</a> (ToT):</strong> explore multiple reasoning paths simultaneously, backtrack from dead ends. <strong>MCTS for <a class="concept-link" href="agents.html">agents</a>:</strong> score each candidate action with a value function (another LLM call), expand promising branches. <strong>o1/o3 <a class="concept-link" href="test-time-compute.html">test-time compute</a>:</strong> a form of learned tree search — model runs internal reasoning traces and scores them.</p>
 <h3>Cost and Applicability</h3>
-<p>Tree search is expensive: N calls per step where N = branching factor. Explore 3 branches × 4 levels deep = 81 LLM calls. Reserve for high-stakes tasks: competition, formal verification, critical decisions. For most production agent tasks (tool-use, RAG), ReAct is 10× cheaper and works just as well.</p>
+<p>Tree search is expensive: N calls per step where N = branching factor. Explore 3 branches × 4 levels deep = 81 LLM calls. Reserve for high-stakes tasks: competition, formal verification, critical decisions. For most production agent tasks (tool-use, <a class="concept-link" href="rag.html">RAG</a>), <a class="concept-link" href="react-prompting.html">ReAct</a> is 10× cheaper and works just as well.</p>
 <h3>Tree of Thoughts Structure</h3>
 <div class="example-box">Task: prove a math theorem
 
@@ -680,7 +680,7 @@ Best path: A → A1 → complete proof</div>
 <div class="section-block" id="tool-selection">
 <div class="section-marker">06 — Execution</div>
 <h2>Tool Selection and Error Recovery</h2>
-<p>Tool selection failure modes: wrong tool chosen, correct tool with wrong args, tool returns error, infinite loop. Mitigations are critical for production reliability.</p>
+<p><a class="concept-link" href="tool-selection.html">Tool selection</a> failure modes: wrong tool chosen, correct tool with wrong args, tool returns error, infinite loop. Mitigations are critical for production reliability.</p>
 <h3>Mitigation Strategies</h3>
 <p><strong>Tool descriptions:</strong> must be unambiguous. Bad: "search". Good: "web_search(query: str) → list of {title, url, snippet}". <strong>Validation:</strong> validate tool args before calling. <strong>Max iterations:</strong> enforce a ceiling on loop depth. <strong>Error handling:</strong> handle tool errors gracefully, don't let exceptions bubble up.</p>
 <h3>Robust Tool-Call with Retry</h3>
@@ -701,9 +701,9 @@ Best path: A → A1 → complete proof</div>
 <div class="section-block" id="memory-state">
 <div class="section-marker">07 — State Management</div>
 <h2>Memory Types and State</h2>
-<p>Agents need multiple memory systems working together. Each serves a different purpose and has different constraints.</p>
+<p><a class="concept-link" href="agents.html">Agents</a> need multiple <a class="concept-link" href="agent-memory.html">memory</a> systems working together. Each serves a different purpose and has different constraints.</p>
 <h3>Four Memory Types</h3>
-<p><strong>Short-term (in-context):</strong> conversation history, scratchpad, tool results — limited by context window, cleared at session end. <strong>Long-term (external):</strong> vector store of past experiences, episodic memory, fact cache — persistent across sessions, queryable. <strong>Procedural (prompt):</strong> the agent's "skills" — encoded in system prompt, updated via prompt engineering, static within session. <strong>Checkpoint (persisted state):</strong> full graph state saved to DB (LangGraph pattern), enables pause/resume across sessions.</p>
+<p><strong>Short-term (in-context):</strong> conversation history, scratchpad, tool results — limited by <a class="concept-link" href="context-window.html">context window</a>, cleared at session end. <strong>Long-term (external):</strong> <a class="concept-link" href="vector-dbs.html">vector store</a> of past experiences, episodic memory, fact cache — persistent across sessions, queryable. <strong>Procedural (prompt):</strong> the agent's "skills" — encoded in system prompt, updated via prompt engineering, static within session. <strong>Checkpoint (persisted state):</strong> full graph state saved to DB (<a class="concept-link" href="langgraph.html">LangGraph</a> pattern), enables pause/resume across sessions.</p>
 <h3>Memory Comparison Table</h3>
 <div class="table-wrap">
 <table>
@@ -799,17 +799,14 @@ Best path: A → A1 → complete proof</div>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="agent-memory.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Memory</span></a>
-<a href="tool-use.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Tool Use</span></a>
-<a href="agent-frameworks.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Frameworks</span></a>
-<a href="multi-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Multi-Agent</span></a>
-<a href="react-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="agent-memory.html" style="--rc-accent:#06b6d4"><span class="rc-label">Memory</span></a>
+<a class="rc-card" href="tool-use.html" style="--rc-accent:#06b6d4"><span class="rc-label">Tool Use</span></a>
+<a class="rc-card" href="agent-frameworks.html" style="--rc-accent:#06b6d4"><span class="rc-label">Frameworks</span></a>
+<a class="rc-card" href="multi-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">Multi-Agent</span></a>
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
 </div>
 </div>
 <div class="page-footer">

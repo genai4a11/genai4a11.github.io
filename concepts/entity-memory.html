@@ -153,7 +153,7 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>What entity memory solves</h2>
-<p>Standard conversation buffers remember what was <em>said</em>. Entity memory remembers <em>facts about things</em>. The distinction matters: in a long conversation, you might mention "our CTO Sarah" in turn 2, "Sarah's team" in turn 8, "the engineering budget" in turn 15. A buffer memory might compress these into a vague summary. Entity memory tracks Sarah as an entity with attributes (role=CTO, team=engineering), so when you reference her 20 turns later, the model has structured, precise context.</p>
+<p>Standard conversation buffers remember what was <em>said</em>. Entity memory remembers <em>facts about things</em>. The distinction matters: in a long conversation, you might mention "our CTO Sarah" in turn 2, "Sarah's team" in turn 8, "the engineering budget" in turn 15. A buffer <a class="concept-link" href="agent-memory.html">memory</a> might compress these into a vague summary. Entity memory tracks Sarah as an entity with attributes (role=CTO, team=engineering), so when you reference her 20 turns later, the model has structured, precise context.</p>
 <p>Entity memory builds a lightweight knowledge graph from the conversation — a set of entities (nodes) with attributes (properties) and relationships (edges). This is especially valuable for: customer support (track customer's product, issue, history), personal assistants (track user's projects, people, preferences), and coding assistants (track codebase components, dependencies, recent changes).</p>
 </div>
 <div class="section-block" id="s2">
@@ -279,12 +279,12 @@ print(memory.entity_store.store)
 #  "Priya": "Priya is the ML lead on Mindmap.",
 #  "Mindmap": "Mindmap is a GenAI project..."}
 </code></pre>
-<p>LangChain's <code>ConversationEntityMemory</code> uses a separate LLM call after each turn to extract and update entity summaries. The entity store is injected at the start of the next prompt as structured context.</p>
+<p><a class="concept-link" href="langchain.html">LangChain</a>'s <code>ConversationEntityMemory</code> uses a separate LLM call after each turn to extract and update entity summaries. The entity store is injected at the start of the next prompt as structured context.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Knowledge graph memory</h2>
-<p>For complex entity relationships, upgrade from a flat attribute store to a proper knowledge graph. LangChain's <code>ConversationKGMemory</code> extracts (subject, predicate, object) triples:</p>
+<p>For complex entity relationships, upgrade from a flat attribute store to a proper knowledge graph. <a class="concept-link" href="langchain.html">LangChain</a>'s <code>ConversationKGMemory</code> extracts (subject, predicate, object) triples:</p>
 <pre><code class="language-python">from langchain.memory import ConversationKGMemory
 from langchain_anthropic import ChatAnthropic
 
@@ -337,21 +337,18 @@ print(memory.kg.get_triples())
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>Entity extraction adds latency per turn.</strong> Each user message triggers an extra LLM call to extract entities. For high-volume applications, batch entity extraction asynchronously after returning the response, or use a smaller/faster model exclusively for extraction (Haiku for extraction, Sonnet for responses).</p>
-<p><strong>Entity proliferation degrades quality.</strong> After a long conversation, the entity store might contain dozens of entities, most no longer relevant. Add a relevance threshold: only inject the top N entities most similar to the current query (using embedding similarity), not all of them.</p>
+<p><strong>Entity proliferation degrades quality.</strong> After a long conversation, the entity store might contain dozens of entities, most no longer relevant. Add a relevance threshold: only inject the top N entities most similar to the current query (using <a class="concept-link" href="embeddings.html">embedding</a> similarity), not all of them.</p>
 <p><strong>Ambiguous references are hard.</strong> "He said the project is delayed" — who is "he"? Which "project"? Coreference resolution is a hard NLP problem. Either restrict your domain (the agent always knows the current "active entity" from context) or add explicit disambiguation logic.</p>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="conversation-buffer.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Conversation Buffer</span></a>
-<a href="long-term-memory.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Long-term Memory</span></a>
-<a href="react-agent.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
-<a href="plan-and-execute.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Plan & Execute</span></a>
-<a href="reflection.html" class="rc-card" style="--rc-accent:#06b6d4"><span class="rc-label">Reflection / Critique</span></a>
+<a class="rc-card" href="conversation-buffer.html" style="--rc-accent:#06b6d4"><span class="rc-label">Conversation Buffer</span></a>
+<a class="rc-card" href="long-term-memory.html" style="--rc-accent:#06b6d4"><span class="rc-label">Long-term Memory</span></a>
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#06b6d4"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="plan-and-execute.html" style="--rc-accent:#06b6d4"><span class="rc-label">Plan &amp; Execute</span></a>
+<a class="rc-card" href="reflection.html" style="--rc-accent:#06b6d4"><span class="rc-label">Reflection / Critique</span></a>
 </div>
 </div>
 <footer>

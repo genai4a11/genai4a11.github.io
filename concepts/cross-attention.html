@@ -153,8 +153,8 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Cross-attention vs self-attention</h2>
-<p>In <strong>self-attention</strong>, queries, keys, and values all come from the same sequence — each position attends to every other position in the same sequence. In <strong>cross-attention</strong>, the queries come from one sequence (typically the decoder's hidden states) while the keys and values come from a different sequence (typically the encoder's output). This lets the decoder look up which parts of the source are most relevant for generating the next token.</p>
-<p>Cross-attention is the mechanism that connects encoder and decoder in seq2seq architectures like the original Transformer (Vaswani et al. 2017), T5, and BART. It also reappears in multimodal models (LLaVA, Flamingo) to fuse visual features into a language decoder.</p>
+<p>In <strong><a class="concept-link" href="self-attention.html">self-attention</a></strong>, queries, keys, and values all come from the same sequence — each position attends to every other position in the same sequence. In <strong>cross-attention</strong>, the queries come from one sequence (typically the decoder's hidden states) while the keys and values come from a different sequence (typically the encoder's output). This lets the decoder look up which parts of the source are most relevant for generating the next token.</p>
+<p>Cross-attention is the mechanism that connects encoder and decoder in seq2seq <a class="concept-link" href="transformer-arch.html">architectures</a> like the original Transformer (Vaswani et al. 2017), T5, and BART. It also reappears in <a class="concept-link" href="multimodal.html">multimodal</a> models (<a class="concept-link" href="llava.html">LLaVA</a>, Flamingo) to fuse visual features into a language decoder.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
@@ -211,13 +211,13 @@ class CrossAttention(nn.Module):
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Role in encoder-decoder models</h2>
-<p>In the original Transformer decoder, each layer has three sublayers: (1) masked self-attention over previously generated tokens, (2) <strong>cross-attention</strong> over the encoder output, and (3) a feed-forward network. The cross-attention sublayer is what allows the model to focus on relevant source tokens when generating each target token.</p>
+<p>In the original Transformer decoder, each layer has three sublayers: (1) masked <a class="concept-link" href="self-attention.html">self-attention</a> over previously generated tokens, (2) <strong>cross-attention</strong> over the encoder output, and (3) a feed-forward network. The cross-attention sublayer is what allows the model to focus on relevant source tokens when generating each target token.</p>
 <p>Modern variants like T5 follow the same pattern. During inference, the encoder processes the input once; the decoder runs cross-attention at every step, re-attending to encoder states. This is efficient because encoder keys and values can be cached for the entire generation.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Cross-attention in multimodal models</h2>
-<p>Cross-attention is the dominant mechanism for fusing modalities. In <strong>Flamingo</strong>, visual features from a frozen vision encoder are injected into a language model via cross-attention layers inserted between transformer blocks. In <strong>LLaVA</strong>, visual tokens are projected into the language model's embedding space and prepended to the text — effectively using the language model's self-attention as a form of cross-attention. In <strong>Stable Diffusion</strong>'s UNet, cross-attention fuses CLIP text embeddings with image features at multiple resolutions to condition the denoising process on the text prompt.</p>
+<p>Cross-attention is the dominant mechanism for fusing modalities. In <strong>Flamingo</strong>, visual features from a frozen vision encoder are injected into a language model via cross-attention layers inserted between transformer blocks. In <strong><a class="concept-link" href="llava.html">LLaVA</a></strong>, visual tokens are projected into the language model's <a class="concept-link" href="embeddings.html">embedding</a> space and prepended to the text — effectively using the language model's <a class="concept-link" href="self-attention.html">self-attention</a> as a form of cross-attention. In <strong><a class="concept-link" href="stable-diffusion.html">Stable Diffusion</a></strong>'s UNet, cross-attention fuses CLIP text <a class="concept-link" href="embeddings.html">embeddings</a> with image features at multiple resolutions to condition the denoising process on the text prompt.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
@@ -243,21 +243,18 @@ def plot_cross_attn(attn_weights, src_tokens, tgt_tokens, head=0):
 <ul>
 <li><strong>Key-value caching</strong>: In cross-attention during generation, K and V are always derived from the encoder output (which doesn't change). Cache them after the encoder pass to avoid recomputing every decoder step.</li>
 <li><strong>Padding masks</strong>: The encoder output has padding tokens for shorter sequences in a batch. Apply the encoder padding mask to cross-attention scores to prevent the decoder from attending to padding.</li>
-<li><strong>Decoder-only models</strong>: GPT-style decoder-only models have no cross-attention layer — they rely entirely on self-attention over a concatenated context (prompt + response). Cross-attention is specific to encoder-decoder architectures.</li>
+<li><strong>Decoder-only models</strong>: GPT-style decoder-only models have no cross-attention layer — they rely entirely on <a class="concept-link" href="self-attention.html">self-attention</a> over a concatenated context (prompt + response). Cross-attention is specific to encoder-decoder <a class="concept-link" href="transformer-arch.html">architectures</a>.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
-<a href="multi-head-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
-<a href="flash-attn.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
-<a href="rope.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RoPE</span></a>
-<a href="alibi.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">ALiBi</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="multi-head-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Multi-Head Attention</span></a>
+<a class="rc-card" href="flash-attn.html" style="--rc-accent:#64748b"><span class="rc-label">Flash Attention 2</span></a>
+<a class="rc-card" href="rope.html" style="--rc-accent:#64748b"><span class="rc-label">RoPE</span></a>
+<a class="rc-card" href="alibi.html" style="--rc-accent:#64748b"><span class="rc-label">ALiBi</span></a>
 </div>
 </div>
 <footer>

@@ -153,20 +153,20 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Why semantic caching</h2>
-<p>Traditional exact-match caching is useless for LLM apps — users phrase the same question in dozens of different ways. "What is RAG?" and "Can you explain Retrieval Augmented Generation?" should return the same cached answer. Semantic caching embeds each query and looks for existing cached responses with high cosine similarity. On cache hit, return the cached response immediately. On miss, call the LLM and cache the result.</p>
-<p>Hit rates for real applications: 30–60% for customer support chatbots (many repeated questions), 10–30% for general-purpose assistants. At $0.01 per GPT-4o call, a 40% hit rate saves $400 per 1000 queries.</p>
+<p>Traditional exact-match caching is useless for LLM apps — users phrase the same question in dozens of different ways. "What is <a class="concept-link" href="rag.html">RAG</a>?" and "Can you explain Retrieval Augmented Generation?" should return the same cached answer. Semantic caching embeds each query and looks for existing cached responses with high cosine similarity. On cache hit, return the cached response immediately. On miss, call the LLM and cache the result.</p>
+<p>Hit rates for real applications: 30–60% for customer support chatbots (many repeated questions), 10–30% for general-purpose assistants. At $0.01 per <a class="concept-link" href="gpt4o.html">GPT-4o</a> call, a 40% hit rate saves $400 per 1000 queries.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Architecture</h2>
 <p>A semantic cache sits between your application and the LLM API:</p>
 <ol>
-<li><strong>Query embedding</strong>: Embed the user query with a fast embedding model (text-embedding-3-small, $0.00002/1K tokens).</li>
+<li><strong>Query <a class="concept-link" href="embeddings.html">embedding</a></strong>: Embed the user query with a fast embedding model (text-embedding-3-small, $0.00002/1K tokens).</li>
 <li><strong>Similarity search</strong>: Search the cache for existing queries with cosine similarity &gt; threshold (typically 0.95).</li>
 <li><strong>Cache hit</strong>: Return cached response in &lt;10ms. No LLM call needed.</li>
 <li><strong>Cache miss</strong>: Call the LLM, cache the (query embedding, response) pair, return response.</li>
 </ol>
-<p>Cache store options: Redis with vector search (redis-py + RediSearch), Qdrant/Weaviate/Pinecone as vector stores, or in-memory with FAISS for development.</p>
+<p>Cache store options: Redis with vector search (redis-py + RediSearch), <a class="concept-link" href="qdrant.html">Qdrant</a>/<a class="concept-link" href="weaviate.html">Weaviate</a>/<a class="concept-link" href="pinecone.html">Pinecone</a> as <a class="concept-link" href="vector-dbs.html">vector stores</a>, or in-<a class="concept-link" href="agent-memory.html">memory</a> with FAISS for development.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -279,7 +279,7 @@ print(response2["gptcache"])  # {"cache_hit": True}
 <li><strong>TTL (time-to-live)</strong>: Expire entries after N hours/days. Good for facts that change (stock prices, news). Typical TTL: 24h for general knowledge, 1h for current events.</li>
 <li><strong>Max cache size</strong>: Evict least-recently-used (LRU) entries when the cache exceeds a size limit. Prevents unbounded growth.</li>
 <li><strong>Manual invalidation</strong>: When you update the underlying data (e.g. product documentation changes), purge related cache entries. Tag entries with source document IDs for targeted invalidation.</li>
-<li><strong>System prompt versioning</strong>: Cache entries should include a hash of the system prompt. When you change the system prompt, all existing cache entries are invalid.</li>
+<li><strong>System <a class="concept-link" href="prompt-versioning.html">prompt versioning</a></strong>: Cache entries should include a hash of the system prompt. When you change the system prompt, all existing cache entries are invalid.</li>
 </ul>
 </div>
 <div class="section-block" id="s6">
@@ -314,22 +314,19 @@ print(response2["gptcache"])  # {"cache_hit": True}
 <h2>Gotchas</h2>
 <ul>
 <li><strong>Threshold calibration</strong>: Too high (0.99) → almost no hits. Too low (0.85) → wrong answers returned for semantically similar but different questions. Test your threshold on a sample of real queries before deploying.</li>
-<li><strong>Context-dependent queries</strong>: "What did I ask earlier?" or "Summarise the above" contain implicit context that the embedding doesn't capture. Don't cache multi-turn conversations — only single-turn stateless queries.</li>
+<li><strong>Context-dependent queries</strong>: "What did I ask earlier?" or "Summarise the above" contain implicit context that the <a class="concept-link" href="embeddings.html">embedding</a> doesn't capture. Don't cache multi-turn conversations — only single-turn stateless queries.</li>
 <li><strong>Personalized responses</strong>: If responses are personalised (user name, account details), cached responses may be wrong for different users. Either don't cache personalised queries, or include the personalisation key in the cache key.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="vllm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
-<a href="ollama.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
-<a href="tgi.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">TGI (HF)</span></a>
-<a href="sglang.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">SGLang</span></a>
-<a href="llm-router.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">LLM Router</span></a>
+<a class="rc-card" href="vllm.html" style="--rc-accent:#64748b"><span class="rc-label">vLLM</span></a>
+<a class="rc-card" href="ollama.html" style="--rc-accent:#64748b"><span class="rc-label">Ollama</span></a>
+<a class="rc-card" href="tgi.html" style="--rc-accent:#64748b"><span class="rc-label">TGI (HF)</span></a>
+<a class="rc-card" href="sglang.html" style="--rc-accent:#64748b"><span class="rc-label">SGLang</span></a>
+<a class="rc-card" href="llm-router.html" style="--rc-accent:#64748b"><span class="rc-label">LLM Router</span></a>
 </div>
 </div>
 <footer>

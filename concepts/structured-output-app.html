@@ -442,7 +442,7 @@
 <div class="section-block" id="problem-definition">
 <div class="section-marker">01 — Context</div>
 <h2>The Parsing Problem</h2>
-<p>LLMs generate text token-by-token, unconstrained. For structured extraction — entity recognition, classification, JSON generation — we need guaranteed outputs matching a schema. Naive approach: ask the LLM to return JSON, parse it, pray it's valid. This fails regularly.</p>
+<p><a class="concept-link" href="llms.html">LLMs</a> generate text token-by-token, unconstrained. For structured extraction — entity recognition, classification, JSON generation — we need guaranteed outputs matching a schema. Naive approach: ask the LLM to return JSON, parse it, pray it's valid. This fails regularly.</p>
 <h3>Common Failures</h3>
 <div class="table-wrap">
 <table>
@@ -468,13 +468,13 @@
 <div class="section-block" id="approaches">
 <div class="section-marker">02 — Solutions</div>
 <h2>Three Approaches to Structured Generation</h2>
-<p>Different techniques exist, ranging from simple to sophisticated. Choose based on robustness needs, latency budget, and what your model supports.</p>
+<p>Different techniques exist, ranging from simple to sophisticated. Choose based on robustness needs, <a class="concept-link" href="latency-budget.html">latency budget</a>, and what your model supports.</p>
 <h3>Approach 1: Native JSON Mode (Simple)</h3>
-<p><strong>How:</strong> Some LLMs (Claude, GPT-4) support a "JSON mode" flag that constrains output to valid JSON. <strong>Pros:</strong> Simple, fast, one API parameter. <strong>Cons:</strong> Only validates JSON format, not schema adherence. Still need client-side validation. <strong>Best for:</strong> Quick prototypes, high-confidence tasks.</p>
+<p><strong>How:</strong> Some <a class="concept-link" href="llms.html">LLMs</a> (Claude, GPT-4) support a "<a class="concept-link" href="json-mode.html">JSON mode</a>" flag that constrains output to valid JSON. <strong>Pros:</strong> Simple, fast, one API parameter. <strong>Cons:</strong> Only validates JSON format, not schema adherence. Still need client-side validation. <strong>Best for:</strong> Quick prototypes, high-confidence tasks.</p>
 <h3>Approach 2: Post-Processing &amp; Retry (Practical)</h3>
-<p><strong>How:</strong> Generate response, validate against schema, retry if invalid. Use Instructor library for this. <strong>Pros:</strong> Works with any LLM, simple to implement, handles ambiguous schemas. <strong>Cons:</strong> Latency overhead (retries add 100–500ms), not guaranteed to succeed after N retries. <strong>Best for:</strong> Production systems where reliability matters and latency is acceptable.</p>
+<p><strong>How:</strong> Generate response, validate against schema, retry if invalid. Use <a class="concept-link" href="instructor.html">Instructor</a> library for this. <strong>Pros:</strong> Works with any LLM, simple to implement, handles ambiguous schemas. <strong>Cons:</strong> Latency overhead (retries add 100–500ms), not guaranteed to succeed after N retries. <strong>Best for:</strong> Production systems where reliability matters and latency is acceptable.</p>
 <h3>Approach 3: Constrained Decoding (Guaranteed)</h3>
-<p><strong>How:</strong> Use Outlines or LMQL to enforce constraints at the token level. At each step, only allow tokens that keep output schema-valid. <strong>Pros:</strong> Guaranteed valid output, no retries needed. <strong>Cons:</strong> Requires access to model logits, only works with certain inference engines (vLLM, Ollama). <strong>Best for:</strong> Self-hosted models, strict schema requirements.</p>
+<p><strong>How:</strong> Use <a class="concept-link" href="outlines.html">Outlines</a> or <a class="concept-link" href="lmql.html">LMQL</a> to enforce constraints at the token level. At each step, only allow tokens that keep output schema-valid. <strong>Pros:</strong> Guaranteed valid output, no retries needed. <strong>Cons:</strong> Requires access to model logits, only works with certain inference engines (<a class="concept-link" href="vllm.html">vLLM</a>, <a class="concept-link" href="ollama.html">Ollama</a>). <strong>Best for:</strong> Self-hosted models, strict schema requirements.</p>
 <div class="table-wrap">
 <table>
 <thead>
@@ -496,7 +496,7 @@
 <div class="section-block" id="instructor-deep">
 <div class="section-marker">03 — Instructor Library</div>
 <h2>Instructor: Structured Extraction at Scale</h2>
-<p>Instructor is a Python library (works with many LLM APIs) that wraps LLMs and enforces Pydantic schema compliance. Define your data type as a Pydantic model, call the LLM, get back validated objects. Simple and powerful.</p>
+<p><a class="concept-link" href="instructor.html">Instructor</a> is a Python library (works with many LLM APIs) that wraps <a class="concept-link" href="llms.html">LLMs</a> and enforces Pydantic schema compliance. Define your data type as a Pydantic model, call the LLM, get back validated objects. Simple and powerful.</p>
 <h3>Core Pattern</h3>
 <p><strong>Step 1:</strong> Define Pydantic model (your schema). <strong>Step 2:</strong> Create instructor client. <strong>Step 3:</strong> Call LLM with response_model=YourModel. <strong>Step 4:</strong> Get back validated instance. <strong>Step 5:</strong> Retries happen transparently if validation fails.</p>
 <div class="example-box">from instructor import Instructor
@@ -540,9 +540,9 @@ print(person.role)  # "Software Engineer"
 <div class="section-block" id="outlines-overview">
 <div class="section-marker">04 — Constrained Decoding</div>
 <h2>Outlines: Token-Level Schema Enforcement</h2>
-<p>Outlines (formerly Guides) is a framework for constrained decoding. It modifies the LLM's generation to only produce tokens that maintain schema validity. Zero failures, by design.</p>
+<p><a class="concept-link" href="outlines.html">Outlines</a> (formerly Guides) is a framework for <a class="concept-link" href="constrained-decoding.html">constrained decoding</a>. It modifies the LLM's generation to only produce tokens that maintain schema validity. Zero failures, by design.</p>
 <h3>How Outlines Works</h3>
-<p><strong>Tokenization:</strong> Convert schema (JSON Schema, Pydantic, regex) to finite automaton. <strong>Generation:</strong> At each token, mask invalid options based on automaton state. LLM can only choose valid tokens. <strong>Output:</strong> Generated text is guaranteed valid schema.</p>
+<p><strong><a class="concept-link" href="tokenization.html">Tokenization</a>:</strong> Convert schema (JSON Schema, Pydantic, regex) to finite automaton. <strong>Generation:</strong> At each token, mask invalid options based on automaton state. LLM can only choose valid tokens. <strong>Output:</strong> Generated text is guaranteed valid schema.</p>
 <h3>Comparison with Instructor</h3>
 <div class="table-wrap">
 <table>
@@ -567,7 +567,7 @@ print(person.role)  # "Software Engineer"
 <div class="section-block" id="pydantic-schemas">
 <div class="section-marker">05 — Schema Definition</div>
 <h2>Pydantic Schemas for Extraction</h2>
-<p>Whether using Instructor, Outlines, or native JSON mode, define schemas with Pydantic. It's the standard for Python-based LLM extraction.</p>
+<p>Whether using <a class="concept-link" href="instructor.html">Instructor</a>, <a class="concept-link" href="outlines.html">Outlines</a>, or native <a class="concept-link" href="json-mode.html">JSON mode</a>, define schemas with Pydantic. It's the standard for Python-based LLM extraction.</p>
 <h3>Writing Good Extraction Schemas</h3>
 <div class="methods-list">
 <div class="method-card">
@@ -644,9 +644,9 @@ class ReviewExtraction(BaseModel):
 <div class="section-block" id="error-handling">
 <div class="section-marker">06 — Robustness</div>
 <h2>Error Handling and Retry Strategies</h2>
-<p>Even with Instructor's automatic retries, some extractions fail. Plan for it.</p>
+<p>Even with <a class="concept-link" href="instructor.html">Instructor</a>'s automatic retries, some extractions fail. Plan for it.</p>
 <h3>Common Failure Patterns</h3>
-<p><strong>LLM refusal:</strong> LLM declines to extract (safety filter). Handle gracefully. <strong>Ambiguous input:</strong> Text doesn't clearly contain requested data. Return Optional None instead of hallucinating. <strong>Timeout:</strong> Extraction takes &gt;30s (stuck in retry loop). Implement max_retries. <strong>Malformed JSON:</strong> Rare with Instructor, but can happen with native JSON mode.</p>
+<p><strong>LLM refusal:</strong> LLM declines to extract (<a class="concept-link" href="safety.html">safety</a> filter). Handle gracefully. <strong>Ambiguous input:</strong> Text doesn't clearly contain requested data. Return Optional None instead of hallucinating. <strong>Timeout:</strong> Extraction takes &gt;30s (stuck in retry loop). Implement max_retries. <strong>Malformed JSON:</strong> Rare with Instructor, but can happen with native <a class="concept-link" href="json-mode.html">JSON mode</a>.</p>
 <h3>Best Practices</h3>
 <div class="table-wrap">
 <table>
@@ -673,9 +673,9 @@ class ReviewExtraction(BaseModel):
 <h2>Production Extraction Patterns</h2>
 <p>Structured extraction at scale requires monitoring, batching, and fallbacks.</p>
 <h3>Patterns for Production</h3>
-<p><strong>Batch extraction:</strong> Queue incoming tasks, extract in batches (10–100). Cheaper and faster than one-by-one. <strong>Caching:</strong> Same input → same output. Cache results for duplicate texts. <strong>Model selection:</strong> Use fast models (Haiku) for simple schemas, larger models (Sonnet) for complex ones. <strong>Monitoring:</strong> Track success rate, latency, cost per extraction. Alert on drops. <strong>Fallback:</strong> If extraction fails, either return None, use rule-based fallback, or queue for human review.</p>
+<p><strong>Batch extraction:</strong> Queue incoming tasks, extract in batches (10–100). Cheaper and faster than one-by-one. <strong>Caching:</strong> Same input → same output. Cache results for duplicate texts. <strong><a class="concept-link" href="model-selection.html">Model selection</a>:</strong> Use fast models (Haiku) for simple schemas, larger models (Sonnet) for complex ones. <strong>Monitoring:</strong> Track success rate, latency, cost per extraction. Alert on drops. <strong>Fallback:</strong> If extraction fails, either return None, use rule-based fallback, or queue for human review.</p>
 <h3>Example: Production Extraction Pipeline</h3>
-<p>1. Receive document. 2. Check cache. 3. If miss, queue extraction. 4. Call Instructor with timeout=10s, max_retries=2. 5. If success, cache result, return. 6. If fail after retries, log + route to human review queue. 7. Monitor: track success%, avg latency, cost/task.</p>
+<p>1. Receive document. 2. Check cache. 3. If miss, queue extraction. 4. Call <a class="concept-link" href="instructor.html">Instructor</a> with timeout=10s, max_retries=2. 5. If success, cache result, return. 6. If fail after retries, log + route to human review queue. 7. Monitor: track success%, avg latency, cost/task.</p>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Cost optimization:</strong> Structured extraction can be expensive at scale. 100k tasks × $0.001 per task = $100 base, plus retries. Optimize by: reducing schema complexity, using cheaper models where possible, caching aggressively.</span>
@@ -688,13 +688,13 @@ class ReviewExtraction(BaseModel):
 <div class="ref-group-title">Child Concepts</div>
 <ul class="ref-list">
 <li><a href="instructor-app.html">Instructor</a> — Python library for structured extraction</li>
-<li><a href="outlines-app.html">Outlines</a> — Constrained decoding framework</li>
+<li><a href="outlines-app.html">Outlines</a> — <a class="concept-link" href="constrained-decoding.html">Constrained decoding</a> framework</li>
 <li><a href="marvin.html">Marvin</a> — High-level structured extraction library</li>
 </ul>
 <div class="ref-group-title">Related Concepts</div>
 <ul class="ref-list">
 <li><a href="output-control.html">Output Control</a> — Controlling LLM generation format</li>
-<li><a href="function-calling.html">Function Calling</a> — Tool use and structured generation</li>
+<li><a href="function-calling.html">Function Calling</a> — <a class="concept-link" href="tool-use.html">Tool use</a> and structured generation</li>
 <li><a href="programmatic-prompting.html">Programmatic Prompting</a> — DSLs for LLM control</li>
 </ul>
 <div class="ref-group-title">Papers &amp; Resources</div>
@@ -713,17 +713,14 @@ class ReviewExtraction(BaseModel):
       </li>
 </ul>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="rag-systems.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">RAG Systems</span></a>
-<a href="code-assist.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Code Assistants</span></a>
-<a href="database-query.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Text-to-Data</span></a>
-<a href="voice-agents.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Voice Agents</span></a>
-<a href="doc-processing.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Document Processing</span></a>
+<a class="rc-card" href="rag-systems.html" style="--rc-accent:#64748b"><span class="rc-label">RAG Systems</span></a>
+<a class="rc-card" href="code-assist.html" style="--rc-accent:#64748b"><span class="rc-label">Code Assistants</span></a>
+<a class="rc-card" href="database-query.html" style="--rc-accent:#64748b"><span class="rc-label">Text-to-Data</span></a>
+<a class="rc-card" href="voice-agents.html" style="--rc-accent:#64748b"><span class="rc-label">Voice Agents</span></a>
+<a class="rc-card" href="doc-processing.html" style="--rc-accent:#64748b"><span class="rc-label">Document Processing</span></a>
 </div>
 </div>
 <footer class="page-footer">

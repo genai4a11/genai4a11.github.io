@@ -153,17 +153,17 @@
 <div class="section-block" id="s1">
 <div class="section-marker">SECTION 01</div>
 <h2>Encoder-decoder architecture</h2>
-<p>Encoder-decoder transformers consist of two stacks. The <strong>encoder</strong> processes the full source sequence with bidirectional self-attention, producing contextualised representations for every input token. The <strong>decoder</strong> generates the output sequence autoregressively: at each step, it attends to its own previously generated tokens (via causal self-attention) and to the encoder's output (via cross-attention). This two-stage design naturally fits tasks where you read an entire input before generating output: translation, summarisation, question answering.</p>
+<p>Encoder-decoder <a class="concept-link" href="transformers.html">transformers</a> consist of two stacks. The <strong>encoder</strong> processes the full source sequence with bidirectional <a class="concept-link" href="self-attention.html">self-attention</a>, producing contextualised representations for every input token. The <strong>decoder</strong> generates the output sequence autoregressively: at each step, it attends to its own previously generated tokens (via causal self-attention) and to the encoder's output (via <a class="concept-link" href="cross-attention.html">cross-attention</a>). This two-stage design naturally fits tasks where you read an entire input before generating output: translation, summarisation, question answering.</p>
 </div>
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>T5: text-to-text unification</h2>
-<p>T5 (Raffel et al. 2020, Google) reframes all NLP tasks as text-to-text: both input and output are always text strings. Translation: <code>"translate English to German: The cat sat on the mat"</code> → <code>"Die Katze saß auf der Matte"</code>. Summarisation: <code>"summarize: [long article]"</code> → <code>"[summary]"</code>. Classification: <code>"sst2 sentence: This movie was great"</code> → <code>"positive"</code>. This unification allows training a single model on diverse tasks with a shared format, which proved highly effective — T5-11B set state-of-the-art on many benchmarks in 2020.</p>
+<p>T5 (Raffel et al. 2020, Google) reframes all NLP tasks as text-to-text: both input and output are always text strings. Translation: <code>"translate English to German: The cat sat on the mat"</code> → <code>"Die Katze saß auf der Matte"</code>. Summarisation: <code>"summarize: [long article]"</code> → <code>"[summary]"</code>. Classification: <code>"sst2 sentence: This movie was great"</code> → <code>"positive"</code>. This unification allows training a single model on diverse tasks with a shared format, which proved highly effective — T5-11B set state-of-the-art on many <a class="concept-link" href="benchmarks.html">benchmarks</a> in 2020.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Relative position bias in T5</h2>
-<p>T5 uses relative position biases instead of sinusoidal PE or learned absolute positions. A learned bias b(i-j) is added to attention scores, where i-j is the relative distance between query and key. Distances beyond a threshold are bucketed together. This is simpler than RoPE but similar in spirit — attention scores depend on relative rather than absolute positions, giving better generalisation to unseen lengths.</p>
+<p>T5 uses relative position biases instead of <a class="concept-link" href="sinusoidal-pe.html">sinusoidal PE</a> or learned absolute positions. A learned bias b(i-j) is added to attention scores, where i-j is the relative distance between query and key. Distances beyond a threshold are bucketed together. This is simpler than <a class="concept-link" href="rope.html">RoPE</a> but similar in spirit — attention scores depend on relative rather than absolute positions, giving better generalisation to unseen lengths.</p>
 </div>
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
@@ -215,9 +215,9 @@ print(tokenizer.decode(outputs[0], skip_special_tokens=True))
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>When to use enc-dec vs decoder-only</h2>
-<p>Use <strong>encoder-decoder</strong> when: (1) you have a fixed source that needs to be fully read before generating output (translation, summarisation), (2) you need strong bidirectional context in the input, (3) you're fine-tuning a specialised seq2seq model for a specific task pair.</p>
-<p>Use <strong>decoder-only</strong> (GPT-style) when: (1) you're doing open-ended generation, chat, or instruction following, (2) you want a single model that can handle diverse tasks via prompting, (3) you're working with frontier-scale models (GPT-4, Claude, Llama) which are all decoder-only.</p>
-<p>The industry has largely converged on decoder-only for general-purpose LLMs, but encoder-decoder models like NLLB-200 and mBART remain dominant for production translation.</p>
+<p>Use <strong>encoder-decoder</strong> when: (1) you have a fixed source that needs to be fully read before generating output (translation, summarisation), (2) you need strong bidirectional context in the input, (3) you're <a class="concept-link" href="finetuning.html">fine-tuning</a> a specialised seq2seq model for a specific task pair.</p>
+<p>Use <strong>decoder-only</strong> (GPT-style) when: (1) you're doing open-ended generation, chat, or instruction following, (2) you want a single model that can handle diverse tasks via <a class="concept-link" href="prompting.html">prompting</a>, (3) you're working with frontier-scale models (GPT-4, Claude, Llama) which are all decoder-only.</p>
+<p>The industry has largely converged on decoder-only for general-purpose <a class="concept-link" href="llms.html">LLMs</a>, but encoder-decoder models like NLLB-200 and mBART remain dominant for production translation.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
@@ -229,22 +229,19 @@ print(tokenizer.decode(outputs[0], skip_special_tokens=True))
 <h2>Gotchas</h2>
 <ul>
 <li><strong>Decoder input_ids vs labels</strong>: In HuggingFace, T5 expects <code>input_ids</code> for the encoder and <code>labels</code> for the decoder target. The library handles teacher-forcing automatically — don't manually construct decoder_input_ids unless you need custom decoding.</li>
-<li><strong>Flan-T5 for zero-shot</strong>: Vanilla T5 requires task-specific fine-tuning. Flan-T5 (instruction-tuned T5) can handle zero-shot and few-shot tasks. For most use cases, start with <code>google/flan-t5-xl</code>.</li>
+<li><strong>Flan-T5 for <a class="concept-link" href="zero-shot.html">zero-shot</a></strong>: Vanilla T5 requires task-specific <a class="concept-link" href="finetuning.html">fine-tuning</a>. Flan-T5 (instruction-tuned T5) can handle zero-shot and <a class="concept-link" href="few-shot.html">few-shot</a> tasks. For most use cases, start with <code>google/flan-t5-xl</code>.</li>
 <li><strong>Speed vs GPT</strong>: Enc-dec models are slower at inference than same-parameter decoder-only models because you run two stacks. For real-time generation, decoder-only is usually faster per token.</li>
 </ul>
 </div>
 </div>
-
-
-
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
-<a href="encoder-only.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">BERT / Encoder-only</span></a>
-<a href="decoder-only.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">GPT / Decoder-only</span></a>
-<a href="mamba-ssm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Mamba SSM</span></a>
-<a href="hybrid-llm.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Hybrid LLM Arch</span></a>
-<a href="self-attention.html" class="rc-card" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
+<a class="rc-card" href="encoder-only.html" style="--rc-accent:#64748b"><span class="rc-label">BERT / Encoder-only</span></a>
+<a class="rc-card" href="decoder-only.html" style="--rc-accent:#64748b"><span class="rc-label">GPT / Decoder-only</span></a>
+<a class="rc-card" href="mamba-ssm.html" style="--rc-accent:#64748b"><span class="rc-label">Mamba SSM</span></a>
+<a class="rc-card" href="hybrid-llm.html" style="--rc-accent:#64748b"><span class="rc-label">Hybrid LLM Arch</span></a>
+<a class="rc-card" href="self-attention.html" style="--rc-accent:#64748b"><span class="rc-label">Self-Attention</span></a>
 </div>
 </div>
 <footer>
