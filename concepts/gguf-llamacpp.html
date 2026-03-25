@@ -295,6 +295,28 @@ for f in ["llama3.1-8b-f16.gguf", "llama3.1-8b-q4km.gguf"]:
 <p><strong>Model quality varies by quantisation and task.</strong> Q4_K_M is excellent for coding and factual tasks but can degrade noticeably on nuanced reasoning compared to Q8. Always benchmark the quantised model on a representative sample of your actual use cases before committing to a quantisation level in production.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>GGUF Quantization Levels Reference</h2>
+<p>GGUF (GPT-Generated Unified Format) is the standard file format for quantized models compatible with llama.cpp and its ecosystem. It packages model weights, tokenizer, and metadata into a single portable file that can be loaded and run on CPU, GPU, or mixed CPU+GPU configurations with no additional dependencies beyond the llama.cpp runtime.</p>
+<table>
+<thead><tr><th>Quantization</th><th>Bits/Weight</th><th>File Size (7B)</th><th>Quality vs FP16</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Q2_K</td><td>~2.6</td><td>~2.8GB</td><td>Noticeable degradation</td><td>Extreme memory limits</td></tr>
+<tr><td>Q4_K_M</td><td>~4.8</td><td>~4.1GB</td><td>Good</td><td>Recommended default</td></tr>
+<tr><td>Q5_K_M</td><td>~5.7</td><td>~4.8GB</td><td>Very good</td><td>Quality-focused</td></tr>
+<tr><td>Q6_K</td><td>~6.6</td><td>~5.5GB</td><td>Near lossless</td><td>Max quality local</td></tr>
+<tr><td>Q8_0</td><td>8</td><td>~7.0GB</td><td>Near identical to FP16</td><td>Reference quality</td></tr>
+</tbody>
+</table>
+<p>The K-quants (Q4_K_M, Q5_K_M, Q6_K) use a more sophisticated quantization scheme that applies different bit widths to different weight groups based on their sensitivity to precision loss. Attention projection weights, which are most sensitive, receive higher precision allocation; feed-forward weights, which tolerate more compression, receive lower precision. This mixed-precision approach within a single quantization level produces better quality-per-bit than uniform quantization schemes like Q4_0.</p>
+<p>GPU offloading with llama.cpp is controlled by the n_gpu_layers parameter, which specifies how many transformer layers to load onto the GPU. Setting n_gpu_layers=-1 offloads all layers to GPU (fastest, requires full model VRAM); partial offloading (e.g., n_gpu_layers=20) runs some layers on GPU and the rest on CPU. The optimal split depends on available VRAM — keeping as many layers on GPU as possible while leaving ~1GB of VRAM headroom for the KV cache and activation buffers produces the best latency/memory trade-off.</p>
+
+<p>Context length and KV cache memory scale linearly with the configured n_ctx parameter in llama.cpp. A 7B model with Q4_K_M quantization uses about 4GB for weights; adding an 8K context window for a batch of 4 concurrent requests adds another 1–2GB of KV cache memory. Planning context allocation is essential for avoiding OOM errors during peak load — setting n_ctx too generously for a serving scenario with multiple concurrent users can exhaust available VRAM and cause inference failures on requests that arrive while long contexts are in flight.</p>
+
+<p>llama.cpp's server mode provides an OpenAI-compatible REST API that allows any application built against the OpenAI SDK to run against a local GGUF model with only a base URL change. The server supports parallel slot processing, where multiple requests share the GPU compute in a round-robin scheduling pattern. For CPU-only deployments on systems with many cores, the --threads parameter should be set to the number of physical cores (not hyperthreads), as hyperthreading provides minimal benefit for the matrix multiplication operations that dominate LLM inference workloads.</p>
+
+<p>Batch inference with llama.cpp processes multiple prompts in a single forward pass when the --parallel flag is set. This is particularly useful for offline batch evaluation, dataset annotation, or generating multiple completions for the same prompt for self-consistency voting. The batch size is bounded by available KV cache memory — each concurrent sequence requires its own KV cache slots — so larger batches require either more memory or a smaller per-sequence context allocation.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

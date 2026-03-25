@@ -277,6 +277,28 @@ trainer.train()
 <p><strong>Mixtral <a class="concept-link" href="agent-memory.html">memory</a></strong>: Despite only 13B active parameters, Mixtral 8x7B needs to load all 47B parameters. At fp16 this requires ~90GB VRAM. In practice, use 4-bit (48GB) or access via API for casual use.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Mistral Model Family Comparison</h2>
+<p>Mistral AI has released a series of open-weight models that have consistently punched above their parameter count in benchmark performance, largely through architectural innovations like sliding window attention, grouped-query attention, and mixture-of-experts scaling. The Mistral model family spans a wide range of capability and deployment profiles.</p>
+<table>
+<thead><tr><th>Model</th><th>Parameters</th><th>Architecture</th><th>Context</th><th>Strength</th></tr></thead>
+<tbody>
+<tr><td>Mistral 7B</td><td>7B dense</td><td>GQA + SWA</td><td>32K</td><td>Efficient baseline</td></tr>
+<tr><td>Mixtral 8x7B</td><td>47B MoE (13B active)</td><td>Sparse MoE</td><td>32K</td><td>Quality at low cost</td></tr>
+<tr><td>Mixtral 8x22B</td><td>141B MoE (39B active)</td><td>Sparse MoE</td><td>65K</td><td>Near-frontier open</td></tr>
+<tr><td>Mistral Large</td><td>Proprietary</td><td>Dense</td><td>128K</td><td>Frontier tasks</td></tr>
+<tr><td>Mistral Small</td><td>~22B</td><td>Dense</td><td>128K</td><td>Cost-efficient</td></tr>
+</tbody>
+</table>
+<p>Sliding window attention (SWA), used in the original Mistral 7B, limits each token's attention span to a fixed window of W preceding tokens rather than the full sequence. This reduces the attention complexity from O(n²) to O(n·W), enabling efficient processing of long sequences with a fixed memory footprint per layer. However, information from tokens outside the window is only accessible through earlier layers via residual connections, which can limit the model's ability to reason over very long contexts compared to full attention models with equivalent context length.</p>
+<p>The Mixtral MoE architecture activates only 2 of 8 experts per token during inference, meaning only about 13B parameters are active per forward pass despite the 47B total parameter count. This provides the representational capacity benefit of a larger model (more total parameters = more knowledge) at the computational cost of a smaller model. The router mechanism that selects which experts to activate per token is trained end-to-end with the rest of the model and is not explicitly supervised to specialize experts in particular domains.</p>
+
+<p>Mistral's function calling support follows the same JSON schema pattern as OpenAI's tool use API, making code that targets one provider straightforward to adapt for the other. The function definitions are injected into the system prompt in a structured format that the model has been fine-tuned to recognize and respond to with properly formatted JSON tool calls. Response parsing is handled by the client library, which detects tool call responses and separates them from natural language content in the model's output.</p>
+
+<p>The Mistral tokenizer uses a byte-pair encoding vocabulary derived from SentencePiece, which handles multilingual text efficiently by encoding rare characters and Unicode symbols as byte sequences rather than out-of-vocabulary tokens. This design means Mistral models can process any UTF-8 text without failures, but multilingual content may tokenize at a higher token-per-word ratio than English, which affects cost estimation and context window utilization calculations for non-English use cases. Planning for 1.5–3× the token count for Chinese, Japanese, and Arabic text compared to equivalent English content is a reasonable heuristic.</p>
+
+<p>Mistral's commitment to releasing model weights under the Apache 2.0 license has made the Mistral model family a popular choice for applications requiring full ownership of the model artifacts. Apache 2.0 permits commercial use, modification, and redistribution without royalty obligations, enabling organizations to self-host, fine-tune, and distribute derivative models without legal restrictions. This licensing approach differs from Llama's custom community license, which imposes usage restrictions above certain user thresholds.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

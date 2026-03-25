@@ -273,6 +273,44 @@ print("Claude Haiku:", monthly_cost_estimate(daily_queries, avg_input, avg_outpu
 <p><strong>Rate limits matter at scale</strong>: Enterprise tier rate limits are 10–100× higher than free/standard tiers. Factor in the lead time to upgrade limits — OpenAI rate limit increases can take days or weeks to approve.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Model Selection Decision Framework</h2>
+<p>Choosing the right model for a production application involves balancing capability, cost, latency, and deployment constraints. No single model is optimal for all use cases — the right choice depends on the specific task requirements, traffic volume, and acceptable quality thresholds for the application.</p>
+<table>
+<thead><tr><th>Criterion</th><th>Small Model (≤8B)</th><th>Mid Model (8–70B)</th><th>Large Model (70B+)</th></tr></thead>
+<tbody>
+<tr><td>Cost per 1M tokens</td><td>$0.10–$0.50</td><td>$0.50–$3.00</td><td>$3–$15</td></tr>
+<tr><td>TTFT (API)</td><td>100–300ms</td><td>300ms–1s</td><td>1–3s</td></tr>
+<tr><td>Reasoning quality</td><td>Good for simple tasks</td><td>Strong</td><td>Best</td></tr>
+<tr><td>Self-hosting cost</td><td>1–2 GPUs</td><td>2–4 GPUs</td><td>4–8+ GPUs</td></tr>
+<tr><td>Context length</td><td>8K–128K</td><td>32K–128K</td><td>128K–1M+</td></tr>
+</tbody>
+</table>
+<p>Task complexity is the primary determinant of required model size. Simple classification, extraction, and templated generation tasks often reach production-quality accuracy with 7–8B parameter models, especially when fine-tuned on domain-specific data. Complex reasoning chains, multi-step planning, nuanced instruction following, and tasks requiring broad world knowledge are where larger models provide clear advantages that fine-tuning a smaller model cannot fully bridge.</p>
+<p>Routing architectures allow mixing model tiers dynamically. A lightweight classifier routes simple queries to a cheap small model and complex queries to a more capable model, achieving better cost-quality trade-offs than either model alone. The classifier itself can be a small model or even a rule-based system based on query length, complexity heuristics, or user tier. Measuring the quality-cost curve of the routing strategy against both pure-small and pure-large baselines quantifies the actual benefit of the routing overhead.</p>
+
+<div class="example-box">
+<pre><code># Model router: select model tier based on query complexity
+import re
+
+def classify_complexity(query: str) -> str:
+    word_count = len(query.split())
+    has_reasoning = any(k in query.lower() for k in
+        ["compare", "analyze", "explain why", "evaluate", "trade-off"])
+    has_code = bool(re.search(r"```|def |class |function", query))
+
+    if word_count > 100 or has_reasoning:
+        return "large"   # e.g. claude-opus or gpt-4o
+    elif has_code or word_count > 40:
+        return "medium"  # e.g. claude-sonnet or gpt-4o-mini
+    else:
+        return "small"   # e.g. claude-haiku or gpt-3.5-turbo</code></pre>
+</div>
+
+<p>Benchmark-to-production quality correlation is imperfect, and over-relying on public benchmarks for model selection leads to suboptimal choices. MMLU and HumanEval measure academic reasoning and code generation; they may poorly predict performance on your specific task — customer support triage, document summarization, structured extraction from PDFs — which has different linguistic characteristics. Maintaining a domain-specific evaluation dataset and running new model releases against it before switching providers is the most reliable way to make model selection decisions grounded in actual use-case performance.</p>
+
+<p>Total cost of ownership for model selection extends beyond per-token API pricing to include evaluation cost, integration engineering time, prompt migration effort, and monitoring overhead when switching providers. A model that is 20% cheaper per token but requires a week of prompt re-engineering and new evaluation suite runs may not deliver net savings unless the traffic volume is high enough for the per-token savings to amortize the switching cost. Modeling the full TCO over a 6–12 month horizon produces more accurate build-vs-buy cost comparisons than token price alone.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

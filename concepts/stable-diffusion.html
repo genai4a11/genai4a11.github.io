@@ -271,6 +271,28 @@ result = pipe(
 <p><strong>Community models on Civitai</strong>: Civitai hosts thousands of fine-tuned SD models. Quality varies enormously. Look for models with high download counts, recent updates, and example images that match your target style.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Stable Diffusion Pipeline Variants</h2>
+<p>The Stable Diffusion model family has evolved significantly since the original release, with each major version bringing architectural improvements, better prompt following, higher resolution capability, and reduced generation artifacts. Understanding the differences between variants helps select the right model for each image generation use case.</p>
+<table>
+<thead><tr><th>Model</th><th>Architecture</th><th>Resolution</th><th>Prompt Following</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td>SD 1.5</td><td>UNet + CLIP</td><td>512×512</td><td>Moderate</td><td>Widest fine-tune ecosystem</td></tr>
+<tr><td>SD 2.1</td><td>UNet + OpenCLIP</td><td>768×768</td><td>Better</td><td>Higher resolution needs</td></tr>
+<tr><td>SDXL</td><td>2× UNet ensemble</td><td>1024×1024</td><td>Strong</td><td>High-quality production</td></tr>
+<tr><td>SD 3</td><td>Diffusion Transformer</td><td>1024×1024</td><td>Very strong</td><td>Text rendering, accuracy</td></tr>
+<tr><td>FLUX.1</td><td>Flow matching + DiT</td><td>Any</td><td>Excellent</td><td>Highest quality open</td></tr>
+</tbody>
+</table>
+<p>ControlNet extensions add spatial conditioning to the diffusion process, allowing generation to follow structural constraints like edge maps, depth maps, pose skeletons, and semantic segmentation masks. A ControlNet-conditioned generation starts from the same noise diffusion process but is guided at each denoising step to maintain the spatial structure of the condition image while applying the style and content specified in the text prompt. This enables applications like pose-consistent character generation, architecture visualization, and product placement that are impractical with text-only prompts.</p>
+<p>LoRA fine-tuning for Stable Diffusion follows the same low-rank weight adaptation principle as LLM LoRA, but adapts the UNet's attention layers to capture a specific style, object, or person from a small set of training images (typically 10–30). A style LoRA trained on a painter's work can apply that artistic style to any text prompt; a subject LoRA trained on a person's photos can insert that person into generated scenes. LoRAs are small files (10–100MB) that can be freely combined with different base models and with each other, creating a rich ecosystem of reusable style and subject adapters.</p>
+
+<p>Negative prompts in Stable Diffusion guide the diffusion process away from undesired visual elements by conditioning the classifier-free guidance calculation on both a positive prompt and a negative prompt. The denoising update is proportional to (positive - unconditional) + guidance_scale * (positive - negative), effectively amplifying movement toward the positive prompt while simultaneously moving away from elements described in the negative prompt. Common negative prompt patterns include "blurry, low quality, artifacts, deformed, watermark" to prevent common generation failure modes.</p>
+
+<p>Inpainting workflows use Stable Diffusion to regenerate specific regions of an existing image while preserving the rest. A binary mask identifies which pixels should be regenerated; the unmasked region is encoded into the latent space and held fixed during denoising while the masked region starts from noise. This enables product image editing (replacing backgrounds), photo retouching (removing objects), and iterative scene composition where specific elements are refined without regenerating the entire image from scratch.</p>
+
+<p>VAE (Variational Autoencoder) selection significantly affects the fine detail and color accuracy in Stable Diffusion outputs. The VAE encodes images to the latent space for the diffusion process and decodes them back to pixel space after denoising. The baked-in VAE of SD 1.5 is known to produce slightly washed-out colors; replacing it with an improved VAE fine-tuned specifically for better color saturation and sharpness produces noticeably cleaner outputs without changing any other model weights. For SDXL, the official SDXL VAE uses FP16 precision by default but benefits from using an FP16-fix variant to prevent NaN values during inference on some GPU configurations.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

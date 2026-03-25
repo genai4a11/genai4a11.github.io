@@ -273,6 +273,50 @@ async def query_with_semantic_cache(query: str, threshold: float = 0.95) -&gt; s
 <p><strong>Cold starts in serverless</strong>: If deploying on serverless (Lambda, Cloud Run), cold start times (200ms–2s) can dominate latency for infrequent users. Keep instances warm with periodic ping requests or use always-on minimum instances.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Latency Budget Allocation by Component</h2>
+<p>A latency budget is a formal decomposition of the total allowable end-to-end response time across all components of an LLM pipeline. By assigning a maximum time to each stage — retrieval, model inference, post-processing, network round-trip — teams can make explicit trade-offs about where to invest optimization effort and identify which component is the binding constraint for their latency SLO.</p>
+<table>
+<thead><tr><th>Pipeline Component</th><th>Typical Range</th><th>Optimization Lever</th><th>Hard Floor</th></tr></thead>
+<tbody>
+<tr><td>Network (client→server)</td><td>10–100ms</td><td>CDN, edge inference</td><td>~10ms</td></tr>
+<tr><td>Embedding lookup</td><td>5–50ms</td><td>Caching, smaller model</td><td>~2ms</td></tr>
+<tr><td>Vector retrieval</td><td>10–100ms</td><td>Index tuning, caching</td><td>~5ms</td></tr>
+<tr><td>LLM TTFT</td><td>200ms–2s</td><td>Smaller model, GPU tier</td><td>~100ms</td></tr>
+<tr><td>LLM generation</td><td>1–10s</td><td>Streaming, early stop</td><td>~500ms</td></tr>
+<tr><td>Post-processing</td><td>5–50ms</td><td>Async, lighter logic</td><td>~1ms</td></tr>
+</tbody>
+</table>
+<p>Time-to-first-token (TTFT) and time-per-output-token (TPOT) are the two most important sub-metrics within the LLM generation component. TTFT dominates perceived responsiveness for chat interfaces because users judge whether a system feels fast by how quickly it starts responding. TPOT determines total generation time and matters more for batch workflows or long-form content. Streaming output to the client as tokens are generated hides generation latency from the user, making TTFT the primary metric to optimize for interactive applications.</p>
+<p>Caching is the highest-leverage optimization for latency budgets in production RAG systems. Semantic caches that return cached responses for semantically similar queries can serve a significant fraction of production traffic at sub-millisecond latency. Embedding caches that store pre-computed embeddings for frequently queried documents eliminate the embedding lookup cost entirely. Prompt prefix caches, supported by providers like Anthropic and OpenAI, reuse KV cache entries for system prompts and common prefixes, reducing TTFT by 20–60% for requests with long shared prefixes.</p>
+
+<div class="example-box">
+<pre><code># Latency budget profiler: instrument each pipeline stage
+import time
+
+class LatencyBudget:
+    def __init__(self, budget_ms):
+        self.budget = budget_ms / 1000
+        self.stages = {}
+        self.start = time.perf_counter()
+
+    def checkpoint(self, stage):
+        elapsed = time.perf_counter() - self.start
+        self.stages[stage] = elapsed
+        return elapsed
+
+    def report(self):
+        prev = 0
+        for stage, t in self.stages.items():
+            print(f"{stage}: {(t-prev)*1000:.1f}ms")
+            prev = t
+        total = list(self.stages.values())[-1] * 1000
+        print(f"Total: {total:.1f}ms / budget {self.budget*1000:.0f}ms")
+        return total <= self.budget * 1000</code></pre>
+</div>
+
+<p>Adaptive latency budgets adjust targets based on real-time system load. When GPU utilization is below 60%, the system can afford to process more tokens and return higher-quality long-form responses; when a traffic spike pushes utilization above 90%, the system dynamically reduces max output token limits and disables optional post-processing steps to protect the P99 latency SLO for all concurrent users. Load-shedding policies that gracefully degrade quality under pressure are preferable to latency SLO violations that cause user-facing errors.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

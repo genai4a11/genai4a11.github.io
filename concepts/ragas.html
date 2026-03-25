@@ -300,6 +300,28 @@ results = evaluate(
 <p><strong>Evaluation cost adds up.</strong> Each metric calls the judge LLM once per sample. 1000 questions × 3 metrics = 3000 LLM calls. Budget for this in your CI/CD pipeline and use cheaper judge models for fast feedback loops.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>RAGAS Metrics Reference</h2>
+<p>RAGAS (Retrieval Augmented Generation Assessment) provides a suite of reference-free metrics for evaluating RAG pipelines end-to-end. Unlike traditional NLP evaluation that requires gold-standard answers, RAGAS uses the LLM itself to judge response quality across multiple dimensions, making it practical for production evaluation where ground truth is unavailable.</p>
+<table>
+<thead><tr><th>Metric</th><th>Measures</th><th>Range</th><th>Low Score Means</th></tr></thead>
+<tbody>
+<tr><td>Faithfulness</td><td>Facts in answer supported by context</td><td>0–1</td><td>Hallucination present</td></tr>
+<tr><td>Answer Relevance</td><td>Answer addresses the question</td><td>0–1</td><td>Off-topic or incomplete</td></tr>
+<tr><td>Context Precision</td><td>Retrieved chunks are relevant</td><td>0–1</td><td>Noisy retrieval</td></tr>
+<tr><td>Context Recall</td><td>All relevant info was retrieved</td><td>0–1</td><td>Missing critical chunks</td></tr>
+<tr><td>Answer Correctness</td><td>Factual accuracy vs. ground truth</td><td>0–1</td><td>Wrong facts (needs GT)</td></tr>
+</tbody>
+</table>
+<p>Faithfulness is typically the most actionable metric for improving RAG systems. A low faithfulness score indicates that the LLM is generating claims not supported by the retrieved context — hallucinating facts rather than grounding its answer in the retrieved documents. Common causes include a context window too small to hold all retrieved chunks, retrieved chunks that partially address the question but leave gaps the model fills with parametric knowledge, and aggressive summarization that compresses away key supporting details.</p>
+<p>Running RAGAS evaluations in a CI pipeline requires a curated test dataset of question-context-answer triples. Even without gold-standard answers, question-context pairs drawn from representative production queries provide meaningful signal. Tracking the score distribution over time — rather than a single aggregate number — reveals whether quality improvements on one metric come at the cost of another, which is common when tuning retrieval parameters.</p>
+
+<p>Calibrating RAGAS evaluator prompts for your domain is an often-overlooked step that significantly affects score reliability. The default faithfulness evaluator prompt asks a general-purpose LLM to judge whether each claim in the answer is supported by the context. For highly technical domains — medical, legal, financial — the evaluator LLM may incorrectly judge domain-specific terminology as unsupported if it lacks domain knowledge. Using a stronger evaluator model or adding domain context to the evaluator prompt improves calibration and reduces false faithfulness failures.</p>
+
+<p>RAGAS batch evaluation is typically run asynchronously to avoid blocking application response time. A common architecture uses a sampling approach: a random sample of production traces (1–5% of traffic) is sent to the evaluation pipeline in the background, results are stored in a time-series database, and alert rules trigger when any metric drops below threshold over a rolling window. This continuous evaluation loop catches quality regressions within hours of a bad deployment without requiring dedicated evaluation infrastructure running at full production volume.</p>
+
+<p>RAGAS scores are most meaningful when compared to a baseline established at the start of a project rather than interpreted as absolute quality measures. A faithfulness score of 0.85 on a technical documentation RAG system may represent excellent performance for the domain, while the same score on a general-purpose FAQ bot might indicate significant room for improvement. Establishing domain-specific quality thresholds through human evaluation calibration is essential before using RAGAS scores to make deployment decisions.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

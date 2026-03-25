@@ -319,6 +319,27 @@ print(response2["gptcache"])  # {"cache_hit": True}
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Semantic Cache Architecture Patterns</h2>
+<p>Semantic caching stores LLM responses indexed by the semantic meaning of the query rather than its exact text, so that similar but not identical queries can retrieve cached responses. Unlike exact-match caches that require bit-perfect key equality, semantic caches use embedding similarity to find cache hits, enabling cache reuse across paraphrases, synonyms, and minor query variations.</p>
+<table>
+<thead><tr><th>Approach</th><th>Cache Key</th><th>Hit Condition</th><th>Hit Rate</th><th>Risk</th></tr></thead>
+<tbody>
+<tr><td>Exact match</td><td>Query string</td><td>String equality</td><td>Low</td><td>None</td></tr>
+<tr><td>Semantic (high threshold)</td><td>Embedding</td><td>Similarity &gt; 0.97</td><td>Medium</td><td>Low false hits</td></tr>
+<tr><td>Semantic (medium threshold)</td><td>Embedding</td><td>Similarity &gt; 0.90</td><td>High</td><td>Occasional wrong cache</td></tr>
+<tr><td>Cluster-based</td><td>Query cluster ID</td><td>Same cluster</td><td>High</td><td>Cluster boundary errors</td></tr>
+</tbody>
+</table>
+<p>Similarity threshold tuning is the most sensitive configuration decision in semantic cache deployment. A threshold that is too high results in low cache hit rates and minimal cost savings. A threshold that is too low causes cache collisions where queries with related but distinct intents receive the wrong cached response — for instance, "What is the capital of France?" and "What is the largest city in France?" might map to the same cache entry despite requiring different answers. Per-topic threshold tuning, where queries about time-sensitive topics use higher thresholds, provides better precision than a single global threshold.</p>
+<p>Cache invalidation is more complex for semantic caches than exact-match caches. When a fact in the knowledge base changes — a product price updates, a policy is revised — all cached responses that reference that fact need to be invalidated, even if they were cached under different query phrasings. Tag-based invalidation strategies attach metadata to each cache entry indicating which knowledge sources it draws from, enabling targeted invalidation of all entries that reference a specific source document when that document is updated.</p>
+
+<p>Session-scoped semantic caches restrict cache lookups to the current conversation context, preventing responses from one user's session from serving as cache hits for another user's queries. This is important for applications where personalization matters — the cached response to "summarize my recent emails" from user A should never be returned to user B. Namespacing cache entries by user ID or session ID adds a prefix to the similarity search scope, maintaining cache hit rates within-session while enforcing strict isolation between sessions.</p>
+
+<p>Monitoring semantic cache health requires tracking metrics beyond the standard hit/miss rate. False positive rate — cache hits that returned incorrect responses — is more important than hit rate, since false positives actively degrade response quality rather than just missing an optimization opportunity. Logging sampled cache hits with their similarity scores and submitting them to periodic human review is the most reliable way to detect false positive clusters and tune the threshold accordingly. Alert on any sustained false positive rate above 1–2% as this will noticeably degrade user experience.</p>
+
+<p>Time-to-live (TTL) policies for semantic cache entries must account for the staleness characteristics of the underlying content. Responses about current events, prices, or status information become stale quickly and should have short TTLs (minutes to hours). Responses about stable factual content — explanations of mathematical concepts, historical events, product documentation — can safely use longer TTLs (days to weeks). Implementing topic-based TTL policies, where different cache namespaces have different expiry rules, provides better cache efficiency than a single global TTL applied uniformly across all response types.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

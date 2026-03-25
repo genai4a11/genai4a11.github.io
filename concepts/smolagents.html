@@ -309,6 +309,28 @@ agent = CodeAgent(
 <p><strong>Max steps can be hit on complex tasks.</strong> Default is 6 steps. For tasks requiring many tool calls, increase <code>max_steps</code> carefully — each step costs LLM tokens. Add a <code>step_callback</code> to log or monitor progress.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>SmolAgents Architecture Comparison</h2>
+<p>SmolAgents from HuggingFace provides a minimal, lightweight framework for building LLM agents that prioritizes simplicity and transparency over feature richness. Its core design philosophy is that agents should be understandable codebases that developers can read, modify, and debug rather than black-box frameworks that hide complexity behind abstractions.</p>
+<table>
+<thead><tr><th>Agent Type</th><th>Action Format</th><th>Strengths</th><th>Limitations</th></tr></thead>
+<tbody>
+<tr><td>CodeAgent</td><td>Python code snippets</td><td>Flexible, composable</td><td>Requires sandbox</td></tr>
+<tr><td>ToolCallingAgent</td><td>JSON tool calls</td><td>Structured, safe</td><td>Less flexible</td></tr>
+<tr><td>MultiStepAgent</td><td>Thought + action pairs</td><td>Transparent reasoning</td><td>More tokens</td></tr>
+</tbody>
+</table>
+<p>The CodeAgent in SmolAgents allows the LLM to write Python code as its action format rather than calling predefined tools via JSON. This provides much greater flexibility — the agent can compose tool calls, apply transformations, use control flow, and handle complex data processing all within a single code block. The generated code is executed in a controlled Python interpreter with access to a predefined set of allowed imports, balancing capability with safety.</p>
+<p>SmolAgents integrates natively with HuggingFace Hub for tool sharing, allowing developers to publish reusable tool definitions that other agents can import with a single line. The Hub-hosted tools follow a standardized interface with typed inputs and outputs, making it straightforward to compose third-party tools into custom pipelines without writing adapter code. This ecosystem approach to tool sharing is one of SmolAgents' key differentiators from more self-contained frameworks.</p>
+
+<p>SmolAgents' multi-agent support allows one agent to delegate sub-tasks to other specialized agents. A manager agent breaks down a complex task, routes sub-tasks to domain-specialist agents (a coding agent, a research agent, a data analysis agent), and synthesizes their outputs into a final response. The manager communicates with sub-agents via a simple interface that looks like a tool call, keeping the architectural complexity manageable while enabling powerful hierarchical task decomposition.</p>
+
+<p>Observability in SmolAgents pipelines is built around the reasoning trace — the sequence of thoughts, tool calls, and observations the agent generates during task execution. Logging the full trace to a structured store (LangSmith, Weights & Biases, or a custom database) enables post-hoc analysis of failure modes, step counts, and tool usage patterns. Comparing traces of successful and failed runs on the same task type reveals the decision points where the agent diverges, guiding targeted improvements to the system prompt or tool definitions.</p>
+
+<p>The SmolAgents framework is intentionally small — the core codebase is under 1,000 lines — making it easy to read and understand completely before using it in production. This transparency is a deliberate design choice that contrasts with larger frameworks where critical behavior is buried in nested abstractions. Teams that need to debug agent behavior, customize planning logic, or integrate with non-standard infrastructure benefit significantly from a codebase where every execution path can be traced directly to readable source code.</p>
+
+<p>Error recovery patterns in SmolAgents are handled by giving the agent visibility into tool call failures through the observation mechanism. When a tool call raises an exception, the error message becomes the observation for that step, and the agent can reason about whether to retry with different parameters, try an alternative tool, or escalate to the user. Agents that handle errors gracefully tend to have explicit instructions in the system prompt about preferred recovery strategies for common failure modes like network timeouts, rate limits, and empty search results.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

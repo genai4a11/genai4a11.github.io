@@ -271,6 +271,29 @@ docker compose up -d
 <p><strong>Self-hosting operational complexity is real.</strong> The Docker Compose stack is easy to start but has 8 services to maintain. Upgrades occasionally require manual database migrations. For small teams without DevOps capacity, the Dify cloud offering reduces this burden significantly.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Dify Workflow Component Comparison</h2>
+<p>Dify provides a visual workflow builder for constructing LLM applications without requiring deep programming expertise. Its node-based interface lets users chain LLM calls, tool invocations, conditional logic, and data transformations into production-ready pipelines that can be deployed as APIs or embedded in web applications.</p>
+<table>
+<thead><tr><th>Component</th><th>Purpose</th><th>Key Config</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td>LLM Node</td><td>Model inference</td><td>Model, prompt, temp</td><td>Any generation step</td></tr>
+<tr><td>Knowledge Retrieval</td><td>Semantic search</td><td>Dataset, top-K, threshold</td><td>RAG pipelines</td></tr>
+<tr><td>Tool Node</td><td>External API call</td><td>Tool name, params</td><td>Web search, calculators</td></tr>
+<tr><td>Code Node</td><td>Python execution</td><td>Script, inputs/outputs</td><td>Data transformation</td></tr>
+<tr><td>If/Else</td><td>Conditional routing</td><td>Condition expression</td><td>Intent routing</td></tr>
+<tr><td>Iterator</td><td>Loop over list</td><td>Input array, sub-flow</td><td>Batch processing</td></tr>
+</tbody>
+</table>
+<p>Dify's dataset management handles the full RAG document lifecycle: uploading documents, chunking them into segments, generating embeddings, and storing them in a vector database. The platform supports multiple chunking strategies (fixed-length, sentence-based, paragraph-based) and allows configuring overlap between chunks. For most document types, paragraph-based chunking with moderate overlap produces the best retrieval precision because it preserves semantic units rather than splitting sentences mid-thought.</p>
+<p>The annotation feature in Dify enables human-in-the-loop quality improvement. When a query produces a low-confidence or incorrect response, operators can annotate the correct answer directly in the Dify interface. These annotations are stored as high-priority examples that override the LLM response for similar future queries using embedding similarity matching, creating a progressively improving knowledge base without requiring model retraining.</p>
+
+<p>Dify's variable system allows dynamic content to flow between nodes using a Jinja-like template syntax. Output from one node is referenced in subsequent nodes using double-brace notation, enabling complex data transformations across the workflow without requiring custom code. System variables like user inputs, session metadata, and timestamp are available globally, while node outputs are scoped to the current workflow execution context and accessible to all downstream nodes.</p>
+
+<p>Multi-turn conversation state management in Dify uses conversation variables that persist across turns within a session. Unlike regular workflow variables that reset per execution, conversation variables accumulate context — previous questions, established facts, user preferences — that subsequent turns can reference. This enables agents that remember what the user said three turns ago without appending the full conversation history to every prompt, reducing token costs while maintaining conversational coherence.</p>
+
+<p>Dify supports webhook triggers that allow external events to initiate workflow executions without human interaction. A webhook endpoint configured on a Dify workflow can receive payloads from GitHub, Slack, or any HTTP-capable service, parse the payload using a code node, and trigger the appropriate LLM processing pipeline. This enables event-driven AI automation where document uploads, ticket creations, or form submissions automatically invoke AI analysis without requiring polling or manual intervention.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
