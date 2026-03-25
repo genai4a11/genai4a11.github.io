@@ -94,7 +94,7 @@ const DN=[
 {id:'claude35',label:'Claude 3.5 Sonnet',cat:'llms',g:3,p:'frontier_models',desc:'Anthropic top coding and reasoning model with 200K context.'},
 {id:'gemini15',label:'Gemini 1.5 Pro',cat:'llms',g:3,p:'frontier_models',desc:'Google\'s frontier model with a 1M-token context window — fit an entire codebase, book, or hour of video into a single API call for end-to-end reasoning.'},
 {id:'o3',label:'o3 / o4-mini',cat:'llms',g:3,p:'frontier_models',desc:'Reasoning models that run an internal chain-of-thought search before answering — dramatically more accurate on hard math and logic at the cost of 10s–5min latency.'},
-{id:'llama3',label:'Llama 3.1',cat:'llms',g:3,p:'open_models',desc:'Meta 8B/70B/405B — best open-weight foundation models.'},
+{id:'llama3',label:'Llama 3.1',cat:'llms',g:3,p:'open_models',desc:'Meta\'s open-weight model family (8B/70B/405B) — trained on 15T tokens, commercially licensed, fine-tunable, and deployable on your own infrastructure.'},
 {id:'mistral',label:'Mistral 7B',cat:'llms',g:3,p:'open_models',desc:'Sliding window attention, GQA, efficient inference, strong instruct.'},
 {id:'phi3',label:'Phi-3 / Phi-4',cat:'llms',g:3,p:'open_models',desc:'Microsoft small language models punching above their size.'},
 {id:'qwen25',label:'Qwen 2.5',cat:'llms',g:3,p:'open_models',desc:'Alibaba multilingual models with strong code and math skills.'},

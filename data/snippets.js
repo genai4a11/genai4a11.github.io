@@ -8287,35 +8287,49 @@ print(response_mini.choices[0].message.content)
 # Check reasoning tokens used (contributes to cost)
 usage = response_mini.usage
 print(f'Reasoning tokens: {usage.completion_tokens_details.reasoning_tokens}')`,tip:'Match reasoning effort to task difficulty: use low/medium for most product features, high only for the hardest problems — the latency and cost difference is 5–10×.\n\nDo not use reasoning models for tasks → GPT-4o node handles well (chat, summarization, straightforward Q&A) — save them for provably hard tasks: formal verification, competition-level coding, multi-step mathematical proofs.\n\no4-mini at medium effort is often the sweet spot: 80% of o3-high accuracy at 20% of the cost.',questions:{leader:['Which parts of your product involve problems hard enough to justify 60-second response times — and which are currently using reasoning models unnecessarily?','How does accuracy-vs-latency tradeoff change your product design — what features become possible when a model can "think" for 2 minutes?'],pm:['How do you set user expectations for a feature that takes 30 seconds vs. 2 seconds — and when does that latency become unacceptable?','What problem categories in your product would measurably improve with o3-level accuracy vs. current GPT-4o performance?'],eng:['How do you implement timeouts and fallback logic for reasoning model calls in production — and what do you do when a 5-minute call times out?','How do reasoning tokens appear in your cost tracking, and how do you set reasoning_effort budgets per task type?']},refs:[{label:'[1] OpenAI o3 and o4-mini model card and documentation',url:'https://platform.openai.com/docs/models/o3'},{label:'[2] OpenAI Python SDK',url:'https://github.com/openai/openai-python'},{label:'[3] ARC-AGI benchmark — Abstraction and Reasoning Corpus (Chollet)',url:'https://arcprize.org/'}]},
-llama3:{use:'Llama 3.1 (open weights, 8B/70B/405B) is fully transparent, fine-tunable, and runs on-prem or via API; strong for coding and instruction-following in regulated orgs.',diag:`
-  Llama 3 family architecture:
+llama3:{use:'Llama 3.1[1] is Meta\'s open-weight model family (8B, 70B, 405B) — trained on 15 trillion tokens, released with a permissive license that allows fine-tuning and commercial use. The key reason to use Llama over closed APIs: full data privacy, no per-token cost at scale, and the ability to fine-tune on your own data.\n\nKey libraries: transformers[2] (HuggingFace), Ollama[3] (→ Ollama node, local), vLLM[4] (→ vLLM node, production serving)',diag:`
+  Llama 3.1 model family:
+  ┌──────────┬────────┬─────────┬──────────────────────────┐
+  │ Model    │ Params │ Context │ Use case                 │
+  ├──────────┼────────┼─────────┼──────────────────────────┤
+  │ 3.2 1B   │  1B    │  128K   │ Mobile, edge, toy tasks  │
+  │ 3.2 3B   │  3B    │  128K   │ Embedded, lightweight    │
+  │ 3.1 8B   │  8B    │  128K   │ Fine-tuning, dev, cheap  │
+  │ 3.1 70B  │ 70B    │  128K   │ Best cost/quality        │
+  │ 3.1 405B │ 405B   │  128K   │ Research, near-GPT4      │
+  └──────────┴────────┴─────────┴──────────────────────────┘
 
-  ┌──────────────────────────────────────────────┐
-  │ Model    │ Params │ Context │ GQA │ Trained  │
-  ├──────────┼────────┼─────────┼─────┼──────────┤
-  │ 3.2 1B   │  1B    │ 128K    │ Yes │ 15T tok  │
-  │ 3.2 3B   │  3B    │ 128K    │ Yes │ 9T tok   │
-  │ 3.1 8B   │  8B    │ 128K    │ Yes │ 15T tok  │
-  │ 3.1 70B  │ 70B    │ 128K    │ Yes │ 15T tok  │
-  │ 3.1 405B │ 405B   │ 128K    │ Yes │ 15T tok  │
-  └──────────┴────────┴─────────┴─────┴──────────┘
+  Architecture: decoder-only, → GQA node (all sizes), RoPE (→ RoPE node)
+  Training: 15T tokens, RLHF + DPO instruction tuning
+  Tool calling: built-in for 3.1+ (JSON function calling)
+  License: Llama 3 Community License — commercial use OK`,code:`from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
-  Key advances vs Llama 2:
-  • 8× more training data (15T tokens)
-  • GQA for all sizes (efficient KV cache)
-  • Tiktoken-based tokenizer (128K vocab)
-  • Instruction tuning: RLHF + DPO
-  • Tool calling built-in (3.1+)`,code:`import replicate
-
-output = replicate.run(
-    "meta/llama-2-70b-chat:58d078176e02430d1f0db41b2a94c8a3f3f4f62f77bea52e4a3c8c8b8e8e8e8e",
-    input={
-        "prompt": "Write a Python function to detect palindromes.",
-        "max_tokens": 500,
-        "temperature": 0.7
-    }
+# Run Llama 3.1 8B locally (needs ~16GB VRAM)
+model_id = 'meta-llama/Meta-Llama-3.1-8B-Instruct'
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    torch_dtype=torch.bfloat16,   # use bfloat16 to halve VRAM
+    device_map='auto'              # auto-splits across available GPUs
 )
-print("".join(output))`,tip:'405B is SOTA but slow; 70B is best cost/perf; 8B runs on phones.\n\nFully open = no vendor lock-in, reproducible research.\n\nCan fine-tune on your data; watch vRAM on 70B/405B locally.',refs:[{label:"Llama 3.1",url:"concepts/llama3.html"}]},
+
+messages = [
+    {'role': 'system', 'content': 'You are a helpful Python expert.'},
+    {'role': 'user',   'content': 'Write a function to detect palindromes.'}
+]
+
+# Apply chat template (Llama 3.1 uses a specific token format)
+prompt = tokenizer.apply_chat_template(
+    messages, tokenize=False, add_generation_prompt=True
+)
+inputs = tokenizer(prompt, return_tensors='pt').to(model.device)
+outputs = model.generate(**inputs, max_new_tokens=512, temperature=0.7)
+response = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:])
+print(response)
+
+# OR: 1 command local run via Ollama (→ Ollama node)
+# ollama run llama3.1:8b`,tip:'Llama 3.1 70B is the best open-weight model for most tasks — quality close to GPT-4 at zero per-token cost once running.\n\n8B is the sweet spot for fine-tuning: fits in 16GB VRAM with bfloat16, runs fast enough for experimentation, and small enough to fine-tune on a single A100.\n\nFor production serving use the → vLLM node — it batches requests and achieves 10–20× better GPU utilization than vanilla HuggingFace generation.',questions:{leader:['What is the total cost of running Llama 3.1 70B in-house vs. GPT-4o API at your current usage volume — and how does that change at 10× scale?','In which regulatory or data-privacy contexts does open-weight deployment become a compliance requirement rather than just a cost preference?'],pm:['How do you communicate to users whether a feature is powered by open-weight vs. closed-API models — and does it matter to them?','What product capabilities become possible when you can fine-tune the model on your users\' specific data and vocabulary?'],eng:['What VRAM is required for Llama 3.1 8B, 70B, and 405B at different precisions — and how does quantization (→ QLoRA node, GGUF) change that?','How does → vLLM node continuous batching change throughput compared to serial HuggingFace generation under real traffic?']},refs:[{label:'[1] Llama 3 model card and community license (Meta AI)',url:'https://llama.meta.com/llama3/'},{label:'[2] transformers — HuggingFace model loading and inference library',url:'https://huggingface.co/docs/transformers'},{label:'[3] Ollama — run Llama models locally with one command',url:'https://ollama.com/'},{label:'[4] vLLM — high-throughput Llama serving for production',url:'https://docs.vllm.ai/'}]},
 mistral:{use:'Mistral 7B is a lightweight, efficient open model with 32K context and sliding-window attention; ideal for edge, fast inference, and cost-sensitive deployments.',diag:`
   Mistral 7B — punch above its weight:
 
