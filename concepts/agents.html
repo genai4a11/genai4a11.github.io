@@ -582,7 +582,7 @@ OUTPUT: Sam Altman, CEO of OpenAI, was born on April 22, 1985.
 <p>Tools are functions the agent can call: search_web, query_database, execute_code, send_email, etc. Each tool takes inputs and returns results. The agent only knows about tools you give it; without a search tool, it can't do research. Without a code execution tool, it can't write and run code.</p>
 <p><strong>What matters:</strong> Tool clarity, correctness, speed. Document what each tool does, what inputs it needs, and what it returns. Buggy tools cause agent errors.</p>
 <h3>3. Memory — The Context</h3>
-<p><a class="concept-link" href="agent-memory.html">Memory</a> stores the conversation history and intermediate results so the agent can build on previous steps. Without <a class="concept-link" href="agent-memory.html">memory</a>, the agent forgets why it started or what it learned. There are two types: <strong>short-term</strong> (current conversation), <strong>long-term</strong> (past conversations, facts about the user/domain).</p>
+<p><a class="concept-link" href="agent-memory.html">Memory</a> stores the conversation history and intermediate results so the agent can build on previous steps. Without memory, the agent forgets why it started or what it learned. There are two types: <strong>short-term</strong> (current conversation), <strong>long-term</strong> (past conversations, facts about the user/domain).</p>
 <p><strong>What matters:</strong> Relevance, not volume. Too much memory confuses the LLM; too little causes the agent to forget. Use retrieval to fetch only relevant facts, not the entire knowledge base.</p>
 <h3>4. Loop — The Control Flow</h3>
 <p>The loop is the while-true that keeps calling the LLM, parsing tool calls, executing tools, and feeding results back until a stopping condition is met. The loop needs termination conditions: max iterations, output token limit, explicit "finished" signal, or timeout.</p>
@@ -751,6 +751,61 @@ print(agent('What does our documentation say about authentication?'))
         <a href="https://lilianweng.github.io/posts/2023-06-23-agent/" target="_blank">lilianweng.github.io ↗</a>
 </li>
 </ul>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">8</div>
+<h2>Multi-Agent Systems</h2>
+<p>Single agents hit limits on task complexity, context length, and reliability. Multi-agent systems split work across specialised sub-agents, each with focused tools and instructions. The orchestrator delegates; sub-agents execute. This enables parallelism, role specialisation, and independent verification (one agent checks another's work).</p>
+<p>Common topologies: <strong>Orchestrator → Workers</strong> (one coordinator, many specialists), <strong>Pipeline</strong> (sequential agents in a fixed order), and <strong>Debate/Critique</strong> (two agents argue a point, a judge decides). LangGraph and CrewAI both implement graph-based multi-agent workflows. For most teams, start with 2 agents max — orchestration complexity grows faster than the benefits.</p>
+<div class="example-box"># Minimal 2-agent system: researcher + writer
+import openai
+client = openai.OpenAI()
+
+def run_agent(system: str, task: str, model="gpt-4o-mini") -> str:
+    return client.chat.completions.create(
+        model=model,
+        messages=[{"role":"system","content":system},
+                  {"role":"user","content":task}]
+    ).choices[0].message.content
+
+# Agent 1: Researcher — gathers and structures facts
+research = run_agent(
+    system="You are a research agent. Extract key facts, statistics, and concepts. "
+           "Output as structured bullet points.",
+    task="Research topic: 'How does PagedAttention improve LLM serving throughput?'"
+)
+
+# Agent 2: Writer — turns research into polished content
+article = run_agent(
+    system="You are a technical writer. Turn research notes into a clear 150-word explanation "
+           "for a software engineer audience. No jargon without definition.",
+    task=f"Write an explanation based on this research:
+
+{research}"
+)
+print(article)
+
+# Agent 3 (optional): Critic — validates quality before delivery
+critique = run_agent(
+    system="You are a critical reviewer. Identify any inaccuracies, gaps, or unclear statements. "
+           "Be concise. If the content is good, just say 'APPROVED'.",
+    task=f"Review this explanation:
+
+{article}"
+)
+print(f"
+Critique: {critique}")
+</div>
+<table>
+<thead><tr><th>Framework</th><th>Strengths</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>LangGraph</td><td>Stateful graphs, cycles, persistence</td><td>Complex workflows with branching</td></tr>
+<tr><td>CrewAI</td><td>Role-based agents, easy setup</td><td>Business process automation</td></tr>
+<tr><td>AutoGen (Microsoft)</td><td>Conversational multi-agent</td><td>Research, debate, code generation</td></tr>
+<tr><td>Plain Python</td><td>Full control, no framework overhead</td><td>Simple 2–3 agent pipelines</td></tr>
+</tbody>
+</table>
 </div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>

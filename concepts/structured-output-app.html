@@ -665,6 +665,55 @@ class ReviewExtraction(BaseModel):
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Retry strategy:</strong> 1–2 retries is usually enough. Beyond that, diminishing returns. If it fails twice, it's likely the input is genuinely ambiguous. Better to return None and flag for human review than waste tokens on retries.</span>
+
+<div class="example-box"># Production-grade extraction with retry and fallback
+# pip install instructor openai pydantic tenacity
+
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional, List
+import instructor, openai
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+client = instructor.from_openai(openai.OpenAI())
+
+class LineItem(BaseModel):
+    description: str
+    quantity: int = Field(ge=1)
+    unit_price: float = Field(ge=0)
+    total: float
+
+    @field_validator("total")
+    @classmethod
+    def validate_total(cls, v, info):
+        expected = info.data.get("quantity", 1) * info.data.get("unit_price", 0)
+        if abs(v - expected) > 0.01:
+            raise ValueError(f"total {v} != quantity × unit_price {expected:.2f}")
+        return v
+
+class Invoice(BaseModel):
+    invoice_number: str
+    vendor: str
+    date: str
+    line_items: List[LineItem]
+    subtotal: float
+    tax_rate: Optional[float] = 0.0
+    total_due: float
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=4))
+def extract_invoice(raw_text: str) -> Invoice:
+    return client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_model=Invoice,
+        messages=[
+            {"role": "system", "content": "Extract invoice data precisely. Validate all totals."},
+            {"role": "user",   "content": raw_text},
+        ],
+        max_retries=2,   # instructor-level retries for validation errors
+    )
+
+invoice = extract_invoice("Invoice #1042 from Acme Corp, 2024-03-15. 3x Widget A @ $12.50 = $37.50. Tax 8%. Total: $40.50")
+print(invoice.model_dump_json(indent=2))
+</div>
 </div>
 </div>
 <!-- ── 7. PRODUCTION ── -->

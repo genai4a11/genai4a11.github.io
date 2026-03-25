@@ -162,7 +162,7 @@
 <ul>
 <li><strong>Key scaling</strong>: K' = l_k ⊙ K   (l_k ∈ ℝ^d_head, applied per attention head)</li>
 <li><strong>Value scaling</strong>: V' = l_v ⊙ V   (l_v ∈ ℝ^d_head)</li>
-<li><strong>FFN scaling</strong>: h' = l_ff ⊙ σ(W_1 x)   (applied to intermediate <a class="concept-link" href="activations.html">activations</a> before the second linear layer)</li>
+<li><strong>FFN scaling</strong>: h' = l_ff ⊙ σ(W_1 x)   (applied to intermediate activations before the second linear layer)</li>
 </ul>
 <p>All three vectors are initialised to ones (identity transform), so at the start of training the model behaves identically to the frozen base. The scaling vectors learn to inhibit (values near 0) or amplify (values &gt; 1) specific dimensions, effectively steering which features each layer amplifies for the target task.</p>
 <p>Total trainable parameters for a model with L layers and d_model dimensions: 3 × L × d_model. For T5-XL (3B): ~100K parameters — far fewer than <a class="concept-link" href="lora.html">LoRA</a> at typical ranks.</p>
@@ -204,7 +204,7 @@ training_args = Seq2SeqTrainingArguments(
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>T-Few: few-shot with IA³</h2>
-<p>The T-Few recipe (from the IA³ paper) achieves strong <a class="concept-link" href="few-shot.html">few-shot</a> performance using IA³ + a multitask pre-trained T5 base. With only 16 training examples per task, T-Few outperforms GPT-3 175B (few-shot in-context learning) on most Super-NaturalInstructions tasks — at roughly 1000× less compute. The recipe: start from a T5 model already multitask fine-tuned on a large task mixture, then apply IA³ with only 16 gradient steps per new task. The small parameter count makes overfitting on tiny datasets much less of a problem than with <a class="concept-link" href="lora.html">LoRA</a> or full <a class="concept-link" href="finetuning.html">fine-tuning</a>.</p>
+<p>The T-Few recipe (from the IA³ paper) achieves strong few-shot performance using IA³ + a multitask pre-trained T5 base. With only 16 training examples per task, T-Few outperforms GPT-3 175B (few-shot in-context learning) on most Super-NaturalInstructions tasks — at roughly 1000× less compute. The recipe: start from a T5 model already multitask fine-tuned on a large task mixture, then apply IA³ with only 16 gradient steps per new task. The small parameter count makes overfitting on tiny datasets much less of a problem than with LoRA or full fine-tuning.</p>
 </div>
 <div class="section-block" id="s5">
 <pre><code class="language-python"># T-Few: zero-shot / few-shot with IA³ (HuggingFace t-few style)
@@ -242,8 +242,8 @@ print(tokenizer.decode(out[0], skip_special_tokens=True))  # → positive
 <div class="section-marker">SECTION 05</div>
 <h2>IA³ vs LoRA vs prefix tuning</h2>
 <ul>
-<li><strong>Parameter count</strong>: IA³ &lt; <a class="concept-link" href="prefix-tuning.html">prefix tuning</a> &lt; <a class="concept-link" href="lora.html">LoRA</a>. IA³ has ~0.003% of base model params; LoRA r=8 has ~0.1%.</li>
-<li><strong>Performance</strong>: LoRA &gt; IA³ ≈ prefix tuning for most tasks at the same training budget. IA³ wins on <a class="concept-link" href="few-shot.html">few-shot</a> low-data regimes.</li>
+<li><strong>Parameter count</strong>: IA³ &lt; <a class="concept-link" href="prefix-tuning.html">prefix tuning</a> &lt; LoRA. IA³ has ~0.003% of base model params; LoRA r=8 has ~0.1%.</li>
+<li><strong>Performance</strong>: LoRA &gt; IA³ ≈ prefix tuning for most tasks at the same training budget. IA³ wins on few-shot low-data regimes.</li>
 <li><strong>Merge to weights</strong>: IA³ vectors can be merged into the weight matrices (W_k' = diag(l_k) @ W_k) — zero inference overhead after merging, same as LoRA.</li>
 <li><strong>Stability</strong>: IA³ is more stable than prefix tuning since it's a multiplicative perturbation starting at identity.</li>
 </ul>
@@ -251,7 +251,7 @@ print(tokenizer.decode(out[0], skip_special_tokens=True))  # → positive
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>When to use IA³</h2>
-<p>IA³ is the right choice when: (1) you have very few training examples (&lt;100) and need to avoid overfitting; (2) you're running many task-specific adapters and need the smallest possible per-task overhead; (3) you're working with T5/encoder-decoder models where the T-Few recipe gives strong results out of the box. For general instruction tuning with 1000+ examples, <a class="concept-link" href="lora.html">LoRA</a> typically performs better.</p>
+<p>IA³ is the right choice when: (1) you have very few training examples (&lt;100) and need to avoid overfitting; (2) you're running many task-specific adapters and need the smallest possible per-task overhead; (3) you're working with T5/encoder-decoder models where the T-Few recipe gives strong results out of the box. For general instruction tuning with 1000+ examples, LoRA typically performs better.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>

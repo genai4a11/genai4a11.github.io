@@ -158,7 +158,7 @@
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>ALiBi mechanism</h2>
-<p>Instead of adding positional information to token <a class="concept-link" href="embeddings.html">embeddings</a>, ALiBi adds a static bias matrix to the query-key attention scores before the softmax. For a query at position i attending to a key at position j, the bias is:</p>
+<p>Instead of adding positional information to token embeddings, ALiBi adds a static bias matrix to the query-key attention scores before the softmax. For a query at position i attending to a key at position j, the bias is:</p>
 <p><code>bias(i, j) = -m · |i - j|</code></p>
 <p>where m is a head-specific slope. The slopes form a geometric sequence: for H heads, m_h = 2^(-8h/H). With 8 heads: slopes are 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256.</p>
 <p>Different heads use different slopes — small slopes allow attending far back (large receptive field); large slopes focus on local context. This gives the model multi-scale temporal structure for free.</p>
@@ -212,7 +212,7 @@ bias = build_alibi_bias(n_heads=8, seq_len=512)
 <div class="section-marker">SECTION 05</div>
 <h2>ALiBi vs RoPE vs sinusoidal</h2>
 <ul>
-<li><strong><a class="concept-link" href="sinusoidal-pe.html">Sinusoidal PE</a></strong>: Added to input <a class="concept-link" href="embeddings.html">embeddings</a>. Fixed pattern; poor extrapolation. Used in original Transformer, BERT.</li>
+<li><strong><a class="concept-link" href="sinusoidal-pe.html">Sinusoidal PE</a></strong>: Added to input embeddings. Fixed pattern; poor extrapolation. Used in original Transformer, BERT.</li>
 <li><strong>Learned PE</strong>: Trained position embeddings; hard cutoff at max train length. Used in GPT-2.</li>
 <li><strong>ALiBi</strong>: Bias on attention scores; no parameters; good extrapolation. Used in MPT, BLOOM, BloombergGPT.</li>
 <li><strong><a class="concept-link" href="rope.html">RoPE</a></strong>: Rotational encoding applied to Q/K; better extrapolation with YaRN/dynamic NTK scaling; dominant in modern <a class="concept-link" href="llms.html">LLMs</a> (Llama, Mistral). RoPE wins on most <a class="concept-link" href="benchmarks.html">benchmarks</a>; ALiBi is simpler to implement.</li>
@@ -221,14 +221,14 @@ bias = build_alibi_bias(n_heads=8, seq_len=512)
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Models using ALiBi</h2>
-<p><strong>BLOOM</strong> (BigScience, 2022): 176B multilingual model, one of the first large models to use ALiBi. <strong>MPT</strong> (MosaicML): 7B, 30B models trained on long contexts; ALiBi enables efficient context extension. <strong>BloombergGPT</strong>: Financial domain LLM based on BLOOM architecture. ALiBi has largely been superseded by <a class="concept-link" href="rope.html">RoPE</a> in newer models, but it remains relevant for understanding the design space of positional encodings.</p>
+<p><strong>BLOOM</strong> (BigScience, 2022): 176B multilingual model, one of the first large models to use ALiBi. <strong>MPT</strong> (MosaicML): 7B, 30B models trained on long contexts; ALiBi enables efficient context extension. <strong>BloombergGPT</strong>: Financial domain LLM based on BLOOM architecture. ALiBi has largely been superseded by RoPE in newer models, but it remains relevant for understanding the design space of positional encodings.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
 <li><strong>Causal vs bidirectional</strong>: For causal language models, the bias only applies to j ≤ i (no future attending). For bidirectional models (BERT-style), apply the bias symmetrically.</li>
-<li><strong>Not combined with positional <a class="concept-link" href="embeddings.html">embeddings</a></strong>: ALiBi replaces positional embeddings — don't use both. If your model has learned position embeddings in the token <a class="concept-link" href="embeddings.html">embedding</a> layer, remove them before adding ALiBi.</li>
+<li><strong>Not combined with positional embeddings</strong>: ALiBi replaces positional embeddings — don't use both. If your model has learned position embeddings in the token embedding layer, remove them before adding ALiBi.</li>
 <li><strong>Flash Attention compatibility</strong>: <a class="concept-link" href="flash-attn.html">Flash Attention 2</a> has native ALiBi support via the <code>alibi_slopes</code> argument to <code>flash_attn_func</code>.</li>
 </ul>
 </div>

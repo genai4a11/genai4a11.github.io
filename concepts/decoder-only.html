@@ -344,7 +344,7 @@ print(f"Params: {sum(p.numel() for p in model.parameters()):,}")  # ~6.5M
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Pre-norm vs post-norm matters.</strong> The original transformer uses post-norm (LayerNorm after the residual add). Modern <a class="concept-link" href="llms.html">LLMs</a> (GPT-2+, Llama) use pre-norm (LayerNorm before the attention/FFN). Pre-norm is more stable to train at large scale — gradients flow more cleanly through the residual stream. If you see training instability, check whether you're using post-norm.</p>
+<p><strong>Pre-norm vs post-norm matters.</strong> The original transformer uses post-norm (LayerNorm after the residual add). Modern LLMs (GPT-2+, Llama) use pre-norm (LayerNorm before the attention/FFN). Pre-norm is more stable to train at large scale — gradients flow more cleanly through the residual stream. If you see training instability, check whether you're using post-norm.</p>
 <p><strong>The FFN is the majority of parameters.</strong> For a 7B Llama model, attention is ~25% of parameters, FFN is ~65%, <a class="concept-link" href="embeddings.html">embeddings</a> ~10%. The FFN (two linear layers with a non-linearity, often SwiGLU) is where most of the "factual knowledge" is stored. Don't neglect FFN optimisation when profiling inference speed.</p>
 <p><strong>Temperature 0 is not greedy decoding.</strong> Setting temperature to 0 makes all logits divide by 0 (or near-0), producing NaN or all-uniform distributions. Most inference libraries implement "temperature=0" as argmax (true greedy decoding) as a special case. When writing your own sampler, handle temperature≤0 explicitly with argmax rather than the division formula.</p>
 </div>

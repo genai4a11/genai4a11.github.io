@@ -158,7 +158,7 @@
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Sinusoidal PE formula</h2>
-<p>For a token at position pos in the sequence and <a class="concept-link" href="embeddings.html">embedding</a> dimension i:</p>
+<p>For a token at position pos in the sequence and embedding dimension i:</p>
 <ul>
 <li>PE(pos, 2i) = sin(pos / 10000^(2i/d_model))</li>
 <li>PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))</li>
@@ -217,19 +217,19 @@ plt.colorbar(); plt.title("Sinusoidal Positional Encoding"); plt.show()
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Learned vs sinusoidal</h2>
-<p>Vaswani et al. tested both fixed sinusoidal PE and learned positional <a class="concept-link" href="embeddings.html">embeddings</a> and found nearly identical performance on translation tasks. Sinusoidal PE has practical advantages: no parameters to train, works for any sequence length at inference time (no hard cutoff), and can in principle extrapolate beyond training length (though in practice this degrades). Learned PE has a hard cutoff at the training max length but can be extended with techniques like position interpolation.</p>
+<p>Vaswani et al. tested both fixed sinusoidal PE and learned positional embeddings and found nearly identical performance on translation tasks. Sinusoidal PE has practical advantages: no parameters to train, works for any sequence length at inference time (no hard cutoff), and can in principle extrapolate beyond training length (though in practice this degrades). Learned PE has a hard cutoff at the training max length but can be extended with techniques like position interpolation.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>The road to RoPE</h2>
-<p>Sinusoidal PE inspired <a class="concept-link" href="rope.html">RoPE</a> (Rotary Position <a class="concept-link" href="embeddings.html">Embedding</a>, Su et al. 2021). Where sinusoidal PE is added to <a class="concept-link" href="embeddings.html">embeddings</a> before attention, RoPE is applied directly to query and key vectors by rotating them in a position-dependent way. RoPE inherits sinusoidal PE's nice relative-position properties but integrates more naturally with the attention mechanism and supports efficient context extension via YaRN and dynamic NTK scaling. RoPE is now the dominant <a class="concept-link" href="pos-encoding.html">positional encoding</a> in modern <a class="concept-link" href="llms.html">LLMs</a>.</p>
+<p>Sinusoidal PE inspired <a class="concept-link" href="rope.html">RoPE</a> (Rotary Position Embedding, Su et al. 2021). Where sinusoidal PE is added to embeddings before attention, RoPE is applied directly to query and key vectors by rotating them in a position-dependent way. RoPE inherits sinusoidal PE's nice relative-position properties but integrates more naturally with the attention mechanism and supports efficient context extension via YaRN and dynamic NTK scaling. RoPE is now the dominant positional encoding in modern <a class="concept-link" href="llms.html">LLMs</a>.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
-<li><strong>Don't normalise PE</strong>: Layer normalisation after adding PE can wash out positional information. If using post-attention LayerNorm (GPT-style), PE survives. If applying LayerNorm to the <a class="concept-link" href="embeddings.html">embeddings</a> directly, position signal is attenuated.</li>
-<li><strong>Hard extrapolation limit</strong>: Despite the theoretical extrapolation claim, practical performance drops for sequences significantly longer than training. Use <a class="concept-link" href="rope.html">RoPE</a> + YaRN or <a class="concept-link" href="alibi.html">ALiBi</a> for real long-context requirements.</li>
+<li><strong>Don't normalise PE</strong>: Layer normalisation after adding PE can wash out positional information. If using post-attention LayerNorm (GPT-style), PE survives. If applying LayerNorm to the embeddings directly, position signal is attenuated.</li>
+<li><strong>Hard extrapolation limit</strong>: Despite the theoretical extrapolation claim, practical performance drops for sequences significantly longer than training. Use RoPE + YaRN or <a class="concept-link" href="alibi.html">ALiBi</a> for real long-context requirements.</li>
 <li><strong>BERT uses learned PE</strong>: BERT does not use sinusoidal PE — it uses learned absolute position embeddings with a max of 512 positions. Don't confuse the two.</li>
 </ul>
 </div>

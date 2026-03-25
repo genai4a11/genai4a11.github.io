@@ -254,8 +254,8 @@ K_rope = apply_rope_torch(K, cos_freqs, sin_freqs)
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>RoPE vs sinusoidal vs ALiBi</h2>
-<p><strong><a class="concept-link" href="sinusoidal-pe.html">Sinusoidal PE</a></strong> (original transformer): adds fixed sin/cos patterns to token <a class="concept-link" href="embeddings.html">embeddings</a> before the first layer. Encodes absolute position. Doesn't generalise well beyond training length — no mechanism to extrapolate. Simple and still used in some models.</p>
-<p><strong>Learned absolute PE</strong> (BERT, GPT-2): same as sinusoidal but learned from data. Hard cap at training sequence length — a BERT-base trained on 512 tokens has no positional <a class="concept-link" href="embeddings.html">embedding</a> for position 513. Fine for fixed-length tasks, bad for variable-length generation.</p>
+<p><strong>Sinusoidal PE</strong> (original transformer): adds fixed sin/cos patterns to token embeddings before the first layer. Encodes absolute position. Doesn't generalise well beyond training length — no mechanism to extrapolate. Simple and still used in some models.</p>
+<p><strong>Learned absolute PE</strong> (BERT, GPT-2): same as sinusoidal but learned from data. Hard cap at training sequence length — a BERT-base trained on 512 tokens has no positional embedding for position 513. Fine for fixed-length tasks, bad for variable-length generation.</p>
 <p><strong>RoPE</strong> (Llama, Mistral, Qwen, GPT-NeoX): rotates Q and K. Relative positions emerge naturally from the dot product. With tricks like YaRN (Yet another RoPE extension), models can be extended from 4K to 128K context post-training by adjusting the rotation frequencies.</p>
 <p><strong><a class="concept-link" href="alibi.html">ALiBi</a></strong> (BLOOM, MPT): instead of modifying embeddings, subtracts a linear bias from attention scores proportional to distance. Simpler than RoPE, strong extrapolation, but slightly lower quality on long-context retrieval tasks. Chosen for models where simplicity and extrapolation matter more than peak performance.</p>
 </div>
@@ -281,7 +281,7 @@ def dynamic_ntk_base(d: int, seq_len: int, max_trained: int, alpha: float = 1.0)
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>RoPE must be applied before, not after, the attention projection.</strong> It rotates Q and K as part of the attention computation. Applying it to the raw <a class="concept-link" href="embeddings.html">embeddings</a> (like adding <a class="concept-link" href="sinusoidal-pe.html">sinusoidal PE</a> to X before the first layer) breaks the relative-position property — the rotation must happen on the per-head projected Q and K vectors.</p>
+<p><strong>RoPE must be applied before, not after, the attention projection.</strong> It rotates Q and K as part of the attention computation. Applying it to the raw embeddings (like adding sinusoidal PE to X before the first layer) breaks the relative-position property — the rotation must happen on the per-head projected Q and K vectors.</p>
 <p><strong>Extending context requires <a class="concept-link" href="finetuning.html">fine-tuning</a>, not just changing the base.</strong> Simply increasing the base at inference time degrades model quality because the model hasn't seen those relative position encodings during training. Effective long-context extension requires continued pre-training on long documents with the new base, plus techniques like YaRN's interpolation.</p>
 <p><strong>RoPE doesn't work on V.</strong> Only Q and K are rotated. V is left as-is. This is intentional — the rotation only needs to affect the dot-product similarity score, not the values that are summed. Applying rotation to V would have no effect on position encoding and just wastes compute.</p>
 </div>

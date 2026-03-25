@@ -160,7 +160,7 @@
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>Trigger patterns</h2>
-<p>Three primary trigger patterns for event-driven <a class="concept-link" href="agents.html">agents</a>:</p>
+<p>Three primary trigger patterns for event-driven agents:</p>
 <p><strong>Webhooks</strong>: an external service calls your HTTP endpoint when something happens. GitHub sends a webhook on PR events; Stripe sends one on payment completion; Twilio sends one on incoming SMS. Fast, push-based, no polling needed.</p>
 <p><strong>Message queues</strong>: events are written to a queue (Redis, RabbitMQ, SQS, Kafka) and the agent consumes them. Decouples event producer from consumer, handles backpressure, supports retry and dead-letter queues. Best for high-volume or unreliable producers.</p>
 <p><strong>Scheduled triggers</strong>: a cron job or scheduler (APScheduler, Celery Beat, GitHub Actions) wakes the agent on a fixed schedule. Simplest for regular batch processing: "every night at 2am, process yesterday's logs".</p>
@@ -323,7 +323,7 @@ scheduler.start()
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Idempotency and reliability</h2>
-<p>Event-driven <a class="concept-link" href="agents.html">agents</a> must handle failures gracefully. Key patterns:</p>
+<p>Event-driven agents must handle failures gracefully. Key patterns:</p>
 <p><strong>Idempotent processing</strong>: if an event is processed twice (e.g., due to a retry after a crash), the result should be the same as processing it once. Add a deduplication key (event ID) and check it before processing:</p>
 <pre><code class="language-python">def process_event_idempotently(event_id: str, event: dict):
     # Check if already processed
@@ -343,7 +343,7 @@ scheduler.start()
 <h2>Gotchas</h2>
 <p><strong>Webhook endpoints must return 200 quickly.</strong> Most webhook providers (GitHub, Stripe, Twilio) timeout in 5-30 seconds. If your agent takes longer, acknowledge the webhook immediately and process in a background task or queue. A timeout causes the provider to retry — leading to duplicate processing if you're not idempotent.</p>
 <p><strong>Queue consumers need heartbeats.</strong> A worker that takes 10 minutes on a task might look "dead" to the queue, which reassigns the task to another worker — causing double processing. Set visibility timeouts longer than your longest expected task, or send periodic heartbeat extensions.</p>
-<p><strong>LLM cost surprises in batch jobs.</strong> A scheduled agent that processes 1,000 items/night might cost pennies in testing but dollars in production when the items are large. Always estimate token cost before deploying batch <a class="concept-link" href="agents.html">agents</a> — multiply (average tokens per item) × (items per run) × (cost per 1M tokens) × (runs per month).</p>
+<p><strong>LLM cost surprises in batch jobs.</strong> A scheduled agent that processes 1,000 items/night might cost pennies in testing but dollars in production when the items are large. Always estimate token cost before deploying batch agents — multiply (average tokens per item) × (items per run) × (cost per 1M tokens) × (runs per month).</p>
 </div>
 </div>
 <div class="related-concepts">

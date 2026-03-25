@@ -208,14 +208,14 @@ training_args = TrainingArguments(
 <ul>
 <li><strong>Prefix length (num_virtual_tokens)</strong>: 10–100 is typical. Longer prefixes are more expressive but add <a class="concept-link" href="agent-memory.html">memory</a>. Start with 20 for most tasks.</li>
 <li><strong>Learning rate</strong>: 3e-2 to 1e-1 — much higher than full <a class="concept-link" href="finetuning.html">fine-tuning</a> (1e-5) or <a class="concept-link" href="lora.html">LoRA</a> (1e-4). The prefix parameters start from random initialisation and need a larger LR to converge.</li>
-<li><strong>Initialisation</strong>: Random initialisation often unstable. Li &amp; Lam recommend initialising from actual token <a class="concept-link" href="embeddings.html">embeddings</a> of task-relevant words (e.g. words that describe the task).</li>
+<li><strong>Initialisation</strong>: Random initialisation often unstable. Li &amp; Lam recommend initialising from actual token embeddings of task-relevant words (e.g. words that describe the task).</li>
 <li><strong>Batch size</strong>: Prefix tuning is sensitive to batch size. Larger batches (16–32) tend to stabilise training.</li>
 </ul>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Prefix tuning vs LoRA</h2>
-<p>In practice, <a class="concept-link" href="lora.html">LoRA</a> has largely superseded prefix tuning for most use cases. LoRA is more stable to train, scales better to large models, and achieves better performance on most <a class="concept-link" href="benchmarks.html">benchmarks</a> at equivalent parameter counts. Prefix tuning has one advantage: the prefix vectors are naturally task-specific and can be swapped without any model weight modification — you can switch tasks by simply loading a different prefix, which is useful in multi-task serving scenarios where you need to handle many tasks with a single frozen model.</p>
+<p>In practice, LoRA has largely superseded prefix tuning for most use cases. LoRA is more stable to train, scales better to large models, and achieves better performance on most <a class="concept-link" href="benchmarks.html">benchmarks</a> at equivalent parameter counts. Prefix tuning has one advantage: the prefix vectors are naturally task-specific and can be swapped without any model weight modification — you can switch tasks by simply loading a different prefix, which is useful in multi-task serving scenarios where you need to handle many tasks with a single frozen model.</p>
 </div>
 <div class="section-block" id="s6">
 <pre><code class="language-python"># Fine-tune with prefix tuning vs LoRA — side-by-side setup
@@ -252,14 +252,14 @@ args = TrainingArguments(output_dir="./out", num_train_epochs=3,
 </code></pre>
 <div class="section-marker">SECTION 06</div>
 <h2>When to use prefix tuning</h2>
-<p>Prefix tuning is worth considering when: (1) you have a frozen API model where you can inject prefix tokens but not modify weights; (2) you need to serve many tasks from one frozen base model and want the cheapest per-task overhead; (3) you're adapting a model where <a class="concept-link" href="lora.html">LoRA</a> is not supported (some <a class="concept-link" href="transformer-arch.html">architectures</a>). For most practitioners with access to the model weights, LoRA is the better default choice.</p>
+<p>Prefix tuning is worth considering when: (1) you have a frozen API model where you can inject prefix tokens but not modify weights; (2) you need to serve many tasks from one frozen base model and want the cheapest per-task overhead; (3) you're adapting a model where LoRA is not supported (some <a class="concept-link" href="transformer-arch.html">architectures</a>). For most practitioners with access to the model weights, LoRA is the better default choice.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
 <li><strong>Inference overhead</strong>: The prefix tokens extend the effective sequence length by k tokens at every layer. This means attention computation increases from O(L²) to O((L+k)²) — for long sequences this is negligible, but for very short inputs the relative overhead is significant.</li>
-<li><strong>Task type matters</strong>: Prefix tuning works well for generation tasks (summarisation, translation) but can underperform <a class="concept-link" href="lora.html">LoRA</a> on classification and instruction following, where direct weight updates at the right layers are more effective.</li>
+<li><strong>Task type matters</strong>: Prefix tuning works well for generation tasks (summarisation, translation) but can underperform LoRA on classification and instruction following, where direct weight updates at the right layers are more effective.</li>
 <li><strong>Reparameterization at inference</strong>: The PEFT library materialises the prefix directly during inference (no projection network needed). Ensure you call <code>model.merge_and_unload()</code> equivalents if you need a self-contained model checkpoint.</li>
 </ul>
 </div>

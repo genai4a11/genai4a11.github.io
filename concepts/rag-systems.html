@@ -573,7 +573,34 @@ metadata_db.store(chunks)  # for re-ranking, filtering
 <div class="tool-card">
 <div class="tool-category">Dense (API)</div>
 <div class="tool-name">OpenAI text-embedding-3</div>
-<div class="tool-desc">High quality, 3072 dimensions, fast. $0.02 per 1M tokens. Proprietary.</div>
+<div class="tool-desc">High quality, 3072 dimensions, fast. $0.02 per 1M tokens. Proprietary.
+
+<div class="example-box"># Minimal RAG pipeline with LlamaIndex
+# pip install llama-index llama-index-llms-openai llama-index-embeddings-openai
+
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.llms.openai import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
+
+# Configure models
+Settings.llm = OpenAI(model="gpt-4o-mini", temperature=0.1)
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+Settings.chunk_size = 512
+Settings.chunk_overlap = 50
+
+# Index your documents
+documents = SimpleDirectoryReader("./docs").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+# Query
+query_engine = index.as_query_engine(similarity_top_k=4)
+response = query_engine.query("What are the key SLA requirements?")
+print(response)
+
+# Persist index to disk (avoids re-embedding on restart)
+index.storage_context.persist("./storage")
+</div>
+</div>
 </div>
 <div class="tool-card">
 <div class="tool-category">Dense (OSS)</div>
@@ -634,6 +661,38 @@ metadata_db.store(chunks)  # for re-ranking, filtering
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Vector DB lock-in:</strong> Embedding model and vector DB are coupled (you can't easily switch). Start with Chroma for prototyping; plan your migration path to production DB early.</span>
+
+<div class="example-box"># Hybrid retrieval: dense + BM25 with reranking
+# pip install llama-index llama-index-retrievers-bm25 sentence-transformers
+
+from llama_index.core import VectorStoreIndex, StorageContext, load_index_from_storage
+from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.retrievers.bm25 import BM25Retriever
+from llama_index.core.retrievers import QueryFusionRetriever
+from llama_index.core.query_engine import RetrieverQueryEngine
+
+# Load persisted index
+storage_ctx = StorageContext.from_defaults(persist_dir="./storage")
+index = load_index_from_storage(storage_ctx)
+
+# Build hybrid retriever (dense + sparse)
+vector_retriever = VectorIndexRetriever(index=index, similarity_top_k=6)
+bm25_retriever   = BM25Retriever.from_defaults(index=index, similarity_top_k=6)
+
+hybrid_retriever = QueryFusionRetriever(
+    retrievers=[vector_retriever, bm25_retriever],
+    similarity_top_k=4,
+    num_queries=1,          # don't generate sub-queries
+    mode="reciprocal_rerank",
+)
+
+query_engine = RetrieverQueryEngine.from_args(hybrid_retriever)
+response = query_engine.query("Summarise the data retention policy")
+print(response)
+# Source nodes: response.source_nodes
+for node in response.source_nodes:
+    print(f"  score={node.score:.3f} | {node.text[:80]}...")
+</div>
 </div>
 </div>
 <!-- ── 7. ENTERPRISE RAG ── -->
@@ -702,7 +761,7 @@ metadata_db.store(chunks)  # for re-ranking, filtering
 </li>
 <li>
 <span class="ref-badge badge-blog">Blog</span>
-<a class="concept-link" href="embeddings.html">Embedding</a> Quality &amp; <a class="concept-link" href="model-selection.html">Model Selection</a>. <a href="https://huggingface.co/spaces/mteb/leaderboard" target="_blank">MTEB Leaderboard ↗</a>
+Embedding Quality &amp; <a class="concept-link" href="model-selection.html">Model Selection</a>. <a href="https://huggingface.co/spaces/mteb/leaderboard" target="_blank">MTEB Leaderboard ↗</a>
 </li>
 </ul>
 </div>

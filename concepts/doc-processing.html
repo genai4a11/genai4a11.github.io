@@ -704,6 +704,67 @@ def process_document_batch(documents: List[Path]):
     
     update_status('processing_complete')
     report_metrics()  # timing, quality, errors</div></div></div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">8</div>
+<h2>End-to-End Pipeline Example</h2>
+<p>A production document processing pipeline typically combines several of the approaches above. The pattern below handles PDFs with mixed text, tables, and images — the most common enterprise use case.</p>
+<div class="example-box"># Full document pipeline: parse → chunk → embed → store
+# pip install pymupdf4llm unstructured[pdf] langchain-openai chromadb
+
+import pymupdf4llm
+from unstructured.partition.pdf import partition_pdf
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+def process_document(pdf_path: str, collection_name: str):
+    # 1. Parse: use pymupdf4llm for clean markdown extraction
+    md_text = pymupdf4llm.to_markdown(pdf_path)
+
+    # 2. For complex layouts (forms, mixed tables), fallback to unstructured
+    # elements = partition_pdf(filename=pdf_path, strategy="hi_res",
+    #                          extract_images_in_pdf=True)
+
+    # 3. Chunk with overlap, respect document structure
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800, chunk_overlap=100,
+        separators=["
+## ", "
+### ", "
+
+", "
+", " "]
+    )
+    chunks = splitter.create_documents(
+        [md_text],
+        metadatas=[{"source": pdf_path, "page_count": 0}]
+    )
+
+    # 4. Embed and store
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    vectorstore = Chroma.from_documents(
+        chunks, embeddings, collection_name=collection_name,
+        persist_directory="./chroma_db"
+    )
+    print(f"Indexed {len(chunks)} chunks from {pdf_path}")
+    return vectorstore
+
+vs = process_document("annual_report.pdf", "financials")
+results = vs.similarity_search("What was the revenue growth in Q4?", k=4)
+for r in results:
+    print(r.page_content[:120])
+</div>
+<table>
+<thead><tr><th>Tool</th><th>Best for</th><th>Limitation</th></tr></thead>
+<tbody>
+<tr><td>PyMuPDF4LLM</td><td>Clean digital PDFs, markdown output</td><td>Struggles with scanned docs</td></tr>
+<tr><td>Unstructured</td><td>Mixed PDFs, tables, images</td><td>Slower; requires hi_res for accuracy</td></tr>
+<tr><td>Azure Document Intelligence</td><td>Enterprise forms, invoices</td><td>Cost; external API dependency</td></tr>
+<tr><td>Docling (IBM)</td><td>Scientific papers, complex layouts</td><td>Newer; smaller community</td></tr>
+</tbody>
+</table>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -160,7 +160,7 @@
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>NF4 quantisation</h2>
-<p>NF4 (Normal Float 4) is a 4-bit data type optimised for normally-distributed weights. LLM weights are approximately normally distributed (mean ~0, std ~small), so a <a class="concept-link" href="quantization.html">quantisation</a> scheme designed for this distribution uses its 16 levels more efficiently than a uniform grid.</p>
+<p>NF4 (Normal Float 4) is a 4-bit data type optimised for normally-distributed weights. LLM weights are approximately normally distributed (mean ~0, std ~small), so a quantisation scheme designed for this distribution uses its 16 levels more efficiently than a uniform grid.</p>
 <p>NF4 maps each weight to the nearest of 16 quantisation levels that are spaced to minimise quantisation error for a unit normal distribution. Contrast with INT4 (uniform 4-bit integers) which wastes levels on rare extreme values.</p>
 <pre><code class="language-python">import bitsandbytes as bnb
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
@@ -190,8 +190,8 @@ for name, param in model.named_parameters():
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Double quantisation</h2>
-<p>4-bit <a class="concept-link" href="quantization.html">quantisation</a> requires storing quantisation constants (one per 64-weight block). These constants are float32 — adding ~0.5 bytes/param overhead. Double quantisation quantises these constants too (to 8-bit), reducing the overhead to ~0.125 bytes/param.</p>
-<p>The net result: a 7B model compressed from ~14GB (float16) to ~4.5GB (NF4 + double quantisation). <a class="concept-link" href="agent-memory.html">Memory</a> breakdown:</p>
+<p>4-bit quantisation requires storing quantisation constants (one per 64-weight block). These constants are float32 — adding ~0.5 bytes/param overhead. Double quantisation quantises these constants too (to 8-bit), reducing the overhead to ~0.125 bytes/param.</p>
+<p>The net result: a 7B model compressed from ~14GB (float16) to ~4.5GB (NF4 + double quantisation). Memory breakdown:</p>
 <pre><code class="language-python"># Memory calculation for QLoRA fine-tuning
 def qlora_memory_estimate(num_params_B: float, lora_rank: int = 16) -&gt; dict:
     # Base model in 4-bit: ~0.5 bytes per param
@@ -277,8 +277,8 @@ trainer.save_model("./qlora-final")
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Choosing rank and alpha</h2>
-<p><strong>Rank (r)</strong>: controls the number of trainable parameters. r=8: minimal (good for simple style adaptation). r=16: standard default. r=64: for complex tasks like code generation or domain adaptation with large distribution shift. Higher rank = more capacity but more <a class="concept-link" href="agent-memory.html">memory</a> and risk of overfitting.</p>
-<p><strong>Alpha (lora_alpha)</strong>: scaling factor applied to <a class="concept-link" href="lora.html">LoRA</a> outputs before adding to frozen weights. Effective LoRA contribution = (alpha/r) × LoRA_output. Setting alpha=2r keeps the effective scale stable regardless of r. Common choices: r=16/alpha=32, r=64/alpha=64.</p>
+<p><strong>Rank (r)</strong>: controls the number of trainable parameters. r=8: minimal (good for simple style adaptation). r=16: standard default. r=64: for complex tasks like code generation or domain adaptation with large distribution shift. Higher rank = more capacity but more memory and risk of overfitting.</p>
+<p><strong>Alpha (lora_alpha)</strong>: scaling factor applied to LoRA outputs before adding to frozen weights. Effective LoRA contribution = (alpha/r) × LoRA_output. Setting alpha=2r keeps the effective scale stable regardless of r. Common choices: r=16/alpha=32, r=64/alpha=64.</p>
 <p><strong>Target modules</strong>: which weight matrices to add adapters to. Minimal: <code>q_proj, v_proj</code>. Standard: <code>q_proj, k_proj, v_proj, o_proj</code>. Aggressive: include FFN layers (<code>gate_proj, up_proj, down_proj</code>) for tasks requiring more knowledge update.</p>
 <pre><code class="language-python"># Quick sweep to find good rank:
 for rank in [8, 16, 32, 64]:
@@ -319,8 +319,8 @@ merged.save_pretrained("./merged-model")
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <p><strong>4-bit models cannot be fine-tuned directly — you need prepare_model_for_kbit_training.</strong> This function casts certain normalisation layers back to float32 (they can't be trained in 4-bit) and enables gradient <a class="concept-link" href="checkpointing.html">checkpointing</a>. Skipping this step causes NaN losses or silent failures where gradients don't flow through the base model correctly.</p>
-<p><strong>Gradient checkpointing trades compute for <a class="concept-link" href="agent-memory.html">memory</a>.</strong> <code>model.gradient_checkpointing_enable()</code> recomputes <a class="concept-link" href="activations.html">activations</a> during the backward pass instead of storing them. This reduces activation memory by ~60% but increases training time by ~20%. Essential for fitting large models in limited VRAM.</p>
-<p><strong>The merged model is larger than the 4-bit base.</strong> Merging adds <a class="concept-link" href="lora.html">LoRA</a> weights back into the base weights at full precision — the merged model is back to float16 size. If you need a small model for deployment, quantise the merged model to GGUF/<a class="concept-link" href="gptq.html">GPTQ</a> after merging, not before.</p>
+<p><strong>Gradient checkpointing trades compute for memory.</strong> <code>model.gradient_checkpointing_enable()</code> recomputes <a class="concept-link" href="activations.html">activations</a> during the backward pass instead of storing them. This reduces activation memory by ~60% but increases training time by ~20%. Essential for fitting large models in limited VRAM.</p>
+<p><strong>The merged model is larger than the 4-bit base.</strong> Merging adds LoRA weights back into the base weights at full precision — the merged model is back to float16 size. If you need a small model for deployment, quantise the merged model to GGUF/<a class="concept-link" href="gptq.html">GPTQ</a> after merging, not before.</p>
 </div>
 </div>
 <div class="related-concepts">

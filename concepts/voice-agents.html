@@ -641,7 +641,7 @@ With optimization: ~400–500ms possible.
 <h3>LiveKit Voice Agent Pattern</h3>
 <p><strong>1. User joins room:</strong> Browser/mobile connects via WebRTC. <strong>2. Agent joins room:</strong> <a class="concept-link" href="programmatic-prompting.html">Programmatic</a> agent connects, listens to audio. <strong>3. Audio flow:</strong> User's microphone → agent's input stream. Agent processes → LLM → TTS → plays to user. <strong>4. Recording:</strong> Optionally record conversation for audit/training. <strong>5. Disconnect:</strong> Agent leaves room when done.</p>
 <h3>LiveKit Agents SDK</h3>
-<p>LiveKit provides SDKs for building <a class="concept-link" href="agents.html">agents</a> (Python, Go). Define an agent with STT, LLM, TTS components. LiveKit handles the WebRTC plumbing.</p>
+<p>LiveKit provides SDKs for building agents (Python, Go). Define an agent with STT, LLM, TTS components. LiveKit handles the WebRTC plumbing.</p>
 <div class="example-box">LiveKit agent pseudocode:
 
 from livekit.agents import VoiceAssistant, STT, LLM, TTS
@@ -663,6 +663,44 @@ agent.run(room_url, room_token)
     <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Best practice:</strong> Use LiveKit if you need multi-party, recording, or managed infrastructure. Build custom if you're optimizing for ultra-low latency (edge deployment).</span>
+
+<div class="example-box"># Full real-time voice agent with LiveKit
+# pip install livekit-agents livekit-plugins-openai livekit-plugins-silero
+
+from livekit.agents import AutoSubscribe, JobContext, WorkerOptions, cli, llm
+from livekit.agents.voice_assistant import VoiceAssistant
+from livekit.plugins import openai, silero
+
+async def entrypoint(ctx: JobContext):
+    initial_ctx = llm.ChatContext().append(
+        role="system",
+        text=(
+            "You are a voice assistant for Acme customer support. "
+            "Keep responses under 40 words. Never say 'certainly' or 'absolutely'."
+        ),
+    )
+
+    await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
+
+    assistant = VoiceAssistant(
+        vad=silero.VAD.load(),                          # voice activity detection
+        stt=openai.STT(model="whisper-1"),              # speech-to-text
+        llm=openai.LLM(model="gpt-4o-mini"),            # language model
+        tts=openai.TTS(voice="nova", speed=1.1),        # text-to-speech
+        chat_ctx=initial_ctx,
+        allow_interruptions=True,
+        interrupt_speech_duration=0.5,                  # interrupt after 0.5s of speech
+        min_endpointing_delay=0.3,                      # wait 0.3s before LLM call
+    )
+
+    assistant.start(ctx.room)
+    await assistant.say("Hi, how can I help you today?", allow_interruptions=True)
+
+if __name__ == "__main__":
+    cli.run_app(WorkerOptions(entrypoint_fnc=entrypoint))
+
+# Run: python agent.py start --url wss://your-livekit-server.livekit.cloud --api-key ... --api-secret ...
+</div>
 </div>
 </div>
 <div class="section-block" id="references">

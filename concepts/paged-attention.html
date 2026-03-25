@@ -158,13 +158,13 @@
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>PagedAttention design</h2>
-<p>PagedAttention, introduced in the <a class="concept-link" href="vllm.html">vLLM</a> paper (Kwon et al. 2023), borrows the OS virtual <a class="concept-link" href="agent-memory.html">memory</a> paging concept. The <a class="concept-link" href="kv-cache.html">KV cache</a> is divided into <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> <strong>physical blocks</strong> (e.g. 16 token positions each). Each sequence maintains a <strong>block table</strong> — a mapping from logical block indices to physical block indices, like a page table. Memory is allocated one block at a time as sequences grow, rather than pre-allocating the full maximum length. When a sequence finishes, its blocks are freed and can be immediately reused by new sequences with no fragmentation.</p>
+<p>PagedAttention, introduced in the <a class="concept-link" href="vllm.html">vLLM</a> paper (Kwon et al. 2023), borrows the OS virtual memory paging concept. The KV cache is divided into <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> <strong>physical blocks</strong> (e.g. 16 token positions each). Each sequence maintains a <strong>block table</strong> — a mapping from logical block indices to physical block indices, like a page table. Memory is allocated one block at a time as sequences grow, rather than pre-allocating the full maximum length. When a sequence finishes, its blocks are freed and can be immediately reused by new sequences with no fragmentation.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Block tables and physical blocks</h2>
-<p>The key invariant: logical block i of sequence s maps to some physical block p. The attention kernel reads K and V from the physical block addresses in the block table, not from contiguous <a class="concept-link" href="agent-memory.html">memory</a>. This requires a custom CUDA kernel that handles the scatter-gather read pattern efficiently.</p>
-<p>Copy-on-write (CoW) blocks enable prefix caching: if two sequences share a common prefix (e.g. a system prompt), they can share physical blocks for the prefix, with CoW ensuring modifications don't affect the shared copy. This is the basis for <a class="concept-link" href="vllm.html">vLLM</a>'s prefix caching feature.</p>
+<p>The key invariant: logical block i of sequence s maps to some physical block p. The attention kernel reads K and V from the physical block addresses in the block table, not from contiguous memory. This requires a custom CUDA kernel that handles the scatter-gather read pattern efficiently.</p>
+<p>Copy-on-write (CoW) blocks enable prefix caching: if two sequences share a common prefix (e.g. a system prompt), they can share physical blocks for the prefix, with CoW ensuring modifications don't affect the shared copy. This is the basis for vLLM's prefix caching feature.</p>
 </div>
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
@@ -198,14 +198,14 @@ for out in outputs:
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Continuous batching synergy</h2>
-<p>PagedAttention and continuous batching (iteration-level scheduling) work together to maximise throughput. Continuous batching adds new requests to a running batch as soon as any sequence finishes a token, rather than waiting for all sequences to complete. Without PagedAttention, the scheduler couldn't predict how much <a class="concept-link" href="agent-memory.html">memory</a> a new request needs. With block-level allocation, the scheduler knows exactly how many free blocks exist and can make fine-grained admission decisions.</p>
+<p>PagedAttention and continuous batching (iteration-level scheduling) work together to maximise throughput. Continuous batching adds new requests to a running batch as soon as any sequence finishes a token, rather than waiting for all sequences to complete. Without PagedAttention, the scheduler couldn't predict how much memory a new request needs. With block-level allocation, the scheduler knows exactly how many free blocks exist and can make fine-grained admission decisions.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Memory efficiency numbers</h2>
-<p>From the <a class="concept-link" href="vllm.html">vLLM</a> paper <a class="concept-link" href="benchmarks.html">benchmarks</a> on LLaMA-13B:</p>
+<p>From the vLLM paper <a class="concept-link" href="benchmarks.html">benchmarks</a> on LLaMA-13B:</p>
 <ul>
-<li><strong>HuggingFace <a class="concept-link" href="transformers.html">transformers</a></strong>: 20.4% <a class="concept-link" href="kv-cache.html">KV cache</a> utilisation (79.6% wasted to fragmentation and reservations)</li>
+<li><strong>HuggingFace <a class="concept-link" href="transformers.html">transformers</a></strong>: 20.4% KV cache utilisation (79.6% wasted to fragmentation and reservations)</li>
 <li><strong>vLLM with PagedAttention</strong>: ~96% KV cache utilisation</li>
 <li><strong>Throughput improvement</strong>: 2.2–3.5× higher request throughput on A100 80GB vs HuggingFace baseline</li>
 </ul>
@@ -215,10 +215,10 @@ for out in outputs:
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
-<li><strong>Block size tuning</strong>: Smaller blocks (8–16 tokens) reduce internal fragmentation but increase block table overhead. <a class="concept-link" href="vllm.html">vLLM</a> defaults to 16 tokens/block, which works well for most cases.</li>
+<li><strong>Block size tuning</strong>: Smaller blocks (8–16 tokens) reduce internal fragmentation but increase block table overhead. vLLM defaults to 16 tokens/block, which works well for most cases.</li>
 <li><strong>Prefix caching</strong>: Enable with <code>enable_prefix_caching=True</code> in vLLM for workloads with shared <a class="concept-link" href="system-prompts.html">system prompts</a>. Reduces time-to-first-token for subsequent requests.</li>
 <li><strong>CPU offloading</strong>: Setting <code>swap_space</code> allows inactive KV blocks to spill to CPU RAM. Enables more concurrent sequences but adds swap-in latency when blocks are retrieved.</li>
-<li><strong>Not just vLLM</strong>: TGI, <a class="concept-link" href="sglang.html">SGLang</a>, and LMDeploy all implement equivalent paged <a class="concept-link" href="kv-cache.html">KV cache</a> management — PagedAttention was the first published formalisation, but the concept is now standard across all serious <a class="concept-link" href="serving.html">LLM serving</a> systems.</li>
+<li><strong>Not just vLLM</strong>: TGI, <a class="concept-link" href="sglang.html">SGLang</a>, and LMDeploy all implement equivalent paged KV cache management — PagedAttention was the first published formalisation, but the concept is now standard across all serious <a class="concept-link" href="serving.html">LLM serving</a> systems.</li>
 </ul>
 </div>
 </div>

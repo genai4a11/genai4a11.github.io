@@ -170,7 +170,7 @@ docker run --gpus all -p 8080:80   -v $HF_HOME:/data   ghcr.io/huggingface/text-
 # Test the endpoint
 curl http://localhost:8080/v1/chat/completions   -H "Content-Type: application/json"   -d '{"model":"tgi","messages":[{"role":"user","content":"Hello!"}],"max_tokens":100}'
 </code></pre>
-<p>For <a class="concept-link" href="gptq.html">GPTQ</a> or <a class="concept-link" href="awq.html">AWQ</a> models, use <code>--quantize gptq</code> or <code>--quantize awq</code> and ensure you're using a pre-quantised model from the Hub.</p>
+<p>For GPTQ or AWQ models, use <code>--quantize gptq</code> or <code>--quantize awq</code> and ensure you're using a pre-quantised model from the Hub.</p>
 </div>
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
@@ -181,7 +181,7 @@ curl http://localhost:8080/v1/chat/completions   -H "Content-Type: application/j
 <li><strong>--max-total-tokens</strong>: Input + output tokens. Sets the upper bound per request.</li>
 <li><strong>--max-batch-total-tokens</strong>: Maximum total tokens across all active requests in the continuous batch. Tune this to fill GPU <a class="concept-link" href="agent-memory.html">memory</a> without OOM.</li>
 <li><strong>--num-shard</strong>: Number of GPUs for tensor parallelism. Must divide the number of attention heads evenly.</li>
-<li><strong>--quantize</strong>: <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a>-nf4, bitsandbytes-fp4, <a class="concept-link" href="gptq.html">gptq</a>, <a class="concept-link" href="awq.html">awq</a>, eetq.</li>
+<li><strong>--quantize</strong>: <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a>-nf4, bitsandbytes-fp4, gptq, awq, eetq.</li>
 <li><strong>--speculate</strong>: Number of tokens the draft model proposes speculatively.</li>
 <li><strong>--<a class="concept-link" href="rope.html">rope</a>-scaling</strong> / <strong>--rope-factor</strong>: Extend <a class="concept-link" href="context-window.html">context window</a> beyond training length.</li>
 </ul>
@@ -207,7 +207,7 @@ for chunk in response:
 <div class="section-marker">SECTION 04</div>
 <h2>Continuous batching explained</h2>
 <p>Traditional static batching waits to fill a batch, then runs all requests together to completion. This wastes GPU time: early-finishing sequences idle while long ones continue. TGI uses <strong>continuous batching</strong> (also called in-flight batching): when any sequence finishes, a new request immediately joins the active batch without waiting.</p>
-<p>The <a class="concept-link" href="kv-cache.html">KV-cache</a> is managed dynamically using <strong>PagedAttention</strong> (borrowed from <a class="concept-link" href="vllm.html">vLLM</a>). <a class="concept-link" href="agent-memory.html">Memory</a> is allocated in <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> pages rather than per-sequence, allowing efficient sharing and reuse. This means TGI can sustain high throughput even with highly variable sequence lengths — a critical property for production APIs where users send everything from 10-token queries to 4000-token documents.</p>
+<p>The KV-cache is managed dynamically using <strong>PagedAttention</strong> (borrowed from <a class="concept-link" href="vllm.html">vLLM</a>). Memory is allocated in <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> pages rather than per-sequence, allowing efficient sharing and reuse. This means TGI can sustain high throughput even with highly variable sequence lengths — a critical property for production APIs where users send everything from 10-token queries to 4000-token documents.</p>
 <p>In practice, continuous batching gives 2–10× higher throughput than static batching for typical API workloads with mixed sequence lengths.</p>
 </div>
 <div class="section-block" id="s5">
@@ -226,11 +226,11 @@ docker run --gpus '"device=0,1,2,3"' -p 8080:80   -v $HF_HOME:/data   ghcr.io/hu
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Quantisation support</h2>
-<p>TGI supports several <a class="concept-link" href="quantization.html">quantisation</a> schemes, each with different trade-offs:</p>
+<p>TGI supports several quantisation schemes, each with different trade-offs:</p>
 <ul>
-<li><strong><a class="concept-link" href="bitsandbytes.html">bitsandbytes</a>-nf4</strong>: 4-bit NF4 quantisation on the fly. Easiest to use — works with any bf16/fp16 model. ~25% quality degradation vs fp16, but 4× <a class="concept-link" href="agent-memory.html">memory</a> reduction.</li>
-<li><strong><a class="concept-link" href="gptq.html">GPTQ</a></strong>: Post-training quantisation that calibrates per-layer. Requires a pre-quantised model (many available on HF Hub with <code>-GPTQ</code> suffix). Better quality than bnb at same bit-width.</li>
-<li><strong><a class="concept-link" href="awq.html">AWQ</a></strong>: Activation-aware Weight Quantisation. State-of-the-art 4-bit method. Better than GPTQ on most <a class="concept-link" href="benchmarks.html">benchmarks</a>. Requires AWQ-quantised model.</li>
+<li><strong>bitsandbytes-nf4</strong>: 4-bit NF4 quantisation on the fly. Easiest to use — works with any bf16/fp16 model. ~25% quality degradation vs fp16, but 4× memory reduction.</li>
+<li><strong>GPTQ</strong>: Post-training quantisation that calibrates per-layer. Requires a pre-quantised model (many available on HF Hub with <code>-GPTQ</code> suffix). Better quality than bnb at same bit-width.</li>
+<li><strong>AWQ</strong>: Activation-aware Weight Quantisation. State-of-the-art 4-bit method. Better than GPTQ on most <a class="concept-link" href="benchmarks.html">benchmarks</a>. Requires AWQ-quantised model.</li>
 <li><strong>EETQ</strong>: 8-bit quantisation, good for inference on slightly older <a class="concept-link" href="hardware.html">hardware</a>.</li>
 </ul>
 <p>Recommendation: use AWQ for best quality-size trade-off, bnb-nf4 for flexibility when no pre-quantised model exists.</p>
@@ -238,7 +238,7 @@ docker run --gpus '"device=0,1,2,3"' -p 8080:80   -v $HF_HOME:/data   ghcr.io/hu
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>OOM during startup</strong>: TGI pre-allocates <a class="concept-link" href="kv-cache.html">KV-cache</a> based on <code>--max-batch-total-tokens</code>. If you set this too high for your GPU, it OOMs at startup rather than at runtime. Start with a lower value and increase until you see OOM.</p>
+<p><strong>OOM during startup</strong>: TGI pre-allocates KV-cache based on <code>--max-batch-total-tokens</code>. If you set this too high for your GPU, it OOMs at startup rather than at runtime. Start with a lower value and increase until you see OOM.</p>
 <p><strong>Model gates</strong>: Llama and some other models require accepting a HuggingFace license before downloading. Set <code>HUGGING_FACE_HUB_TOKEN</code> env var with a token that has accepted the license.</p>
 <p><strong>Version pinning</strong>: The <code>latest</code> tag changes frequently. Pin to a specific version (e.g. <code>2.4.0</code>) in production.</p>
 <p><strong>Max tokens asymmetry</strong>: <code>--max-input-length</code> and <code>--max-total-tokens</code> must both be set. Total must be &gt; input. A common mistake: setting input=4096 and total=4096, leaving zero room for output.</p>

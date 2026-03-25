@@ -482,7 +482,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <p><strong>Continuous batching (Orca 2022):</strong> Don't wait. Start processing requests immediately. As one request finishes generating a token, remove it from the active batch. As new requests arrive, add them to fill empty slots. The batch is always full, always moving.</p>
 <p>This is deceptively powerful. All major serving <a class="concept-link" href="agent-frameworks.html">frameworks</a> (<a class="concept-link" href="vllm.html">vLLM</a>, TGI, TRT-LLM, <a class="concept-link" href="sglang.html">SGLang</a>) implement continuous batching. Without it, you leave 5–10× throughput on the table.</p>
 <p>Key insight: prefill (processing input tokens) is compute-bound. Decode (generating tokens one-by-one) is <a class="concept-link" href="agent-memory.html">memory</a>-bandwidth-bound. Modern systems separate them: prefill on one GPU pool, decode on another. Each optimized independently.</p>
-<p><strong>Disaggregated serving</strong> takes this further: run prefill and decode on completely separate GPU clusters. Prefill gets high-end GPUs with large <a class="concept-link" href="agent-memory.html">memory</a> for long prompts. Decode gets bandwidth-optimized GPUs for throughput. Route requests through a scheduler.</p>
+<p><strong>Disaggregated serving</strong> takes this further: run prefill and decode on completely separate GPU clusters. Prefill gets high-end GPUs with large memory for long prompts. Decode gets bandwidth-optimized GPUs for throughput. Route requests through a scheduler.</p>
 <div class="callout green">
 <span class="callout-icon">💡</span>
 <span><strong>Continuous batching is the single highest-leverage optimization for throughput.</strong> Enables 5–10× better GPU utilization vs naive batching. If you're running a custom serving system, implement this first.</span>
@@ -492,9 +492,9 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 <div class="section-block" id="paged-attention">
 <div class="section-marker">03 — Memory Optimization</div>
 <h2>PagedAttention and Memory Management</h2>
-<p>The <a class="concept-link" href="kv-cache.html">KV cache</a> — stored key and value tensors for each token in the context — is the primary <a class="concept-link" href="agent-memory.html">memory</a> consumer during inference. As sequences get longer (and they do — 8K, 32K, 128K contexts are becoming standard), <a class="concept-link" href="kv-cache.html">KV cache</a> dominates.</p>
+<p>The <a class="concept-link" href="kv-cache.html">KV cache</a> — stored key and value tensors for each token in the context — is the primary <a class="concept-link" href="agent-memory.html">memory</a> consumer during inference. As sequences get longer (and they do — 8K, 32K, 128K contexts are becoming standard), KV cache dominates.</p>
 <p>With <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> KV cache pre-allocated per request, varying sequence lengths cause fragmentation. A request with 1K tokens uses 1K of 4K allocated cache — 3K wasted. Multiply across 100 concurrent requests and you've wasted significant memory.</p>
-<p><strong>PagedAttention (<a class="concept-link" href="vllm.html">vLLM</a>):</strong> Allocate KV cache in <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> "pages" (like OS virtual memory). Each token's key and value go into a page. Pages are dynamically allocated. If a sequence needs more pages, allocate more. No internal fragmentation.</p>
+<p><strong>PagedAttention (<a class="concept-link" href="vllm.html">vLLM</a>):</strong> Allocate KV cache in fixed-size "pages" (like OS virtual memory). Each token's key and value go into a page. Pages are dynamically allocated. If a sequence needs more pages, allocate more. No internal fragmentation.</p>
 <p>Benefits cascade: <strong>Prefix sharing:</strong> requests with the same prompt prefix share the same pages. System prompt appears in every request — save 90% of system prompt cache by sharing. <strong>Beam search:</strong> explore multiple hypotheses without memory blowup — each hypothesis shares the prefix.</p>
 <div class="table-wrap">
 <table>
@@ -602,7 +602,7 @@ Throughput: maximize within SLA bounds    <div class="callout blue">
 </tbody>
 </table>
 </div>
-<p><a class="concept-link" href="speculative-decoding.html">Speculative decoding</a> is especially effective for long outputs. Short completions don't benefit as much. Worth measuring on your workload.</p>
+<p>Speculative decoding is especially effective for long outputs. Short completions don't benefit as much. Worth measuring on your workload.</p>
 </div>
 <!-- ── 6. ROUTING AND LOAD BALANCING ── -->
 <div class="section-block" id="routing">

@@ -810,6 +810,54 @@ print(f"Answer: {answer}")</div>
 </li>
 </ul>
 </div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">8</div>
+<h2>Multimodal Evaluation and Benchmarks</h2>
+<p>Evaluating multimodal models requires benchmarks that test both individual modalities and cross-modal understanding. No single benchmark captures everything — use a suite covering perception, reasoning, and generation quality.</p>
+<table>
+<thead><tr><th>Benchmark</th><th>Tests</th><th>2024 SOTA</th></tr></thead>
+<tbody>
+<tr><td>MMMU</td><td>College-level VQA across 30 subjects</td><td>GPT-4o 69.1%, Gemini 1.5 Pro 65.8%</td></tr>
+<tr><td>MMBench</td><td>Perception, reasoning, knowledge</td><td>GPT-4V 75.8%</td></tr>
+<tr><td>DocVQA</td><td>Document understanding, tables, forms</td><td>InternVL2 96.4%</td></tr>
+<tr><td>TextVQA</td><td>OCR and text reading in images</td><td>GPT-4V 78.0%</td></tr>
+<tr><td>SEED-Bench</td><td>Image + video spatial reasoning</td><td>Gemini 1.5 Pro 74.6%</td></tr>
+<tr><td>FID (images)</td><td>Generation quality (lower = better)</td><td>FLUX.1 ~2.0</td></tr>
+</tbody>
+</table>
+<p>For production multimodal systems, move beyond leaderboard scores. Build a domain-specific eval set with images representative of your actual use case. Measure: extraction accuracy (structured outputs from images), hallucination rate (does the model invent content not in the image?), and latency (VLMs are typically 2–5× slower than text-only calls for the same output length).</p>
+<div class="example-box"># Automated multimodal eval: check if model hallucinates about images
+import openai, base64, json
+from pathlib import Path
+
+client = openai.OpenAI()
+
+def eval_image_extraction(image_path: str, expected: dict) -> dict:
+    """Test if VLM accurately extracts structured data from an image."""
+    b64 = base64.b64encode(Path(image_path).read_bytes()).decode()
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+                {"type": "text",      "text": "Extract: {" + ", ".join(expected.keys()) + "} as JSON."}
+            ]
+        }],
+        response_format={"type": "json_object"},
+    )
+    actual = json.loads(response.choices[0].message.content)
+    correct = sum(1 for k,v in expected.items() if str(actual.get(k,"")).lower() == str(v).lower())
+    return {"accuracy": correct/len(expected), "actual": actual, "expected": expected}
+
+result = eval_image_extraction(
+    "invoice.jpg",
+    {"vendor": "Acme Corp", "total": "1250.00", "date": "2024-03-15"}
+)
+print(f"Accuracy: {result['accuracy']*100:.0f}%")
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -160,7 +160,7 @@
 <div class="section-block" id="s2">
 <div class="section-marker">SECTION 02</div>
 <h2>SSE vs WebSockets</h2>
-<p><strong>Server-Sent Events (SSE)</strong>: unidirectional, server → client. Uses regular HTTP. Auto-reconnects on disconnect. Supported natively in browsers via EventSource API. Perfect for <a class="concept-link" href="streaming.html">streaming</a> LLM responses — you only need server-to-client data flow. Simpler to implement, works through proxies and load balancers that support HTTP.</p>
+<p><strong>Server-Sent Events (SSE)</strong>: unidirectional, server → client. Uses regular HTTP. Auto-reconnects on disconnect. Supported natively in browsers via EventSource API. Perfect for streaming LLM responses — you only need server-to-client data flow. Simpler to implement, works through proxies and load balancers that support HTTP.</p>
 <p><strong>WebSockets</strong>: bidirectional. Separate protocol (WS/WSS). More complex setup. Use WebSockets when you need client-to-server messages mid-stream — e.g., user interrupts the generation, sends a follow-up while the model is still generating, or you need real-time bidirectional communication (like voice/audio streaming).</p>
 <p>For most LLM chat applications: use SSE. The OpenAI and Anthropic APIs both use SSE for their streaming endpoints. WebSockets add complexity without benefit unless you have genuine bidirectional requirements.</p>
 </div>
@@ -351,7 +351,7 @@ Calculator result: {result}")
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Nginx and proxies buffer SSE by default.</strong> Most reverse proxies buffer responses before forwarding — this breaks <a class="concept-link" href="streaming.html">streaming</a>, showing nothing until the buffer fills or the connection closes. Fix: add <code>X-Accel-Buffering: no</code> response header (Nginx) or configure <code>proxy_buffering off</code> in your Nginx config. AWS ALB and Cloudflare also require explicit configuration to pass through SSE without buffering.</p>
+<p><strong>Nginx and proxies buffer SSE by default.</strong> Most reverse proxies buffer responses before forwarding — this breaks streaming, showing nothing until the buffer fills or the connection closes. Fix: add <code>X-Accel-Buffering: no</code> response header (Nginx) or configure <code>proxy_buffering off</code> in your Nginx config. AWS ALB and Cloudflare also require explicit configuration to pass through SSE without buffering.</p>
 <p><strong>EventSource only supports GET requests.</strong> The browser's native EventSource API doesn't support POST or custom headers. If you need to send a long prompt (too long for URL params) or authentication headers, use the Fetch API with ReadableStream instead of EventSource. Most production streaming implementations use fetch + ReadableStream for this reason.</p>
 <p><strong>Count tokens before streaming starts for accurate cost estimates.</strong> Once you start streaming, you can't stop it mid-way without closing the connection — you'll be charged for all tokens generated. For expensive operations, count input tokens with <code>client.messages.count_tokens()</code> before opening the stream, and warn users or require confirmation if the estimated cost exceeds a threshold.</p>
 </div>

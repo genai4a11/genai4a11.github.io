@@ -682,6 +682,50 @@
 <li>Chat: 4k–32k sufficient</li>
 <li>Code repository: 128k+ (<a class="concept-link" href="llama3.html">Llama 3.1</a>, Qwen)</li>
 </ul>
+
+<div class="example-box"># Benchmarking LLMs: latency, cost, and quality in one script
+# pip install openai anthropic google-generativeai
+
+import time, openai, anthropic
+
+def benchmark_llm(prompt: str, model_configs: list) -> list:
+    results = []
+    for cfg in model_configs:
+        start = time.perf_counter()
+        if cfg["provider"] == "openai":
+            client = openai.OpenAI()
+            resp = client.chat.completions.create(
+                model=cfg["model"],
+                messages=[{"role":"user","content":prompt}],
+                max_tokens=200,
+            )
+            text = resp.choices[0].message.content
+            usage = resp.usage
+            in_tok, out_tok = usage.prompt_tokens, usage.completion_tokens
+        elif cfg["provider"] == "anthropic":
+            client = anthropic.Anthropic()
+            resp = client.messages.create(
+                model=cfg["model"],
+                max_tokens=200,
+                messages=[{"role":"user","content":prompt}],
+            )
+            text = resp.content[0].text
+            in_tok, out_tok = resp.usage.input_tokens, resp.usage.output_tokens
+        latency = time.perf_counter() - start
+        cost = in_tok/1e6 * cfg["in_$/1m"] + out_tok/1e6 * cfg["out_$/1m"]
+        results.append({"model":cfg["model"], "latency_s":round(latency,2),
+                         "cost_$":round(cost,5), "tokens":out_tok, "output":text[:80]})
+    return results
+
+configs = [
+    {"provider":"openai",    "model":"gpt-4o-mini",        "in_$/1m":0.15,  "out_$/1m":0.60},
+    {"provider":"openai",    "model":"gpt-4o",             "in_$/1m":2.50,  "out_$/1m":10.0},
+    {"provider":"anthropic", "model":"claude-haiku-4-5-20251001","in_$/1m":0.25,  "out_$/1m":1.25},
+]
+rows = benchmark_llm("Explain the transformer attention mechanism in 3 sentences.", configs)
+for r in rows:
+    print(f"{r['model']:30s} {r['latency_s']:.2f}s  ${r['cost_$']:.5f}  {r['tokens']}tok")
+</div>
 </div>
 </div>
 <h3>Quick Decision Tree</h3>
@@ -740,6 +784,44 @@ print("Gemini:", resp.choices[0].message.content)</div>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>LiteLLM benefit:</strong> Swap models without changing code. Use it for A/B testing different models, automatic fallback on API failure, and unified logging across providers.</span>
+
+<div class="example-box"># LLM routing: send queries to the cheapest capable model
+# pip install openai anthropic
+
+import openai
+
+client = openai.OpenAI()
+
+COMPLEXITY_CLASSIFIER = """Classify this user query as SIMPLE or COMPLEX.
+SIMPLE: factual lookups, short answers, basic rewrites.
+COMPLEX: multi-step reasoning, code generation, analysis, synthesis.
+Reply with one word: SIMPLE or COMPLEX."""
+
+def route_query(query: str) -> tuple[str, str]:
+    """Returns (model, reason)."""
+    classification = client.chat.completions.create(
+        model="gpt-4o-mini",   # cheap model classifies first
+        messages=[{"role":"system","content":COMPLEXITY_CLASSIFIER},
+                  {"role":"user","content":query}],
+        max_tokens=5,
+    ).choices[0].message.content.strip().upper()
+
+    if classification == "SIMPLE":
+        return "gpt-4o-mini", "Simple query → cheap model"
+    else:
+        return "gpt-4o",      "Complex query → powerful model"
+
+def smart_complete(query: str) -> str:
+    model, reason = route_query(query)
+    print(f"  [{reason}] using {model}")
+    return client.chat.completions.create(
+        model=model,
+        messages=[{"role":"user","content":query}],
+    ).choices[0].message.content
+
+print(smart_complete("What year was Python created?"))        # → cheap
+print(smart_complete("Design a rate limiter for a REST API")) # → powerful
+</div>
 </div>
 </div>
 <!-- ── 6. WHAT TO EXPLORE NEXT ── -->

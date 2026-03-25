@@ -164,7 +164,7 @@
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Jamba architecture deep dive</h2>
-<p>Jamba (AI21 Labs, 2024) is a 52B hybrid model built on alternating Mamba and transformer blocks. Architecture details: 1 attention layer per 6 Mamba layers, each "Jamba block" contains [Mamba → Mamba → Attention → Mamba → Mamba → Mamba]. <a class="concept-link" href="moe.html">MoE</a> (<a class="concept-link" href="moe.html">Mixture of Experts</a>) FFN layers replace standard FFN, activating 2 of 16 experts per token to keep compute proportional to a 12B active parameter model despite 52B total parameters. <a class="concept-link" href="context-window.html">Context window</a>: 256k tokens — feasible because most layers are Mamba (linear <a class="concept-link" href="agent-memory.html">memory</a>).</p>
+<p>Jamba (AI21 Labs, 2024) is a 52B hybrid model built on alternating Mamba and transformer blocks. Architecture details: 1 attention layer per 6 Mamba layers, each "Jamba block" contains [Mamba → Mamba → Attention → Mamba → Mamba → Mamba]. <a class="concept-link" href="moe.html">MoE</a> (Mixture of Experts) FFN layers replace standard FFN, activating 2 of 16 experts per token to keep compute proportional to a 12B active parameter model despite 52B total parameters. <a class="concept-link" href="context-window.html">Context window</a>: 256k tokens — feasible because most layers are Mamba (linear memory).</p>
 </div>
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
@@ -219,7 +219,7 @@ class HybridBlock(nn.Module):
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
 <ul>
-<li><strong>Mixed parallelism</strong>: Attention layers need different parallelism strategies than SSM layers. SSM layers parallelize well with tensor parallelism; attention needs <a class="concept-link" href="kv-cache.html">KV cache</a> sharding. Hybrid serving <a class="concept-link" href="infra.html">infrastructure</a> is more complex.</li>
+<li><strong>Mixed parallelism</strong>: Attention layers need different parallelism strategies than SSM layers. SSM layers parallelize well with tensor parallelism; attention needs KV cache sharding. Hybrid serving <a class="concept-link" href="infra.html">infrastructure</a> is more complex.</li>
 <li><strong>Pretraining from scratch</strong>: You can't easily convert a trained transformer to a hybrid by replacing some layers with SSM — the weight distributions are different. Hybrid models must be trained from scratch or from a compatible checkpoint.</li>
 <li><strong>Still maturing</strong>: Hybrid architecture research is moving fast (2024–2025). Best layer ratios, placement strategies, and <a class="concept-link" href="scaling-laws.html">scaling laws</a> are still being established. Treat published results as reference points, not final answers.</li>
 </ul>

@@ -188,7 +188,7 @@ for i, chunk in enumerate(chunks[:3]):
 <div class="section-block" id="s3">
 <div class="section-marker">SECTION 03</div>
 <h2>Choosing chunk size and overlap</h2>
-<p>The right chunk size depends on your <a class="concept-link" href="embeddings.html">embedding</a> model's <a class="concept-link" href="context-window.html">context window</a> and the nature of your documents:</p>
+<p>The right chunk size depends on your embedding model's <a class="concept-link" href="context-window.html">context window</a> and the nature of your documents:</p>
 <ul>
 <li><strong>Small chunks (128–256 tokens)</strong>: High precision retrieval — each chunk contains a focused idea. But individual chunks may lack context to answer questions. Good for: FAQs, structured data, short-answer retrieval.</li>
 <li><strong>Medium chunks (512–1024 tokens)</strong>: The standard sweet spot. Captures full paragraphs with surrounding context. Good for: general documents, articles, documentation.</li>
@@ -224,13 +224,13 @@ print(f"Token chunks: {len(token_chunks)}")
 # Character count per chunk is unpredictable for multilingual text
 # Token count per chunk is exact — use for LLM context budgeting
 </code></pre>
-<p>Use token-based chunking when you need predictable <a class="concept-link" href="context-window.html">context window</a> usage. Character-based is faster to compute and language-agnostic, but token counts vary across languages (CJK characters ≈ 1 char : 1-2 tokens, ASCII ≈ 4 chars : 1 token).</p>
+<p>Use token-based chunking when you need predictable context window usage. Character-based is faster to compute and language-agnostic, but token counts vary across languages (CJK characters ≈ 1 char : 1-2 tokens, ASCII ≈ 4 chars : 1 token).</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Benchmarks vs other strategies</h2>
-<p>On standard <a class="concept-link" href="rag.html">RAG</a> <a class="concept-link" href="benchmarks.html">benchmarks</a> (<a class="concept-link" href="ragas.html">RAGAS</a>, <a class="concept-link" href="trulens.html">TruLens</a>), fixed-size chunking at 512 tokens with 50-token overlap typically achieves 70–85% of the performance of more sophisticated strategies (<a class="concept-link" href="semantic-chunking.html">semantic chunking</a>, sentence-window). For many production use cases, the simplicity and speed advantage of fixed-size chunking outweighs the quality gap.</p>
-<p>Fixed-size chunking breaks down when: documents have highly variable density (a 512-token chunk of legal boilerplate contains less information than 512 tokens of dense technical content), sentences span chunk boundaries (partially captured sentences hurt both <a class="concept-link" href="embeddings.html">embedding</a> quality and LLM coherence), and documents have natural semantic units (chapters, sections) that should stay together.</p>
+<p>On standard RAG <a class="concept-link" href="benchmarks.html">benchmarks</a> (<a class="concept-link" href="ragas.html">RAGAS</a>, <a class="concept-link" href="trulens.html">TruLens</a>), fixed-size chunking at 512 tokens with 50-token overlap typically achieves 70–85% of the performance of more sophisticated strategies (<a class="concept-link" href="semantic-chunking.html">semantic chunking</a>, sentence-window). For many production use cases, the simplicity and speed advantage of fixed-size chunking outweighs the quality gap.</p>
+<p>Fixed-size chunking breaks down when: documents have highly variable density (a 512-token chunk of legal boilerplate contains less information than 512 tokens of dense technical content), sentences span chunk boundaries (partially captured sentences hurt both embedding quality and LLM coherence), and documents have natural semantic units (chapters, sections) that should stay together.</p>
 <p>Recommendation: start with fixed-size 512 tokens + 50 overlap, measure retrieval quality, then try sentence-window or semantic chunking if you need improvement.</p>
 </div>
 <div class="section-block" id="s6">
@@ -267,7 +267,7 @@ for r in results:
 <h2>Gotchas</h2>
 <p><strong>Mid-sentence splits</strong>: Fixed-size chunking can cut sentences in half. Use <code>RecursiveCharacterTextSplitter</code> with sentence-boundary separators to reduce this. Overlap also helps — the end of chunk N and start of chunk N+1 overlap, so a query that needs the full sentence can retrieve it from one of them.</p>
 <p><strong>Table and code chunking</strong>: Fixed-size chunking destroys table structure and code blocks. For documents with tables, use a dedicated table parser. For codebases, use AST-based chunking (split at function/class boundaries) rather than fixed-size.</p>
-<p><strong>Chunk size ≠ <a class="concept-link" href="embeddings.html">embedding</a> window</strong>: Ensure your chunk_size fits within the embedding model's token limit. text-embedding-3-small handles 8191 tokens, but smaller chunk sizes (256-512) often yield better retrieval precision because the embedding captures a more focused concept.</p>
+<p><strong>Chunk size ≠ embedding window</strong>: Ensure your chunk_size fits within the embedding model's token limit. text-embedding-3-small handles 8191 tokens, but smaller chunk sizes (256-512) often yield better retrieval precision because the embedding captures a more focused concept.</p>
 <p><strong>Re-chunking after document updates</strong>: When a source document is updated, you need to re-chunk and re-embed the entire document. There's no "partial update" for chunks — track document version hashes to detect changes and trigger re-ingestion.</p>
 </div>
 </div>

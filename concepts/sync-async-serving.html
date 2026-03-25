@@ -243,11 +243,11 @@ async def async_infer(prompt: str) -&gt; str:
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Throughput vs latency tradeoffs</h2>
-<p>The fundamental tension in <a class="concept-link" href="serving.html">LLM serving</a>:</p>
+<p>The fundamental tension in LLM serving:</p>
 <ul>
 <li><strong>Maximise throughput</strong>: Batch many requests together (continuous batching). Each request waits a little longer to start but the system handles more tokens/second overall. Best for offline batch jobs, <a class="concept-link" href="embeddings.html">embeddings</a> APIs.</li>
 <li><strong>Minimise latency</strong>: Process each request immediately. Low p50 but wasted GPU capacity when traffic is low. Best for interactive chat where p99 matters.</li>
-<li><strong><a class="concept-link" href="streaming.html">Streaming</a></strong>: Orthogonal to the above — you can stream a batched response. Streaming improves perceived latency (user sees tokens appearing) without changing wall-clock completion time.</li>
+<li><strong>Streaming</strong>: Orthogonal to the above — you can stream a batched response. Streaming improves perceived latency (user sees tokens appearing) without changing wall-clock completion time.</li>
 </ul>
 </div>
 <div class="section-block" id="s6">
@@ -255,7 +255,7 @@ async def async_infer(prompt: str) -&gt; str:
 <h2>When to use each pattern</h2>
 <p>Use <strong>synchronous</strong> endpoints when: latency is more important than throughput (single-user apps, debugging), you're using a simple framework like Flask, or the inference is fast (&lt;100ms) and parallelism isn't needed.</p>
 <p>Use <strong>async</strong> endpoints when: you need to handle many concurrent requests, you're calling remote inference APIs (network I/O bound), or you want to combine inference with other async operations (database lookups, external APIs).</p>
-<p>Use <strong><a class="concept-link" href="streaming.html">streaming</a></strong> when: the response is long and the user is watching — streaming makes a 10-second response feel responsive immediately. Most chat interfaces expect SSE or WebSocket streaming.</p>
+<p>Use <strong>streaming</strong> when: the response is long and the user is watching — streaming makes a 10-second response feel responsive immediately. Most chat interfaces expect SSE or WebSocket streaming.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
@@ -264,7 +264,7 @@ async def async_infer(prompt: str) -&gt; str:
 <li><strong>Don't await blocking code</strong>: <code>await slow_sync_function()</code> does NOT make it async — it still blocks the event loop. Always use <code>run_in_executor</code>.</li>
 <li><strong>Connection pooling</strong>: If you're calling a remote inference API, use a single async HTTP client (httpx.AsyncClient) with connection pooling rather than creating a new client per request.</li>
 <li><strong>Backpressure</strong>: Without a queue, async <a class="concept-link" href="agent-frameworks.html">frameworks</a> silently accept thousands of concurrent requests. Add a semaphore or queue limit to avoid OOM.</li>
-<li><strong>SSE buffering</strong>: Nginx and some reverse proxies buffer responses by default. Set <code>X-Accel-Buffering: no</code> to ensure <a class="concept-link" href="streaming.html">streaming</a> reaches the client immediately.</li>
+<li><strong>SSE buffering</strong>: Nginx and some reverse proxies buffer responses by default. Set <code>X-Accel-Buffering: no</code> to ensure streaming reaches the client immediately.</li>
 </ul>
 </div>
 </div>

@@ -546,7 +546,7 @@ Your response (SQL only, no markdown):
 <h2>The Vanna Approach: RAG + Fine-Tuning</h2>
 <p><a class="concept-link" href="vanna.html">Vanna AI</a> is a commercial <a class="concept-link" href="text2sql.html">Text-to-SQL</a> platform that combines <a class="concept-link" href="rag.html">RAG</a> (retrieve past successful queries) with optional <a class="concept-link" href="finetuning.html">fine-tuning</a>. Instead of relying purely on <a class="concept-link" href="prompting.html">prompting</a>, it learns from your data.</p>
 <h3>How Vanna Works</h3>
-<p><strong>Indexing:</strong> Vanna ingests your schema + successful SQL queries from prod. <strong>Retrieval:</strong> When a new question arrives, it retrieves similar past queries (by <a class="concept-link" href="embeddings.html">embedding</a> or semantic search). <strong>Augmentation:</strong> Includes retrieved examples in prompt. <strong>Optional <a class="concept-link" href="finetuning.html">fine-tuning</a>:</strong> With enough examples (100+), fine-tune a smaller model on your domain.</p>
+<p><strong>Indexing:</strong> Vanna ingests your schema + successful SQL queries from prod. <strong>Retrieval:</strong> When a new question arrives, it retrieves similar past queries (by <a class="concept-link" href="embeddings.html">embedding</a> or semantic search). <strong>Augmentation:</strong> Includes retrieved examples in prompt. <strong>Optional fine-tuning:</strong> With enough examples (100+), fine-tune a smaller model on your domain.</p>
 <h3>Vanna vs LangChain SQL Agent</h3>
 <div class="table-wrap">
 <table>
@@ -565,6 +565,39 @@ Your response (SQL only, no markdown):
 <div class="callout rose">
 <span class="callout-icon">⚠️</span>
 <span><strong>Vanna lock-in:</strong> Vanna's fine-tuning is proprietary; your data is on their servers. For sensitive data, stick with open-source (LangChain + local examples).</span>
+
+<div class="example-box"># Text-to-SQL with Vanna: RAG + fine-tuning approach
+# pip install vanna[openai,chromadb]
+
+import vanna
+from vanna.openai import OpenAI_Chat
+from vanna.chromadb import ChromaDB_VectorStore
+
+class MyVanna(ChromaDB_VectorStore, OpenAI_Chat):
+    def __init__(self, config=None):
+        ChromaDB_VectorStore.__init__(self, config=config)
+        OpenAI_Chat.__init__(self, config=config)
+
+vn = MyVanna(config={"api_key": "sk-...", "model": "gpt-4o-mini"})
+vn.connect_to_postgres(host="localhost", dbname="sales", user="analyst", password="...")
+
+# Train: feed it your schema, DDL, and example Q&A pairs
+vn.train(ddl="""
+    CREATE TABLE orders (order_id INT, customer_id INT,
+    product_sku VARCHAR, quantity INT, unit_price DECIMAL,
+    order_date DATE, status VARCHAR);
+""")
+vn.train(question="Top 10 products by revenue last month",
+         sql="SELECT product_sku, SUM(quantity*unit_price) as revenue "
+             "FROM orders WHERE order_date >= CURRENT_DATE - INTERVAL '30 days' "
+             "GROUP BY product_sku ORDER BY revenue DESC LIMIT 10;")
+
+# Query in natural language
+sql = vn.generate_sql("Show me customers who ordered more than 5 times this year")
+print(sql)
+df  = vn.run_sql(sql)
+print(df.head())
+</div>
 </div>
 </div>
 <div class="section-block" id="safety">
@@ -590,6 +623,45 @@ Your response (SQL only, no markdown):
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>Guardrail layering:</strong> Use multiple defenses (blocklist + timeout + row limit). No single check is bulletproof. An attacker might evade regex but not AST parsing.</span>
+
+<div class="example-box"># Safety: validate and sanitise generated SQL before execution
+import re, sqlparse
+from sqlparse.sql import Statement
+from sqlparse.tokens import Keyword, DML
+
+ALLOWED_STATEMENTS = {"SELECT"}
+BLOCKED_PATTERNS   = [r'DROP', r'DELETE', r'TRUNCATE',
+                       r'INSERT', r'UPDATE', r'EXEC',
+                       r';\s*SELECT',    # stacked queries
+                       r'--',            # SQL comments (injection vector)
+                       r'/\*']           # block comments
+
+def validate_sql(sql: str) -> tuple[bool, str]:
+    """Returns (is_safe, reason). Only allows single SELECT statements."""
+    # Strip and normalise
+    sql = sql.strip().rstrip(';')
+
+    # Check for blocked patterns (case-insensitive)
+    for pat in BLOCKED_PATTERNS:
+        if re.search(pat, sql, re.IGNORECASE):
+            return False, f"Blocked pattern detected: {pat}"
+
+    # Parse and check statement type
+    parsed = sqlparse.parse(sql)
+    if len(parsed) != 1:
+        return False, "Only single statements allowed"
+
+    stmt: Statement = parsed[0]
+    stmt_type = stmt.get_type()
+    if stmt_type not in ALLOWED_STATEMENTS:
+        return False, f"Only SELECT allowed, got {stmt_type}"
+
+    return True, "OK"
+
+generated_sql = "SELECT customer_id, SUM(total) FROM orders GROUP BY 1 ORDER BY 2 DESC LIMIT 20"
+safe, reason = validate_sql(generated_sql)
+print(f"Safe: {safe} — {reason}")
+</div>
 </div>
 </div>
 <div class="section-block" id="production">

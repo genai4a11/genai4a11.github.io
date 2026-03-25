@@ -221,26 +221,26 @@ print(result[0]["generated_text"])
 <div class="section-marker">SECTION 04</div>
 <h2>GPTQ vs AWQ vs bitsandbytes</h2>
 <p>All three quantise weights to 4-bit, but differ in algorithm and trade-offs:</p>
-<p><strong>GPTQ</strong>: Second-order Hessian optimisation per layer. Good quality. Takes 1–4 hours to quantise a 7B model. Requires calibration data. Widely supported across serving <a class="concept-link" href="agent-frameworks.html">frameworks</a>. Best for: deploying to production with prebuilt quantised models.</p>
-<p><strong><a class="concept-link" href="awq.html">AWQ</a></strong> (Activation-aware Weight <a class="concept-link" href="quantization.html">Quantisation</a>): Identifies which weights are most important by looking at activation magnitudes, then protects them during quantisation. Typically better quality than GPTQ at 4-bit, especially on instruction-following tasks. Quantisation is faster. Best for: highest quality 4-bit inference.</p>
-<p><strong><a class="concept-link" href="bitsandbytes.html">bitsandbytes</a></strong>: On-the-fly quantisation during model loading — no separate quantisation step needed. Convenient but slower at inference (no fused kernels). Best for: quick experiments, <a class="concept-link" href="finetuning.html">fine-tuning</a> (<a class="concept-link" href="qlora.html">QLoRA</a>).</p>
+<p><strong>GPTQ</strong>: Second-order Hessian optimisation per layer. Good quality. Takes 1–4 hours to quantise a 7B model. Requires calibration data. Widely supported across serving frameworks. Best for: deploying to production with prebuilt quantised models.</p>
+<p><strong><a class="concept-link" href="awq.html">AWQ</a></strong> (Activation-aware Weight Quantisation): Identifies which weights are most important by looking at activation magnitudes, then protects them during quantisation. Typically better quality than GPTQ at 4-bit, especially on instruction-following tasks. Quantisation is faster. Best for: highest quality 4-bit inference.</p>
+<p><strong><a class="concept-link" href="bitsandbytes.html">bitsandbytes</a></strong>: On-the-fly quantisation during model loading — no separate quantisation step needed. Convenient but slower at inference (no fused kernels). Best for: quick experiments, fine-tuning (<a class="concept-link" href="qlora.html">QLoRA</a>).</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>Choosing bit-width and group size</h2>
-<p><strong>Bit-width</strong>: 4-bit is the standard sweet spot — roughly 4× compression vs fp16 with &lt;1% perplexity degradation. 3-bit gives 5.3× compression but noticeable quality loss (2–4% perplexity increase). 8-bit is almost lossless but only 2× compression, better served by <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a>-int8 for simplicity.</p>
+<p><strong>Bit-width</strong>: 4-bit is the standard sweet spot — roughly 4× compression vs fp16 with &lt;1% perplexity degradation. 3-bit gives 5.3× compression but noticeable quality loss (2–4% perplexity increase). 8-bit is almost lossless but only 2× compression, better served by bitsandbytes-int8 for simplicity.</p>
 <p><strong>Group size</strong>: Controls the granularity of scale factors. Smaller group size = more scale factors = better quality but larger file size.</p>
 <ul>
 <li>group_size=128: Standard. Good quality, small overhead.</li>
 <li>group_size=32: Better quality, 4× more scale factors (~4% larger file).</li>
 <li>group_size=-1: One scale per row (column-wise). Lowest overhead, lowest quality.</li>
 </ul>
-<p><strong>desc_act=True</strong>: <a class="concept-link" href="activations.html">Activations</a> are sorted by magnitude before <a class="concept-link" href="quantization.html">quantisation</a>. Better quality but requires reordering during inference — not all kernels support it. Use desc_act=False for maximum compatibility and speed.</p>
+<p><strong>desc_act=True</strong>: <a class="concept-link" href="activations.html">Activations</a> are sorted by magnitude before quantisation. Better quality but requires reordering during inference — not all kernels support it. Use desc_act=False for maximum compatibility and speed.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Calibration data</h2>
-<p>GPTQ needs calibration data to compute the Hessian (second-order statistics of <a class="concept-link" href="activations.html">activations</a>). This data should be representative of your inference distribution.</p>
+<p>GPTQ needs calibration data to compute the Hessian (second-order statistics of activations). This data should be representative of your inference distribution.</p>
 <pre><code class="language-python">from datasets import load_dataset
 
 # Standard: use a slice of the pretraining data
@@ -262,10 +262,10 @@ calibration_data = [
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>VRAM during <a class="concept-link" href="quantization.html">quantisation</a></strong>: The quantisation process loads the full fp16 model. A 70B model needs ~140GB just to load, requiring multiple GPUs even though the output fits in one. Use <code>--nsamples 128</code> and <code>--wbits 4</code> with the AutoGPTQ CLI for large models.</p>
+<p><strong>VRAM during quantisation</strong>: The quantisation process loads the full fp16 model. A 70B model needs ~140GB just to load, requiring multiple GPUs even though the output fits in one. Use <code>--nsamples 128</code> and <code>--wbits 4</code> with the AutoGPTQ CLI for large models.</p>
 <p><strong>Pre-quantised models on HF Hub</strong>: For popular models, pre-quantised GPTQ versions are available (search for <code>-GPTQ</code> suffix, e.g. <code>TheBloke/Llama-2-7B-GPTQ</code>). No need to quantise yourself unless you have a custom model.</p>
 <p><strong>Kernel compatibility</strong>: The ExLlamaV2 kernels that make GPTQ fast require specific GPU <a class="concept-link" href="transformer-arch.html">architectures</a> (Ampere+). On older GPUs, fall back to AutoGPTQ's slower kernels or use a different quantisation scheme.</p>
-<p><strong>Not suitable for <a class="concept-link" href="finetuning.html">fine-tuning</a></strong>: GPTQ-quantised weights can't be fine-tuned directly (gradients don't flow through integer weights). For fine-tuning, use <a class="concept-link" href="qlora.html">QLoRA</a> with <a class="concept-link" href="bitsandbytes.html">bitsandbytes</a> instead.</p>
+<p><strong>Not suitable for fine-tuning</strong>: GPTQ-quantised weights can't be fine-tuned directly (gradients don't flow through integer weights). For fine-tuning, use QLoRA with bitsandbytes instead.</p>
 </div>
 </div>
 <div class="related-concepts">

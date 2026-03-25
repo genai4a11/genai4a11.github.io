@@ -226,7 +226,7 @@ print(result)  # Always valid JSON
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>The SGLang Python DSL</h2>
-<p>SGLang includes a Python DSL for writing multi-call LLM programs. Programs are compiled into optimised execution graphs that automatically parallelise independent calls and share <a class="concept-link" href="kv-cache.html">KV-cache</a> across dependent calls.</p>
+<p>SGLang includes a Python DSL for writing multi-call LLM programs. Programs are compiled into optimised execution graphs that automatically parallelise independent calls and share KV-cache across dependent calls.</p>
 <pre><code class="language-python">import sglang as sgl
 
 @sgl.function
@@ -253,13 +253,13 @@ for q, s in zip(questions, states):
 <div class="section-marker">SECTION 06</div>
 <h2>Benchmarks</h2>
 <p>SGLang typically outperforms <a class="concept-link" href="vllm.html">vLLM</a> and TGI on workloads with shared prefixes. On pure throughput <a class="concept-link" href="benchmarks.html">benchmarks</a> without shared prefixes, performance is roughly comparable to vLLM (within 10–20%).</p>
-<p>Key scenarios where SGLang excels: batch <a class="concept-link" href="doc-processing.html">document processing</a> (all requests share a long instruction prefix), <a class="concept-link" href="rag.html">RAG</a> (documents are reused across queries), multi-turn <a class="concept-link" href="agents.html">agents</a> (conversation history prefix grows and is reused), and structured generation (JSON/regex constraints are applied efficiently).</p>
+<p>Key scenarios where SGLang excels: batch <a class="concept-link" href="doc-processing.html">document processing</a> (all requests share a long instruction prefix), RAG (documents are reused across queries), multi-turn <a class="concept-link" href="agents.html">agents</a> (conversation history prefix grows and is reused), and structured generation (JSON/regex constraints are applied efficiently).</p>
 <p>SGLang is maintained by the LMSYS team (same group behind <a class="concept-link" href="chatbot-arena.html">Chatbot Arena</a>) and is production-used at scale. It also supports <a class="concept-link" href="speculative-decoding.html">speculative decoding</a> with an eagle-style draft model for additional speedups.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong><a class="concept-link" href="agent-memory.html">Memory</a> configuration</strong>: <code>--mem-fraction-static</code> controls what fraction of GPU memory is pre-allocated for <a class="concept-link" href="kv-cache.html">KV-cache</a>. If too high, the process OOMs loading the model. Default 0.9 is aggressive; start at 0.85.</p>
+<p><strong><a class="concept-link" href="agent-memory.html">Memory</a> configuration</strong>: <code>--mem-fraction-static</code> controls what fraction of GPU memory is pre-allocated for KV-cache. If too high, the process OOMs loading the model. Default 0.9 is aggressive; start at 0.85.</p>
 <p><strong>Chunked prefill</strong>: For very long inputs, SGLang chunks prefill into smaller pieces to avoid GPU memory spikes. Enable with <code>--chunked-prefill-size 4096</code>.</p>
 <p><strong>Prefix caching requires deterministic tokenisation</strong>: If you format prompts differently between requests (extra spaces, different BOS handling), the cache won't hit. Use a consistent prompt template function.</p>
 <p><strong>DSL vs REST API</strong>: The Python DSL is powerful but adds a dependency on the SGLang Python client. For simple deployments, the OpenAI-compatible REST API is lower friction.</p>

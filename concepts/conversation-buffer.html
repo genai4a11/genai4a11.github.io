@@ -266,7 +266,7 @@ Conversation so far: {self.summary}"
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>LangChain memory classes</h2>
-<p><a class="concept-link" href="langchain.html">LangChain</a> provides pre-built <a class="concept-link" href="agent-memory.html">memory</a> implementations so you don't have to write this yourself:</p>
+<p><a class="concept-link" href="langchain.html">LangChain</a> provides pre-built memory implementations so you don't have to write this yourself:</p>
 <pre><code class="language-python">from langchain.memory import (
     ConversationBufferMemory,         # keep all turns
     ConversationBufferWindowMemory,   # sliding window
@@ -288,19 +288,19 @@ chain = ConversationChain(llm=llm, memory=memory, verbose=True)
 chain.predict(input="Hi, I'm Deepak and I'm building a GenAI mindmap.")
 chain.predict(input="What project did I mention?")  # still knows
 </code></pre>
-<p><code>ConversationSummaryBufferMemory</code> is the most practical for production: it keeps recent turns verbatim (fast, faithful) and summarises older ones (compact). Set <code>max_token_limit</code> to roughly 20-30% of your model's <a class="concept-link" href="context-window.html">context window</a>.</p>
+<p><code>ConversationSummaryBufferMemory</code> is the most practical for production: it keeps recent turns verbatim (fast, faithful) and summarises older ones (compact). Set <code>max_token_limit</code> to roughly 20-30% of your model's context window.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>When to upgrade to long-term memory</h2>
-<p>Conversation buffer (short-term <a class="concept-link" href="agent-memory.html">memory</a>) is the right choice when: you're building a chatbot or assistant within a single session, the relevant context fits within a few thousand tokens, and you don't need to remember facts across separate conversations.</p>
+<p>Conversation buffer (short-term memory) is the right choice when: you're building a chatbot or assistant within a single session, the relevant context fits within a few thousand tokens, and you don't need to remember facts across separate conversations.</p>
 <p>You need <strong><a class="concept-link" href="long-term-memory.html">long-term memory</a></strong> (<a class="concept-link" href="vector-dbs.html">vector store</a> + retrieval) when: users return across multiple sessions, you need to remember facts from weeks or months ago, or the volume of information is too large for even summary compression (e.g., an agent that processes hundreds of documents over time).</p>
 <p>A practical upgrade path: start with <code>ConversationSummaryBufferMemory</code> for per-session context, and add a vector store lookup at the start of each new session to retrieve relevant facts from past conversations. The two systems are complementary, not competing.</p>
 </div>
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong>Token counting matters.</strong> You can't just count messages — count tokens. A single long user message might be worth more than five short turns. Use <code>anthropic.count_tokens()</code> or tiktoken to track actual token usage before building your <a class="concept-link" href="agent-memory.html">memory</a> window.</p>
+<p><strong>Token counting matters.</strong> You can't just count messages — count tokens. A single long user message might be worth more than five short turns. Use <code>anthropic.count_tokens()</code> or tiktoken to track actual token usage before building your memory window.</p>
 <p><strong>Compression is lossy — and the model can't tell.</strong> After summarisation, the model doesn't know what was compressed. If a user references a detail from a compressed turn ("like I said about the edge case in my first question"), the model will have lost that detail. Consider including a note: "earlier turns summarised — ask me if you need specifics".</p>
 <p><strong>System messages are not magic memory.</strong> Prepending summaries to the system prompt works but can "feel" lower quality to the model than actual conversation history in the <code>messages</code> array. For anthropic models, the conversation history format (user/assistant alternation) is the most natural way to provide context.</p>
 </div>

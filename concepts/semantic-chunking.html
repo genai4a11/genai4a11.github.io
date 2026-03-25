@@ -158,7 +158,7 @@
 <ol>
 <li>Split the document into sentences.</li>
 <li>Embed each sentence (or small group of sentences).</li>
-<li>Compute cosine distance between consecutive sentence <a class="concept-link" href="embeddings.html">embeddings</a>.</li>
+<li>Compute cosine distance between consecutive sentence embeddings.</li>
 <li>Identify "breakpoints" — positions where cosine distance is unusually high (topic shift).</li>
 <li>Split the document at breakpoints. Everything between two breakpoints becomes one chunk.</li>
 </ol>
@@ -235,14 +235,14 @@ plt.savefig("semantic_chunking_viz.png")
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>Comparison with fixed-size</h2>
-<p>On <a class="concept-link" href="rag.html">RAG</a> <a class="concept-link" href="benchmarks.html">benchmarks</a> like <a class="concept-link" href="ragas.html">RAGAS</a> and HotpotQA, semantic chunking typically outperforms <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> by 5–12% on answer faithfulness and context precision metrics. The main wins come from: fewer "partial context" retrievals (chunks don't cut mid-topic), better <a class="concept-link" href="embeddings.html">embedding</a> quality (each chunk represents a coherent concept), and reduced noise in retrieved context (LLM gets on-topic text, not arbitrary windows).</p>
-<p>The cost: semantic chunking requires N embedding API calls during ingestion (one per sentence), vs O(1) for fixed-size splitting. For a 1M-token document corpus, this is ~2,000 embedding API calls (batching helps). Pre-compute and cache <a class="concept-link" href="embeddings.html">embeddings</a> at ingestion time to amortise this cost.</p>
+<p>On <a class="concept-link" href="rag.html">RAG</a> <a class="concept-link" href="benchmarks.html">benchmarks</a> like <a class="concept-link" href="ragas.html">RAGAS</a> and HotpotQA, semantic chunking typically outperforms <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> by 5–12% on answer faithfulness and context precision metrics. The main wins come from: fewer "partial context" retrievals (chunks don't cut mid-topic), better embedding quality (each chunk represents a coherent concept), and reduced noise in retrieved context (LLM gets on-topic text, not arbitrary windows).</p>
+<p>The cost: semantic chunking requires N embedding API calls during ingestion (one per sentence), vs O(1) for fixed-size splitting. For a 1M-token document corpus, this is ~2,000 embedding API calls (batching helps). Pre-compute and cache embeddings at ingestion time to amortise this cost.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>When to use semantic chunking</h2>
-<p>Semantic chunking is the right choice when: documents cover multiple topics within a single file (technical reports, Wikipedia articles), you need high answer precision and can afford longer ingestion time, and the <a class="concept-link" href="embeddings.html">embedding</a> model you use is strong enough to distinguish topic changes (larger models work better here).</p>
-<p>Stick with <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a> when: documents are already topically uniform (each file covers one topic), you need fast, cheap ingestion (batch jobs processing millions of documents), or you're working with code/structured data where topic boundaries don't apply.</p>
+<p>Semantic chunking is the right choice when: documents cover multiple topics within a single file (technical reports, Wikipedia articles), you need high answer precision and can afford longer ingestion time, and the embedding model you use is strong enough to distinguish topic changes (larger models work better here).</p>
+<p>Stick with fixed-size when: documents are already topically uniform (each file covers one topic), you need fast, cheap ingestion (batch jobs processing millions of documents), or you're working with code/structured data where topic boundaries don't apply.</p>
 </div>
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
@@ -275,9 +275,9 @@ print(f"Created {len(nodes)} semantic nodes")
 <div class="section-block" id="s7">
 <div class="section-marker">SECTION 07</div>
 <h2>Gotchas</h2>
-<p><strong><a class="concept-link" href="embeddings.html">Embedding</a> cost scales with document size</strong>: Each sentence requires an embedding call. Batch sentences (max 2048 per OpenAI call) to minimise API round-trips. For large corpora, this is the main cost driver of semantic chunking vs <a class="concept-link" href="fixed-size-chunking.html">fixed-size</a>.</p>
+<p><strong>Embedding cost scales with document size</strong>: Each sentence requires an embedding call. Batch sentences (max 2048 per OpenAI call) to minimise API round-trips. For large corpora, this is the main cost driver of semantic chunking vs fixed-size.</p>
 <p><strong>Very short or very long chunks</strong>: Semantic chunking can produce degenerate chunks: very short (a single transition sentence) or very long (if a document discusses one topic for 50 pages). Add min/max chunk size <a class="concept-link" href="guardrails.html">guardrails</a>: merge chunks below 100 tokens, split chunks above 2000 tokens with a fallback fixed-size split.</p>
-<p><strong>Domain specificity</strong>: Standard embedding models may not detect topic shifts in highly specialised technical text. The <a class="concept-link" href="embeddings.html">embeddings</a> for "quantum error correction" and "quantum gate fidelity" may be similar enough to prevent splitting, even though these are different topics. Fine-tuned domain embeddings help here.</p>
+<p><strong>Domain specificity</strong>: Standard embedding models may not detect topic shifts in highly specialised technical text. The embeddings for "quantum error correction" and "quantum gate fidelity" may be similar enough to prevent splitting, even though these are different topics. Fine-tuned domain embeddings help here.</p>
 </div>
 </div>
 <div class="related-concepts">

@@ -218,14 +218,14 @@ docker run --gpus all -p 8080:80   ghcr.io/huggingface/text-generation-inference
 <div class="section-block" id="s4">
 <div class="section-marker">SECTION 04</div>
 <h2>AWQ vs GPTQ quality comparison</h2>
-<p>On standard <a class="concept-link" href="benchmarks.html">benchmarks</a> (<a class="concept-link" href="mmlu.html">MMLU</a>, <a class="concept-link" href="humaneval.html">HumanEval</a>, <a class="concept-link" href="mt-bench.html">MT-Bench</a>), AWQ-4bit consistently outperforms <a class="concept-link" href="gptq.html">GPTQ</a>-4bit by 1–3 percentage points. The difference is larger for smaller models (7B) than larger ones (70B), likely because larger models have more redundancy and are more robust to <a class="concept-link" href="quantization.html">quantisation</a> noise.</p>
+<p>On standard benchmarks (<a class="concept-link" href="mmlu.html">MMLU</a>, <a class="concept-link" href="humaneval.html">HumanEval</a>, <a class="concept-link" href="mt-bench.html">MT-Bench</a>), AWQ-4bit consistently outperforms GPTQ-4bit by 1–3 percentage points. The difference is larger for smaller models (7B) than larger ones (70B), likely because larger models have more redundancy and are more robust to quantisation noise.</p>
 <p>Both methods significantly outperform naive round-to-nearest (RTN) quantisation, which degrades heavily below 6-bit. At 3-bit, AWQ still maintains reasonable quality while GPTQ-3bit degrades more.</p>
 <p>For production deployment, if a pre-quantised AWQ model exists for your chosen base model, use it. The quality advantage over GPTQ is real and costs nothing.</p>
 </div>
 <div class="section-block" id="s5">
 <div class="section-marker">SECTION 05</div>
 <h2>AutoAWQ library</h2>
-<p>AutoAWQ is the main Python library for AWQ <a class="concept-link" href="quantization.html">quantisation</a>. Key features:</p>
+<p>AutoAWQ is the main Python library for AWQ quantisation. Key features:</p>
 <ul>
 <li><strong>GEMM kernel</strong>: Optimised for batch sizes &gt; 1 (typical serving scenario). Use <code>version="GEMM"</code>.</li>
 <li><strong>GEMV kernel</strong>: Optimised for batch size = 1 (decode step, edge deployment). Fastest for single-token generation.</li>
@@ -240,7 +240,7 @@ pip install git+https://github.com/casper-hansen/AutoAWQ.git
 <div class="section-block" id="s6">
 <div class="section-marker">SECTION 06</div>
 <h2>Weight-only vs activation quantisation</h2>
-<p>AWQ and <a class="concept-link" href="gptq.html">GPTQ</a> are <strong>weight-only</strong> <a class="concept-link" href="quantization.html">quantisation</a>: weights are stored in 4-bit, but <a class="concept-link" href="activations.html">activations</a> (the layer outputs computed during inference) remain in fp16. This is the dominant approach for <a class="concept-link" href="llms.html">LLMs</a> because: (1) activations have much larger dynamic range than weights and are harder to quantise, (2) computing activations in fp16 uses the GPU's fast fp16 tensor cores, (3) the <a class="concept-link" href="agent-memory.html">memory</a> bottleneck in autoregressive generation is weight loading, not activation storage.</p>
+<p>AWQ and GPTQ are <strong>weight-only</strong> quantisation: weights are stored in 4-bit, but <a class="concept-link" href="activations.html">activations</a> (the layer outputs computed during inference) remain in fp16. This is the dominant approach for <a class="concept-link" href="llms.html">LLMs</a> because: (1) activations have much larger dynamic range than weights and are harder to quantise, (2) computing activations in fp16 uses the GPU's fast fp16 tensor cores, (3) the memory bottleneck in autoregressive generation is weight loading, not activation storage.</p>
 <p>In contrast, <strong>W8A8 quantisation</strong> (SmoothQuant, LLM.int8) quantises both weights and activations to int8, using integer tensor cores that can be 2× faster on supported <a class="concept-link" href="hardware.html">hardware</a>. This is more complex but gives higher throughput on datacenter GPUs with strong int8 support (A100, H100).</p>
 </div>
 <div class="section-block" id="s7">

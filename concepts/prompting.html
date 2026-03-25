@@ -868,6 +868,61 @@ print(response.content[0].text)</div>
 </li>
 </ul>
 </div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">8</div>
+<h2>Prompt Chaining and Pipelines</h2>
+<p>Single prompts rarely solve complex tasks. Chaining breaks a hard problem into sequential sub-tasks, each with a focused prompt. The output of one call becomes the input to the next. Chains are deterministic (no branching) and easy to debug, making them the right default before reaching for agents.</p>
+<p>Common chain patterns: <strong>Decompose → Solve → Aggregate</strong> (split a big question, answer each part, merge), <strong>Draft → Critique → Revise</strong> (generate then self-correct), and <strong>Extract → Transform → Format</strong> (parse raw input, process, structure output). DSPy and LangChain Expression Language both formalise chains, but plain Python function calls work just as well for short chains.</p>
+<div class="example-box">import openai
+
+client = openai.OpenAI()
+
+def call(prompt, system="You are a helpful assistant.", model="gpt-4o-mini"):
+    return client.chat.completions.create(
+        model=model,
+        messages=[{"role":"system","content":system},
+                  {"role":"user","content":prompt}]
+    ).choices[0].message.content
+
+# Chain: Decompose → Solve → Synthesise
+def answer_complex(question: str) -> str:
+    # Step 1: decompose into sub-questions
+    sub_qs = call(
+        f"Break this question into 3 focused sub-questions:
+{question}",
+        system="Output only a numbered list."
+    )
+    # Step 2: answer each sub-question
+    answers = call(
+        f"Answer each sub-question concisely:
+{sub_qs}",
+        system="Be factual and brief."
+    )
+    # Step 3: synthesise final answer
+    final = call(
+        f"Original question: {question}
+
+Sub-answers:
+{answers}
+
+Write a concise final answer.",
+        system="Synthesise the sub-answers into a single, coherent response."
+    )
+    return final
+
+print(answer_complex("How should I choose between RAG and fine-tuning for a customer support bot?"))
+</div>
+<table>
+<thead><tr><th>Pattern</th><th>Use when</th><th>Trade-off</th></tr></thead>
+<tbody>
+<tr><td>Sequential chain</td><td>Steps are dependent and linear</td><td>Latency adds up; errors propagate</td></tr>
+<tr><td>Parallel fan-out</td><td>Sub-tasks are independent</td><td>Lower latency; needs merge step</td></tr>
+<tr><td>Draft → critique</td><td>Quality matters more than speed</td><td>2× LLM calls; usually worth it</td></tr>
+<tr><td>Agent loop</td><td>Path is unknown at design time</td><td>Unpredictable steps; harder to debug</td></tr>
+</tbody>
+</table>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

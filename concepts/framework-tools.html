@@ -574,16 +574,16 @@ with mlflow.start_run(run_name="baseline"):
 <h2>Development Frameworks: LangChain, LlamaIndex, DSPy</h2>
 <p>GenAI development is repetitive: prompt templating, context injection, tool calling, error handling. <a class="concept-link" href="agent-frameworks.html">Frameworks</a> abstract these patterns.</p>
 <h3>LangChain</h3>
-<p><strong>Largest ecosystem.</strong> High-level abstractions for: chains (sequences of operations), <a class="concept-link" href="agents.html">agents</a> (loop with tool calling), <a class="concept-link" href="rag.html">RAG</a> pipelines, <a class="concept-link" href="agent-memory.html">memory</a> management.</p>
+<p><strong>Largest ecosystem.</strong> High-level abstractions for: chains (sequences of operations), agents (loop with tool calling), <a class="concept-link" href="rag.html">RAG</a> pipelines, <a class="concept-link" href="agent-memory.html">memory</a> management.</p>
 <p><strong>Strengths:</strong> Most mature, huge community, tons of integrations (100+ document loaders, <a class="concept-link" href="vector-dbs.html">vector stores</a>, tools).</p>
 <p><strong>Weaknesses:</strong> Can feel over-abstracted. Learning curve. Hidden complexity. Heavy dependencies.</p>
 <h3>LlamaIndex</h3>
 <p><strong>Specialized for RAG.</strong> Simple API for ingestion → indexing → querying. Great for document Q&amp;A applications.</p>
-<p><strong>Strengths:</strong> Laser-focused on RAG. Simpler than <a class="concept-link" href="langchain.html">LangChain</a>. Good documentation.</p>
+<p><strong>Strengths:</strong> Laser-focused on RAG. Simpler than LangChain. Good documentation.</p>
 <p><strong>Weaknesses:</strong> Less suitable for agent/tool-use workflows. Smaller community.</p>
 <h3>DSPy</h3>
 <p><strong><a class="concept-link" href="programmatic-prompting.html">Programmatic</a>, composable.</strong> Define modular components, optimize over datasets. Treat prompts as learnable parameters.</p>
-<p><strong>Strengths:</strong> Elegant design. Programmatic prompt <a class="concept-link" href="optimization.html">optimization</a> (teleprompter). Great for complex workflows.</p>
+<p><strong>Strengths:</strong> Elegant design. Programmatic prompt optimization (teleprompter). Great for complex workflows.</p>
 <p><strong>Weaknesses:</strong> Smaller community. Steeper learning curve. Less production tooling.</p>
 <h3>Comparison</h3>
 <div class="table-wrap">
@@ -618,6 +618,46 @@ with mlflow.start_run(run_name="baseline"):
 </tr>
 </tbody>
 </table>
+
+<div class="example-box"># LangChain Expression Language (LCEL) — composable chain
+# pip install langchain langchain-openai langchain-community
+
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_community.vectorstores import FAISS
+
+# Build a retrieval-augmented chain using LCEL pipe syntax
+docs = ["LangChain supports LCEL for composable chains.",
+        "FAISS enables fast vector similarity search.",
+        "OpenAI's gpt-4o-mini is cost-effective for chains."]
+
+vectorstore = FAISS.from_texts(docs, OpenAIEmbeddings())
+retriever   = vectorstore.as_retriever(search_kwargs={"k": 2})
+
+prompt = ChatPromptTemplate.from_template(
+    "Answer using only this context:
+{context}
+
+Question: {question}"
+)
+llm    = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+# LCEL chain — each | is a pipe between runnables
+chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
+)
+
+print(chain.invoke("What is LCEL good for?"))
+
+# Stream the response
+for chunk in chain.stream("Explain FAISS in one sentence"):
+    print(chunk, end="", flush=True)
+</div>
 </div>
 </div>
 <!-- ── 5. CHOOSING ── -->
@@ -717,7 +757,34 @@ with mlflow.start_run(run_name="baseline"):
 <div class="workflow">
 <div class="workflow-step">
 <div class="step-num">1</div>
-<div class="step-text"><strong>Prototype:</strong> Write script with Anthropic SDK directly. No framework overhead.</div>
+<div class="step-text"><strong>Prototype:</strong> Write script with Anthropic SDK directly. No framework overhead.
+
+<div class="example-box"># DSPy: programming (not prompting) language models
+# pip install dspy-ai
+
+import dspy
+
+lm = dspy.LM("openai/gpt-4o-mini", max_tokens=500)
+dspy.configure(lm=lm)
+
+class SupportIntent(dspy.Signature):
+    """Classify customer support message intent and extract key entities."""
+    message: str = dspy.InputField()
+    intent:  str = dspy.OutputField(desc="One of: billing, technical, refund, general")
+    urgency: str = dspy.OutputField(desc="One of: low, medium, high, critical")
+    summary: str = dspy.OutputField(desc="One sentence summary of the issue")
+
+# Chain of Thought module — DSPy handles prompt optimisation internally
+cot = dspy.ChainOfThought(SupportIntent)
+result = cot(message="App crashes when I export to PDF on mobile — been happening all week")
+print(f"Intent: {result.intent}, Urgency: {result.urgency}")
+print(f"Summary: {result.summary}")
+
+# Compile (optimise prompts automatically against labelled examples)
+# optimizer = dspy.MIPROv2(metric=your_metric_fn)
+# optimized = optimizer.compile(cot, trainset=your_examples)
+</div>
+</div>
 </div>
 <div class="workflow-step">
 <div class="step-num">2</div>
@@ -764,9 +831,9 @@ with mlflow.start_run(run_name="baseline"):
 <div class="ref-group-title">Documentation &amp; Guides</div>
 <ul class="ref-list">
 <li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="mlflow.html">MLflow</a> documentation. <a href="https://mlflow.org/docs/" target="_blank">mlflow.org/docs ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="langchain.html">LangChain</a> docs. <a href="https://python.langchain.com/docs/" target="_blank">langchain.com/docs ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="llamaindex.html">LlamaIndex</a> documentation. <a href="https://docs.llamaindex.ai/" target="_blank">llamaindex.ai/docs ↗</a></li>
-<li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="dspy.html">DSPy</a> guide. <a href="https://github.com/stanfordnlp/dspy" target="_blank">github.com/stanfordnlp/dspy ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> LangChain docs. <a href="https://python.langchain.com/docs/" target="_blank">langchain.com/docs ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> LlamaIndex documentation. <a href="https://docs.llamaindex.ai/" target="_blank">llamaindex.ai/docs ↗</a></li>
+<li><span class="ref-badge badge-docs">Docs</span> DSPy guide. <a href="https://github.com/stanfordnlp/dspy" target="_blank">github.com/stanfordnlp/dspy ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> Anthropic SDK. <a href="https://github.com/anthropics/anthropic-sdk-python" target="_blank">anthropics/anthropic-sdk-python ↗</a></li>
 <li><span class="ref-badge badge-docs">Docs</span> <a class="concept-link" href="litellm.html">LiteLLM</a> documentation. <a href="https://docs.litellm.ai/" target="_blank">docs.litellm.ai ↗</a></li>
 </ul>
