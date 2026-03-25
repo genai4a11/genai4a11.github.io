@@ -302,6 +302,51 @@ Return as JSON: {{"scores": [0.9, 0.8, ...]}}'''
 <p><strong>Self-critique is circular.</strong> A model that's biased in a particular direction will apply its critiques through that same biased lens. If the base model has systematic blind spots, CAI may not catch them — it will evaluate outputs using the same blind spots. External <a class="concept-link" href="eval.html">evaluation</a> (red-teaming, human audits) remains necessary alongside CAI.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Implementing CAI-Style Filtering</h2>
+<table>
+<thead><tr><th>Principle Type</th><th>Example</th><th>Revision Trigger</th><th>Preferred Fix</th></tr></thead>
+<tbody>
+<tr><td>Harm avoidance</td><td>Do not provide instructions for illegal activities</td><td>Output contains step-by-step harmful guidance</td><td>Replace with refusal and redirection</td></tr>
+<tr><td>Honesty</td><td>Do not claim certainty about uncertain facts</td><td>Output contains unhedged factual claims</td><td>Add appropriate uncertainty markers</td></tr>
+<tr><td>Helpfulness</td><td>Provide actionable, specific answers</td><td>Output is vague or unhelpfully evasive</td><td>Rewrite to be more specific</td></tr>
+<tr><td>Bias</td><td>Represent all groups fairly</td><td>Output disparages a demographic</td><td>Rewrite with neutral framing</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+CONSTITUTION = [
+    "Do not provide step-by-step instructions for illegal or harmful activities.",
+    "Acknowledge uncertainty when facts are not well established.",
+    "Treat all demographic groups with equal respect.",
+]
+
+def cai_revise(original_response: str, user_query: str) -&gt; str:
+    critique_prompt = f"""User asked: {user_query}
+Assistant responded: {original_response}
+
+Review the response against these principles:
+{chr(10).join(f"- {p}" for p in CONSTITUTION)}
+
+If the response violates any principle, rewrite it to comply.
+If it already complies, return it unchanged.
+Revised response:"""
+
+    result = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": critique_prompt}]
+    )
+    return result.content[0].text
+</code></pre>
+</div>
+
+<p>Measure false-positive rates before enabling CAI-style hard blocks in production. Start with logging mode: record which responses would have been revised without actually revising them. Analyse flagged outputs for false positives, then refine principle wording before enabling enforcement. Review weekly and treat principle refinement as an ongoing process.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

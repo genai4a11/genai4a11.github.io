@@ -346,6 +346,25 @@ scheduler.start()
 <p><strong>LLM cost surprises in batch jobs.</strong> A scheduled agent that processes 1,000 items/night might cost pennies in testing but dollars in production when the items are large. Always estimate token cost before deploying batch agents — multiply (average tokens per item) × (items per run) × (cost per 1M tokens) × (runs per month).</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Event-Driven Agent Reliability Patterns</h2>
+<table>
+<thead><tr><th>Failure Mode</th><th>Cause</th><th>Solution</th></tr></thead>
+<tbody>
+<tr><td>Duplicate processing</td><td>Webhook retry on timeout</td><td>Idempotency key; check-and-set in Redis before processing</td></tr>
+<tr><td>Message loss</td><td>Agent crashes mid-processing</td><td>Ack only after successful completion; dead-letter queue for failures</td></tr>
+<tr><td>Stale triggers</td><td>Old events queued during downtime</td><td>Timestamp check; discard events older than TTL</td></tr>
+<tr><td>Fan-out explosion</td><td>One event triggers many agents</td><td>Rate-limit downstream fan-out; use topic-based filtering</td></tr>
+<tr><td>Runaway cron</td><td>Scheduled job takes longer than interval</td><td>Distributed lock; skip if previous run still active</td></tr>
+</tbody>
+</table>
+<p>The dead-letter queue (DLQ) is the most important reliability primitive in event-driven agent systems. When a message fails processing after all retries, move it to the DLQ rather than dropping it. Set up a monitoring alert on DLQ depth — a growing DLQ means systematic failures, not just transient ones. Schedule a weekly review of DLQ contents to identify patterns: if the same event type fails repeatedly, the agent's handling logic needs to be updated.</p>
+
+<p>Testing event-driven agents requires simulating the full event lifecycle, not just the agent logic. Use a local message broker in tests rather than mocking it entirely — this catches serialisation bugs and timing issues. Write integration tests that publish a test event, verify the agent processes it, and confirm expected side effects. Use a dedicated test topic to avoid polluting production event streams.</p>
+
+<p>For GDPR and data residency compliance in event-driven agent pipelines, never store PII in event payloads themselves. Instead, store a reference ID in the event and look up PII from an encrypted, region-restricted data store at processing time. This allows event logs and dead-letter queues to be retained for debugging without creating a compliance liability. Implement event payload schema validation at the producer side to catch accidental PII inclusion before events enter the queue.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

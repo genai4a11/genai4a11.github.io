@@ -341,6 +341,25 @@ for chunk in streaming_orchestrator("Write a technical blog post about LLMs"):
 <p><strong>Error handling must be explicit.</strong> If Worker A fails, the orchestrator needs a clear recovery path: retry, use a fallback agent, skip the subtask, or abort the whole workflow. Don't assume workers succeed — always handle errors at the orchestration layer.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Orchestrator Design Checklist</h2>
+<table>
+<thead><tr><th>Design Decision</th><th>Options</th><th>Recommendation</th></tr></thead>
+<tbody>
+<tr><td>Task decomposition</td><td>Static (hardcoded) vs Dynamic (LLM-decided)</td><td>Static for known workflows; dynamic for open-ended tasks</td></tr>
+<tr><td>Worker communication</td><td>Direct call vs message queue</td><td>Direct for latency-sensitive; queue for reliability</td></tr>
+<tr><td>Error handling</td><td>Fail fast vs partial results</td><td>Partial results with confidence scores for user-facing APIs</td></tr>
+<tr><td>Result aggregation</td><td>Concat vs synthesise with LLM</td><td>Synthesise for coherent output; concat for audit trails</td></tr>
+<tr><td>Human oversight</td><td>None vs checkpoint vs full review</td><td>Checkpoint before irreversible actions</td></tr>
+</tbody>
+</table>
+<p>The orchestrator should be the only component with global state — individual workers should be stateless and rerunnable. This makes the system debuggable: if a worker fails, you can replay exactly its inputs from the orchestrator's log without re-running earlier stages. Log the full task decomposition and all worker inputs/outputs at DEBUG level; this data is invaluable when diagnosing why the final output diverged from expectations.</p>
+
+<p>Keep orchestrator state minimal: store only task inputs, outputs, and status. Delegate all business logic to workers. Checkpoint state after every worker completion, not just at the end of the full orchestration, so a failed orchestrator instance can be replaced and any task resumed from the last persisted checkpoint without replaying the entire workflow.</p>
+
+<p>Implement structured logging in your orchestrator to enable post-hoc workflow analysis. Each log entry should include: orchestration ID, step number, worker ID, input token count, output token count, latency, and success/failure status. This lets you run cost attribution queries across orchestration runs, identify which worker types are the most expensive or slowest, and build dashboards that show quality trends correlated with orchestration complexity.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

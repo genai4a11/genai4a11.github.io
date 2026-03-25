@@ -349,6 +349,25 @@ print(f"Params: {sum(p.numel() for p in model.parameters()):,}")  # ~6.5M
 <p><strong>Temperature 0 is not greedy decoding.</strong> Setting temperature to 0 makes all logits divide by 0 (or near-0), producing NaN or all-uniform distributions. Most inference libraries implement "temperature=0" as argmax (true greedy decoding) as a special case. When writing your own sampler, handle temperature≤0 explicitly with argmax rather than the division formula.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Architecture Comparison</h2>
+<table>
+<thead><tr><th>Property</th><th>Decoder-Only (GPT style)</th><th>Encoder-Decoder (T5 style)</th><th>Encoder-Only (BERT style)</th></tr></thead>
+<tbody>
+<tr><td>Primary use</td><td>Generation, completion</td><td>Translation, summarisation</td><td>Classification, embeddings</td></tr>
+<tr><td>Attention type</td><td>Causal (left-to-right)</td><td>Full (encoder) + Causal (decoder)</td><td>Bidirectional full attention</td></tr>
+<tr><td>Prompt conditioning</td><td>In-context (prefix)</td><td>Separate input sequence</td><td>N/A (no generation)</td></tr>
+<tr><td>KV cache benefit</td><td>High — caches all prior tokens</td><td>Partial — encoder KV fixed</td><td>N/A</td></tr>
+<tr><td>Parameter efficiency</td><td>One model for all tasks</td><td>Better for seq2seq tasks</td><td>Compact for classification</td></tr>
+</tbody>
+</table>
+<p>The dominance of decoder-only architectures in frontier LLMs reflects a practical advantage: they unify pretraining (next-token prediction) and fine-tuning (instruction following) into a single paradigm. Encoder-decoder models require a separate pretraining objective and a harder alignment between input and output sequences. For most production GenAI use cases today, decoder-only is the default choice; encoder-only models remain valuable for high-throughput classification and embedding workloads where generation is not needed.</p>
+
+<p>Long system prompts that repeat across requests are prime candidates for prompt caching. The KV pairs for static prefixes can be computed once and reused, cutting both latency and cost for the prefill phase. This is possible precisely because decoder-only models process the prompt autoregressively and the KV cache naturally partitions by sequence position.</p>
+
+<p>From a practical inference standpoint, the distinction between prefill and decode phases matters for latency optimisation. Prefill processes your entire prompt in one forward pass (parallelisable on GPU) and is fast even for long prompts. Decode generates tokens one at a time (sequential) and is the bottleneck for long outputs. This asymmetry means that increasing prompt length has a much smaller latency impact than increasing max output tokens, which is useful for system prompt design trade-offs.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

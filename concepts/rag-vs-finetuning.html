@@ -300,6 +300,40 @@ Question: {user_question}"}
 <p><strong>Hybrid is often the answer</strong>: Production teams that start with "RAG or fine-tuning?" often end up with both. Budget for this possibility when <a class="concept-link" href="agent-planning.html">planning</a> your roadmap.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Decision Flowchart and Cost Model</h2>
+<p>The build-vs-train decision comes down to three questions: Does the information change frequently? Is the information too large to fit in context? Does the task require a different behaviour pattern, or just different knowledge?</p>
+<p>If information changes weekly or more often, RAG is almost always right — re-indexing a vector store costs cents; re-training costs thousands of dollars. If the information is static and fits in a long context window (under 200K tokens), try prompting with the full document first — surprisingly often, this outperforms both RAG and fine-tuning for knowledge-intensive tasks. Fine-tuning earns its place when you need the model to adopt a consistent tone, follow a strict output schema, or perform a narrow task (e.g. SQL generation) at higher reliability than prompting achieves.</p>
+<div class="example-box">
+<pre><code class="language-python"># Quick decision heuristic: score your use case
+def choose_approach(
+    data_updates_weekly: bool,
+    data_size_tokens: int,
+    needs_style_change: bool,
+    budget_usd: float
+) -&gt; str:
+    if data_updates_weekly:
+        return "RAG — data changes too fast for fine-tuning"
+    if data_size_tokens &lt; 150_000 and not needs_style_change:
+        return "Long-context prompting — cheapest and fastest to iterate"
+    if needs_style_change and budget_usd &gt; 500:
+        return "Fine-tuning — consistent behaviour change justified"
+    if data_size_tokens &gt; 150_000:
+        return "RAG — data too large for context window"
+    return "RAG + prompting — default safe choice"
+
+# Example
+print(choose_approach(
+    data_updates_weekly=True,
+    data_size_tokens=5_000_000,
+    needs_style_change=False,
+    budget_usd=200
+))  # → RAG
+</code></pre>
+</div>
+<p>Track the combined cost over a 12-month horizon: fine-tuning has high upfront cost but near-zero per-query cost; RAG has low upfront cost but non-zero retrieval + synthesis cost per query. For high-volume (1M+ queries/month), fine-tuning on a smaller model often beats RAG on total cost of ownership within 6 months.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

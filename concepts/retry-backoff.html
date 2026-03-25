@@ -380,6 +380,26 @@ async def tenacity_async(prompt: str) -&gt; str:
 <p><strong>Log retry attempts with context.</strong> A retry loop that silently sleeps and retries is a debugging nightmare. Log at WARNING level on each retry: the attempt number, error code, delay, and the first ~100 chars of the prompt. This lets you distinguish "normal <a class="concept-link" href="rate-limiting.html">rate limiting</a>" from "stuck in an infinite 429 loop due to a quota bug" during incident investigation.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Retry Strategy Reference</h2>
+<table>
+<thead><tr><th>Error Type</th><th>HTTP Code</th><th>Retry?</th><th>Strategy</th><th>Max Attempts</th></tr></thead>
+<tbody>
+<tr><td>Rate limit</td><td>429</td><td>Yes</td><td>Exponential backoff + jitter; respect Retry-After header</td><td>5</td></tr>
+<tr><td>Server error</td><td>500, 529</td><td>Yes</td><td>Exponential backoff from 1s</td><td>3</td></tr>
+<tr><td>Gateway timeout</td><td>502, 503, 504</td><td>Yes</td><td>Linear backoff from 2s</td><td>3</td></tr>
+<tr><td>Auth error</td><td>401, 403</td><td>No</td><td>Alert immediately; token may be expired</td><td>0</td></tr>
+<tr><td>Bad request</td><td>400</td><td>No</td><td>Fix request; retrying will always fail</td><td>0</td></tr>
+<tr><td>Context too long</td><td>400 (specific)</td><td>Maybe</td><td>Truncate input and retry once</td><td>1</td></tr>
+</tbody>
+</table>
+<p>In async high-concurrency applications, add per-request deadline tracking alongside retry logic. A request that has already consumed 80% of its SLA budget should not attempt a full exponential backoff sequence — it should fail fast and let the caller handle degradation. Use <code>asyncio.wait_for</code> with a deadline calculated from the original request timestamp, not from the retry attempt timestamp.</p>
+
+<p>When using the Anthropic Python SDK, built-in retry logic (<code>max_retries</code> parameter) handles 429 and 529 errors automatically. Disable it only if you need custom logic such as falling back to a different model on the third retry. Set <code>anthropic.Anthropic(max_retries=0)</code> and implement your own wrapper with model-switching using <code>tenacity</code>.</p>
+
+<p>For distributed microservice architectures, implement circuit-breaker logic alongside retry logic. After 5 consecutive failures to the same upstream provider, open the circuit and fail fast for 60 seconds before attempting a probe request. This prevents cascading failures where a slow LLM API causes your entire request queue to back up with retrying requests. Libraries like <code>pybreaker</code> implement this pattern with minimal boilerplate.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

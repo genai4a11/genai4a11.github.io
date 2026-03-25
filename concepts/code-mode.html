@@ -313,6 +313,55 @@ services:
 <p><strong>SDK documentation is your prompt.</strong> The model writes code against the docstrings you provide. Missing a return type or an example will cause the model to guess, often incorrectly. Treat SDK docs with the same care as <a class="concept-link" href="system-prompts.html">system prompts</a>.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Code Mode Safety and Sandboxing</h2>
+<table>
+<thead><tr><th>Sandboxing Approach</th><th>Isolation Level</th><th>Overhead</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>subprocess (no sandbox)</td><td>None</td><td>None</td><td>Trusted internal tools only</td></tr>
+<tr><td>RestrictedPython</td><td>Python AST-level</td><td>Low</td><td>Simple scripts, no system calls</td></tr>
+<tr><td>Docker container</td><td>Process + filesystem</td><td>Medium (500ms+ startup)</td><td>General-purpose untrusted code</td></tr>
+<tr><td>gVisor / Firecracker</td><td>Kernel-level VM</td><td>Medium-high</td><td>High-security multi-tenant</td></tr>
+<tr><td>WASM (e.g. Pyodide)</td><td>Full browser/runtime sandbox</td><td>High (cold start)</td><td>Client-side or ultra-secure server</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code class="language-python">import subprocess, tempfile, os, textwrap
+
+def run_sandboxed(code: str, timeout: int = 10) -&gt; dict:
+    """Execute Python code in a subprocess with resource limits."""
+    # Wrap code to capture stdout and stderr
+    wrapper = textwrap.dedent(f"""
+import sys, io
+_stdout = io.StringIO()
+sys.stdout = _stdout
+try:
+{textwrap.indent(code, "    ")}
+except Exception as e:
+    print(f"ERROR: {{e}}", file=sys.__stderr__)
+finally:
+    sys.stdout = sys.__stdout__
+    print(_stdout.getvalue(), end="")
+""")
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        f.write(wrapper); tmp = f.name
+    try:
+        result = subprocess.run(
+            ["python3", "-u", tmp],
+            capture_output=True, text=True, timeout=timeout,
+            env={**os.environ, "PYTHONPATH": ""}  # strip custom imports
+        )
+        return {"stdout": result.stdout, "stderr": result.stderr,
+                "returncode": result.returncode}
+    except subprocess.TimeoutExpired:
+        return {"stdout": "", "stderr": "Execution timed out", "returncode": -1}
+    finally:
+        os.unlink(tmp)
+</code></pre>
+</div>
+<p>For production code-mode agents, always use Docker or a proper sandbox over subprocess. Set resource limits: <code>--memory=256m --cpus=0.5 --network=none</code> prevent runaway memory use, CPU exhaustion, and exfiltration. Rotate containers after each execution to prevent state persistence across sessions.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

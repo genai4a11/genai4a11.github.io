@@ -390,6 +390,25 @@ def enforce_limits(user_id: str, plan: Plan, token_count: int) -&gt; bool:
 <p><strong>Count tokens, not just requests, for LLM rate limiting.</strong> A single request with a 100K-token prompt uses 1000× the upstream API quota of a 100-token request. Counting requests equally is unfair and ineffective at protecting your budget. Track token usage per user alongside request counts, especially if you expose long-context capabilities.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Rate Limit Architecture Patterns</h2>
+<table>
+<thead><tr><th>Algorithm</th><th>Burst Handling</th><th>Memory</th><th>Best For</th></tr></thead>
+<tbody>
+<tr><td>Fixed window</td><td>Poor (resets at boundary)</td><td>O(1)</td><td>Simple per-minute caps</td></tr>
+<tr><td>Sliding window log</td><td>Excellent</td><td>O(n) per user</td><td>Strict fairness, low traffic</td></tr>
+<tr><td>Sliding window counter</td><td>Good approximation</td><td>O(1)</td><td>High-traffic APIs</td></tr>
+<tr><td>Token bucket</td><td>Excellent (allows bursts)</td><td>O(1)</td><td>APIs with bursty clients</td></tr>
+<tr><td>Leaky bucket</td><td>None (smooths traffic)</td><td>O(1)</td><td>Upstream LLM API protection</td></tr>
+</tbody>
+</table>
+<p>For LLM applications specifically, rate-limit on <em>tokens</em> not just requests — a single 100K-token request can exhaust your upstream API budget as fast as 200 small requests. Track estimated input + output tokens per request in your rate-limit counter. Use the token estimates your upstream provider returns in response headers to update rolling averages, and adjust your rate-limit thresholds dynamically rather than hardcoding them.</p>
+
+<p>Token-based rate limiting requires estimating output token counts before the request completes. Use the provider token counting endpoint for exact input counts, and maintain a rolling average of output-to-input ratio from recent requests for total usage estimation. Update the counter optimistically before the request, then correct it when actual usage arrives in response headers.</p>
+
+<p>Implement a global token budget tracker across all users using Redis sorted sets: store <code>(timestamp, tokens_used)</code> tuples per user ID and use a sliding window to compute total tokens used in the past 60 seconds. This approach scales to millions of users with sub-millisecond overhead per request and supports atomic check-and-decrement operations that prevent race conditions in high-concurrency deployments where multiple request handlers run in parallel.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
