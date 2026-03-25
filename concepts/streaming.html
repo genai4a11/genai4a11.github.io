@@ -935,6 +935,21 @@ function robustStream(query, maxRetries = 3) {
       </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Streaming Architecture Patterns</h2>
+<p>Choosing the right streaming architecture depends on your latency requirements, client diversity, and infrastructure constraints. The table below compares the four main patterns.</p>
+<table>
+<thead><tr><th>Pattern</th><th>Transport</th><th>TTFT Impact</th><th>Best For</th><th>Limitation</th></tr></thead>
+<tbody>
+<tr><td>Direct SSE</td><td>HTTP/1.1 SSE</td><td>Lowest (~100ms)</td><td>Web browsers, simple APIs</td><td>No multiplexing; one connection per stream</td></tr>
+<tr><td>WebSocket</td><td>Full-duplex TCP</td><td>Low</td><td>Interactive chat, real-time tools</td><td>Stateful — harder to load-balance</td></tr>
+<tr><td>gRPC streaming</td><td>HTTP/2</td><td>Low</td><td>Service-to-service, mobile</td><td>Requires gRPC client; browser support via proxy</td></tr>
+<tr><td>Buffered proxy</td><td>Any</td><td>Highest (full latency)</td><td>Caching, rate-limiting, logging</td><td>Defeats purpose of streaming; only use for middleware</td></tr>
+</tbody>
+</table>
+<p>For public-facing APIs, SSE is the default choice — it works over plain HTTP, survives proxies and CDNs, and needs no special client code. For mobile apps where battery and connection stability matter, a WebSocket with heartbeats is more reliable. Avoid buffering proxies in the hot path; if you need to log completions, write to a queue asynchronously after forwarding each chunk, not before.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

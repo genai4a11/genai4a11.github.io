@@ -420,6 +420,49 @@ def run_computer_task(task: str, max_steps: int = 20):
 <p><strong>Claude refuses differently than GPT-4.</strong> Claude is more likely to decline requests that feel like they're testing limits, even benign ones. Adding context about why the task is legitimate (e.g., "I'm a security researcher testing my own system") reduces refusals for borderline requests.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Model Selection and Migration Guide</h2>
+<p>Claude 3.5 Sonnet sits at the top of the cost-performance curve for most production tasks. Understanding when to choose it versus Claude 3 Haiku or Claude 3 Opus helps you optimise your inference budget without sacrificing quality.</p>
+<table>
+<thead><tr><th>Use Case</th><th>Recommended Model</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>High-volume classification, routing</td><td>Claude 3 Haiku</td><td>10× cheaper; accuracy gap negligible for simple tasks</td></tr>
+<tr><td>RAG synthesis, summarisation</td><td>Claude 3.5 Sonnet</td><td>Best quality/cost ratio; fast output tokens</td></tr>
+<tr><td>Multi-step reasoning, coding</td><td>Claude 3.5 Sonnet</td><td>Outperforms Opus on most coding benchmarks</td></tr>
+<tr><td>Very long-document analysis (&gt;100K tokens)</td><td>Claude 3.5 Sonnet</td><td>200K context with strong recall</td></tr>
+<tr><td>Computer use / browser automation</td><td>Claude 3.5 Sonnet</td><td>Only supported model for computer use beta</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code class="language-python">import anthropic
+
+client = anthropic.Anthropic()
+
+# Migrate from claude-3-opus-20240229 to claude-3-5-sonnet-20241022
+# Key differences to handle:
+# 1. claude-3-5-sonnet is faster (higher output tokens/sec)
+# 2. Tool use format is identical — no changes needed
+# 3. System prompt position is unchanged
+
+def create_with_fallback(prompt: str, primary="claude-3-5-sonnet-20241022",
+                         fallback="claude-3-opus-20240229") -&gt; str:
+    for model in [primary, fallback]:
+        try:
+            resp = client.messages.create(
+                model=model,
+                max_tokens=2048,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return resp.content[0].text
+        except anthropic.APIStatusError as e:
+            if model == fallback:
+                raise
+            print(f"Primary model failed ({e.status_code}), trying fallback...")
+    return ""
+</code></pre>
+</div>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

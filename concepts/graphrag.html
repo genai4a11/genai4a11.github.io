@@ -646,6 +646,12 @@ Question: How critical is hallucination reduction?
             </div>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>GraphRAG Performance Tuning</h2>
+<p>Microsoft GraphRAG's indexing pipeline is expensive by design — it runs community detection (Leiden algorithm), entity extraction via LLM, and relationship summarisation on the full corpus. For a 10 M-token corpus, expect 4–8 hours of indexing time and $40–80 in API costs at Haiku pricing. To reduce this: (1) chunk aggressively (512 tokens is usually sufficient for entity extraction); (2) use a cheaper model for entity extraction passes and only run the expensive summarisation on top-level community reports; (3) filter the input corpus to the documents most relevant to anticipated query types — GraphRAG scales quadratically in entity count, not linearly.</p>
+<p>For query latency, global search is slower than local search because it aggregates community reports across the entire graph. Profile your top query patterns and pre-cache community report summaries for the most common anchor entities. Entity resolution is a hidden bottleneck: if the same concept appears under multiple surface forms (e.g. "GPT-4", "GPT4", "OpenAI GPT-4"), the graph will fragment rather than consolidate. Run a deduplication pass on entity names before building the graph — even a simple fuzzy-match threshold of 0.85 cosine similarity dramatically reduces fragmentation and improves global search quality.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

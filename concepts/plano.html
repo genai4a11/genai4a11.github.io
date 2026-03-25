@@ -389,6 +389,52 @@ for step in plan.steps:
 <p><strong>Estimated tokens are usually wrong.</strong> The LLM's token estimates are rough. For accurate cost forecasting, track actual tokens used per step and use historical data to calibrate future estimates. Never use LLM-estimated tokens for billing.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Production Planning Patterns</h2>
+<p>LLM-based planning systems require careful design to be reliable in production. The three patterns below cover the most common architectures, from simple single-shot plans to robust iterative systems.</p>
+<table>
+<thead><tr><th>Pattern</th><th>Description</th><th>Best For</th><th>Failure Risk</th></tr></thead>
+<tbody>
+<tr><td>Single-shot plan</td><td>Generate full plan upfront, execute sequentially</td><td>Predictable, short tasks</td><td>Early errors cascade; no recovery</td></tr>
+<tr><td>Hierarchical plan</td><td>Decompose into sub-plans recursively</td><td>Complex multi-stage tasks</td><td>Over-planning; combinatorial depth</td></tr>
+<tr><td>Replanning loop</td><td>Replan after each step based on results</td><td>Dynamic environments</td><td>High cost; risk of infinite loops</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code class="language-python">import anthropic, json
+
+client = anthropic.Anthropic()
+
+PLAN_PROMPT = """Given the goal below, produce a JSON plan with steps.
+Each step: {{"id": int, "action": str, "depends_on": [int], "status": "pending"}}
+Goal: {goal}
+Return only valid JSON."""
+
+def generate_plan(goal: str) -&gt; list[dict]:
+    resp = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": PLAN_PROMPT.format(goal=goal)}]
+    )
+    return json.loads(resp.content[0].text)
+
+def execute_step(step: dict, context: dict) -&gt; str:
+    # Placeholder: in production, dispatch to tools/agents
+    return f"Completed: {step['action']}"
+
+def run_plan(goal: str):
+    plan = generate_plan(goal)
+    results = {}
+    for step in plan:
+        if all(results.get(dep) for dep in step["depends_on"]):
+            results[step["id"]] = execute_step(step, results)
+            step["status"] = "done"
+    return results
+</code></pre>
+</div>
+<p>For production replanning loops, always enforce a hard step limit (e.g. 20 steps) and a budget cap (e.g. $0.50 per plan execution). Log the full plan and all replan events so you can audit why the system diverged from the original plan. Human-in-the-loop checkpoints at natural plan boundaries (e.g. before irreversible actions like sending emails or writing files) reduce the blast radius of planning failures.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

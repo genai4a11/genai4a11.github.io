@@ -389,6 +389,64 @@ def safe_generate(user_input: str, session_context: dict) -&gt; str:
 <p><strong>Overly aggressive guardrails harm legitimate users.</strong> A guardrail that blocks all mentions of "medication" to prevent medical advice will also block legitimate questions like "Can I take this product with medication?". Tune thresholds carefully and measure false positive rates, not just false negatives. A guardrail that blocks 30% of legitimate queries is not a safety feature — it's a product bug.</p>
 </div>
 </div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Production Guardrails Architecture</h2>
+<p>Enterprise guardrails deployments layer multiple validation mechanisms to achieve defence-in-depth. No single guardrail catches everything — adversarial users iterate on inputs, and classifier models have inherent false-negative rates. The industry standard is a four-layer stack: input filtering, prompt construction controls, output validation, and post-delivery audit logging.</p>
+<table>
+<thead><tr><th>Layer</th><th>What It Catches</th><th>Latency Cost</th><th>Tools</th></tr></thead>
+<tbody>
+<tr><td>Input filter</td><td>Obvious jailbreaks, PII in prompt</td><td>10–50ms</td><td>Llama Guard, keyword filters, regex</td></tr>
+<tr><td>Prompt controls</td><td>Instruction injection, role confusion</td><td>0ms</td><td>Structured templates, privilege separation</td></tr>
+<tr><td>Output validator</td><td>Policy violations, schema errors, hallucinations</td><td>50–300ms</td><td>NeMo Guardrails, Guardrails AI, custom</td></tr>
+<tr><td>Audit log</td><td>Post-hoc pattern detection, compliance</td><td>Async (0ms)</td><td>LangSmith, custom logging pipeline</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code class="language-python">import anthropic
+import re
+
+client = anthropic.Anthropic()
+
+PII_PATTERNS = [
+    r'\d{3}-\d{2}-\d{4}',          # SSN
+    r'\d{4}[\s-]\d{4}[\s-]\d{4}[\s-]\d{4}',  # credit card
+    r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}',  # email
+]
+
+def input_guard(text: str) -&gt; tuple[bool, str]:
+    for pat in PII_PATTERNS:
+        if re.search(pat, text):
+            return False, "Input contains sensitive personal information."
+    return True, ""
+
+def output_guard(text: str) -&gt; tuple[bool, str]:
+    blocked = ["step-by-step instructions", "how to make", "bypass security"]
+    for phrase in blocked:
+        if phrase in text.lower():
+            return False, "Response blocked by output policy."
+    return True, ""
+
+def safe_completion(user_input: str) -&gt; str:
+    ok, reason = input_guard(user_input)
+    if not ok:
+        return f"Request blocked: {reason}"
+
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": user_input}]
+    )
+    output = response.content[0].text
+
+    ok, reason = output_guard(output)
+    if not ok:
+        return f"Response blocked: {reason}"
+    return output
+</code></pre>
+</div>
+<p>Run your guardrail stack in shadow mode first — log blocks without actually blocking — for at least one week in production. This gives you false-positive rate data before enabling hard blocks. A false-positive rate above 2% on benign traffic will cause user-facing friction that outweighs security benefits.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
