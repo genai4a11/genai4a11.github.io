@@ -8493,7 +8493,13 @@ response = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special
 print(response)
 
 # Via Ollama (→ Ollama node) — single command:
-# ollama run phi3:mini`,tip:'Phi-3 Mini (3.8B) is the model to reach for when you need on-device inference — it runs on Apple Neural Engine (Core ML), Android NPU, and Raspberry Pi 5 with acceptable latency.\n\nFor tasks where response quality matters more than size, Phi-4 (14B) often beats models 4× larger because its training data is so carefully curated — benchmark it against Mistral 7B and Llama 3.1 8B before assuming bigger is better.\n\nWeakness: multi-step reasoning chains longer than 3–4 steps degrade quickly. Use the → o3 / o4-mini node or Llama 3.1 70B for tasks requiring deep logical chaining.',questions:{leader:['Where in your product roadmap does on-device AI (no API call, no data leaving the device) unlock features that cloud-based models cannot — especially for privacy-sensitive applications?','What is the cost comparison between running Phi-3 on-device vs. the cheapest cloud API at your expected query volume?'],pm:['Which user-facing features can run acceptably on Phi-3 quality — and which genuinely need frontier model quality?','How do you validate that a small model\'s outputs meet quality thresholds across the range of real user inputs, not just benchmark problems?'],eng:['How do you export Phi-3 to ONNX or Core ML for on-device deployment on iOS/Android — and what quantization precision gives the best quality/speed tradeoff?','What is the latency of Phi-3 Mini on your target device vs. an API call with network round-trip — at what network latency does on-device win?']},refs:[{label:'[1] Phi-3 Technical Report — Microsoft Research (Abdin et al., 2024)',url:'https://arxiv.org/abs/2404.14219'},{label:'[2] transformers — HuggingFace library (requires trust_remote_code=True for Phi-3)',url:'https://huggingface.co/microsoft/Phi-3-mini-128k-instruct'},{label:'[3] Azure AI Studio — cloud API for Phi-3/Phi-4 without self-hosting',url:'https://ai.azure.com/'}]},
+# ollama run phi3:mini`,tip:'Phi-3 Mini (3.8B) is the model to reach for when you need on-device inference — it runs on Apple Neural Engine (Core ML), Android NPU, and Raspberry Pi 5 with acceptable latency.\n\nFor tasks where response quality matters more than size, Phi-4 (14B) often beats models 4× larger because its training data is so carefully curated — benchmark it against Mistral 7B and Llama 3.1 8B before assuming bigger is better.\n\nWeakness: multi-step reasoning chains longer than 3–4 steps degrade quickly. Use the → o3 / o4-mini node or Llama 3.1 70B for tasks requiring deep logical chaining.',questions:{leader:['Where in your product roadmap does on-device AI (no API call, no data leaving the device) unlock features that cloud-based models cannot — especially for privacy-sensitive applications?','What is the cost comparison between running Phi-3 on-device vs. the cheapest cloud API at your expected query volume?'],pm:['Which user-facing features can run acceptably on Phi-3 quality — and which genuinely need frontier model quality?','How do you validate that a small model\'s outputs meet quality thresholds across the range of real user inputs, not just benchmark problems?'],eng:['How do you export Phi-3 to ONNX or Core ML for on-device deployment on iOS/Android — and what quantization precision gives the best quality/speed tradeoff?','What is the latency of Phi-3 Mini on your target device vs. an API call with network round-trip — at what network latency does on-device win?']},learn:[
+  {type:'paper',label:'Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone (Abdin et al., 2024)',url:'https://arxiv.org/abs/2404.14219'},
+  {type:'paper',label:'Phi-4 Technical Report — Microsoft Research (2024)',url:'https://arxiv.org/abs/2412.08905'},
+  {type:'tool',label:'Phi-3 Mini on HuggingFace Hub (microsoft/Phi-3-mini-128k-instruct)',url:'https://huggingface.co/microsoft/Phi-3-mini-128k-instruct'},
+  {type:'course',label:'ONNX Runtime: deploying models on-device (mobile / edge)',url:'https://onnxruntime.ai/docs/get-started/with-python.html'},
+  {type:'blog',label:'Microsoft blog: small language models for edge AI (Phi series)',url:'https://azure.microsoft.com/en-us/blog/phi-2-the-surprising-power-of-small-language-models/'}
+],refs:[{label:'[1] Phi-3 Technical Report — Microsoft Research (Abdin et al., 2024)',url:'https://arxiv.org/abs/2404.14219'},{label:'[2] transformers — HuggingFace library (requires trust_remote_code=True for Phi-3)',url:'https://huggingface.co/microsoft/Phi-3-mini-128k-instruct'},{label:'[3] Azure AI Studio — cloud API for Phi-3/Phi-4 without self-hosting',url:'https://ai.azure.com/'}]},
 qwen25:{
 use:'Qwen 2.5 is Alibaba\'s open-weight model family[1] — from a 0.5B model that runs on a phone to a 72B model that matches GPT-4o on major benchmarks. Three specialized sub-families cover general chat (Qwen2.5), coding (Qwen2.5-Coder[2]), and mathematics (Qwen2.5-Math[3]), each trained with separate domain-heavy instruction data.\n\nThe architecture uses → GQA node for fast KV-cache reads, → RoPE node for position encoding, and SwiGLU[4] activations. Context window is 128K tokens natively, extendable to 1M tokens with YaRN[5] long-context scaling. Trained on 18 trillion tokens across 29 languages — strong Chinese/CJK support comes from a 152K-vocabulary tokenizer[6] built for logographic efficiency.\n\nApache 2.0 license means free commercial use for services under 100M monthly active users, making it a realistic cost-cutting alternative to GPT-4o API for many production workloads.\n\nKey tools: transformers[7] (local HuggingFace inference), → vLLM node (high-throughput batch serving), → Ollama node (one-command local run)',
 diag:`
@@ -8657,37 +8663,74 @@ refs:[
   {label:'[5] SentencePiece: large-vocabulary subword tokenization',url:'https://arxiv.org/abs/1808.06226'},
   {label:'[6] bitsandbytes — quantization (int4/int8) for LLMs',url:'https://github.com/TimDettmers/bitsandbytes'}
 ]},
-deepseek:{use:'DeepSeek R1 is an open-source reasoning model competitive with o1, MIT-licensed, trained with chain-of-thought; strong for logic, math, and code.',diag:`
-  DeepSeek R1 — reasoning model, open weights:
+deepseek:{
+use:'DeepSeek R1 is a fully open reasoning model (MIT-licensed)[1] from a Chinese AI lab that matches OpenAI\'s o1 on math and coding benchmarks — at roughly 1/30th the API cost. It demonstrated that strong reasoning behavior can emerge from reinforcement learning alone, without needing a separate reward model trained on human preferences.\n\nThe training recipe[1] has five stages: (1) pre-train a large base model (DeepSeek-V3[2]); (2) cold-start supervised fine-tuning on a small chain-of-thought[3] dataset; (3) GRPO[4] (Group Relative Policy Optimization) — grades batches of completions for math/code correctness without a reward model; (4) rejection sampling + SFT to clean up format; (5) full RLHF[5] for helpfulness and safety. Reasoning emerges from the RL phase — the model learns to think step-by-step without being shown how.\n\nKey tools: openai[6] Python SDK (DeepSeek API is OpenAI-compatible — swap base_url only), → vLLM node (self-host distilled 7B/70B variants), → Ollama node (run deepseek-r1:7b locally in one command)',
+diag:`
+  DeepSeek R1 — training pipeline
 
-  Training approach (novel):
-  1. Pre-train base model (DeepSeek-V3 base)
-  2. Cold-start SFT on small CoT dataset
-  3. GRPO (Group Relative Policy Optimization)
-     — reward: correctness on math/code
-     — no reward model needed
-  4. Rejection sampling → SFT again
-  5. Full RLHF with helpfulness + safety
+  Stage 1:  Pre-train base (DeepSeek-V3 [2], 671B)
+  Stage 2:  Cold-start SFT on small CoT [3] dataset
+  Stage 3:  GRPO [4] — RL with correctness reward
+             (math/code answers graded automatically)
+  Stage 4:  Rejection sampling + SFT cleanup
+  Stage 5:  Full RLHF [5] (helpfulness + safety)
 
-  Result: reasoning emerges from RL training
-  ┌───────────────────────────────────────┐
-  │ Benchmark       │ R1      │ o1        │
-  ├─────────────────┼─────────┼───────────┤
-  │ AIME 2024       │ 79.8%   │ 79.2%     │
-  │ MATH-500        │ 97.3%   │ 96.4%     │
-  │ SWE-bench       │ 49.2%   │ 48.9%     │
-  └─────────────────┴─────────┴───────────┘
-  MIT license — fully open weights`,code:`import requests
+  ┌─────────────────────────────────────────────────┐
+  │ Benchmark       DeepSeek R1      OpenAI o1      │
+  ├─────────────────────────────────────────────────┤
+  │ AIME 2024          79.8%           79.2%        │
+  │ MATH-500           97.3%           96.4%        │
+  │ SWE-bench          49.2%           48.9%        │
+  └─────────────────────────────────────────────────┘
 
-url = "https://api.deepseek.com/chat/completions"
-data = {
-    "model": "deepseek-reasoner",
-    "messages": [{"role": "user", "content": "Why do mirrors reverse left-right but not up-down?"}],
-    "temperature": 0.7
-}
-response = requests.post(url, json=data, headers={"Authorization": "Bearer YOUR_KEY"})
-result = response.json()
-print(result["choices"][0]["message"]["content"])`,tip:'MIT license = unrestricted commercial use.\n\nChain-of-thought reasoning similar to o1 but more transparent.\n\nInference slow; best for offline batching, not real-time chat.',refs:[{label:"Deepseek R1",url:"concepts/deepseek-r1.html"}]},
+  Distilled variants: R1-Distill-Qwen-7B, Llama-70B
+  License: MIT (full weights, unrestricted commercial use)`,
+code:`from openai import OpenAI  # DeepSeek API is OpenAI-compatible
+
+client = OpenAI(
+    api_key="your_deepseek_api_key",
+    base_url="https://api.deepseek.com"
+)
+
+# deepseek-reasoner: shows chain-of-thought thinking before the answer
+response = client.chat.completions.create(
+    model="deepseek-reasoner",       # or "deepseek-chat" for non-reasoning
+    messages=[
+        {"role": "user", "content": "Why do mirrors reverse left-right but not up-down?"}
+    ]
+)
+
+# R1 returns reasoning_content (the thinking) + content (the final answer)
+msg = response.choices[0].message
+if hasattr(msg, "reasoning_content") and msg.reasoning_content:
+    print("=== Model thinking ===")
+    print(msg.reasoning_content)
+print("=== Final answer ===")
+print(msg.content)
+
+# Self-host the 7B distilled variant with vLLM (→ vLLM node):
+# vllm serve deepseek-ai/DeepSeek-R1-Distill-Qwen-7B --port 8000`,
+tip:'DeepSeek R1 exposes its chain-of-thought[3] reasoning via the reasoning_content field — read it to understand why it got an answer right or wrong, useful for debugging complex problems. For latency-sensitive workloads, use the distilled variants (R1-Distill-Qwen-7B runs on a single RTX 3090) — they keep most of the reasoning quality at a fraction of inference cost. The full 671B model requires 8×H100; distilled 70B needs 2×A100.',
+questions:{
+  leader:['DeepSeek R1 is MIT-licensed with API pricing ~1/30th of o1 — how does this change your build-vs-buy calculus for reasoning-heavy workloads?','What is your risk framework for using a model from a Chinese AI lab — compliance, data residency, and geopolitical considerations?'],
+  pm:['Which product tasks genuinely need multi-step reasoning (math, logic, code debugging) — and which are fine with a faster chat model?','How do you surface the model\'s "thinking" to users in a way that builds trust without overwhelming them?'],
+  eng:['How do you evaluate R1 vs o1 on your specific hard cases — what does your evaluation harness look like for reasoning quality?','How do you self-host the 7B distilled variant with → vLLM node and what configuration maximizes throughput on your GPU?','Do you log the reasoning_content field in production — and how do you handle its size (often 3–5× the final answer length) in your storage budget?']
+},
+learn:[
+  {type:'paper',label:'DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning (2025)',url:'https://arxiv.org/abs/2501.12948'},
+  {type:'paper',label:'DeepSeek-V3 Technical Report — the 671B base model underlying R1',url:'https://arxiv.org/abs/2412.19437'},
+  {type:'paper',label:'GRPO: DeepSeekMath — Group Relative Policy Optimization for math reasoning',url:'https://arxiv.org/abs/2402.03300'},
+  {type:'tool',label:'DeepSeek R1 models on HuggingFace Hub (all distilled variants)',url:'https://huggingface.co/deepseek-ai'},
+  {type:'blog',label:'DeepSeek API documentation — OpenAI-compatible endpoint',url:'https://api-docs.deepseek.com/'}
+],
+refs:[
+  {label:'[1] DeepSeek-R1: Incentivizing Reasoning Capability via RL (DeepSeek AI, 2025)',url:'https://arxiv.org/abs/2501.12948'},
+  {label:'[2] DeepSeek-V3 Technical Report — 671B base model (DeepSeek AI, 2024)',url:'https://arxiv.org/abs/2412.19437'},
+  {label:'[3] Chain-of-Thought Prompting Elicits Reasoning in LLMs (Wei et al., 2022)',url:'https://arxiv.org/abs/2201.11903'},
+  {label:'[4] GRPO: DeepSeekMath — RL without a reward model (Shao et al., 2024)',url:'https://arxiv.org/abs/2402.03300'},
+  {label:'[5] RLHF: Learning to Summarize from Human Feedback (Stiennon et al., 2020)',url:'https://arxiv.org/abs/2009.01325'},
+  {label:'[6] openai Python SDK — works with any OpenAI-compatible API',url:'https://github.com/openai/openai-python'}
+]},
 lmql:{use:'LMQL is a constraint-based query language that enables structured generation with stops, regex constraints, and Python logic integration for reliably formatted outputs.',diag:`
   LMQL — Language Model Query Language:
 

@@ -2,7 +2,7 @@
 // Regenerate: python3 scripts/gen-stats.py
 const SITE_STATS = {
   nodes:        337,
-  snippets:     333,
+  snippets:     332,
   clusters:     5,
   conceptPages: 336,
 };
