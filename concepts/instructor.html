@@ -234,6 +234,70 @@ print(company.headquarters.city)  # "San Francisco"</code></pre>
 <p>Use when you need: typed LLM outputs in Python, zero-boilerplate JSON extraction, automatic validation and retries, or complex nested data structures from unstructured text. It's the fastest way to go from 'I want structured data from LLM' to working code.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Prompt Optimization and Validation</h2>
+<p>Instructor excels at extracting structured data from unstructured text. Define your output format as a Pydantic model. Instructor validates the LLM output against the schema automatically, retrying with corrected prompts if validation fails. This guarantees type safety without manual parsing.</p>
+<p>Practical example: extract contact information from an email. Define the schema (email, phone, name, company). Pass the email text to Instructor. It returns a validated Contact object. No manual regex parsing, no type errors, no hallucinated fields outside the schema.</p>
+<div class="example-box"><pre><code>from pydantic import BaseModel, Field
+from instructor import from_openai
+import openai
+
+class Contact(BaseModel):
+    email: str = Field(description="Valid email address")
+    phone: str = Field(description="Phone number in E.164 format")
+    name: str = Field(description="Person's full name")
+    company: str = Field(description="Company name if mentioned")
+
+client = from_openai(openai.OpenAI())
+
+resp = client.messages.create(
+    model="gpt-4-turbo",
+    messages=[{"role": "user", "content": email_text}],
+    response_model=Contact
+)
+print(resp)  # Guaranteed to be valid Contact object</code></pre></div>
+<p>Validation benefits: type safety, schema enforcement, automatic retries, clear error messages. Drawback: adds latency from validation loop. For most use cases, one retry is sufficient (~10% of the time). Set max_retries to control retry behavior.</p>
+<div class="example-box"><pre><code>resp = client.messages.create(
+    model="gpt-4-turbo",
+    messages=[{"role": "user", "content": text}],
+    response_model=Contact,
+    max_retries=3
+)
+# Instructor will retry up to 3 times if validation fails</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Use Case</th><th>Benefit</th><th>Cost</th><th>Complexity</th></tr>
+<tr><td>Data extraction</td><td>High (guaranteed valid)</td><td>Small (1 retry typical)</td><td>Low (define schema)</td></tr>
+<tr><td>Entity recognition</td><td>High (no hallucinations)</td><td>Small (1-2 retries)</td><td>Low</td></tr>
+<tr><td>Classification</td><td>Medium (valid categories)</td><td>Tiny (rare retry)</td><td>Minimal</td></tr>
+<tr><td>Free-form generation</td><td>Low (not suitable)</td><td>N/A</td><td>N/A</td></tr>
+</table>
+</div>
+</div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Advanced Patterns and Integration</h2>
+<p>Nested models: define complex hierarchies. A Contact contains an Address, which contains coordinates. Instructor validates the entire tree. This is powerful for document parsing: extract a document structure with nested sections, fields, and relationships.</p>
+<p>Union types: define multiple possible output formats. The LLM chooses the right format based on input. Instructor validates against all possible types and returns the correct one. Useful for multi-domain applications.</p>
+<p>Custom validation: add Pydantic validators to enforce business logic. Example: validate that phone numbers are in correct format, emails are valid, dates are reasonable. Instructor reruns the LLM with validation error messages if custom logic fails.</p>
+</div>
+<p>Instructor bridges the gap between LLMs and structured output. It solves the fundamental problem of LLM unpredictability: guaranteeing output format and validity. This enables reliable integration of LLMs into production systems. Use Instructor whenever you need structured, validated output from language models. It pays for itself through reduced error handling and debugging.</p>
+<p>Production reliability: Instructor adds latency from validation and retries. In practice, 90-95% of responses pass validation on first try. Add ~100-200ms for retry logic. For most applications, this is acceptable. If latency-critical, use simpler schemas or disable retries.</p>
+<p>Cost considerations: retries mean extra API calls. A response that requires 2 retries costs 3x API tokens. Optimize schemas to maximize first-pass success rate. Use simple types when possible. Add detailed field descriptions to help the LLM understand requirements. These small changes reduce retries and save costs.</p>
+<p>Combining with RAG: use Instructor to extract information from documents as part of retrieval-augmented generation. Extract entities, relationships, facts. Store structured outputs for downstream processing. This creates knowledge graphs from unstructured text, enabling powerful query and reasoning capabilities.</p>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Scaling and Production Deployment</h2>
+<p>Batch processing: process multiple documents in parallel. Instructor handles concurrent validation. Use async/await for non-blocking I/O. Build queues for high-throughput scenarios. Process thousands of documents per minute with proper infrastructure. Each document gets validated independently, failures don't block others.</p>
+<p>Monitoring and observability: track validation success rates. Monitor retry frequencies. Alert on pattern changes (sudden increase in retries indicates distribution shift). Log all validation failures for debugging. Use observability to understand production behavior and improve schemas over time.</p>
+<p>Fine-tuning for your domain: use Instructor with fine-tuned models for specialized domains. Medical document extraction, legal contract parsing, scientific paper analysis. Fine-tuning reduces hallucinations and improves accuracy. Combine domain-specific models with structured validation for state-of-the-art reliability.</p>
+<p>Integration patterns: use Instructor as the output layer in RAG systems. Extract from retrieved documents. Feed extracted structured data to downstream processors. Build knowledge graphs, update databases, trigger workflows. This architecture is more reliable than trying to extract information from freeform LLM outputs.</p>
+</div>
+<p>Future of structured extraction: Instructor is part of a broader trend toward constrained generation. As LLMs improve, structured output becomes increasingly valuable. Expect tooling to evolve toward more sophisticated schema validation and error recovery. Tools like Instructor will become standard infrastructure for production LLM systems.</p>
+<p>Getting started: begin with simple schemas. Validate basic extractions from text. Iterate on schema design based on real errors. Add custom validators incrementally. Start with one use case, expand to others once you master the technique. Instructor unlocks reliable structured output from LLMs, essential capability for production systems that need guaranteed formats.</p>
+<p>Real-world example: a company uses Instructor to extract structured data from customer support tickets. Define schema with fields like: issue type, severity, required action, customer sentiment. Instructor validates each extraction. Failed validations trigger manual review. Success rate improved from 70% (manual parsing) to 99% (Instructor). Reduced support team burden. Improved response quality. Data quality improved downstream. This is typical of Instructor adoption: it unlocks reliability that was previously impossible with unstructured LLM outputs. Small investment in schema design pays massive dividends in production quality and cost savings. Structured output is the future of reliable language model integration in production systems.</p>
+<p>Structured output guarantees are essential for production AI systems. Hallucinations become dealable when confined to optional fields. Type violations become impossible. Invalid enums get automatically corrected. Instructor makes this reliability possible without custom parsing logic. As LLM applications mature from prototypes to production, structured output becomes non-negotiable. Instructor is the de facto solution in the Python ecosystem. Adoption is accelerating as teams discover the value of guaranteed output formats and schema enforcement for production reliability and cost control. Adopt Instructor for all structured extraction from language models. Transform unstructured LLM outputs into reliable structured data. Guarantee output quality and format. Structured output validation is mandatory for building reliable production language model applications.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

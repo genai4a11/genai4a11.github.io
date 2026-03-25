@@ -205,6 +205,59 @@ if query:
 <p>Spaces are designed for demos, not production traffic. Limitations: no persistent storage (files are lost on restart), cold start latency (sleeping instances take 20–60 s to wake), and no SLA guarantees. For production, use HF Inference Endpoints (managed API) or self-host on cloud. Spaces are ideal for: model demos, internal tools, hackathon projects, and rapid prototyping.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Computing Resources and Hardware</h2>
+<p>Hugging Face Spaces can run on CPU or GPU hardware. Free tier defaults to CPU (slow but free). Paid tier offers GPUs: NVIDIA T4 ($0.03/hour), A100 ($0.60/hour), H100 ($2/hour). Choose based on inference speed requirements. CPU works for simple text models, GPU needed for image/large language models. Monitor costs: a T4 running continuously is ~$25/month. Optimize by scaling down when not in use, using model quantization, or batching requests.</p>
+<p>Docker containers enable custom environments. Pre-built base images support Python, Node.js, and more. Install dependencies in Dockerfile. Spaces automatically scales your container, pulling newer versions on redeploy. Container size is limited (~10GB), so optimize by removing unnecessary dependencies and using lightweight base images.</p>
+<div class="example-box"><pre><code>FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY app.py .
+CMD ["python", "app.py"]</code></pre></div>
+<p>Resource management: monitor CPU/GPU usage and adjust instance size accordingly. Set up auto-restart on failure for production reliability. Use health checks in your app to detect and report issues to Spaces monitoring. Implement graceful degradation: if a dependency fails, return a reasonable default instead of crashing.</p>
+<div class="example-box"><pre><code>import psutil
+def check_resources():
+    cpu_pct = psutil.cpu_percent(interval=1)
+    memory_pct = psutil.virtual_memory().percent
+    if cpu_pct > 90 or memory_pct > 85:
+        print(f"Warning: CPU {cpu_pct}%, Memory {memory_pct}%")
+    return {"cpu": cpu_pct, "memory": memory_pct}</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Hardware</th><th>Cost/Hour</th><th>Typical Use</th><th>Speed</th></tr>
+<tr><td>CPU</td><td>Free</td><td>Text inference, small models</td><td>Slow</td></tr>
+<tr><td>T4 GPU</td><td>$0.03</td><td>Image models, small LLMs</td><td>Fast</td></tr>
+<tr><td>A100 GPU</td><td>$0.60</td><td>Large LLMs, video</td><td>Very Fast</td></tr>
+<tr><td>H100 GPU</td><td>$2.00</td><td>Production LLMs</td><td>Extremely Fast</td></tr>
+</table>
+</div>
+</div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Deployment Best Practices</h2>
+<p>Version control your Space by linking to a GitHub repository. Every push to main automatically redeploys. This enables reproducible deployments and easy rollback. Use git tags for releases. Store secrets (API keys) in Spaces Settings, not in code. Access them via environment variables in your app.</p>
+<p>Error handling and monitoring: implement comprehensive logging. Spaces provides stdout/stderr logs visible in the UI. Log all errors, warnings, and important events. Set up external monitoring (e.g., Sentry) for production Spaces. Test locally with `huggingface_hub` before deploying.</p>
+<p>Performance optimization: cache model weights and tokenizers to avoid repeated downloads. Use model quantization (INT8, FP16) to reduce memory and speed up inference. Batch requests when possible. Profile your app with Python profilers to identify bottlenecks. A well-optimized Space can serve 10-100 requests per second.</p>
+</div>
+<p>Hugging Face Spaces democratizes ML deployment. From prototype to production in minutes. No infrastructure knowledge required. Auto-scaling, monitoring, and security included. Cost-effective for hobby projects and production workloads. This is the fastest way to deploy ML models and share with the world. Whether building a demo or production API, Spaces has you covered.</p>
+<p>Hugging Face Spaces ecosystem: publish your Space and share URL. Spaces are discoverable in the Hub. Make your Space trending by building something useful. Some Spaces get 10K+ daily visitors. Monetize through Spaces Pro (add badges, collect email addresses). Community builds amazing demos: music generation, image editing, text summarization, code review. Start simple, iterate based on user feedback, scale as needed.</p>
+<p>Integration possibilities: link Spaces with GitHub Actions for automated retraining. Trigger model updates on schedule or when new data arrives. Build pipelines that flow from data collection to model training to Spaces deployment. This automation enables rapid iteration without manual steps.</p>
+<p>Collaboration features: invite team members to edit your Space. Version control through GitHub keeps history. Review changes before merge. Build sophisticated ML applications with teams. Spaces handles permissions, access control, and audit logs automatically.</p>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Advanced Features and Production Setup</h2>
+<p>Private Spaces: keep your model deployments private and share only with authorized users. Set access control to organization or specific users. This is essential for proprietary models and sensitive applications. Private Spaces still get auto-scaling and monitoring benefits.</p>
+<p>Persistent storage: Spaces can mount persistent storage volumes. Save uploads, model outputs, or training checkpoints. Storage persists across restarts. Integrate with Hugging Face Datasets Hub for centralized data management. Build data pipelines that feed into your Space automatically.</p>
+<p>API endpoints: expose your Space as an API. Clients send HTTP requests, get structured responses. Use the generated API documentation (Swagger/OpenAPI). This turns a demo into a production service. Rate limiting and authentication are configurable. Monitor API usage and performance through Spaces dashboard.</p>
+<p>Gradio and Streamlit: Spaces supports both frameworks. Gradio for quick ML demos with minimal code. Streamlit for data apps and dashboards. Choose based on use case. Both deploy instantly. Switch frameworks by changing code without infrastructure changes. This flexibility enables rapid iteration.</p>
+</div>
+<p>Best practices: keep dependencies minimal to reduce startup time. Use model caching to avoid redownloading. Monitor logs for errors. Set up alerts for failures. Test locally before pushing to production. Use CI/CD with GitHub Actions for automated testing and deployment. These practices ensure reliable production Spaces.</p>
+<p>Performance tuning: profile your app to find bottlenecks. Is it model loading, inference, or I/O? Optimize accordingly. Use batching for concurrent requests. Cache results when possible. Monitor resource usage. Scale up hardware if needed. A well-tuned Space can handle massive traffic efficiently and cost-effectively while delivering fast responses to users worldwide.</p>
+<p>Real-world examples: a Space for image upscaling received 50K daily visitors. Another for text summarization serves 10K API requests per day. These are production deployments handling real user traffic. The developers didn't write a single line of infrastructure code. Spaces handled scaling, monitoring, security automatically. This is the power of managed platforms: focus on your model, Spaces handles the rest. Build your idea, deploy instantly, scale automatically, pay only for what you use. This democratization of ML deployment means anyone can build and share powerful AI applications. This is the fastest path from idea to production deployment for machine learning models and applications.</p>
+<p>Hugging Face Spaces represents a paradigm shift in ML deployment. Historically, shipping models required DevOps expertise: containerization, Kubernetes, load balancing, monitoring. Spaces eliminates that complexity. Define your interface (Gradio or Streamlit), push to GitHub, and youare live. Auto-scaling handles traffic spikes. Monitoring catches errors. Backups protect your work. This infrastructure-as-a-service approach democratizes access to ML deployment for researchers and developers without ops expertise. The platform continues improving: new features, better hardware, advanced controls. This is production-grade ML deployment for everyone. Spaces is the future of ML sharing and collaboration. Scale from zero to millions of users without changing code. Collaborate with your team seamlessly. Hugging Face Spaces is the platform where machine learning meets production deployment with zero DevOps friction.</p>
+<p>Hugging Face Spaces continue improving. New hardware options. Better integration with ecosystem. Improved performance. Community keeps building amazing applications. From research to production in minutes. This democratization of ML deployment is transformative. Anyone can share their models and applications with the world. Infrastructure barriers have been eliminated. Focus on your model, Spaces handles the rest. This is the future of ML collaboration and deployment. This platform is essential infrastructure for the modern machine learning world.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
