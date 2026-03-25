@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System-Level Eval | GenAI Mindmap</title>
+  <meta name="description" content="End-to-end evaluation of multi-component AI systems — measuring pipeline quality, not just individual model outputs — to catch emergent failure modes that component evals miss." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="System-Level Eval" />
+  <meta property="og:description" content="End-to-end evaluation of multi-component AI systems — measuring pipeline quality, not just individual model outputs — to catch emergent failure modes that component evals miss." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/system-eval.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/system-eval.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "System-Level Eval | GenAI Mindmap",
+  "description": "End-to-end evaluation of multi-component AI systems \u2014 measuring pipeline quality, not just individual model outputs \u2014 to catch emergent failure modes that component evals miss.",
+  "url": "https://genai4a11.github.io/concepts/system-eval.html",
+  "dateModified": "2026-03-25T00:34:10.525484",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "System-Level Eval | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/system-eval.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #166534;
+      --accent-dark: #15803d;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#166534 0%,#15803d 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/sysdesign.html" class="nav-back">← System Design</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">System Design</span>
+    <h1><em>System-Level Eval</em></h1>
+    <p class="hero-sub">End-to-end evaluation of multi-component AI systems — measuring pipeline quality, not just individual model outputs — to catch emergent failure modes that component evals miss.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Components typically evaluated</div><div class="stat-label">5–15</div></div>
+      <div><div class="stat-num">Eval coverage</div><div class="stat-label">full pipeline</div></div>
+      <div><div class="stat-num">Cadence</div><div class="stat-label">per PR + nightly</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Component vs System Eval</a></li>
+        <li><a href="#s2" data-num="02">Designing System Test Cases</a></li>
+        <li><a href="#s3" data-num="03">Trace-Based Evaluation</a></li>
+        <li><a href="#s4" data-num="04">Failure Mode Taxonomy</a></li>
+        <li><a href="#s5" data-num="05">CI Integration</a></li>
+        <li><a href="#s6" data-num="06">Metrics Pyramid</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+('Component vs System Eval', "A retrieval component scoring 90% precision and a generation model scoring 85% quality don't guarantee an 80%+ end-to-end system. Errors compound: bad retrieval feeds bad context to generation; correct generation on wrong context still fails. System eval measures the only thing that matters: does the full pipeline produce the right answer for the user?")
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+('Designing System Test Cases', 'Use a golden set of 100–500 (query, expected_output) pairs covering your top user intents. Include: adversarial queries, out-of-scope requests, ambiguous inputs, multi-turn dialogues, edge cases from production failures. Score with: exact match (structured outputs), LLM judge (free-form), task completion rate (for agentic systems), and human review (10% random sample).')
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+('Trace-Based Evaluation', 'Capture full execution traces for every eval run. Each trace records inputs/outputs at each step: "\n   "retriever (query, docs, scores), reranker (input docs, output docs), generator (context, prompt, response). "\n   "Trace evaluation lets you pinpoint where quality broke down — retrieval miss vs generation error.\n\nimport json\nfrom dataclasses import dataclass, field\nfrom typing import Any\n\n@dataclass\nclass EvalTrace:\n    query: str\n    steps: list = field(default_factory=list)\n    final_output: str = ""\n    scores: dict = field(default_factory=dict)\n\n    def add_step(self, name: str, inputs: Any, outputs: Any, latency_ms: float):\n        self.steps.append({\n            "name": name, "inputs": inputs,\n            "outputs": outputs, "latency_ms": latency_ms\n        })\n\n    def to_json(self) -> str:\n        return json.dumps({"query": self.query, "steps": self.steps,\n                           "final_output": self.final_output, "scores": self.scores})')
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+('Failure Mode Taxonomy', 'Categorise failures: (1) Retrieval miss — correct answer not in retrieved docs. (2) Context truncation — answer was retrieved but cut off in prompt. (3) Hallucination — model ignores context and fabricates. (4) Format failure — correct content but wrong structure (expected JSON, got prose). (5) Latency SLA breach — correct answer but too slow. Tagging failures by type guides where to invest improvement effort.')
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+('CI Integration', 'Run system eval as a required CI check: block merges if top-line pass rate drops >2pp, or if any failure category increases >5pp. Use a fast subset (25–50 cases) for PR checks, full suite nightly. Cache model responses when testing non-model changes to speed up runs.')
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+('Metrics Pyramid', "Top: business metric (user CSAT, task completion). Middle: system metric (end-to-end accuracy, hallucination rate). Bottom: component metrics (retrieval recall, generator fluency). Optimise bottom metrics only when they correlate with top — otherwise you're measuring the wrong thing.")
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/sysdesign.html" style="color:var(--accent)">System Design</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>

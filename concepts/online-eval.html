@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Online Evaluation | GenAI Mindmap</title>
+  <meta name="description" content="Real-time, production evaluation of LLM outputs using lightweight judges, user signals, and automated metrics — closing the feedback loop without waiting for offline batch runs." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Online Evaluation" />
+  <meta property="og:description" content="Real-time, production evaluation of LLM outputs using lightweight judges, user signals, and automated metrics — closing the feedback loop without waiting for offline batch runs." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/online-eval.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/online-eval.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Online Evaluation | GenAI Mindmap",
+  "description": "Real-time, production evaluation of LLM outputs using lightweight judges, user signals, and automated metrics \u2014 closing the feedback loop without waiting for offline batch runs.",
+  "url": "https://genai4a11.github.io/concepts/online-eval.html",
+  "dateModified": "2026-03-25T00:34:09.973337",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Online Evaluation | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/online-eval.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #166534;
+      --accent-dark: #15803d;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#166534 0%,#15803d 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/sysdesign.html" class="nav-back">← System Design</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">System Design</span>
+    <h1><em>Online Evaluation</em></h1>
+    <p class="hero-sub">Real-time, production evaluation of LLM outputs using lightweight judges, user signals, and automated metrics — closing the feedback loop without waiting for offline batch runs.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Latency overhead</div><div class="stat-label"><5 ms</div></div>
+      <div><div class="stat-num">Signal types</div><div class="stat-label">3</div></div>
+      <div><div class="stat-num">Coverage</div><div class="stat-label">~100%</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">Why Online Eval?</a></li>
+        <li><a href="#s2" data-num="02">Signal Sources</a></li>
+        <li><a href="#s3" data-num="03">Lightweight Judges</a></li>
+        <li><a href="#s4" data-num="04">Sampling Strategies</a></li>
+        <li><a href="#s5" data-num="05">Alerting & Dashboards</a></li>
+        <li><a href="#s6" data-num="06">Practical Patterns</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+('Why Online Eval?', "Offline evals catch known failure modes; online eval catches unknown ones in production traffic. Every request is a potential signal: did the user copy the answer? Did they thumbs-up or follow up with 'that's wrong'? Did the latency spike correlate with quality drops? Online eval turns your production system into a continuous evaluation harness.")
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+('Signal Sources', 'Implicit signals come from user behaviour: regeneration clicks, copy-paste actions, session abandonment, "\n   "follow-up corrections (\'actually…\'), and downstream task completion. Explicit signals are thumbs up/down, "\n   "star ratings, or CSAT surveys. Automated signals come from lightweight classifiers run on every response: "\n   "a toxicity filter, a relevance scorer, a hallucination detector. Each signal type has different coverage "\n   "and noise levels; combine them for robust monitoring.\n\nExample implicit signal collector:\nfrom fastapi import Request\nimport time\n\nasync def track_response(request: Request, response_id: str, content: str):\n    # Store response for later correlation with user actions\n    await db.store_response(response_id, {\n        "content": content,\n        "timestamp": time.time(),\n        "session_id": request.headers.get("X-Session-Id"),\n    })\n\nasync def track_user_action(response_id: str, action: str):\n    # action: \'copy\', \'regenerate\', \'thumbs_up\', \'thumbs_down\', \'abandon\'\n    resp = await db.get_response(response_id)\n    score = {"copy": 0.8, "regenerate": -0.5, "thumbs_up": 1.0, "thumbs_down": -1.0, "abandon": -0.3}\n    await db.store_signal(response_id, action, score.get(action, 0))')
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+('Lightweight Judges', 'An LLM-as-judge that runs on every request must be cheap: use a small model (GPT-4o-mini, Haiku) "\n   "with a tight prompt. Score 1–3 on a single axis per call. Run asynchronously so latency isn\'t affected.\n\nfrom openai import AsyncOpenAI\nimport asyncio\n\nclient = AsyncOpenAI()\n\nasync def judge_relevance(query: str, response: str) -> float:\n    result = await client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[{\n            "role": "user",\n            "content": (\n                f"Rate relevance of this response to the query on a scale 1-3.\\n"\n                f"Query: {query}\\nResponse: {response[:500]}\\n"\n                f"Reply with just the number."\n            )\n        }],\n        max_tokens=5,\n        temperature=0,\n    )\n    try:\n        return float(result.choices[0].message.content.strip()) / 3.0\n    except ValueError:\n        return 0.5\n\nasync def eval_async(query: str, response: str, response_id: str):\n    score = await judge_relevance(query, response)\n    await db.store_signal(response_id, "judge_relevance", score)')
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+('Sampling Strategies', "Evaluating every single request with an LLM judge is costly. Use stratified sampling: always evaluate flagged requests (toxicity triggered, very long, low-confidence), randomly sample 5–10% of normal traffic, and oversample new prompt versions or A/B test variants. Reservoir sampling ensures you don't bias toward early-session requests.")
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+('Alerting & Dashboards', 'Track rolling averages over 1-hour and 24-hour windows. Alert when: judge score drops >10% vs baseline, thumbs-down rate exceeds 15%, or implicit abandon rate spikes. Use a time-series DB (InfluxDB, Prometheus) and a dashboard (Grafana) with separate panels for each signal type. Correlate quality signals with deployment events — a sudden drop after a deploy is a rollback trigger.')
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+('Practical Patterns', 'Decouple eval from serving: write to a queue (Kafka, SQS), consume asynchronously. Store raw responses for retrospective eval with newer judges. Use shadow mode: run a new judge in parallel without acting on results, validate it matches human labels before trusting it for alerting. Periodically send 1% of production traffic to human reviewers for ground-truth calibration.')
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/sysdesign.html" style="color:var(--accent)">System Design</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
