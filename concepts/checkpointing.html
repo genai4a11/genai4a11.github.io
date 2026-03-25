@@ -208,6 +208,101 @@ return state["results"]</code></pre>
 <p><a class="concept-link" href="langgraph.html">LangGraph</a> has built-in checkpointing via a Checkpointer interface. SqliteSaver, PostgresSaver, and RedisSaver are provided out of the box. Pass a checkpointer to your graph at compile time; LangGraph saves state after each node. On re-run with the same thread_id, execution resumes from the last saved state automatically.</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Checkpoint Formats & Serialization</h2>
+<p>Checkpoints store model weights, optimizer state, and training metadata. Common formats include PyTorch's native .pt (pickle-based), SafeTensors (safer, faster), and ONNX (framework-agnostic). Each has trade-offs: .pt is fastest to save/load but has security risks; SafeTensors is safer but has slower I/O on some systems; ONNX is portable but loses some precision info.</p>
+<div class="example-box"><pre><code># PyTorch checkpointing with optimizer state
+import torch
+
+checkpoint = {
+    "epoch": epoch,
+    "model_state_dict": model.state_dict(),
+    "optimizer_state_dict": optimizer.state_dict(),
+    "loss": loss,
+    "config": config.to_dict()
+}
+torch.save(checkpoint, f"checkpoint_epoch_{epoch}.pt")
+
+# Load and resume training
+loaded = torch.load("checkpoint_epoch_10.pt")
+model.load_state_dict(loaded["model_state_dict"])
+optimizer.load_state_dict(loaded["optimizer_state_dict"])
+start_epoch = loaded["epoch"] + 1</code></pre></div>
+<h3>Distributed Training Checkpoints</h3>
+<p>In distributed training, each GPU process must save its shard. Coordinate saves to avoid file conflicts using a single "rank 0" process, or use distributed-aware libraries (PyTorch DDP, Hugging Face Accelerate) that handle sharding automatically.</p>
+<div class="example-box"><pre><code"># Distributed checkpoint with DDP
+from torch.distributed import get_rank, barrier
+
+def save_checkpoint_distributed(model, optimizer, epoch, path):
+    # All processes wait before saving
+    barrier()
+
+    if get_rank() == 0:  # Only rank 0 saves
+        checkpoint = {
+            "epoch": epoch,
+            "model": model.module.state_dict(),  # .module for DDP wrapper
+            "optimizer": optimizer.state_dict()
+        }
+        torch.save(checkpoint, path)
+
+    barrier()  # All processes wait for rank 0 to finish</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Checkpoint Management & Recovery</h2>
+<p>Keeping every checkpoint wastes storage. Typically keep the last 3–5 checkpoints and the best (by validation metric). Delete stale checkpoints after 7 days or when disk usage exceeds a threshold. Checksums on checkpoints help detect corruption; if a checkpoint is corrupted, you have backups to fall back to.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Policy</th>
+<th>Frequency</th>
+<th>Retention</th>
+<th>Storage (GB)</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Last N</td>
+<td>Every 100 steps</td>
+<td>Keep last 5</td>
+<td>5 × 2GB = 10GB</td>
+<td>Quick recovery from recent crash</td>
+</tr>
+<tr>
+<td>Best Metric</td>
+<td>Every epoch if improves</td>
+<td>Keep 1 (best val loss)</td>
+<td>2GB</td>
+<td>Model serving, final artifact</td>
+</tr>
+<tr>
+<td>Hourly</td>
+<td>Every 1 hour</td>
+<td>Keep 24</td>
+<td>24 × 2GB = 48GB</td>
+<td>Long training runs, insurance</td>
+</tr>
+<tr>
+<td>Daily</td>
+<td>Once per day</td>
+<td>Keep 30</td>
+<td>30 × 2GB = 60GB</td>
+<td>Very long runs (weeks/months)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Checkpoint Versioning:</strong> Encode the PyTorch version, CUDA version, and model architecture version into each checkpoint metadata. Loading a checkpoint saved with PyTorch 2.0 into PyTorch 1.13 may silently produce incorrect results due to operator changes. Always validate that checkpoint metadata matches your current environment before loading.</p>
+<p>For multi-GPU training on cloud instances, save checkpoints to cloud storage (S3, GCS) rather than local EBS/persistent disks. This protects against instance failure and enables easy sharing across teams. Use signed URLs with time-limited access for security.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

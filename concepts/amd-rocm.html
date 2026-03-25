@@ -190,6 +190,79 @@ result = x @ x.T</code></pre>
 <p>MI300X is compelling for inference at scale: 192GB VRAM eliminates multi-GPU orchestration overhead for 70B models, and 5.3 TB/s bandwidth enables very high decode throughput. Cloud pricing for MI300X instances is often 20–40% cheaper than H100. For training: NVIDIA H100 with NCCL and mature CUDA ecosystem is still preferred. AMD is best for inference-focused deployments where VRAM per GPU is the bottleneck.</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>ROCm Installation & Setup</h2>
+<p>Installing ROCm requires platform-specific steps. For Ubuntu/Debian systems, add AMD's repository and install the ROCm runtime. The installation includes HIP development tools, which are essential for compiling code or using libraries that depend on ROCm.</p>
+<div class="example-box"><pre><code># Ubuntu 22.04 ROCm 6.x installation
+wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
+echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/debian jammy main" | sudo tee /etc/apt/sources.list.d/rocm.list
+sudo apt update
+sudo apt install -y rocm-hip-sdk rocm-libs
+# Add user to video/render groups for device access
+sudo usermod -aG video,render $USER
+sudo usermod -aG kvm $USER</code></pre></div>
+<h3>Environment Variables</h3>
+<p>ROCm respects several key environment variables. Setting <code>HSA_OVERRIDE_GFX_VERSION</code> helps with compatibility across GPU models. Use <code>HIP_VISIBLE_DEVICES</code> to select which GPUs to use, similar to CUDA_VISIBLE_DEVICES in NVIDIA ecosystems.</p>
+<div class="example-box"><pre><code># ROCm environment setup
+export PATH=/opt/rocm/bin:$PATH
+export LD_LIBRARY_PATH=/opt/rocm/lib:$LD_LIBRARY_PATH
+export HIP_VISIBLE_DEVICES=0,1  # Use GPUs 0 and 1
+# Check ROCm compiler
+hipcc --version
+# List available devices
+rocm-smi</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Performance Tuning & Optimization</h2>
+<p>Achieving peak performance on ROCm requires tuning kernel parameters and understanding GPU utilization. The MI300X's 5.3 TB/s bandwidth can be underutilized if kernels aren't properly optimized. Key metrics include compute utilization (% of peak FLOPs) and memory bandwidth utilization.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target Range</th>
+<th>Tools</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU Utilization</td>
+<td>80–100%</td>
+<td>rocm-smi, omniperf</td>
+<td>Watch for idle cycles; batch larger if possible</td>
+</tr>
+<tr>
+<td>Memory Bandwidth</td>
+<td>70–95% of peak</td>
+<td>omniperf, rocmprofile</td>
+<td>MI300X bottleneck differs from MI250X</td>
+</tr>
+<tr>
+<td>Register Pressure</td>
+<td>&lt;90% of registers</td>
+<td>rocm-gfx-profiler</td>
+<td>High pressure → fewer waves in flight</td>
+</tr>
+<tr>
+<td>Kernel Launch Overhead</td>
+<td>&lt;1% of runtime</td>
+<td>hipEventRecord/hipEventElapsedTime</td>
+<td>Batch small kernels; use stream persistence</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Important Note on ROCm Updates:</strong> AMD releases frequent updates to improve stability and kernel coverage. Always check the ROCm release notes when upgrading, as breaking changes can affect library compatibility. MI300X drivers in particular have seen significant improvements in vLLM and Flash Attention support between ROCm 6.0 and 6.2. Subscribe to AMD's official ROCm GitHub releases to stay informed of critical patches and feature releases.</p>
+<p>For production deployments, maintain a dedicated testing environment where you validate new ROCm versions before rolling them out across your training or inference clusters. Document your ROCm version alongside model checkpoints and deployment manifests, since reproducibility across different ROCm versions can be tricky due to kernel variation.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

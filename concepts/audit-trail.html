@@ -205,6 +205,91 @@ class AuditEvent(BaseModel):
 
 
 
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Audit Trail Architecture & Storage</h2>
+<p>A production audit trail system requires append-only storage, immutable records, and fast retrieval. PostgreSQL with write-once semantics (via CHECK constraints and triggers) works well; specialized systems like ClickHouse or cloud audit services (AWS CloudTrail, GCP Audit Logs) handle massive scale automatically.</p>
+<div class="example-box"><pre><code># PostgreSQL audit trail schema
+CREATE TABLE audit_log (
+    id BIGSERIAL PRIMARY KEY,
+    event_type VARCHAR(64) NOT NULL,
+    actor_id UUID NOT NULL,
+    resource_id UUID,
+    change_before JSONB,
+    change_after JSONB,
+    timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip_address INET,
+    user_agent TEXT
+);
+-- Immutable: enforce no deletes/updates
+CREATE TRIGGER audit_immutable BEFORE UPDATE OR DELETE ON audit_log
+FOR EACH ROW EXECUTE FUNCTION raise_immutable_error();</code></pre></div>
+<h3>Querying & Compliance Reporting</h3>
+<p>Audit logs must be queryable by time range, actor, resource, and event type. Set up regular compliance reports that summarize deletions, permission changes, and sensitive data access. Common queries include "who accessed customer data in the last 7 days?" and "what changed on this configuration file in Q4?"</p>
+<div class="example-box"><pre><code"># Query audit trail for compliance report
+SELECT actor_id, COUNT(*) as action_count, MAX(timestamp) as last_action
+FROM audit_log
+WHERE event_type IN ('DELETE', 'UPDATE')
+  AND resource_id = 'prod-config'
+  AND timestamp > NOW() - INTERVAL '90 days'
+GROUP BY actor_id
+ORDER BY action_count DESC;</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Retention, Archiving & Legal Hold</h2>
+<p>Compliance frameworks (SOC 2, HIPAA, PCI-DSS) mandate audit log retention: typically 1–7 years depending on industry and geography. Hot storage (DB) for recent logs, cold storage (S3/GCS) for archives. Legal holds can flag ranges of logs for indefinite retention if litigation or investigation is underway.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Retention Tier</th>
+<th>Duration</th>
+<th>Storage Medium</th>
+<th>Access Latency</th>
+<th>Cost/Month</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hot (Recent)</td>
+<td>90 days</td>
+<td>PostgreSQL / CloudSQL</td>
+<td>&lt;10ms</td>
+<td>$200–500</td>
+</tr>
+<tr>
+<td>Warm (Archive)</td>
+<td>1 year</td>
+<td>S3 Standard / GCS Standard</td>
+<td>1–2s</td>
+<td>$50–100</td>
+</tr>
+<tr>
+<td>Cold (Long-term)</td>
+<td>7 years</td>
+<td>Glacier / Nearline (compressed)</td>
+<td>1–12h</td>
+<td>$5–20</td>
+</tr>
+<tr>
+<td>Legal Hold</td>
+<td>Indefinite</td>
+<td>Immutable (e.g., WORM)</td>
+<td>1–2s</td>
+<td>+50%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Critical Implementation Detail:</strong> Never trust client-supplied timestamps in audit logs. Use server-side, UTC-normalized timestamps only. Attackers can tamper with client time; server-side timestamps are authoritative and harder to spoof. Hash audit records and store hashes in append-only storage (blockchain-style) if you need cryptographic proof of tampering.</p>
+<p>For compliance audits, prepare a monthly report showing new log retention policies, archival activities, and any purges (with legal justification). Many compliance failures occur not because logs aren't kept, but because the organization can't prove they were kept intact and were not altered. Document your entire audit pipeline clearly.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

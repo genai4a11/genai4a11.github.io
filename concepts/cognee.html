@@ -194,6 +194,104 @@ async def build_memory():
 <p>Standard RAG: fast, simple, good for independent fact retrieval. Cognee: slower ingestion (graph building), richer retrieval for relational queries. Use standard RAG for FAQ-style queries ('What is X?'). Use Cognee when queries require connecting multiple pieces of information ('How does X relate to Y given context Z?').</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Cognee Knowledge Graph & Entity Extraction</h2>
+<p>Cognee builds knowledge graphs by extracting entities, relationships, and attributes from unstructured text. It uses LLMs for entity linking, deduplication, and relationship inference. The resulting graph can be queried to answer questions like "who has worked at which companies?" or "what products does Company X make?"</p>
+<div class="example-box"><pre><code"># Cognee knowledge graph extraction
+from cognee import Cognee
+
+cognee = Cognee()
+documents = ["Alice worked at Google from 2020 to 2023.", "Bob is an engineer at Meta."]
+
+# Extract entities and relationships
+kg = cognee.extract_knowledge_graph(documents)
+
+# Query the graph
+employees = kg.query("SELECT * FROM Entity WHERE type='Person'")
+google_employees = kg.query("""
+    SELECT e.name FROM Entity e
+    JOIN Relationship r ON e.id = r.source_id
+    JOIN Entity org ON org.id = r.target_id
+    WHERE org.name = 'Google' AND r.type = 'worked_at'
+""")
+print(f"Google employees: {google_employees}")</code></pre></div>
+<h3>Graph Schema & Customization</h3>
+<p>Cognee uses a default schema (Person, Organization, Location, Product) but allows custom entity types and relationship predicates. Define domain-specific schemas for medical NER (Diagnosis, Treatment, Doctor) or technical documentation (API, Parameter, Return).</p>
+<div class="example-box"><pre><code># Define custom schema for medical domain
+from cognee.schema import Schema, Entity, Relationship
+
+class MedicalSchema(Schema):
+    entities = {
+        "Diagnosis": {"attributes": ["icd_code", "severity"]},
+        "Treatment": {"attributes": ["type", "duration"]},
+        "Patient": {"attributes": ["age", "status"]}
+    }
+    relationships = {
+        "diagnosed_with": {"source": "Patient", "target": "Diagnosis"},
+        "treated_with": {"source": "Patient", "target": "Treatment"}
+    }
+
+# Use custom schema
+cognee = Cognee(schema=MedicalSchema())
+kg = cognee.extract_knowledge_graph(medical_documents)</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Cognee Graph Analytics & Reasoning</h2>
+<p>Once extracted, knowledge graphs enable sophisticated queries and reasoning. Find shortest paths between entities, identify clusters, or detect anomalies. Cognee integrates with LLMs for complex multi-step reasoning over the graph structure.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Query Type</th>
+<th>Example</th>
+<th>Use Case</th>
+<th>Complexity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Direct Entity Lookup</td>
+<td>Find all Persons</td>
+<td>Simple retrieval</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>Relationship Traversal</td>
+<td>Find companies where Alice worked</td>
+<td>1-hop inference</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>Path Finding</td>
+<td>Shortest path: Alice → Bob</td>
+<td>Connection discovery</td>
+<td>O(V+E)</td>
+</tr>
+<tr>
+<td>Clustering</td>
+<td>Find all companies in tech sector</td>
+<td>Category grouping</td>
+<td>O(n log n)</td>
+</tr>
+<tr>
+<td>LLM Reasoning</td>
+<td>Why might Alice be suitable for this role?</td>
+<td>Complex inference</td>
+<td>Variable (LLM call)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Entity Deduplication Challenge:</strong> Knowledge graphs accumulate duplicates ("Apple Inc.", "APPLE Inc.", "Apple Computer"). Cognee uses fuzzy matching and LLM-based canonicalization to deduplicate, but false positives (merging distinct entities) are a persistent problem. Periodically review high-cardinality entity clusters and manually curate if needed for critical applications.</p>
+<p>For production systems, pair Cognee with external knowledge bases (Wikipedia, DBpedia) via entity linking to improve accuracy. If your domain has a standard taxonomy or ontology, integrate it with Cognee's schema to enforce consistency.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

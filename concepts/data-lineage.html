@@ -197,6 +197,107 @@ def emit_lineage(job_name: str, input_datasets: list, output_datasets: list):
 <p>GDPR right-to-erasure: given user_id, find all datasets and models that contain that user's data using column-level lineage, then coordinate deletion. AI Act compliance: for a model under audit, trace all training data back to its source to verify data provenance and consent records. Data residency: verify that data originating in the EU never flows to non-EU processing.</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Lineage Tracking in Data Pipelines</h2>
+<p>Data lineage answers: where did this data come from? Who transformed it? What other datasets depend on it? Tracking lineage requires instrumenting data pipelines to log source tables, transformations (SQL, Spark, Python), and destination tables. Tools like Airflow, dbt, and Databricks automatically track lineage.</p>
+<div class="example-box"><pre><code"># Manual lineage tracking with metadata
+import logging
+import json
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def etl_pipeline(source_table, transform_sql, dest_table):
+    # Log lineage entry
+    lineage_event = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "source": source_table,
+        "transformation": "SQL",
+        "destination": dest_table,
+        "query_hash": hash(transform_sql)
+    }
+    logger.info(json.dumps(lineage_event))
+
+    # Execute transformation
+    df = spark.sql(f"SELECT * FROM {source_table}")
+    result = spark.sql(transform_sql)
+    result.write.mode("overwrite").saveAsTable(dest_table)
+
+    return result</code></pre></div>
+<h3>Downstream Impact Analysis</h3>
+<p>Once lineage is tracked, you can answer "if I fix this bug in the source data, what datasets are affected?" With lineage, the impact is instant; without it, you're flying blind and might miss critical dependencies.</p>
+<div class="example-box"><pre><code># Impact analysis: find all dependent datasets
+def find_downstream_datasets(table_name, lineage_graph):
+    """Recursive: find all tables that depend (directly or indirectly) on table_name"""
+    affected = set()
+    queue = [table_name]
+
+    while queue:
+        current = queue.pop(0)
+        # Find tables that use 'current' as input
+        dependents = lineage_graph.get_dependents(current)
+        for dep in dependents:
+            if dep not in affected:
+                affected.add(dep)
+                queue.append(dep)  # Recursively find their dependents
+
+    return affected
+
+# Usage: if user_master has a data quality issue, what downstream is affected?
+impacted = find_downstream_datasets("user_master", lineage_graph)
+print(f"Fixing user_master will affect: {impacted}")</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Lineage Visualization & Governance</h2>
+<p>Visualizing data lineage as a DAG makes governance easier. Teams can see data provenance, ownership, and sensitivity levels at a glance. Automated governance rules can be enforced: "PII data from user_events can only flow to analytics_prod if anonymized first."</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Lineage Element</th>
+<th>Info to Track</th>
+<th>Tools</th>
+<th>Governance Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source Table</td>
+<td>Owner, SLA, PII flag</td>
+<td>Data Catalog, Alation</td>
+<td>Approve/deny data use</td>
+</tr>
+<tr>
+<td>Transformation</td>
+<td>SQL/code, timestamp, author</td>
+<td>Airflow, dbt, Spark</td>
+<td>Audit trail, rollback ability</td>
+</tr>
+<tr>
+<td>Destination</td>
+<td>Consumer team, SLA, freshness</td>
+<td>Data Catalog, BigQuery</td>
+<td>Monitor contract fulfillment</td>
+</tr>
+<tr>
+<td>Dataflow Graph</td>
+<td>Full DAG, dependency depth</td>
+<td>Airflow UI, OpenLineage</td>
+<td>Impact analysis, risk assessment</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Lineage at Scale:</strong> Large enterprises with 10k+ tables face lineage explosion. Prioritize tracking critical paths: source data, transformations affecting financial/legal/PII data, and key business metrics. Use sampling for non-critical lineage to keep overhead reasonable. Store lineage in a dedicated metadata warehouse (separate from operational DW) to isolate governance queries from business analytics.</p>
+<p>Implement lineage retention policies: keep detailed lineage for 90 days, summary lineage for 1 year. This balances governance needs with storage costs. Use OpenLineage standard for portability across tools.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

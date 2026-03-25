@@ -188,6 +188,76 @@ print(response)</code></pre>
 <p>Use MLX for: development on a Mac without a cloud GPU, privacy-sensitive applications where data can't leave the device, offline-capable applications, and cost-free local inference during development. Avoid for: high-throughput production serving (use <a class="concept-link" href="vllm.html">vLLM</a> on NVIDIA/AMD), training large models (H100 is much faster), or anything requiring CUDA-specific libraries.</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>MLX vs JAX vs Core ML</h2>
+<p>MLX is designed specifically for research on Apple Silicon, while JAX is a more general-purpose framework. Core ML is Apple's production inference framework for on-device deployment. MLX excels at rapid prototyping because it mirrors NumPy's API and operates natively on the unified memory architecture of M-series chips. JAX provides superior numerical stability and automatic differentiation across multiple devices but is overkill for single-device research.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Framework</th>
+<th>GPU Backend</th>
+<th>Best For</th>
+<th>Memory Model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MLX</td>
+<td>Metal (Apple GPU)</td>
+<td>Mac-native research, small experiments</td>
+<td>Unified GPU/CPU memory</td>
+</tr>
+<tr>
+<td>JAX</td>
+<td>Metal (via jax-metal)</td>
+<td>Distributed training, complex autodiff</td>
+<td>Explicit device placement</td>
+</tr>
+<tr>
+<td>Core ML</td>
+<td>Neural Engine</td>
+<td>Production iOS/macOS inference</td>
+<td>Mobile-optimized quantization</td>
+</tr>
+<tr>
+<td>PyTorch MPS</td>
+<td>Metal</td>
+<td>Existing CUDA workflows on Mac</td>
+<td>CUDA-compatible API layer</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>When to Use MLX</h3>
+<p>MLX shines when you have an M3/M4 MacBook Pro or Mac Studio and want to run LLM fine-tuning experiments locally without cloud costs. It's ideal for practitioners prototyping new architectures or loss functions because the compile-free nature enables rapid iteration. The unified memory model means data doesn't need explicit copying between CPU and GPU, making development faster.</p>
+<div class="example-box"><pre><code># MLX unified memory example
+import mlx.core as mx
+# Allocate on GPU, but can be accessed from CPU seamlessly
+x = mx.random.normal((1000, 1000))
+# No explicit .to("cuda") or .to("cpu") needed!
+y = mx.matmul(x, x.T)
+print(f"Result device: {y.device}")  # Metal device</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>MLX Ecosystem & Libraries</h2>
+<p>The MLX ecosystem includes MLX-LM for language models, MLX-Data for efficient data loading, and MLX-Vision for computer vision tasks. These libraries integrate seamlessly with native MLX functions, eliminating the friction of mixing frameworks. Community projects extend MLX to Hugging Face integration, making it easy to download and fine-tune publicly available models directly on Apple Silicon.</p>
+<div class="example-box"><pre><code>from mlx_lm import load, generate
+# Load a 7B model directly from HF hub
+model, tokenizer = load("mistralai/Mistral-7B", adapter_path=None)
+# Generate with automatic batching on unified memory
+response = generate(model, tokenizer, "What is MLX?", max_tokens=256)
+print(response)</code></pre></div>
+</div>
+
+
+<div class="section-block">
+<p><strong>MLX Development Philosophy:</strong> The MLX team prioritizes simplicity and performance parity with NumPy wherever possible. This means less to learn for researchers already familiar with NumPy or Jax. The framework avoids unnecessary abstractions, making it transparent how operations map to Metal kernels. If you're used to writing CUDA kernels, switching to MLX requires unlearning device-explicit programming—unified memory handles it for you.</p>
+<p>Integration with Hugging Face Hub is seamless; you can download any transformers model in MLX format from the community. For production deployments, export to Core ML for iOS apps, or run the MLX server as a local REST endpoint on Mac. The project is actively maintained by Apple ML Research, with regular performance improvements for newer M-series chips.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

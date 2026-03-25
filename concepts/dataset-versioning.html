@@ -203,6 +203,91 @@ def reproducible_split(ids: list, train_ratio=0.8, val_ratio=0.1, seed=42):
 <p>Track the full provenance of every dataset version: which source documents were included, which filters were applied and with what parameters, which annotation job produced which labels, and which model generated synthetic examples. Store this as a lineage graph in a metadata store (e.g. Postgres). When a model trained on dataset v2.3 shows unexpected behaviour, lineage lets you trace it back to the exact data change that caused it.</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Version Control Systems for Data</h2>
+<p>Traditional git is designed for code, not large binary files. Tools like DVC (Data Version Control), Pachyderm, and LakeFS add dataset versioning on top of object storage (S3, GCS). They track data lineage, enable branching (experiment on a copy), and support reproducibility (recreate the exact dataset used for a model).</p>
+<div class="example-box"><pre><code># DVC dataset versioning
+# dvc.yaml: Declare your dataset
+datasets:
+  raw_data:
+    path: s3://my-bucket/data/raw/
+    version: "1.2.3"  # Immutable version tag
+
+# dvc.lock: Lock file tracks exact versions used in training
+# If you train model A on dataset 1.2.3 and later update to 1.3.0,
+# you can always recreate model A by checking out dvc.lock
+
+# Usage
+dvc get s3://my-bucket/dvc-repo raw_data -v 1.2.3
+# Downloads exact dataset version 1.2.3, reproducibly</code></pre></div>
+<h3>Branch-Based Experimentation</h3>
+<p>Just like git branches for code, data versions enable branching for ML experiments. Experiment on a "feature branch" of your dataset, A/B test, and merge back to main only if it improves metrics. Non-merged experiments are discarded without cluttering production data.</p>
+<div class="example-box"><pre><code"># DVC branching for ML experiments
+git checkout -b experiment/new-preprocessing
+# Modify raw_data to add new features
+dvc repro  # Recompute dataset and model
+# Train model on the new version
+python train.py --dataset-version=$(dvc dag --output)
+# If model improves, merge back
+git merge experiment/new-preprocessing
+dvc push  # Push dataset version to storage</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Dataset Storage & Cost Optimization</h2>
+<p>Storing every version of every dataset indefinitely is prohibitively expensive. Implement retention policies: keep "main" branch versions permanently, but garbage collect old experiment branches after 30 days. Use compression and deduplication to reduce storage footprint.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Storage Strategy</th>
+<th>Cost/month</th>
+<th>Retention</th>
+<th>Access Speed</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S3 Standard (hot)</td>
+<td>$23/TB</td>
+<td>Unlimited</td>
+<td>Immediate</td>
+<td>Active datasets, current experiments</td>
+</tr>
+<tr>
+<td>S3-IA (warm)</td>
+<td>$12.50/TB</td>
+<td>30+ days</td>
+<td>1–2 min retrieval</td>
+<td>Older versions, occasional access</td>
+</tr>
+<tr>
+<td>Glacier (cold)</td>
+<td>$4/TB</td>
+<td>6+ months</td>
+<td>1–12 hours</td>
+<td>Archive, compliance holds</td>
+</tr>
+<tr>
+<td>Dedup + Compression</td>
+<td>-40% to -60%</td>
+<td>Same tier</td>
+<td>Same tier + decompress latency</td>
+<td>Large datasets with overlaps</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Reproducibility Best Practice:</strong> Always lock dataset versions in your experiment config or dvc.lock file. Committing only the git version without the data version is incomplete; weeks later, someone pulls your code but the default dataset has been updated, silently breaking reproducibility. Use semantic versioning for datasets (MAJOR.MINOR.PATCH) to signal breaking changes (schema changes = MAJOR).</p>
+<p>For production models, enforce that training datasets are immutable. Create a "golden dataset" snapshot used for all future training; any update requires a new version and retraining. This prevents the "data drift" bug where model training uses different data than what it was evaluated on.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

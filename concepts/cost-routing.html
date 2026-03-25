@@ -208,6 +208,117 @@ def route(query: str, threshold: float = 0.75) -&gt; str:
 <p>Track: cost per request by model, routing distribution (% to each model), quality score by routed model, and cost savings vs always-large baseline. Alert if: cost per request increases &gt;20% (routing shifted to large), or quality score for small-routed requests drops &gt;5% (router over-routing).</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Cost-Based Model Selection Strategy</h2>
+<p>Not all requests need the most capable model. Simple classification tasks work fine with a 7B model, while complex reasoning requires 70B or larger. A smart router evaluates the request complexity (token count, task type) and selects the cheapest model that can handle it, saving 80–90% on costs for simple queries.</p>
+<div class="example-box"><pre><code># Cost-based routing logic
+def route_request(user_query):
+    # Estimate task complexity
+    complexity = estimate_complexity(user_query)  # 0.0 to 1.0
+    token_count = count_tokens(user_query)
+
+    # Routing decision table
+    if complexity < 0.3 and token_count < 500:
+        return "claude-3-haiku"  # Cheapest, ~$0.25 per 1M input tokens
+    elif complexity < 0.6 and token_count < 2000:
+        return "claude-3-sonnet"  # Balanced, ~$3 per 1M input tokens
+    else:
+        return "claude-3-opus"  # Most capable, ~$15 per 1M input tokens
+
+# Example usage
+user_queries = [
+    "What's the capital of France?",  # Haiku sufficient
+    "Summarize this 5-page report",   # Sonnet recommended
+    "Design a novel ML architecture"  # Opus required
+]
+
+for query in user_queries:
+    model = route_request(query)
+    response = call_model(model, query)
+    print(f"Query: '{query[:30]}...' → {model}")</code></pre></div>
+<h3>A/B Testing & Quality Verification</h3>
+<p>Intelligent routing trades latency for cost. Validate that downgraded models still produce acceptable output quality. A/B test by routing 5% of traffic to the upgraded model and comparing latency, cost, and quality metrics (accuracy on evals, user satisfaction).</p>
+<div class="example-box"><pre><code># A/B testing framework for model routing
+import random
+
+def route_with_testing(query, control_model="claude-3-opus", test_pct=0.05):
+    # 95% normal routing, 5% forced to best model for quality check
+    if random.random() < test_pct:
+        selected_model = control_model
+        is_test = True
+    else:
+        selected_model = route_request(query)
+        is_test = False
+
+    # Log for analysis
+    response = call_model(selected_model, query)
+    log_routing_decision({
+        "query": query,
+        "selected_model": selected_model,
+        "is_test": is_test,
+        "latency_ms": response.latency_ms,
+        "cost": response.cost
+    })
+
+    return response</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Advanced Routing Techniques</h2>
+<p>More sophisticated routers incorporate user context (VIP users always get premium models), request history (cache hits on previous queries), and real-time model availability (failover if a model is rate-limited). Some routers even learn from outcomes: if Haiku fails on a query, mark the query type and always upgrade future similar queries.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Routing Strategy</th>
+<th>Cost Saving</th>
+<th>Complexity</th>
+<th>Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Naive (always use Opus)</td>
+<td>0%</td>
+<td>Low</td>
+<td>Baseline, high quality</td>
+</tr>
+<tr>
+<td>Token-based</td>
+<td>40–50%</td>
+<td>Low</td>
+<td>Simple complexity detection</td>
+</tr>
+<tr>
+<td>Learned classifier</td>
+<td>60–75%</td>
+<td>Medium</td>
+<td>Production, proven reliable</td>
+</tr>
+<tr>
+<td>Dynamic with fallback</td>
+<td>70–85%</td>
+<td>High</td>
+<td>Mixed workloads, SLA critical</td>
+</tr>
+<tr>
+<td>User-segmented + caching</td>
+<td>80–90%</td>
+<td>Very High</td>
+<td>Mature platforms, high volume</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Common Pitfall:</strong> Routing that's too aggressive (using cheap models too often) may degrade user experience. Monitor quality metrics closely: if user satisfaction drops even 2–3%, the cost savings are often not worth the reputation damage. Implement a feedback loop where users can report low-quality responses, which should trigger an immediate upgrade for similar future queries.</p>
+<p>Consider time-of-day based routing: use cheaper models during off-peak hours when latency is less critical, and reserve expensive models for peak times. This smooths load and reduces costs without sacrificing peak experience.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

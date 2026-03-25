@@ -234,6 +234,102 @@ for result in client.messages.batches.results(batch.id):
 <p>Track: batch completion rate (some requests may fail individually), total batch cost, average turnaround time, and partial failure rate. Results files include per-request error codes — process errors separately. Set a fallback: if batch fails to complete within 20 hours, re-submit as synchronous requests.</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Batch Job Lifecycle & Monitoring</h2>
+<p>Batch jobs progress through states: QUEUED → PROCESSING → COMPLETED or FAILED. Monitoring transitions is critical; stuck jobs indicate queue saturation or service outages. Modern batch systems expose metrics like job queue depth, average wait time, and SLA compliance (e.g., "95% of jobs complete within 2 hours").</p>
+<div class="example-box"><pre><code># Example: Anthropic Batch API job lifecycle
+import anthropic
+import time
+
+client = anthropic.Anthropic()
+batch = client.messages.batches.create(requests=[...])
+print(f"Batch {batch.id} created. State: {batch.processing_status}")
+
+# Poll until complete
+while batch.processing_status in ["queued", "in_progress"]:
+    time.sleep(30)
+    batch = client.messages.batches.retrieve(batch.id)
+    print(f"Batch {batch.id} state: {batch.processing_status}")
+
+# Retrieve results
+if batch.processing_status == "succeeded":
+    results = client.messages.batches.results(batch.id)
+    for result in results:
+        print(result.result)</code></pre></div>
+<h3>Cost Optimization via Batching</h3>
+<p>Batch APIs often charge 50% less per token than real-time APIs, making them ideal for non-urgent bulk processing. Group requests by priority: urgent batches run within 1 hour, standard batches within 24 hours. This two-tier approach maximizes savings while meeting SLAs.</p>
+<div class="example-box"><pre><code># Prepare batch requests efficiently
+requests = []
+for doc in documents:
+    requests.append({
+        "custom_id": doc.id,
+        "params": {
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": f"Summarize: {doc.text}"}]
+        }
+    })
+
+# Submit batch (receives 50% discount vs real-time)
+batch = client.messages.batches.create(requests=requests)</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Error Handling & Retry Strategies</h2>
+<p>Batch jobs encounter transient failures (temporary service outages) and permanent failures (invalid input). Implement exponential backoff for retries; don't immediately re-queue a failed job. Failed individual requests within a batch should be logged separately so you can investigate and resubmit specific failures without re-processing successful ones.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Error Type</th>
+<th>Status Code</th>
+<th>Retry?</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rate Limit</td>
+<td>429</td>
+<td>Yes (exponential backoff)</td>
+<td>Retry after 60s, then 120s, then 240s</td>
+</tr>
+<tr>
+<td>Service Unavailable</td>
+<td>503</td>
+<td>Yes (exponential backoff)</td>
+<td>Retry after 30s, then 60s, up to 5 retries</td>
+</tr>
+<tr>
+<td>Invalid Input</td>
+<td>400</td>
+<td>No</td>
+<td>Log error, skip this request, continue batch</td>
+</tr>
+<tr>
+<td>Auth Failed</td>
+<td>401</td>
+<td>No</td>
+<td>Stop batch, check API key/credentials</td>
+</tr>
+<tr>
+<td>Timeout</td>
+<td>504</td>
+<td>Yes (exponential backoff)</td>
+<td>Retry with increased timeout window</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Batch Job Deduplication:</strong> If your batch submission process can be interrupted or retried, use idempotent custom_ids. Generate each ID deterministically from the input (e.g., SHA256 hash of the document) so re-submitting the same batch twice doesn't create duplicates. This pattern is crucial for distributed systems where network failures might cause duplicate submissions.</p>
+<p>For large-scale batch operations (100k+ requests), split into multiple smaller batches (10k each) to reduce blast radius if one batch encounters an error. Track overall progress across all batches in a master coordination table; this makes it easy to resume if the batch submission service itself crashes mid-operation.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -215,6 +215,111 @@ def budget_guard(daily_limit_usd: float):
     return decorator</code></pre>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Implementing Budget Thresholds & Alerts</h2>
+<p>Budget guards work by setting hard limits and soft alerts. A soft alert (at 70% of budget) notifies teams via Slack or email; a hard limit (at 100%) stops new requests from being submitted. Both thresholds should be configurable per cost center or project.</p>
+<div class="example-box"><pre><code># Budget guard enforcement (pseudocode)
+class BudgetGuard:
+    def __init__(self, monthly_budget, soft_alert_pct=0.7, hard_limit_pct=1.0):
+        self.monthly_budget = monthly_budget
+        self.soft_alert_pct = soft_alert_pct
+        self.hard_limit_pct = hard_limit_pct
+
+    def check_before_request(self, estimated_cost):
+        current_spend = self.get_ytd_spend()
+        projected = current_spend + estimated_cost
+
+        if projected > self.monthly_budget * self.hard_limit_pct:
+            raise BudgetExceededError(f"Hard limit reached: {projected} > {self.monthly_budget}")
+
+        if projected > self.monthly_budget * self.soft_alert_pct:
+            self.send_alert(f"Approaching budget: {projected} / {self.monthly_budget}")
+
+        return True  # Allow request</code></pre></div>
+<h3>Cost Attribution & Chargeback</h3>
+<p>Budget guards only work if costs are properly attributed to the requester. Track who initiated each request, which project or team they belong to, and what service was used. This enables chargeback (billing teams for their usage) and accountability.</p>
+<div class="example-box"><pre><code># Cost attribution in request
+def submit_inference_request(text, requester_id, project_id):
+    cost_estimate = calculate_cost(text)
+
+    request = {
+        "text": text,
+        "cost_estimate": cost_estimate,
+        "metadata": {
+            "requester_id": requester_id,
+            "project_id": project_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    }
+
+    # Check budget guard BEFORE submitting
+    budget_guard = BudgetGuard.get_for_project(project_id)
+    if not budget_guard.check_before_request(cost_estimate):
+        return {"error": "budget exceeded"}
+
+    return submit_request(request)</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Budget Review & Reallocation</h2>
+<p>Budgets aren't static. Monthly review cycles allow teams to request reallocation if priorities shift. Some teams always underspend (safe buffers), while others need more. A central budget committee meets monthly to rebalance across projects based on utilization trends and business priorities.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Team</th>
+<th>Allocated</th>
+<th>YTD Spent</th>
+<th>% Utilized</th>
+<th>Trend</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data Science</td>
+<td>$50k</td>
+<td>$48.5k</td>
+<td>97%</td>
+<td>↑ +20% vs last month</td>
+<td>Request +$10k</td>
+</tr>
+<tr>
+<td>ML Ops</td>
+<td>$30k</td>
+<td>$12.2k</td>
+<td>41%</td>
+<td>↓ -5% vs last month</td>
+<td>OK, monitor</td>
+</tr>
+<tr>
+<td>Research</td>
+<td>$80k</td>
+<td>$79.8k</td>
+<td>100%</td>
+<td>→ Flat</td>
+<td>Hard limit active, discuss</td>
+</tr>
+<tr>
+<td>Infra</td>
+<td>$25k</td>
+<td>$8.1k</td>
+<td>32%</td>
+<td>↑ +10% vs last month</td>
+<td>OK, growing as expected</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Gaming Budget Alerts:</strong> Budget guards can be circumvented if not carefully designed. Teams might split requests across multiple accounts, use forecast-free spending tier, or intentionally exceed limits if the overage cost is negligible. Design alerts to be surprising (if a team's monthly cost suddenly 10x, something is wrong) rather than predictable. Pair budget guards with usage audits to catch anomalies.</p>
+<p>Consider implementing "committed use discounts" (CUDs) alongside budget guards. A team commits to $100k/month usage and gets 25% discount; they manage their spending to stay near that commitment. This aligns incentives and improves forecasting accuracy across the entire organization.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

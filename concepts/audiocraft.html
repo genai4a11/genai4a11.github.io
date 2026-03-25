@@ -195,6 +195,92 @@ audio_write('dog_bark', wav[0].cpu(), model.sample_rate, strategy='clip')</code>
 <p>AudioCraft models are released under CC-BY-NC 4.0 — commercial use requires a separate license agreement with Meta. Generation is compute-intensive: the large MusicGen model takes ~10 seconds to generate 10 seconds of audio on an A100. Temporal coherence beyond 30 seconds degrades; for longer pieces, use windowed continuation. The models are not real-time by default — for live applications consider ONNX export or streaming decoding with smaller model variants.</p>
 </div>
 </div>
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Musicgen Model Architecture</h2>
+<p>Musicgen uses a three-stage approach: a text encoder (via T5) converts prompts to embeddings, a frozen acoustic model compresses audio into discrete codes, and a transformer-based language model generates those codes autoregressively. The discrete approach allows training on commodity GPUs while maintaining high fidelity.</p>
+<div class="example-box"><pre><code>from audiocraft.models import MusicGen
+from audiocraft.data.audio_utils import convert_audio
+import torch
+
+# Load base model
+model = MusicGen.get_pretrained('facebook/musicgen-medium')
+# Conditions (all optional)
+descriptions = ['upbeat synth pop', 'chill lofi hip-hop']
+melody = convert_audio(waveform, sample_rate, model.sample_rate)
+
+# Generate 30s of music per description
+model.generate_continuation(melody, prompt_sample_rate=16000, length=30)</code></pre></div>
+<h3>Fine-Tuning on Custom Data</h3>
+<p>While pre-trained models cover broad musical styles, fine-tuning on domain-specific data (e.g., game soundtrack, corporate jingles) improves coherence. Audiocraft provides training scripts and datasets management.</p>
+<div class="example-box"><pre><code># Fine-tune on custom audio dataset
+from audiocraft.models import MusicGen
+from audiocraft.solvers import musicgen as musicgen_solver
+
+# Prepare training config
+solver = musicgen_solver.MusicGenSolver(
+    cfg=cfg,
+    data=custom_audio_dataset,
+    model=MusicGen.get_pretrained('facebook/musicgen-small'),
+    num_steps=10000
+)
+solver.train()  # Requires GPU</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Audio Quality & Inference Optimization</h2>
+<p>Musicgen generates at 32 kHz (16-bit PCM). Higher sampling rates (44.1 kHz for CD quality) can be achieved via post-processing resampling, though the model's training is fixed to 32 kHz. Inference speed scales with sequence length; a 60-second track takes roughly 3–5× longer than a 10-second clip on the same GPU due to the autoregressive nature of generation.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Model Size</th>
+<th>VRAM (GB)</th>
+<th>10s Inference (s)</th>
+<th>60s Inference (s)</th>
+<th>Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Small (300M)</td>
+<td>2</td>
+<td>3–4</td>
+<td>18–25</td>
+<td>Real-time web apps</td>
+</tr>
+<tr>
+<td>Medium (1.5B)</td>
+<td>5</td>
+<td>5–7</td>
+<td>30–50</td>
+<td>Batch generation, balancing quality</td>
+</tr>
+<tr>
+<td>Large (3.5B)</td>
+<td>10</td>
+<td>10–15</td>
+<td>60–90</td>
+<td>Highest quality, offline rendering</td>
+</tr>
+<tr>
+<td>Large+ (7B)</td>
+<td>18</td>
+<td>20–30</td>
+<td>120+</td>
+<td>Research, large-scale batch jobs</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Practical Deployment Strategy:</strong> Deploy Musicgen as a long-running gRPC service behind a queue. Users submit generation requests, which are enqueued and processed by a pool of GPU workers. The Small model on a single V100 can generate ~50 unique 10-second clips per hour in batch mode. For cost-sensitive applications, use model quantization (via torchao or bitsandbytes) to reduce memory, though quality degradation is noticeable on longer sequences.</p>
+<p>Consider caching generated audio indexed by prompt hash; identical requests within a 24-hour window can be served from cache at microsecond latency. Document output formats clearly: Audiocraft generates mono or stereo PCM WAV by default, but conversion to MP3 or OGG via ffmpeg is recommended before serving to browsers to reduce bandwidth.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

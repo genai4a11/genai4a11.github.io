@@ -203,6 +203,100 @@ async def request_approval(action: dict, timeout_s: int = 300) -&gt; tuple[Appro
 
 
 
+<div class="section-block">
+<div class="section-marker">SECTION 07</div>
+<h2>Implementing Multi-Level Approval</h2>
+<p>A robust approval gate system requires role-based access control and clear escalation paths. Typical hierarchies include: analysts (request deployments), leads (approve analyst requests), and directors (override or approve critical changes). Each level has explicit approval authority over certain cost ranges or risk categories.</p>
+<div class="example-box"><pre><code># Python approval gate enforcer (pseudocode)
+class ApprovalGate:
+    def __init__(self, cost_threshold, required_approvers):
+        self.cost_threshold = cost_threshold
+        self.required_approvers = required_approvers
+
+    def check_deployment(self, request_cost, requester_role):
+        if request_cost <= self.cost_threshold:
+            return True  # Auto-approve
+        else:
+            # Require N approvals from required_approvers roles
+            return self.request_approvals(required_approvers)
+
+# Set up gates
+dev_gate = ApprovalGate(cost_threshold=100, required_approvers=['lead'])
+prod_gate = ApprovalGate(cost_threshold=1000, required_approvers=['lead', 'director'])</code></pre></div>
+<h3>Webhook & Notification Integration</h3>
+<p>Approval gates should integrate with Slack, PagerDuty, or email to notify approvers in real-time. Delays in approval notification can block deployments; async notification via webhooks ensures approvers see requests immediately and can act without polling dashboards.</p>
+<div class="example-box"><pre><code># Notify approvers via Slack
+import requests
+def notify_approval_request(slack_webhook, request_id, cost, requester):
+    payload = {
+        "text": f"Approval needed for deployment #{request_id}",
+        "blocks": [
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"Cost: ${cost}
+Requester: {requester}"}},
+            {"type": "actions", "elements": [
+                {"type": "button", "text": {"type": "plain_text", "text": "Approve"}, "value": f"approve_{request_id}"},
+                {"type": "button", "text": {"type": "plain_text", "text": "Deny"}, "value": f"deny_{request_id}"}
+            ]}
+        ]
+    }
+    requests.post(slack_webhook, json=payload)</code></pre></div>
+</div>
+<div class="section-block">
+<div class="section-marker">SECTION 08</div>
+<h2>Audit Trail & Compliance Logging</h2>
+<p>Approval gates create a compliance record: who requested, who approved, when, and what changed. This audit trail is essential for SOC 2, HIPAA, or PCI compliance. Every approval (or denial) must be timestamped and immutable, stored in a dedicated audit log or compliance database.</p>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Purpose</th>
+<th>Storage</th>
+<th>Retention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Requester ID</td>
+<td>Who initiated the change</td>
+<td>Audit DB, immutable row</td>
+<td>7 years (compliance)</td>
+</tr>
+<tr>
+<td>Approver ID(s)</td>
+<td>Who authorized the change</td>
+<td>Audit DB, immutable row</td>
+<td>7 years</td>
+</tr>
+<tr>
+<td>Timestamp</td>
+<td>When approval occurred</td>
+<td>UTC ISO-8601, server-side</td>
+<td>7 years</td>
+</tr>
+<tr>
+<td>Change Details</td>
+<td>What was approved (diff)</td>
+<td>Compressed JSON blob</td>
+<td>7 years</td>
+</tr>
+<tr>
+<td>Denial Reason</td>
+<td>Why request was rejected</td>
+<td>Free text + structured code</td>
+<td>2 years</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+<div class="section-block">
+<p><strong>Common Pitfall:</strong> Many teams implement approval gates but fail to enforce them programmatically. If developers can bypass gates via direct AWS/GCP console access, the gates become security theater. Use IAM policies to restrict direct console access; only allow changes through gated API endpoints that enforce approval logic.</p>
+<p>For remote teams across time zones, approval SLAs matter. Set a 4-hour approval window for routine changes and 1-hour for critical incidents. If no one approves within the SLA, escalate to the next level or allow auto-approval if it's low-cost. Document SLAs clearly to avoid confusion.</p>
+</div>
+
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
