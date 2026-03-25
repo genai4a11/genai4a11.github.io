@@ -240,6 +240,38 @@ cost_analysis(100_000_000, 20_000_000)  # 100M input, 20M output tokens/month
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Build vs. Buy Decision Framework</h2>
+<p>The build vs. buy decision for LLM infrastructure — model hosting, RAG pipelines, evaluation tooling, monitoring systems — involves balancing control, cost, time-to-value, and maintenance burden. The right choice varies significantly based on organization size, team expertise, data sensitivity requirements, and the strategic importance of AI capabilities to the business.</p>
+<table>
+<thead><tr><th>Dimension</th><th>Build</th><th>Buy</th><th>When to Build</th></tr></thead>
+<tbody>
+<tr><td>Time to deploy</td><td>Weeks–months</td><td>Days</td><td>Unique requirements</td></tr>
+<tr><td>Customization</td><td>Full</td><td>Limited</td><td>Differentiated product</td></tr>
+<tr><td>Maintenance</td><td>Team owns</td><td>Vendor owns</td><td>Stable, well-understood needs</td></tr>
+<tr><td>Data privacy</td><td>Full control</td><td>Depends on vendor</td><td>Strict compliance needs</td></tr>
+<tr><td>Total cost</td><td>High upfront, lower scale</td><td>Predictable, scale pricing</td><td>Very high volume</td></tr>
+</tbody>
+</table>
+<p>Generic infrastructure components — vector databases, embedding APIs, LLM serving layers — rarely provide competitive differentiation and are strong candidates for buying. The cost of building and maintaining a production-grade vector database with sub-millisecond query latency, horizontal scaling, and replication is enormous relative to the differentiated value it provides. Teams that "buy" these components using managed services can redirect engineering effort toward the application logic, retrieval quality, and domain-specific fine-tuning that actually differentiates their product.</p>
+<p>Model fine-tuning and evaluation infrastructure present a more nuanced build vs. buy calculation. Fine-tuning workflows are highly specific to training data formats, target tasks, and quality metrics that vary significantly across organizations. Generic fine-tuning platforms often require more adaptation effort than building targeted scripts around open-source libraries like HuggingFace Transformers and PEFT. Evaluation infrastructure similarly benefits from domain-specific metric design that generic platforms cannot anticipate. For teams with strong ML engineering capabilities, building evaluation and fine-tuning tooling in-house often delivers better results than adapting generic platforms to specialized requirements.</p>
+<div class="example-box">
+<pre><code># Build vs. Buy scoring matrix (example scoring)
+components = {
+    "Vector DB":        {"differentiation": 1, "complexity": 8, "→": "Buy (Pinecone/Qdrant)"},
+    "LLM API":          {"differentiation": 2, "complexity": 9, "→": "Buy (OpenAI/Anthropic)"},
+    "RAG pipeline":     {"differentiation": 6, "complexity": 5, "→": "Build (domain-specific)"},
+    "Fine-tuning":      {"differentiation": 8, "complexity": 6, "→": "Build (task-specific)"},
+    "Eval framework":   {"differentiation": 7, "complexity": 4, "→": "Build (custom metrics)"},
+    "Monitoring":       {"differentiation": 3, "complexity": 6, "→": "Buy (LangFuse/W&B)"},
+}
+# Rule: differentiation > 5 AND complexity < 7 → Build</code></pre>
+</div>
+
+<p>Vendor lock-in risk is a key consideration in the build vs. buy calculation for LLM infrastructure. Deeply integrating a vendor's proprietary APIs, data formats, and deployment patterns creates switching costs that grow over time as more application code depends on vendor-specific interfaces. Mitigation strategies include building thin abstraction layers over vendor APIs that can be reimplemented against different backends, using open standards like the OpenAI API format that multiple providers support, and maintaining the option to self-host open-weight models as a fallback. The lock-in risk is higher for foundation model providers than for infrastructure components where competitive alternatives exist.</p>
+
+<p>The organizational capability to build and maintain LLM infrastructure is as important as the technical feasibility. A team without dedicated ML engineers, DevOps expertise, and GPU infrastructure management experience will struggle to build and operate production-grade model serving infrastructure regardless of technical approach. Honest capability assessment — staffing levels, skill sets, and engineering bandwidth available for infrastructure maintenance — often determines build vs. buy decisions more than abstract cost calculations. Buying frees scarce engineering capacity for application development; building requires sustained infrastructure investment that competes with feature development priorities.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -300,6 +300,29 @@ If no people mentioned, return: {"people": []}
 <p><strong>The prefill trick and stop sequences.</strong> When using the prefill trick with Anthropic, don't add a stop sequence that could trigger mid-JSON. Also, the response object won't include the <code>{</code> you prefilled — always prepend it manually.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>JSON Mode vs. Tool Calling vs. Structured Outputs</h2>
+<p>LLM APIs offer several mechanisms for obtaining structured, parseable outputs. Understanding the trade-offs between JSON mode, tool calling, and structured output modes helps select the right approach for each extraction and generation use case.</p>
+<table>
+<thead><tr><th>Mechanism</th><th>Schema Enforcement</th><th>Guaranteed Valid</th><th>Flexibility</th><th>Support</th></tr></thead>
+<tbody>
+<tr><td>JSON mode</td><td>None (just valid JSON)</td><td>Valid JSON only</td><td>High</td><td>OpenAI, Groq</td></tr>
+<tr><td>Tool calling</td><td>JSON Schema per tool</td><td>Near-guaranteed</td><td>Medium</td><td>OpenAI, Anthropic</td></tr>
+<tr><td>Structured outputs</td><td>Strict JSON Schema</td><td>Guaranteed</td><td>Medium</td><td>OpenAI (newer models)</td></tr>
+<tr><td>Constrained decoding</td><td>Full grammar</td><td>Guaranteed</td><td>Highest</td><td>Open-source backends</td></tr>
+</tbody>
+</table>
+<p>JSON mode instructs the LLM to produce valid JSON without enforcing any particular schema. The generated JSON will be syntactically valid and parseable but may contain different keys, missing fields, or unexpected value types on different requests for the same prompt. JSON mode is appropriate when the structure of the output is explicitly described in the prompt and the application can handle minor schema variations, but is insufficient for applications requiring machine-readable outputs with strict schema compliance.</p>
+<p>OpenAI's structured outputs feature uses a constrained decoding approach that guarantees the generated JSON exactly matches the provided JSON Schema, with no additional or missing fields and all value types matching their schema declarations. This guarantee eliminates the category of parsing failures where a model produces plausible but schema-invalid JSON, allowing application code to parse and use the output without defensive error handling. The trade-off is that only a subset of JSON Schema features are supported and the constrained decoding process is slightly slower than unconstrained generation.</p>
+
+<p>Prompt design for reliable JSON extraction requires explicit formatting instructions that guide the model toward consistent key naming, value formatting, and null handling. Specifying that missing optional fields should be represented as null rather than omitted, that dates should use ISO 8601 format, and that numeric values should not be quoted as strings reduces the post-processing burden significantly. Few-shot examples of correct JSON output are the most reliable mechanism for establishing format conventions when the schema is complex or ambiguous from description alone.</p>
+
+<p>Error recovery strategies for JSON parsing failures are important because even JSON mode and tool calling occasionally produce malformed outputs under adverse conditions — very long outputs, unusual prompts, or model errors during generation. A robust extraction pipeline implements: primary parsing attempt, secondary retry with explicit error feedback fed back to the model, and fallback to regex-based partial extraction for critical fields if full JSON parsing fails after retries. Tracking parsing failure rates by model, prompt version, and query type identifies systematic issues before they affect a significant fraction of production requests.</p>
+
+<p>Nested JSON schemas with deeply recursive structures or circular references can challenge LLMs because they require correctly tracking parent-child relationships across many key-value pairs. Flattening deeply nested schemas into shallower representations — using dot notation keys like "user.address.city" rather than nested objects — reduces the cognitive complexity for the model and improves extraction accuracy on complex schemas. For schemas that genuinely require deep nesting, extracting nested objects in multiple chained calls (extract the outer object first, then extract nested details) is more reliable than single-pass extraction of the full nested structure.</p>
+
+<p>Streaming JSON responses require specialized parsing strategies because standard JSON parsers require the complete document before returning any results. Incremental JSON parsers like ijson process JSON token-by-token, enabling applications to begin processing array elements or object fields as they arrive in the stream rather than buffering the complete response. For LLM responses returning large arrays of structured objects, streaming with incremental parsing can reduce time-to-first-result by seconds compared to buffering the full response, significantly improving perceived performance for users waiting on results.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

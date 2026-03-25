@@ -247,6 +247,51 @@ def plot_cross_attn(attn_weights, src_tokens, tgt_tokens, head=0):
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Cross-Attention Applications in LLMs</h2>
+<p>Cross-attention allows one sequence to attend to another, enabling transformer architectures to condition generation on external information. While self-attention queries a sequence against itself, cross-attention queries the target sequence against a separate source sequence, making it the mechanism for encoder-decoder interaction in translation and summarization architectures and for conditioning image generation on text prompts in diffusion models.</p>
+<table>
+<thead><tr><th>Architecture</th><th>Cross-Attention Role</th><th>Source Sequence</th><th>Target Sequence</th></tr></thead>
+<tbody>
+<tr><td>Encoder-decoder (T5)</td><td>Attend to encoder output</td><td>Input document</td><td>Output summary</td></tr>
+<tr><td>Diffusion (Stable Diffusion)</td><td>Condition on text</td><td>CLIP text embedding</td><td>Latent image</td></tr>
+<tr><td>MLA (DeepSeek)</td><td>Low-rank KV compression</td><td>Compressed latent</td><td>Query tokens</td></tr>
+<tr><td>Retrieval-augmented (RETRO)</td><td>Attend to retrieved docs</td><td>Retrieved chunks</td><td>Current generation</td></tr>
+</tbody>
+</table>
+<p>In encoder-decoder architectures like T5 and BART, every decoder layer uses cross-attention to query the full encoder output, giving the decoder direct access to all encoded representations of the input at every generation step. This is distinct from decoder-only architectures (GPT-family) that include the source document in the same context as the generated output — the encoder-decoder design has separate computational paths for understanding the input and generating the output, which can be more efficient for tasks like translation where the full source must be processed before output generation begins.</p>
+<p>Cross-attention in image generation models serves as the conditioning mechanism that binds text semantics to spatial features in the image latent. The text prompt is encoded into a sequence of embeddings, and each convolutional or transformer layer in the UNet queries these text embeddings through cross-attention. This conditioning is present at every denoising step, continuously guiding the diffusion process toward the text-described content. ControlNet's architectural contribution is to add additional cross-attention pathways for structural condition images (depth maps, edge maps, poses) alongside the text cross-attention, enabling joint conditioning on both spatial structure and semantic content.</p>
+
+<div class="example-box">
+<pre><code>import torch
+import torch.nn as nn
+
+class CrossAttention(nn.Module):
+    def __init__(self, d_model, n_heads):
+        super().__init__()
+        self.q_proj = nn.Linear(d_model, d_model)   # from target
+        self.k_proj = nn.Linear(d_model, d_model)   # from source
+        self.v_proj = nn.Linear(d_model, d_model)   # from source
+        self.out_proj = nn.Linear(d_model, d_model)
+        self.n_heads = n_heads
+        self.scale = (d_model // n_heads) ** -0.5
+
+    def forward(self, target, source, source_mask=None):
+        B, T, D = target.shape
+        S = source.shape[1]
+        q = self.q_proj(target).view(B, T, self.n_heads, -1).transpose(1,2)
+        k = self.k_proj(source).view(B, S, self.n_heads, -1).transpose(1,2)
+        v = self.v_proj(source).view(B, S, self.n_heads, -1).transpose(1,2)
+        attn = (q @ k.transpose(-2,-1)) * self.scale
+        if source_mask is not None:
+            attn = attn.masked_fill(~source_mask.unsqueeze(1), float('-inf'))
+        return self.out_proj((attn.softmax(-1) @ v).transpose(1,2).reshape(B,T,D))</code></pre>
+</div>
+
+<p>Cross-attention masking strategies differ from self-attention masking. Self-attention uses causal masks for autoregressive generation, preventing tokens from attending to future positions. Cross-attention uses padding masks on the source sequence to prevent attention to padding tokens when source sequences in a batch have different lengths. For retrieval-augmented architectures that attend to retrieved documents, cross-attention masking can additionally implement document-level isolation — preventing the model from attending across document boundaries within the retrieved context pool.</p>
+
+<p>The computational cost of cross-attention scales as O(T_target × T_source) where T_target and T_source are the lengths of the target and source sequences respectively. For architectures where the source sequence is long — a full document in summarization, a dense point cloud in 3D vision — this quadratic scaling creates the same memory and compute bottleneck as long-sequence self-attention. Efficient cross-attention variants that use sparse attention patterns, local windowed attention, or linear attention approximations are active areas of research for applications requiring attention over very long source sequences.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

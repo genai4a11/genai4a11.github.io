@@ -323,6 +323,32 @@ run.finish()
 <p><strong>Large artifact uploads</strong>: For multi-GB model checkpoints, use <code>artifact.add_reference("s3://bucket/path")</code> to store a reference rather than uploading the file to W&amp;B servers, which is slower and costs storage.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>W&amp;B Features for LLM Development</h2>
+<p>Weights &amp; Biases (W&amp;B) provides experiment tracking, model evaluation, and dataset versioning tailored for machine learning workflows. Its LLM-specific features — prompt versioning, trace logging, and the Weave evaluation framework — make it a comprehensive platform for managing the full LLM development cycle from fine-tuning to production monitoring.</p>
+<table>
+<thead><tr><th>Feature</th><th>Purpose</th><th>LLM Use Case</th></tr></thead>
+<tbody>
+<tr><td>Runs</td><td>Experiment tracking</td><td>Fine-tuning hyperparameter comparison</td></tr>
+<tr><td>Artifacts</td><td>Dataset/model versioning</td><td>Training dataset provenance</td></tr>
+<tr><td>Tables</td><td>Data visualization</td><td>Sample-level output comparison</td></tr>
+<tr><td>Sweeps</td><td>Hyperparameter search</td><td>LoRA rank, learning rate optimization</td></tr>
+<tr><td>Weave</td><td>LLM tracing + evaluation</td><td>RAG pipeline observability</td></tr>
+</tbody>
+</table>
+<p>W&amp;B Weave provides LLM-specific observability built on top of the core W&amp;B infrastructure. Weave traces capture the full call tree of an LLM application — every model call, tool invocation, and retrieval operation — stored in a structured format that enables filtering by input characteristics, latency, token count, and quality scores. Unlike general-purpose logging solutions, Weave understands LLM-native concepts like token counts, model names, and conversation structure, providing purpose-built analytics for AI application debugging.</p>
+<p>Fine-tuning experiment tracking in W&amp;B logs training and validation loss curves, learning rate schedules, and token-level metrics for each run. Comparing runs side by side in the W&amp;B dashboard reveals which hyperparameter combinations converge faster, overfit less, or achieve better benchmark scores. The artifact versioning system links each fine-tuned checkpoint to the exact training dataset version and configuration used, providing complete provenance that is essential for reproducing results and auditing model development decisions in regulated industries.</p>
+
+<p>W&amp;B Artifacts provide content-addressed storage for datasets, model checkpoints, and evaluation results, tracking the exact version of each artifact consumed and produced by each training run. A run that trains on dataset v3 and produces checkpoint v7 creates a versioned lineage graph showing which data produced which models. This lineage tracking is essential for debugging quality regressions: when a model starts performing worse, the artifact graph makes it straightforward to identify whether the regression correlates with a dataset change, a hyperparameter change, or a code change.</p>
+
+<p>W&amp;B Sweeps implements Bayesian hyperparameter optimization that learns from previous run results to focus the search on promising regions of the hyperparameter space. Compared to random search, Bayesian optimization typically finds good hyperparameter configurations in 30–50% fewer runs, significantly reducing the compute cost of hyperparameter tuning for expensive fine-tuning jobs. The sweep controller manages parallel run allocation, early stopping of unpromising runs, and result aggregation, enabling distributed hyperparameter search with minimal infrastructure setup.</p>
+
+<p>Custom W&amp;B charts and reports enable sharing LLM evaluation results with non-technical stakeholders in accessible formats. A W&amp;B report can embed interactive charts of quality metric trends, sample output comparisons, and statistical significance tests alongside narrative explanation. Reports are shareable via URL and update automatically when new evaluation runs complete, creating a living document of model quality that tracks progress over time rather than static snapshots that immediately become outdated as development continues.</p>
+
+<p>W&amp;B integration with popular training frameworks reduces instrumentation overhead to near-zero. The Hugging Face Trainer automatically logs metrics to W&amp;B when the WANDB_PROJECT environment variable is set, requiring no additional code. PyTorch Lightning's WandbLogger similarly provides automatic metric logging with a one-line configuration change. These framework-level integrations mean most training pipelines can adopt W&amp;B tracking without modifying training loops, reducing adoption friction for teams adding observability to existing codebases.</p>
+
+<p>W&amp;B's model registry provides a centralized store for promoting experiment checkpoints to named model versions with semantic versioning. Linking the model registry entry to the training run artifact creates a complete audit trail from registered model back to training data, hyperparameters, and evaluation metrics. This traceability supports compliance requirements and simplifies debugging when a deployed model behaves unexpectedly, because the full training provenance is accessible from the registry entry without searching through run history.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

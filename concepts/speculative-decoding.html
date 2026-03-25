@@ -253,6 +253,42 @@ def speculative_decode(draft_model, target_model, tokenizer, prompt, gamma=4, ma
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Speculative Decoding Performance Analysis</h2>
+<p>Speculative decoding accelerates autoregressive LLM inference by using a small, fast draft model to propose multiple candidate tokens, which a larger target model then verifies in a single parallel forward pass. Tokens that the target model agrees with are accepted; the first rejected token triggers regeneration from that point. When the draft model's predictions align well with the target, multiple tokens are accepted per target model step, increasing effective throughput.</p>
+<table>
+<thead><tr><th>Configuration</th><th>Acceptance Rate</th><th>Speedup</th><th>Memory Overhead</th></tr></thead>
+<tbody>
+<tr><td>Same-family (7B draft / 70B target)</td><td>70–85%</td><td>2–3×</td><td>+7B params</td></tr>
+<tr><td>Cross-family (mismatched vocab)</td><td>N/A</td><td>N/A (incompatible)</td><td>N/A</td></tr>
+<tr><td>Self-speculative (layer skipping)</td><td>65–75%</td><td>1.5–2×</td><td>None</td></tr>
+<tr><td>Medusa (multiple heads)</td><td>60–80%</td><td>2–3×</td><td>Small MLP heads</td></tr>
+</tbody>
+</table>
+<p>The acceptance rate — the fraction of draft tokens accepted by the target model — is the key metric determining speculative decoding speedup. Acceptance rates above 70% typically produce 2× or better throughput improvements; rates below 50% may produce little benefit after accounting for the overhead of running the draft model. Acceptance rates vary significantly by task type: continuation of predictable text (filling in boilerplate, completing common phrases) achieves high acceptance rates, while creative generation and complex reasoning produce lower rates as the draft model's predictions diverge from the target's choices.</p>
+<p>Speculative decoding preserves exact output equivalence with standard autoregressive decoding — every accepted token sequence has the same probability under the target model's distribution as if it had been generated without speculative decoding. This mathematical equivalence means speculative decoding is a pure latency optimization with no quality trade-off, unlike quantization or pruning which exchange some quality for efficiency. The determinism guarantee is important for applications that require reproducible outputs or audit trails of generation decisions.</p>
+<div class="example-box">
+<pre><code># Speculative decoding with HuggingFace
+from transformers import pipeline
+
+# Load draft and target models
+pipe = pipeline(
+    "text-generation",
+    model="meta-llama/Llama-3.1-70B-Instruct",
+    assistant_model="meta-llama/Llama-3.2-3B-Instruct",  # draft
+    device_map="auto",
+)
+# Draft model must share vocabulary with target model</code></pre>
+</div>
+
+<p>Draft model selection is critical for achieving high speculative decoding speedup. The draft model must use the same vocabulary and tokenizer as the target model to ensure token-level compatibility — a draft model tokenizing "Python" as one token must produce the same token ID as the target model for acceptance verification to work correctly. For Llama-family models, using a smaller Llama variant (3B draft for 70B target) provides good vocabulary compatibility. Cross-family speculative decoding (using a Mistral model as draft for a Llama target) is not directly supported without additional alignment techniques.</p>
+
+<p>Batch speculative decoding in high-throughput serving scenarios introduces complexity because different requests in the same batch may have different acceptance rates and different numbers of accepted tokens per step. The batch cannot advance uniformly by the same number of tokens per step, requiring careful state management to track where each request is in its generation process. Production serving frameworks like SGLang and vLLM implement batched speculative decoding with these complexities handled internally, but the performance benefit per request decreases as batch sizes grow due to the heterogeneous acceptance pattern across requests.</p>
+
+<p>Speculative decoding acceptance rate monitoring provides a leading indicator of serving efficiency. When acceptance rates drop below approximately 60%, the overhead of running the draft model exceeds its speedup benefit, and disabling speculative decoding improves overall throughput. Acceptance rates vary significantly with prompt type: structured output generation (JSON, code) tends to have high acceptance because the draft model handles predictable patterns well, while creative generation with high entropy outputs has lower acceptance. Monitoring acceptance rates by request category enables adaptive speculative decoding that activates only for request types where it provides net benefit.</p>
+
+<p>Speculative decoding latency gains are most pronounced for long-generation tasks. For short responses of 50 tokens or fewer, the overhead of initializing the draft model and verification loop reduces net speedup substantially. The break-even generation length — below which speculative decoding adds latency rather than reducing it — depends on draft model size and target model size, typically falling in the 20–40 token range for well-matched model pairs.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

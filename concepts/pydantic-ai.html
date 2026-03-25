@@ -331,6 +331,29 @@ result = agent_with_tools.run_sync("Weather in London?")
 <p><strong>result_type validation happens after generation.</strong> If the model produces output that can't be parsed into your result_type Pydantic model, PydanticAI retries with the validation error in the prompt. This is similar to <a class="concept-link" href="instructor.html">Instructor</a>'s retry behaviour — set a max_retries limit to avoid runaway costs.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>PydanticAI Agent and Tool Patterns</h2>
+<p>PydanticAI is a Python agent framework that uses Pydantic models as the foundation for structured LLM interactions, enabling type-safe tool definitions, validated agent outputs, and dependency injection. Built by the Pydantic team, it brings the same philosophy of explicit schemas and runtime validation to LLM agent development.</p>
+<table>
+<thead><tr><th>Component</th><th>Purpose</th><th>Validation</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Agent</td><td>LLM orchestration</td><td>Output model</td><td>Agent(model, result_type=MyModel)</td></tr>
+<tr><td>Tool</td><td>Function the LLM calls</td><td>Args schema auto-generated</td><td>@agent.tool def search(q: str)</td></tr>
+<tr><td>RunContext</td><td>Dependency injection</td><td>Type-checked at runtime</td><td>ctx.deps.database.query()</td></tr>
+<tr><td>Result type</td><td>Structured output</td><td>Pydantic model validation</td><td>class Answer(BaseModel)</td></tr>
+</tbody>
+</table>
+<p>PydanticAI's tool definition uses standard Python function signatures with type annotations to automatically generate the JSON schema the LLM uses when calling the tool. A function annotated with @agent.tool that accepts str, int, and Optional[list[str]] parameters automatically produces the correct tool definition without any manual schema writing. This reduces the friction of adding new tools and eliminates schema-definition bugs where the documented schema differs from the actual function signature.</p>
+<p>The dependency injection system in PydanticAI allows agents to access external resources — database connections, HTTP clients, configuration — through a typed dependency container rather than global state. Dependencies are declared as a type parameter on the Agent and RunContext, making the agent's requirements explicit and testable. Tests can inject mock dependencies in place of real services, enabling deterministic unit testing of agent behavior without requiring live database connections or LLM API calls.</p>
+
+<p>PydanticAI's result validators add a layer of semantic validation beyond structural schema enforcement. A result validator is a Python function decorated with @agent.result_validator that receives the structured output and can raise a ModelRetry exception to request a new attempt if the output is structurally valid but semantically incorrect — for instance, if a required field is empty, if a numeric value is outside a reasonable range, or if a referenced entity cannot be found in a database. The retry mechanism feeds the validation error message back to the LLM as additional context, enabling the model to self-correct without application code handling the retry logic manually.</p>
+
+<p>PydanticAI's streaming support allows results to be yielded incrementally as they are generated, enabling responsive UIs that display partial structured outputs rather than waiting for the complete result. For result types that include a text field alongside structured data, streaming the text portion while waiting for the complete structured output provides good perceived performance — the user sees the narrative response appearing in real time while the metadata is finalized. The streaming API is type-safe, yielding typed partial objects rather than raw strings.</p>
+
+<p>Multi-agent architectures in PydanticAI use agent delegation where one agent calls another as a tool. The delegate agent receives a prompt from the orchestrator, executes with its own system prompt, tools, and model configuration, and returns a typed result. This composition pattern enables building complex agent systems from independently testable single-purpose agents, where each agent's behavior can be validated in isolation before integrating into the full pipeline. The typed interface between agents makes dependency contracts explicit and catches interface mismatches at development time rather than runtime.</p>
+
+<p>PydanticAI's tool retry mechanism allows tools to signal recoverable failures that should be retried with modified parameters rather than propagating as exceptions. When a tool raises a ModelRetry exception with an error message, the agent feeds the message back to the LLM as context for the next tool call attempt, enabling the model to adjust its parameters — for instance, retrying a database query with corrected field names after receiving a schema validation error. This retry loop enables self-correcting agent behavior for transient tool failures without requiring explicit retry logic in the application code.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

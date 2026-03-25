@@ -314,6 +314,30 @@ os.environ["ANTHROPIC_API_KEY"] = "your-key"
 <p><strong>Verbose mode is expensive in production.</strong> <code>verbose=True</code> prints all intermediate reasoning, which is great for debugging but adds no value in production. Set <code>verbose=False</code> before deploying.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>CrewAI Agent Role Design Patterns</h2>
+<p>CrewAI structures multi-agent systems around the metaphor of a crew of specialized workers, each with a defined role, goal, backstory, and set of tools. This role-based architecture makes agent collaboration intuitive to design and reason about, mapping naturally to human organizational structures like research teams, editorial boards, or engineering squads.</p>
+<table>
+<thead><tr><th>Role Pattern</th><th>Responsibilities</th><th>Typical Tools</th><th>Position in Flow</th></tr></thead>
+<tbody>
+<tr><td>Researcher</td><td>Gather and synthesize information</td><td>Web search, document reader</td><td>First (information gathering)</td></tr>
+<tr><td>Analyst</td><td>Process and evaluate data</td><td>Code executor, calculator</td><td>Middle (transformation)</td></tr>
+<tr><td>Writer</td><td>Draft and format output</td><td>Template engine</td><td>Late (content generation)</td></tr>
+<tr><td>Reviewer</td><td>Quality check and edit</td><td>None (pure reasoning)</td><td>Last (quality gate)</td></tr>
+<tr><td>Orchestrator</td><td>Coordinate and delegate</td><td>Agent delegation</td><td>Throughout (coordination)</td></tr>
+</tbody>
+</table>
+<p>CrewAI's task system assigns work items to specific agents with explicit expected outputs, context dependencies, and output type specifications. Sequential task execution passes the output of each completed task as context to the next task in the chain, enabling information to accumulate naturally as it flows through the crew. Parallel task execution runs independent tasks simultaneously across multiple agents, reducing total wall-clock time for workflows where tasks do not have dependencies between them.</p>
+<p>Agent backstory in CrewAI serves as the system prompt that shapes how the agent approaches its assigned tasks. A well-crafted backstory includes relevant expertise, characteristic reasoning style, and typical quality standards the agent should apply. An agent with the backstory "experienced data scientist who always validates assumptions and quantifies uncertainty" will approach tasks differently than one described as "decisive executive who prioritizes speed and actionable conclusions over exhaustive analysis," even when given identical goals and tools.</p>
+
+<p>CrewAI's memory system provides agents with different types of persistent context across task executions. Short-term memory stores recent agent interactions within the current crew run. Long-term memory persists important findings across crew runs, building a knowledge base that improves over time. Entity memory tracks specific entities mentioned across tasks. These memory types are stored in a vector database, enabling semantic retrieval of relevant past knowledge when agents encounter similar situations in future runs — a key capability for crews that perform repeated similar tasks where learning from previous attempts provides value.</p>
+
+<p>Error handling in CrewAI agent crews uses graceful degradation patterns where task failures are reported to the crew orchestrator with the failure reason, and the orchestrator decides whether to retry the task, reassign it to a different agent, or proceed with a reduced result. Configuring max_retries per task and setting allow_delegation to True enables agents to autonomously request help when they are unable to complete a task with their current capabilities. These resilience mechanisms are important for long-running crews that cannot be manually supervised throughout execution.</p>
+
+<p>CrewAI Flow provides a code-first alternative to the role-based crew metaphor for defining LLM pipelines. Rather than defining agents with roles and goals, Flow uses Python decorators to define steps and the routing logic between them, with explicit state management using Pydantic models. Flow is better suited for deterministic pipelines where the execution structure is known in advance, while the crew abstraction is better for exploratory tasks where agents need to dynamically determine the appropriate next action based on intermediate results.</p>
+
+<p>CrewAI's process types — sequential, hierarchical, and consensual — determine how tasks are assigned and executed within a crew. Sequential process executes tasks in defined order with outputs passed between tasks as context. Hierarchical process uses a manager agent to dynamically assign tasks to specialized workers based on capabilities. Consensual process (experimental) requires agent agreement before proceeding. Choosing the right process type for the task structure significantly affects crew reliability and efficiency — sequential processes are predictable but inflexible, while hierarchical processes adapt to task complexity at the cost of additional LLM calls for orchestration.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -252,6 +252,32 @@ pip install git+https://github.com/casper-hansen/AutoAWQ.git
 <p><strong>Pre-quantised model quality</strong>: The quality of a pre-quantised model depends on the calibration data used. Models quantised with domain-specific data will perform better on that domain. Check the model card for calibration details.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>AWQ vs. GPTQ Quantization Comparison</h2>
+<p>Activation-Aware Weight Quantization (AWQ) is a post-training quantization method that identifies and preserves the weights most important for model quality based on the magnitude of corresponding activation values. By keeping only 1% of weights at full precision and quantizing the remaining 99% to 4 bits, AWQ achieves comparable quality to GPTQ with faster quantization and efficient inference support.</p>
+<table>
+<thead><tr><th>Property</th><th>AWQ</th><th>GPTQ</th><th>bitsandbytes NF4</th></tr></thead>
+<tbody>
+<tr><td>Algorithm</td><td>Activation-guided scaling</td><td>Second-order (Hessian)</td><td>NF4 per-block</td></tr>
+<tr><td>Quantization time</td><td>~30 min (7B)</td><td>~2 hours (7B)</td><td>On-the-fly</td></tr>
+<tr><td>Quality at 4-bit</td><td>Very good</td><td>Very good</td><td>Good</td></tr>
+<tr><td>Inference backend</td><td>AutoAWQ, vLLM</td><td>AutoGPTQ, ExLlama</td><td>Transformers</td></tr>
+<tr><td>Merging with LoRA</td><td>Dequantize first</td><td>Dequantize first</td><td>QLoRA native</td></tr>
+</tbody>
+</table>
+<p>AWQ's core insight is that not all weights contribute equally to model output quality, and the most salient weights are those that correspond to activations with large magnitudes. Rather than quantizing all weights with equal precision — which wastes precision bits on unimportant weights — AWQ scales these important weight channels before quantization so they map to quantization levels more faithfully. The scaling is calibrated using a small dataset of activation statistics, requiring only minutes of compute compared to GPTQ's more expensive Hessian computation.</p>
+<p>AWQ's strong support in the vLLM serving stack is a practical advantage for production deployments. vLLM can serve AWQ-quantized models directly with efficient custom CUDA kernels, achieving throughput close to FP16 inference at a fraction of the memory requirement. For organizations that use vLLM as their serving infrastructure, AWQ is often the preferred quantization format because the complete pipeline from quantization to deployment is well-documented and tested, reducing integration risk compared to less common quantization formats.</p>
+
+<p>AWQ quantization quality is relatively insensitive to the calibration dataset size above approximately 128 examples. The activation statistics used to identify important weight channels stabilize quickly as more calibration examples are processed, meaning that adding more data beyond this threshold produces diminishing quality improvements. A representative 128-example sample from the target domain produces better AWQ models than a large generic calibration set, because domain-specific activation patterns may highlight different important weight channels than general-purpose text activations.</p>
+
+<p>AWQ's efficiency advantages compound for serving workloads with many concurrent users. The smaller model footprint from 4-bit quantization allows more request batches to be processed simultaneously in the GPU's VRAM, increasing throughput even beyond the direct speedup from quantized matrix multiplication. For 70B models that would require two A100 80GB GPUs in FP16, AWQ quantization enables single-GPU serving on the same hardware, halving infrastructure costs for services that don't require the throughput of multi-GPU deployment.</p>
+
+<p>Integrating AWQ with serving frameworks requires checking model format compatibility. vLLM natively supports AWQ through the AutoAWQ quantization format, loading quantized checkpoints directly without any conversion step. TGI and SGLang also support AWQ through different backend implementations. When evaluating AWQ for a specific deployment target, verifying that the intended serving framework has production-tested AWQ support avoids last-minute compatibility issues that can delay production deployments.</p>
+
+<p>AWQ quantization artifacts — cases where specific weights are quantized poorly and produce noticeably degraded outputs on certain inputs — can be diagnosed using per-layer perplexity analysis. Computing perplexity on a validation set with each transformer layer's activations logged separately identifies which layers have the highest post-quantization perplexity increase. Layers showing large perplexity spikes are candidates for mixed-precision treatment — quantizing them to 8-bit rather than 4-bit while keeping other layers at 4-bit. This targeted mixed-precision approach recovers most of the quality loss from aggressive quantization with only a modest increase in model size.</p>
+
+<p>AWQ checkpoints are portable across devices with the same quantization configuration, simplifying deployment workflows. A model quantized on a high-memory development machine with 80GB A100 GPUs can be deployed directly on inference hardware with smaller VRAM budgets without re-quantization, as long as the serving framework supports the AWQ format. This portability eliminates the need to maintain separate quantization pipelines for development and production environments.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
