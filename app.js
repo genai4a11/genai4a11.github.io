@@ -597,6 +597,16 @@ function sp(d){
     });
     document.getElementById('ps-questions').style.display='block';
   } else document.getElementById('ps-questions').style.display='none';
+  // WHAT TO LEARN
+  if(d.learn && d.learn.length){
+    const typeIcon={paper:'📄',course:'🎓',video:'▶️',book:'📚',tool:'🔧',blog:'✍️'};
+    const ll=document.getElementById('ps-learn-pills');
+    ll.innerHTML=d.learn.map(item=>{
+      const icon=typeIcon[item.type]||'🔗';
+      return `<a href="${item.url}" target="_blank" class="ref-link learn-link">${icon} ${item.label} ↗</a>`;
+    }).join('');
+    document.getElementById('ps-learn').style.display='block';
+  } else document.getElementById('ps-learn').style.display='none';
   // CONNECTED TOPICS — cross-links
   const xl=X.filter(l=>l.s===d.id||l.t===d.id);
   if(xl.length>0){

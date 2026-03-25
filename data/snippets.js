@@ -8494,62 +8494,169 @@ print(response)
 
 # Via Ollama (→ Ollama node) — single command:
 # ollama run phi3:mini`,tip:'Phi-3 Mini (3.8B) is the model to reach for when you need on-device inference — it runs on Apple Neural Engine (Core ML), Android NPU, and Raspberry Pi 5 with acceptable latency.\n\nFor tasks where response quality matters more than size, Phi-4 (14B) often beats models 4× larger because its training data is so carefully curated — benchmark it against Mistral 7B and Llama 3.1 8B before assuming bigger is better.\n\nWeakness: multi-step reasoning chains longer than 3–4 steps degrade quickly. Use the → o3 / o4-mini node or Llama 3.1 70B for tasks requiring deep logical chaining.',questions:{leader:['Where in your product roadmap does on-device AI (no API call, no data leaving the device) unlock features that cloud-based models cannot — especially for privacy-sensitive applications?','What is the cost comparison between running Phi-3 on-device vs. the cheapest cloud API at your expected query volume?'],pm:['Which user-facing features can run acceptably on Phi-3 quality — and which genuinely need frontier model quality?','How do you validate that a small model\'s outputs meet quality thresholds across the range of real user inputs, not just benchmark problems?'],eng:['How do you export Phi-3 to ONNX or Core ML for on-device deployment on iOS/Android — and what quantization precision gives the best quality/speed tradeoff?','What is the latency of Phi-3 Mini on your target device vs. an API call with network round-trip — at what network latency does on-device win?']},refs:[{label:'[1] Phi-3 Technical Report — Microsoft Research (Abdin et al., 2024)',url:'https://arxiv.org/abs/2404.14219'},{label:'[2] transformers — HuggingFace library (requires trust_remote_code=True for Phi-3)',url:'https://huggingface.co/microsoft/Phi-3-mini-128k-instruct'},{label:'[3] Azure AI Studio — cloud API for Phi-3/Phi-4 without self-hosting',url:'https://ai.azure.com/'}]},
-qwen25:{use:'Qwen 2.5 (0.5B–72B) from Alibaba is strong in math, coding, and multilingual understanding with Apache 2.0 license and excellent MTEB embeddings.',diag:`
-  Qwen 2.5 — Alibaba's frontier open series:
+qwen25:{
+use:'Qwen 2.5 is Alibaba\'s open-weight model family[1] — from a 0.5B model that runs on a phone to a 72B model that matches GPT-4o on major benchmarks. Three specialized sub-families cover general chat (Qwen2.5), coding (Qwen2.5-Coder[2]), and mathematics (Qwen2.5-Math[3]), each trained with separate domain-heavy instruction data.\n\nThe architecture uses → GQA node for fast KV-cache reads, → RoPE node for position encoding, and SwiGLU[4] activations. Context window is 128K tokens natively, extendable to 1M tokens with YaRN[5] long-context scaling. Trained on 18 trillion tokens across 29 languages — strong Chinese/CJK support comes from a 152K-vocabulary tokenizer[6] built for logographic efficiency.\n\nApache 2.0 license means free commercial use for services under 100M monthly active users, making it a realistic cost-cutting alternative to GPT-4o API for many production workloads.\n\nKey tools: transformers[7] (local HuggingFace inference), → vLLM node (high-throughput batch serving), → Ollama node (one-command local run)',
+diag:`
+  Qwen 2.5 — Alibaba's frontier open series
 
-  Strengths: coding, math, multilingual (Chinese+)
-  ┌───────────────────────────────────────────────┐
-  │ Qwen2.5-Coder-32B: state-of-art open code    │
-  │ Qwen2.5-Math-72B:  top-tier math reasoning    │
-  │ Qwen2.5-72B: GPT-4o class, fully open         │
-  └───────────────────────────────────────────────┘
+  Sub-families (pick by task):
+  ┌─────────────────────────────────────────────────┐
+  │ Qwen2.5-72B       — GPT-4o class, general chat  │
+  │ Qwen2.5-Coder-32B — #1 open coding model [2]    │
+  │ Qwen2.5-Math-72B  — near-o1 math reasoning [3]  │
+  └─────────────────────────────────────────────────┘
 
-  Architecture: GQA, RoPE, SwiGLU
-  Context: 128K (1M with YaRN extension)
-  Training: 18T tokens, 3M instruction examples
+  Architecture:
+    Attention  : GQA (fast KV cache)
+    Positional : RoPE (rotary embeddings)
+    Activation : SwiGLU
+    Context    : 128K (1M with YaRN [5])
+    Tokenizer  : 152K vocab (CJK-optimized)
 
-  Multilingual: 29 languages supported
-  Tokenizer: 152K vocab (large for CJK efficiency)
-  License: Qwen License (permissive for <100M users)
+  Training scale:
+    18T tokens · 3M instruction examples
+    29 languages supported
 
-  Use when: strong Chinese language support needed,
-            or best open coding model required`,code:`import anthropic
+  Size range: 0.5B · 1.5B · 3B · 7B · 14B · 32B · 72B`,
+code:`from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
 
-client = anthropic.Anthropic(api_key="your_qwen_api_key")
-response = client.messages.create(
-    model="claude-3-5-sonnet-20241022",
-    max_tokens=512,
-    messages=[
-        {"role": "user", "content": "Solve: 2x^2 - 5x + 3 = 0"}
-    ]
+model_name = "Qwen/Qwen2.5-7B-Instruct"
+# Sizes: 0.5B (phone), 3B (laptop), 7B (1×GPU), 72B (2×A100)
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    device_map="auto",      # auto-shards across GPUs
+    torch_dtype=torch.bfloat16,
 )
-print(response.content[0].text)`,tip:'0.5B for on-device, 72B for SOTA math/code performance.\n\nNative support for Chinese, English, multilingual training.\n\nApache 2.0 = zero license restrictions; safe for commercial use.',refs:[{label:"Qwen 2.5",url:"concepts/qwen25.html"}]},
-gemma2:{use:'Gemma 2 (Google, 2B/9B/27B) uses interleaved local-global attention and is highly fine-tunable; great for custom instruction-following and domain-specific tasks.',diag:`
-  Gemma 2 — Google's efficient open models:
 
-  Key architectural innovations:
-  ┌──────────────────────────────────────────────┐
-  │ Alternating attention:                        │
-  │   odd layers: local (4096 token window)       │
-  │   even layers: global (full context)          │
-  │   → efficiency + quality balance              │
-  │                                              │
-  │ Logit soft-capping:                           │
-  │   tanh(logit/cap) × cap                       │
-  │   prevents attention logit explosion          │
-  │                                              │
-  │ Knowledge distillation from Gemma 2 27B       │
-  │   → smaller models trained on larger output  │
-  └──────────────────────────────────────────────┘
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user",   "content": "Solve: 2x² – 5x + 3 = 0, show all steps."}
+]
 
-  Sizes: 2B, 9B, 27B  (all Apache 2.0)
-  Best for: research, low-resource deployment`,code:`from transformers import AutoTokenizer, AutoModelForCausalLM
+# Apply chat template (handles system/user/assistant turns)
+text = tokenizer.apply_chat_template(
+    messages, tokenize=False, add_generation_prompt=True
+)
+inputs = tokenizer(text, return_tensors="pt").to(model.device)
+outputs = model.generate(**inputs, max_new_tokens=512, temperature=0.7)
 
-tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-9b")
-model = AutoModelForCausalLM.from_pretrained("google/gemma-2-9b")
-inputs = tokenizer("Explain photosynthesis", return_tensors="pt")
-outputs = model.generate(**inputs, max_length=150)
-print(tokenizer.decode(outputs[0]))`,tip:'Interleaved attention = local (8 heads) + global (2 heads) per layer.\n\nFine-tune with LoRA in ~4 hours on single 40GB GPU.\n\nSmall size (9B) makes distillation and quantization easy.',refs:[{label:"Gemma 2",url:"concepts/gemma2.html"}]},
+# Decode only the newly generated tokens
+response = tokenizer.decode(
+    outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True
+)
+print(response)
+
+# --- API option (OpenAI-compatible DashScope) ---
+# from openai import OpenAI
+# client = OpenAI(api_key="DASHSCOPE_KEY",
+#                 base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
+# resp = client.chat.completions.create(model="qwen-max", messages=messages)`,
+tip:'Match model size to hardware: 0.5B runs on a Raspberry Pi 5, 7B needs ~14 GB VRAM at bf16 (or ~6 GB with int4 quantization via bitsandbytes[8]). Qwen2.5-Coder-32B[2] outperforms GPT-4o on HumanEval — try it before paying for a frontier API. The DashScope API is OpenAI-compatible: swap base_url and model name in any existing OpenAI client, no other code changes needed.',
+questions:{
+  leader:['Qwen 2.5 is Apache 2.0 — how does that change your build-vs-buy calculus vs paying for GPT-4o API at scale?','For a Chinese-language product, does Qwen\'s native CJK tokenizer justify the operational complexity of self-hosting?'],
+  pm:['Which Qwen 2.5 sub-model (general / Coder / Math) maps best to your highest-value use case?','How does the 100M-MAU clause in the Qwen license affect commercialization if you scale to a large consumer product?'],
+  eng:['How do you benchmark Qwen2.5-7B vs GPT-4o-mini on your actual task distribution — latency, accuracy, and cost per token?','What quantization level (bf16 / int8 / int4) gives acceptable quality degradation on your hardware budget?','How do you handle tokenizer mismatch when mixing Qwen with other models in a multi-model pipeline?']
+},
+learn:[
+  {type:'paper',label:'Qwen2.5 Technical Report — Qwen Team, Alibaba (2025)',url:'https://arxiv.org/abs/2412.15115'},
+  {type:'paper',label:'Qwen2.5-Coder Technical Report — specialized coding model',url:'https://arxiv.org/abs/2409.12186'},
+  {type:'paper',label:'YaRN: Efficient Context Window Extension of Large Language Models',url:'https://arxiv.org/abs/2309.00071'},
+  {type:'tool',label:'Qwen2.5 model collection on HuggingFace Hub',url:'https://huggingface.co/Qwen'},
+  {type:'course',label:'HuggingFace LLM Course — inference, fine-tuning, deployment',url:'https://huggingface.co/learn/llm-course/chapter1/1'}
+],
+refs:[
+  {label:'[1] Qwen2.5 Technical Report — Qwen Team, Alibaba (2025)',url:'https://arxiv.org/abs/2412.15115'},
+  {label:'[2] Qwen2.5-Coder — state-of-the-art open-source code model',url:'https://arxiv.org/abs/2409.12186'},
+  {label:'[3] Qwen2.5-Math — near-o1 level math reasoning, MATH500 results',url:'https://arxiv.org/abs/2409.12122'},
+  {label:'[4] SwiGLU activation function — Noam Shazeer (2020)',url:'https://arxiv.org/abs/2002.05202'},
+  {label:'[5] YaRN: Efficient Context Window Extension (Peng et al., 2023)',url:'https://arxiv.org/abs/2309.00071'},
+  {label:'[6] BPE tokenization for subword units (Sennrich et al., 2016)',url:'https://arxiv.org/abs/1508.07909'},
+  {label:'[7] transformers — HuggingFace library documentation',url:'https://huggingface.co/docs/transformers'},
+  {label:'[8] bitsandbytes — quantization (int4/int8) for LLMs',url:'https://github.com/TimDettmers/bitsandbytes'}
+]},
+gemma2:{
+use:'Gemma 2 is Google\'s compact open-weight family[1] (2B / 9B / 27B) designed to outperform models twice their size through two architectural innovations.\n\nFirst, alternating local-global attention[2]: odd layers use a sliding window (4096-token local view) for efficiency; even layers use full global attention for long-range understanding. This halves memory pressure vs pure global attention on long sequences. Second, the 2B and 9B models are trained via knowledge distillation[3] from the 27B model — smaller models learn to mimic their teacher\'s output distributions, not just raw training data.\n\nLogit soft-capping (tanh(logit/cap)×cap) stabilizes training by preventing attention score explosions, a technique shared with → Gemini 1.5 node. All three sizes are Apache 2.0 licensed — no usage restrictions, free for commercial deployment.\n\nKey tools: transformers[4] (HuggingFace inference), → LoRA node (fine-tune in 4 hrs on 1 GPU), → vLLM node (high-throughput serving), → Ollama node (one-command local run)',
+diag:`
+  Gemma 2 — alternating attention architecture
+
+  Layer stack (odd = local, even = global):
+  ┌────────────────────────────────────────────────┐
+  │ Layer N+1 (even) — Global attention            │
+  │   attends to full sequence context             │
+  ├────────────────────────────────────────────────┤
+  │ Layer N   (odd)  — Local sliding window        │
+  │   attends to ±4096 token neighborhood only     │
+  └────────────────────────────────────────────────┘
+  → every other layer = 2× memory saving vs full attn
+
+  Logit soft-capping:
+    raw_logit → tanh(raw / cap) × cap
+    keeps attention scores bounded, training stable
+
+  Knowledge distillation [3]:
+    2B/9B trained on 27B teacher outputs
+    → smaller model learns richer signal
+
+  Sizes:  2B (4 GB VRAM) · 9B (18 GB) · 27B (54 GB)
+  Vocab:  256K tokens (strong multilingual coverage)
+  License: Apache 2.0`,
+code:`from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+
+# Use -it (instruction-tuned) for chat; base model for custom fine-tuning
+model_name = "google/gemma-2-9b-it"   # also: 2b-it, 27b-it
+
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    device_map="auto",
+    torch_dtype=torch.bfloat16,
+)
+
+messages = [
+    {"role": "user", "content": "Explain knowledge distillation in 3 sentences."}
+]
+text = tokenizer.apply_chat_template(
+    messages, tokenize=False, add_generation_prompt=True
+)
+inputs = tokenizer(text, return_tensors="pt").to(model.device)
+outputs = model.generate(**inputs, max_new_tokens=256, temperature=0.7, do_sample=True)
+
+# Decode only newly generated tokens
+response = tokenizer.decode(
+    outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True
+)
+print(response)
+
+# Fine-tune with LoRA on a single 40 GB GPU:
+# pip install peft
+# from peft import get_peft_model, LoraConfig
+# config = LoraConfig(r=16, lora_alpha=32, target_modules=["q_proj","v_proj"])
+# model = get_peft_model(model, config)`,
+tip:'Always start fine-tuning from the -it (instruction-tuned) variant, not the base model — it already knows the user/model turn format so your fine-tuning data trains the content, not the format. Gemma 2\'s 256K vocabulary[5] is twice Llama 3\'s 128K, which boosts multilingual tokenization efficiency but increases embedding table size — important for memory budgets at 2B scale. For 27B, use 4-bit quantization via bitsandbytes[6] to fit on a single 80 GB GPU.',
+questions:{
+  leader:['Gemma 2 is Apache 2.0 with no usage restrictions — what is your internal approval process for deploying open-weight models vs a managed API?','How do you weigh the total cost of self-hosting a 9B model (infra + MLOps) against API costs at your expected query volume?'],
+  pm:['Which product features become practical when you can fine-tune a capable small model on proprietary data without vendor lock-in?','How do you communicate to stakeholders that a 9B open model can outperform GPT-3.5 on a specific task after targeted fine-tuning?'],
+  eng:['How do you choose between 2B, 9B, and 27B — what evaluation harness do you use on your specific task distribution?','What LoRA rank and learning rate schedule gives best quality on instruction-following fine-tuning without catastrophic forgetting?','How does alternating attention affect KV cache size per layer compared to a standard full-attention model of the same depth?']
+},
+learn:[
+  {type:'paper',label:'Gemma 2: Improving Open Language Models at a Practical Size (Google, 2024)',url:'https://arxiv.org/abs/2408.00118'},
+  {type:'paper',label:'Knowledge Distillation: A Survey (Gou et al., 2021)',url:'https://arxiv.org/abs/2006.05525'},
+  {type:'course',label:'HuggingFace PEFT: Fine-tuning with LoRA and QLoRA (hands-on guide)',url:'https://huggingface.co/blog/peft'},
+  {type:'tool',label:'Gemma 2 models on HuggingFace Hub',url:'https://huggingface.co/collections/google/gemma-2-release-667d6600fd5220e7b967f315'},
+  {type:'paper',label:'Longformer: local + global attention for long documents (Beltagy et al., 2020)',url:'https://arxiv.org/abs/2004.05150'}
+],
+refs:[
+  {label:'[1] Gemma 2: Improving Open Language Models at a Practical Size (Google, 2024)',url:'https://arxiv.org/abs/2408.00118'},
+  {label:'[2] Longformer: sliding window local attention (Beltagy et al., 2020)',url:'https://arxiv.org/abs/2004.05150'},
+  {label:'[3] Knowledge Distillation survey (Gou et al., 2021)',url:'https://arxiv.org/abs/2006.05525'},
+  {label:'[4] transformers — HuggingFace library documentation',url:'https://huggingface.co/docs/transformers'},
+  {label:'[5] SentencePiece: large-vocabulary subword tokenization',url:'https://arxiv.org/abs/1808.06226'},
+  {label:'[6] bitsandbytes — quantization (int4/int8) for LLMs',url:'https://github.com/TimDettmers/bitsandbytes'}
+]},
 deepseek:{use:'DeepSeek R1 is an open-source reasoning model competitive with o1, MIT-licensed, trained with chain-of-thought; strong for logic, math, and code.',diag:`
   DeepSeek R1 — reasoning model, open weights:
 
