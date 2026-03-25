@@ -7576,45 +7576,57 @@ args = TrainingArguments(
     bf16=True,
 )
 # Then: trainer = Trainer(model, args, ...) — no other changes`,tip:'ZeRO-2 is the sweet spot for most multi-GPU training: 4-8x memory saving with minimal communication overhead. ZeRO-3 enables truly massive models but adds allgather latency on every forward pass — profile before committing. ZeRO-Offload makes 10B+ models trainable on a single GPU by moving optimizer state to CPU RAM, at ~30% speed cost.',refs:[{label:"DeepSpeed",url:"concepts/deepspeed.html"}]},
-dropout:{use:'Dropout randomly zeros neurons during training as regularization—less critical in modern LLMs due to other stabilization techniques.',diag:`
-  Dropout mechanism:
-
-  Training (p=0.5 dropout):
-  Input:  [0.8, 0.3, 0.9, 0.5, 0.7]
-  Mask:   [  1,   0,   1,   0,   1]  (random)
-  Output: [1.6, 0.0, 1.8, 0.0, 1.4]  (÷(1-p) = ×2)
+dropout:{use:'Dropout randomly zeros a fraction of activations during training, forcing the network to learn redundant, distributed representations. At inference it is disabled. Overfit on small data? Dropout is often the first regularizer to reach for.',diag:`  Training (p=0.3 dropout):
+  Input:  [0.8,  0.3,  0.9,  0.5,  0.7,  0.2]
+  Mask:   [  1,    0,    1,    0,    1,    1 ]  ← random
+  Scale:  [1.14, 0.0, 1.29, 0.0, 1.0, 0.29]   ← div by (1-p)
+  (inverted dropout: keeps expected value the same)
 
   Inference:
-  Input:  [0.8, 0.3, 0.9, 0.5, 0.7]
-  Output: [0.8, 0.3, 0.9, 0.5, 0.7]  (no dropout)
+  Input:  [0.8,  0.3,  0.9,  0.5,  0.7,  0.2]  ← no change
 
-  Effect: forces network to learn redundant representations
-          → each neuron can't rely on any other specific neuron
-          → ensemble of 2^N sub-networks
+  Effect: trains ensemble of 2^N sub-networks
+  Each neuron must work without relying on any other
 
-  Typical: p=0.1 for transformers (low dropout)
-           p=0.5 for fully-connected classification layers`,code:`import torch
+  Placement in transformers:
+  After attention weights  (attn_dropout)
+  After FFN activation     (ffn_dropout)
+  On token embeddings      (embed_dropout)`,code:`import torch
 import torch.nn as nn
-# Dropout in a small network
-model = nn.Sequential(
-    nn.Linear(256, 128),
-    nn.ReLU(),
-    nn.Dropout(p=0.5),  # drop 50% of activations
-    nn.Linear(128, 64),
-    nn.ReLU(),
-    nn.Dropout(p=0.5),
-    nn.Linear(64, 10)
-)
-x = torch.randn(32, 256)
-# Training: dropout is active
-model.train()
-y_train = model(x)
-print(f'Training output (with dropout): {y_train.shape}')
-# Inference: dropout is disabled
-model.eval()
-with torch.no_grad():
-    y_eval = model(x)
-print(f'Inference output (no dropout): {y_eval.shape}')`,tip:'Dropout prevents co-adaptation of neurons; set \`model.eval()\` for inference.\n\nModern LLMs use less dropout than older architectures—LayerNorm and large batch sizes provide regularization.\n\nDrop rate typically 0.1-0.5; start low and increase if overfitting is severe.',refs:[{label:'Dropout paper',url:'https://arxiv.org/abs/1207.0580'},{label:'PyTorch Dropout',url:'https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html'},{label:'Regularization in deep learning',url:'https://cs231n.github.io/neural-networks-2/#reg'}]},
+
+# Basic dropout layer
+dropout = nn.Dropout(p=0.3)
+
+x = torch.ones(2, 6)
+print("train mode:", dropout(x))   # ~30% zeros, rest scaled by 1/(1-0.3)
+
+dropout.eval()
+print("eval mode: ", dropout(x))   # all ones — no dropout at inference
+
+# In a transformer block
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model, nhead, dropout=0.1):
+        super().__init__()
+        self.attn   = nn.MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=True)
+        self.ffn    = nn.Sequential(
+            nn.Linear(d_model, d_model * 4),
+            nn.GELU(),
+            nn.Dropout(dropout),          # after FFN activation
+            nn.Linear(d_model * 4, d_model),
+        )
+        self.norm1  = nn.LayerNorm(d_model)
+        self.norm2  = nn.LayerNorm(d_model)
+        self.drop   = nn.Dropout(dropout) # after attention output
+
+    def forward(self, x):
+        a, _ = self.attn(x, x, x)
+        x = self.norm1(x + self.drop(a))
+        return self.norm2(x + self.ffn(x))
+
+block = TransformerBlock(256, 8, dropout=0.1)
+block.train()
+out = block(torch.randn(2, 16, 256))
+print("output shape:", out.shape)`,tip:'Use p=0.1 for transformers — higher values degrade quality. p=0.3-0.5 works for fully-connected classifiers. Always call model.eval() at inference to disable dropout; forgetting this causes non-deterministic predictions that are consistently worse than training accuracy. Dropout is less useful when you have large datasets — weight decay or early stopping is often more effective.',refs:[{label:"Dropout",url:"concepts/dropout.html"}]},
 weight_decay:{use:'Weight decay (L2 regularization) via AdamW prevents overfitting in fine-tuning by penalizing large weights.',diag:`
   Weight decay (L2 regularization):
 
