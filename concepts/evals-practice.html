@@ -533,6 +533,65 @@ Online evals (A/B test, 5% traffic):
 <tr><td>Online A/B</td><td>Slow</td><td>High</td><td>Highest</td><td>Real users</td></tr>
 </tbody>
 </table>
+
+<div class="example-box">
+<div class="example-label">Python · Eval funnel: offline → shadow → live with metrics dashboard</div>
+<pre><code class="language-python">import json, statistics, time
+from openai import OpenAI
+from enum import Enum
+
+client = OpenAI()
+
+class EvalStage(Enum):
+    OFFLINE = "offline"   # run against golden set before deploy
+    SHADOW  = "shadow"    # run new model in parallel, compare to prod
+    LIVE    = "live"      # sample % of live traffic for quality check
+
+def offline_eval(golden_path: str, model: str) -> dict:
+    """Stage 1: evaluate against frozen golden set."""
+    golden = [json.loads(l) for l in open(golden_path)]
+    scores = []
+    for item in golden:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": item["input"]}],
+            temperature=0.0
+        ).choices[0].message.content
+        # Exact-match or LLM-judge scoring
+        score = 1.0 if item["expected"].lower() in resp.lower() else 0.0
+        scores.append(score)
+    return {"stage": "offline", "n": len(golden),
+            "accuracy": round(statistics.mean(scores), 3),
+            "passed": statistics.mean(scores) >= 0.80}
+
+def shadow_eval(requests: list[dict], prod_model: str, new_model: str) -> dict:
+    """Stage 2: run both models, flag where new model differs significantly."""
+    diffs = []
+    for req in requests[:100]:  # sample first 100
+        prod_resp = client.chat.completions.create(
+            model=prod_model,
+            messages=[{"role": "user", "content": req["input"]}]
+        ).choices[0].message.content
+        new_resp = client.chat.completions.create(
+            model=new_model,
+            messages=[{"role": "user", "content": req["input"]}]
+        ).choices[0].message.content
+        # Simple diff: check response length ratio
+        ratio = len(new_resp) / max(len(prod_resp), 1)
+        if ratio < 0.5 or ratio > 2.0:
+            diffs.append({"input": req["input"], "ratio": ratio})
+    return {"stage": "shadow", "n": len(requests[:100]),
+            "significant_diffs": len(diffs), "diff_rate": len(diffs)/100}
+
+# Usage
+result = offline_eval("golden_set.jsonl", "gpt-4o")
+if result["passed"]:
+    print(f"Offline eval PASSED ({result['accuracy']:.0%})")
+else:
+    raise SystemExit(f"Offline eval FAILED ({result['accuracy']:.0%})")
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 3. METRICS FOR GENERATION QUALITY ── -->

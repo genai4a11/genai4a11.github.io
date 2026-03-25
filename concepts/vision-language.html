@@ -639,6 +639,71 @@ print(estimate_image_tokens(4000, 3000))  # ~1360 tokens</div>
 <li>VLM reasons over progression</li>
 <li>Gemini handles video natively</li>
 </ul>
+
+<div class="example-box">
+<div class="example-label">Python · VLM pipeline: image captioning + structured data extraction</div>
+<pre><code class="language-python">import base64
+from pathlib import Path
+from pydantic import BaseModel
+from openai import OpenAI
+
+client = OpenAI()
+
+def encode_image(path: str) -> str:
+    """Encode image file to base64 for API submission."""
+    return base64.b64encode(Path(path).read_bytes()).decode()
+
+def caption_image(image_path: str) -> str:
+    """Generate a detailed caption for an image."""
+    b64 = encode_image(image_path)
+    return client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image_url",
+                 "image_url": {"url": f"data:image/jpeg;base64,{b64}",
+                               "detail": "high"}},  # "low" = faster, cheaper
+                {"type": "text",
+                 "text": "Describe this image in detail. Include objects, text, colors, and layout."}
+            ]
+        }],
+        max_tokens=512
+    ).choices[0].message.content
+
+class DocumentData(BaseModel):
+    title: str
+    date: str | None
+    key_figures: list[str]
+    summary: str
+
+def extract_document_data(image_path: str) -> DocumentData:
+    """Extract structured data from a document image."""
+    b64 = encode_image(image_path)
+    result = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image_url",
+                 "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+                {"type": "text",
+                 "text": "Extract structured data from this document."}
+            ]
+        }],
+        response_format=DocumentData,
+        temperature=0.0
+    )
+    return result.choices[0].message.parsed
+
+# Usage
+caption = caption_image("chart.jpg")
+print(f"Caption: {caption[:100]}")
+doc = extract_document_data("invoice.jpg")
+print(f"Title: {doc.title}, Date: {doc.date}")
+</code></pre>
+</div>
+
 </div>
 </div>
 </div>

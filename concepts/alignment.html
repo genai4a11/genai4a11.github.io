@@ -597,6 +597,54 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>When to use DPO:</strong> You have preference data, limited compute, and want to align quickly. Quality is ~95% of RLHF with significantly lower complexity.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Direct Preference Optimization (DPO) training with TRL</div>
+<pre><code class="language-python">from datasets import Dataset
+from trl import DPOConfig, DPOTrainer
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_id = "mistralai/Mistral-7B-Instruct-v0.2"
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+# Load base model + reference model (frozen copy for KL penalty)
+model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto")
+
+# DPO dataset format: {prompt, chosen, rejected}
+# 'chosen' = preferred response, 'rejected' = rejected response
+dpo_data = [
+    {
+        "prompt": "Explain gradient descent.",
+        "chosen": "Gradient descent is an optimization algorithm that iteratively moves parameters in the direction that reduces loss...",
+        "rejected": "It's just math stuff that makes AI learn."
+    },
+    # ... more preference pairs
+]
+dataset = Dataset.from_list(dpo_data)
+
+config = DPOConfig(
+    output_dir="./dpo-model",
+    num_train_epochs=3,
+    per_device_train_batch_size=2,
+    learning_rate=5e-7,       # lower than SFT — fine-grained preference tuning
+    beta=0.1,                 # KL penalty coefficient — higher = stay closer to ref model
+    loss_type="sigmoid",      # DPO loss variant
+    max_length=512,
+    fp16=True,
+)
+
+trainer = DPOTrainer(
+    model=model,
+    ref_model=None,  # TRL automatically creates frozen reference copy
+    args=config,
+    train_dataset=dataset,
+    tokenizer=tokenizer,
+)
+trainer.train()
+trainer.save_model("./dpo-model-final")
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 5. CONSTITUTIONAL AI ── -->
@@ -616,6 +664,60 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>CAI works best for stylistic and behavioral alignment.</strong> For factual correctness or domain-specific knowledge, human feedback is still necessary. You can't critique what you don't know.</span>
+
+<div class="example-box">
+<div class="example-label">Python · RLAIF: use LLM to generate preference labels (no human annotators)</div>
+<pre><code class="language-python">from openai import OpenAI
+from pydantic import BaseModel
+
+client = OpenAI()
+
+class PreferenceJudgment(BaseModel):
+    preferred: str  # "A" or "B"
+    reasoning: str
+    confidence: float  # 0.0-1.0
+
+JUDGE_SYSTEM = """You are an expert AI alignment judge. Given a question and two responses,
+determine which response is: more helpful, more accurate, safer, and better aligned with
+human values. Be consistent and objective."""
+
+def generate_preference_label(
+    prompt: str, response_a: str, response_b: str
+) -> PreferenceJudgment:
+    """Constitutional AI / RLAIF: use LLM judge to label preferences."""
+    user = f"""Question: {prompt}
+
+Response A:
+{response_a}
+
+Response B:
+{response_b}
+
+Which response is better? Reply with your preference (A or B), reasoning, and confidence."""
+
+    result = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": JUDGE_SYSTEM},
+            {"role": "user", "content": user}
+        ],
+        response_format=PreferenceJudgment,
+        temperature=0.0
+    )
+    return result.choices[0].message.parsed
+
+def build_dpo_dataset(prompts: list[str], model_responses: list[tuple]) -> list[dict]:
+    """Build DPO training data using RLAIF labels."""
+    dataset = []
+    for prompt, (resp_a, resp_b) in zip(prompts, model_responses):
+        judgment = generate_preference_label(prompt, resp_a, resp_b)
+        chosen, rejected = (resp_a, resp_b) if judgment.preferred == "A" else (resp_b, resp_a)
+        if judgment.confidence >= 0.7:  # only use high-confidence labels
+            dataset.append({"prompt": prompt, "chosen": chosen, "rejected": rejected})
+    return dataset
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 6. METHOD COMPARISON ── -->
@@ -674,6 +776,23 @@ Compute cost: 3–4× SFT       Compute cost: ~1–1.5× SFT</div>
 <p>RLHF achieves the highest quality but at high cost. DPO gets 90–95% of RLHF quality at half the compute. Constitutional AI sacrifices quality for annotation savings. Most teams should start with SFT + DPO, only moving to RLHF if quality plateaus and budget is available.</p>
 </div>
 <!-- ── REFERENCES ── -->
+
+<div class="section-block" id="practical-alignment">
+<div class="section-marker">06 — Practice</div>
+<h2>Practical Alignment: When to Use Each Method</h2>
+<p>Choosing between SFT, RLHF, and DPO depends on your resources and goals. SFT alone gets you 70-80% of the way for most applications and requires only a curated dataset. DPO is a significant improvement with modest additional complexity — it only needs preference pairs, no reward model. Full RLHF with PPO is expensive and brittle but can push quality further for high-stakes applications.</p>
+<p>A practical guideline: start with SFT on high-quality domain data, evaluate if the model meets your bar, then add DPO with human preference data if not. Only attempt PPO-based RLHF if you have an ML team with reinforcement learning experience and budget for RM training. Constitutional AI / RLAIF is a middle path — use an existing aligned LLM to generate preference labels, bypassing human annotation cost.</p>
+<table>
+<thead><tr><th>Method</th><th>Data Required</th><th>Compute</th><th>Quality Gain</th><th>When to Use</th></tr></thead>
+<tbody>
+<tr><td>SFT</td><td>Curated examples</td><td>Low</td><td>Good baseline</td><td>Always — first step</td></tr>
+<tr><td>DPO</td><td>Preference pairs</td><td>Low-Medium</td><td>+10–20%</td><td>After SFT, before RLHF</td></tr>
+<tr><td>PPO/RLHF</td><td>RM training data</td><td>High</td><td>+15–30%</td><td>High-stakes, large budgets</td></tr>
+<tr><td>RLAIF / CAI</td><td>LLM-generated feedback</td><td>Medium</td><td>+10–25%</td><td>No human annotation budget</td></tr>
+</tbody>
+</table>
+</div>
+
 <div class="section-block" id="references">
 <div class="section-marker">07 — Further Reading</div>
 <h2>References</h2>

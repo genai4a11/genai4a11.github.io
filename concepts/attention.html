@@ -494,6 +494,79 @@
 </ol>
 </div>
 <!-- ── 1. WHAT ALIGNMENT MEANS ── -->
+<div class="section-block" id="attention-mechanism">
+<div class="section-marker">00 — Core</div>
+<h2>How Attention Works</h2>
+<p>Attention is the mechanism that lets a transformer weigh how much each token should influence every other token. The core operation: for each token, compute a <strong>query</strong> vector, then dot it against every other token's <strong>key</strong> vector to get an attention score. Scale by √d_k to prevent vanishing gradients, apply softmax to get a probability distribution, then use those weights to sum the <strong>value</strong> vectors. The result is a context-aware representation of each token.</p>
+<p>Modern LLMs use <strong>Multi-Head Attention (MHA)</strong>: run h independent attention heads in parallel, each learning different relationship patterns (syntactic, semantic, positional), then concatenate. Variants like <strong>Grouped Query Attention (GQA)</strong> and <strong>Multi-Query Attention (MQA)</strong> reduce the KV cache by sharing key/value heads across multiple query heads.</p>
+<div class="example-box">
+<div class="example-label">Python · Scaled dot-product attention from scratch in PyTorch</div>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, d_model: int, n_heads: int, dropout: float = 0.0):
+        super().__init__()
+        assert d_model % n_heads == 0
+        self.d_k = d_model // n_heads
+        self.n_heads = n_heads
+        # Single projection matrix for efficiency: Q, K, V concatenated
+        self.qkv_proj = nn.Linear(d_model, 3 * d_model, bias=False)
+        self.out_proj  = nn.Linear(d_model, d_model, bias=False)
+        self.dropout   = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor,
+                mask: torch.Tensor = None) -> torch.Tensor:
+        B, T, C = x.shape  # batch, seq_len, d_model
+
+        # Project to Q, K, V
+        qkv = self.qkv_proj(x)                    # (B, T, 3*C)
+        Q, K, V = qkv.split(C, dim=-1)            # each: (B, T, C)
+
+        # Reshape for multi-head: (B, n_heads, T, d_k)
+        def split_heads(t):
+            return t.reshape(B, T, self.n_heads, self.d_k).transpose(1, 2)
+        Q, K, V = split_heads(Q), split_heads(K), split_heads(V)
+
+        # Scaled dot-product attention
+        scores = Q @ K.transpose(-2, -1) / math.sqrt(self.d_k)
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+        weights = F.softmax(scores, dim=-1)
+        weights = self.dropout(weights)
+
+        # Weighted sum of values
+        out = weights @ V                          # (B, n_heads, T, d_k)
+        out = out.transpose(1, 2).reshape(B, T, C) # (B, T, C)
+        return self.out_proj(out)
+
+# Test
+attn = MultiHeadAttention(d_model=512, n_heads=8)
+x = torch.randn(2, 16, 512)   # batch=2, seq_len=16
+out = attn(x)
+print(f"Input: {x.shape} → Output: {out.shape}")  # same shape
+</code></pre>
+</div>
+</div>
+
+<div class="section-block" id="attention-variants">
+<div class="section-marker">00b — Variants</div>
+<h2>Attention Variants: MHA, MQA, GQA, Flash</h2>
+<p>The original Multi-Head Attention (MHA) stores a separate K and V matrix per head, which grows the KV cache linearly with the number of heads. Two efficient variants address this: <strong>Multi-Query Attention (MQA)</strong> uses a single shared K/V across all heads, drastically reducing cache size. <strong>Grouped Query Attention (GQA)</strong> — used in Llama 3, Mistral, and Gemma — is a middle ground: groups of query heads share a single K/V pair.</p>
+<p><strong>FlashAttention</strong> is an algorithmic optimization (not an architectural change) that rewrites the attention computation to be IO-aware — tiling the operation to fit in fast SRAM rather than repeatedly reading from HBM. FlashAttention 2 achieves ~2× the speed of standard attention on modern GPUs without changing the mathematical result. Most production LLM frameworks (vLLM, TGI) use FlashAttention by default.</p>
+<table>
+<thead><tr><th>Variant</th><th>KV Heads</th><th>KV Cache Size</th><th>Quality vs MHA</th><th>Used In</th></tr></thead>
+<tbody>
+<tr><td>MHA</td><td>= num_heads</td><td>Baseline</td><td>Baseline</td><td>GPT-2, BERT</td></tr>
+<tr><td>MQA</td><td>1 (shared)</td><td>num_heads× smaller</td><td>Slight drop</td><td>PaLM, Falcon</td></tr>
+<tr><td>GQA</td><td>n_groups (e.g. 8)</td><td>8× smaller vs MHA</td><td>Near-MHA</td><td>Llama 3, Mistral, Gemma 2</td></tr>
+<tr><td>FlashAttention</td><td>N/A (IO rewrite)</td><td>Same as base</td><td>Identical</td><td>All modern serving</td></tr>
+</tbody>
+</table>
+</div>
+
 <div class="section-block" id="what-alignment">
 <div class="section-marker">01 — Definition</div>
 <h2>What Alignment Means</h2>

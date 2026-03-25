@@ -581,6 +581,53 @@ for batch in train_loader:
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>LoRA is portable:</strong> A LoRA checkpoint is only 10–50MB. Stack multiple LoRAs in inference for composability. Easier to distribute and version than full fine-tunes.</span>
+
+<div class="example-box">
+<div class="example-label">Python · ControlNet for layout-guided image generation</div>
+<pre><code class="language-python">from diffusers import StableDiffusionControlNetPipeline, ControlNetModel
+from diffusers import UniPCMultistepScheduler
+import torch
+from PIL import Image
+import numpy as np
+
+def generate_with_canny_control(
+    prompt: str,
+    control_image: Image.Image,  # edge-detected source image
+    strength: float = 0.8
+) -> Image.Image:
+    """Generate image guided by edge map using ControlNet."""
+    # Load ControlNet (Canny edge conditioning)
+    controlnet = ControlNetModel.from_pretrained(
+        "lllyasviel/sd-controlnet-canny",
+        torch_dtype=torch.float16
+    )
+    pipe = StableDiffusionControlNetPipeline.from_pretrained(
+        "runwayml/stable-diffusion-v1-5",
+        controlnet=controlnet,
+        torch_dtype=torch.float16,
+        safety_checker=None
+    ).to("cuda")
+    pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+    pipe.enable_model_cpu_offload()  # save VRAM
+
+    result = pipe(
+        prompt=prompt,
+        image=control_image,
+        num_inference_steps=30,
+        guidance_scale=7.5,
+        controlnet_conditioning_scale=strength
+    ).images[0]
+    return result
+
+# Typical use case: maintain object layout while changing style
+# control_image = canny_edge_detect(source_photo)
+# output = generate_with_canny_control(
+#     "A Van Gogh painting of a city street, starry night style",
+#     control_image=control_image
+# )
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 5. QUALITY METRICS ── -->
@@ -652,6 +699,60 @@ for batch in train_loader:
 </div>
 </div>
 <!-- ── REFERENCES ── -->
+
+<div class="section-block" id="api-usage">
+<div class="section-marker">07 — Practice</div>
+<h2>Practical API Usage &amp; Prompt Engineering</h2>
+<p>Getting good results from text-to-image models requires understanding how prompt structure affects output. Effective image prompts describe subject, style, lighting, composition, and quality modifiers explicitly. Negative prompts (in models that support them) specify what to exclude — "blurry, low resolution, distorted faces" — and often improve quality as much as the positive prompt itself.</p>
+<p>For production use cases, the key choices are: model (quality vs cost vs speed), resolution (512×512 for drafts, 1024×1024 for finals), steps (20–30 usually sufficient), guidance scale (7–12 for prompt adherence), and seed (fix for reproducibility). Always generate multiple candidates and filter — a rejection rate of 50–70% for final production use is normal.</p>
+<div class="example-box">
+<div class="example-label">Python · DALL-E 3 and Stable Diffusion pipeline comparison</div>
+<pre><code class="language-python">import requests, base64
+from openai import OpenAI
+from pathlib import Path
+
+client = OpenAI()
+
+def dalle3_generate(prompt: str, size: str = "1024x1024",
+                    quality: str = "standard") -> str:
+    """Generate image with DALL-E 3, return URL."""
+    response = client.images.generate(
+        model="dall-e-3",
+        prompt=prompt,
+        size=size,
+        quality=quality,  # "standard" or "hd"
+        n=1
+    )
+    return response.data[0].url
+
+def stable_diffusion_generate(prompt: str, negative_prompt: str = "",
+                               steps: int = 30, guidance: float = 7.5) -> bytes:
+    """Generate with local SD via diffusers."""
+    from diffusers import StableDiffusionPipeline
+    import torch
+    pipe = StableDiffusionPipeline.from_pretrained(
+        "stabilityai/stable-diffusion-2-1",
+        torch_dtype=torch.float16
+    ).to("cuda")
+    image = pipe(
+        prompt=prompt,
+        negative_prompt=negative_prompt or "blurry, low quality, distorted",
+        num_inference_steps=steps,
+        guidance_scale=guidance,
+        width=1024, height=1024
+    ).images[0]
+    return image
+
+# DALL-E 3: best quality, simple API, higher cost
+url = dalle3_generate(
+    "A photorealistic 3D render of a neural network as a glowing blue web, "
+    "dark background, dramatic lighting, 8K, hyperdetailed"
+)
+print(f"DALL-E 3 URL: {url}")
+</code></pre>
+</div>
+</div>
+
 <div class="section-block" id="references">
 <div class="section-marker">07 — Further Reading</div>
 <h2>References</h2>

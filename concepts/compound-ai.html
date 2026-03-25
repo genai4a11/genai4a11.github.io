@@ -592,6 +592,58 @@ print(result.answer)
 <li>Balance across multiple replicas</li>
 <li>Maximize throughput</li>
 </ul>
+
+<div class="example-box">
+<div class="example-label">Python · DSPy: declarative compound AI system with self-optimization</div>
+<pre><code class="language-python">import dspy
+
+# Configure LLM backend
+lm = dspy.LM("openai/gpt-4o-mini", max_tokens=1024)
+dspy.configure(lm=lm)
+
+# Define signatures (input/output contracts)
+class Summarize(dspy.Signature):
+    """Summarize a long document into key points."""
+    document: str = dspy.InputField()
+    summary: str = dspy.OutputField(desc="3-5 bullet points")
+
+class AnswerFromContext(dspy.Signature):
+    """Answer a question using only the provided context."""
+    context: str = dspy.InputField()
+    question: str = dspy.InputField()
+    answer: str = dspy.OutputField()
+    confidence: float = dspy.OutputField(desc="0.0-1.0")
+
+# Build a compound pipeline using modules
+class RAGPipeline(dspy.Module):
+    def __init__(self, retriever):
+        self.retriever = retriever
+        self.summarize = dspy.ChainOfThought(Summarize)
+        self.answer    = dspy.ChainOfThought(AnswerFromContext)
+
+    def forward(self, question: str) -> dspy.Prediction:
+        # Retrieve relevant docs
+        docs = self.retriever(question)
+        context = "
+
+".join(docs)
+
+        # Summarize context first (reduces noise)
+        summary = self.summarize(document=context).summary
+
+        # Answer from summarized context
+        return self.answer(context=summary, question=question)
+
+# DSPy optimizes prompts automatically given a training set
+# optimizer = dspy.BootstrapFewShot(metric=answer_exact_match)
+# optimized_rag = optimizer.compile(RAGPipeline(retriever), trainset=train_data)
+
+# Run pipeline
+# prediction = optimized_rag("What is the capital of France?")
+# print(f"Answer: {prediction.answer} ({prediction.confidence:.0%})")
+</code></pre>
+</div>
+
 </div>
 </div>
 <h3>Router Example</h3>

@@ -619,6 +619,70 @@ loss = -E[advantage_i * log π(r_i | p)]    <div class="table-wrap">
 <div class="tool-category">Framework</div>
 <div class="tool-name">SGLang</div>
 <div class="tool-desc">Structured generation framework. Supports tree search APIs and reasoning workflows.</div>
+
+<div class="example-box">
+<div class="example-label">Python · Chain-of-thought prompting with structured reasoning traces</div>
+<pre><code class="language-python">from openai import OpenAI
+from pydantic import BaseModel
+
+client = OpenAI()
+
+class ReasoningTrace(BaseModel):
+    thinking: str
+    answer: str
+    confidence: float
+
+COT_SYSTEM = """You are a careful reasoner. For every question:
+1. Think step-by-step in the 'thinking' field
+2. Only then give your final 'answer'  
+3. Rate your 'confidence' from 0.0 to 1.0
+
+Show your work explicitly — do not skip steps."""
+
+def cot_solve(problem: str) -> ReasoningTrace:
+    result = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": COT_SYSTEM},
+            {"role": "user", "content": problem}
+        ],
+        response_format=ReasoningTrace,
+        temperature=0.0
+    )
+    return result.choices[0].message.parsed
+
+# Example: multi-step math problem
+trace = cot_solve(
+    "A train leaves city A at 60mph. Another leaves city B "
+    "(300 miles away) at 40mph heading toward A. When do they meet?"
+)
+print(f"Thinking: {trace.thinking[:200]}")
+print(f"Answer: {trace.answer}")
+print(f"Confidence: {trace.confidence:.0%}")
+
+# Process Reward Model pattern: score each reasoning step
+def score_reasoning_steps(steps: list[str], question: str) -> list[float]:
+    """PRM: score each intermediate reasoning step for correctness."""
+    scores = []
+    for i, step in enumerate(steps):
+        prompt = (f"Q: {question}
+Reasoning so far:
+"
+                  + "
+".join(steps[:i+1])
+                  + "
+Is this step correct and helpful? Score 0.0-1.0:")
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=5, temperature=0.0
+        ).choices[0].message.content.strip()
+        try: scores.append(float(resp))
+        except: scores.append(0.5)
+    return scores
+</code></pre>
+</div>
+
 </div>
 </div>
 <h3>When to Use Reasoning Models</h3>
