@@ -692,6 +692,115 @@ def llm_call_with_retry(max_retries=3, backoff=2.0):
 <div class="tool-name">OpenTelemetry</div>
 <div class="tool-category">Observability</div>
 <div class="tool-desc">Standard instrumentation for logs, traces, metrics. Vendor-agnostic.</div>
+
+<div class="example-box">
+<div class="example-label">Python · Async streaming LLM endpoint with SSE</div>
+<pre><code class="language-python">import asyncio
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from openai import AsyncOpenAI
+
+app = FastAPI()
+client = AsyncOpenAI()
+
+@app.post("/stream")
+async def stream_completion(prompt: str):
+    """Server-Sent Events endpoint for streaming LLM output."""
+    async def generate():
+        try:
+            stream = await client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": prompt}],
+                stream=True,
+                timeout=30.0
+            )
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content or ""
+                if delta:
+                    # SSE format: "data: <content>
+
+"
+                    yield f"data: {delta}
+
+"
+        except asyncio.TimeoutError:
+            yield "data: [TIMEOUT]
+
+"
+        except Exception as e:
+            yield f"data: [ERROR: {e}]
+
+"
+        finally:
+            yield "data: [DONE]
+
+"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",   # disable nginx buffering
+            "Connection": "keep-alive"
+        }
+    )
+
+# JavaScript client:
+# const es = new EventSource('/stream?prompt=Hello');
+# es.onmessage = (e) => { if (e.data === '[DONE]') es.close();
+#                          else document.body.innerText += e.data; };
+</code></pre>
+
+<div class="example-box">
+<div class="example-label">Python · Retry with exponential backoff and fallback model</div>
+<pre><code class="language-python">import time, random, logging
+from functools import wraps
+from openai import OpenAI, RateLimitError, APIError
+
+client = OpenAI()
+PRIMARY   = "gpt-4o"
+FALLBACK  = "gpt-4o-mini"
+
+def with_retry(max_attempts=3, base_delay=1.0, use_fallback=True):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            last_err = None
+            for attempt in range(max_attempts):
+                try:
+                    return fn(*args, **kwargs)
+                except RateLimitError as e:
+                    last_err = e
+                    wait = base_delay * (2 ** attempt) + random.random()
+                    logging.warning(f"Rate limit — retry in {wait:.1f}s (attempt {attempt+1})")
+                    time.sleep(wait)
+                except APIError as e:
+                    if e.status_code and e.status_code >= 500:
+                        last_err = e
+                        time.sleep(base_delay * (attempt + 1))
+                    else:
+                        raise  # 4xx = client error, don't retry
+            # All retries exhausted — try cheaper fallback
+            if use_fallback and kwargs.get("model") == PRIMARY:
+                logging.warning(f"Falling back to {FALLBACK}")
+                kwargs["model"] = FALLBACK
+                return fn(*args, **kwargs)
+            raise last_err
+        return wrapper
+    return decorator
+
+@with_retry(max_attempts=3, use_fallback=True)
+def call_llm(prompt: str, model: str = PRIMARY) -> str:
+    return client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}]
+    ).choices[0].message.content
+</code></pre>
+</div>
+
+</div>
+
 </div>
 </div>
 </div>

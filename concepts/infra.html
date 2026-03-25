@@ -522,6 +522,37 @@
 <li>Supports <a class="concept-link" href="quantization.html">quantization</a> (<a class="concept-link" href="gptq.html">GPTQ</a>, <a class="concept-link" href="awq.html">AWQ</a>), <a class="concept-link" href="lora.html">LoRA</a>, multi-modal</li>
 <li>10-20× faster than naive inference on typical workloads</li>
 </ul>
+
+<div class="example-box">
+<div class="example-label">Shell · Launch vLLM with AWQ quantisation for a 7B model</div>
+<pre><code class="language-bash"># Serve a quantized Mistral-7B with continuous batching
+python -m vllm.entrypoints.openai.api_server \
+  --model TheBloke/Mistral-7B-Instruct-v0.2-AWQ \
+  --quantization awq \
+  --tensor-parallel-size 1 \
+  --max-model-len 8192 \
+  --gpu-memory-utilization 0.90 \
+  --enable-chunked-prefill \
+  --max-num-batched-tokens 4096 \
+  --served-model-name mistral-7b \
+  --port 8000
+
+# Quick health check
+curl http://localhost:8000/health
+
+# Test inference (OpenAI-compatible API)
+curl http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "mistral-7b",
+       "messages": [{"role": "user", "content": "Hello!"}],
+       "max_tokens": 64, "temperature": 0.0}'
+
+# Monitor GPU utilisation
+watch -n1 nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total \
+  --format=csv,noheader
+</code></pre>
+</div>
+
 </div>
 </div>
 <div class="method-card">
@@ -720,6 +751,44 @@ print(resp2.choices[0].message.content)
 </div>
 </div>
 <!-- ── 6. CHILD PAGES ── -->
+
+<div class="section-block" id="benchmarking">
+<div class="section-marker">06 — Benchmarking</div>
+<h2>Performance Benchmarking &amp; Cost Optimisation</h2>
+<p>Inference cost is dominated by two factors: time-to-first-token (TTFT) and throughput (tokens/sec). Before choosing a serving solution, benchmark your specific workload — batch size, sequence length, and request concurrency all shift the optimal configuration significantly.</p>
+<p>Key metrics to track: TTFT at p50/p95, tokens-per-second per GPU, GPU memory utilisation, and cost-per-1M tokens. A model serving 10 tok/s on a single A100 can hit 80+ tok/s with continuous batching on the same hardware. The gap between naive and optimised serving is rarely less than 5×.</p>
+<div class="example-box">
+<div class="example-label">Python · vLLM throughput benchmark script</div>
+<pre><code class="language-python">import time, statistics
+from vllm import LLM, SamplingParams
+
+llm = LLM(model="mistralai/Mistral-7B-Instruct-v0.2",
+          tensor_parallel_size=1,
+          max_model_len=4096)
+
+prompts = ["Explain transformer attention in one paragraph."] * 32
+params = SamplingParams(temperature=0.0, max_tokens=256)
+
+# Warm-up run (JIT compilation)
+_ = llm.generate(prompts[:2], params)
+
+# Timed benchmark
+start = time.perf_counter()
+outputs = llm.generate(prompts, params)
+elapsed = time.perf_counter() - start
+
+total_tokens = sum(len(o.outputs[0].token_ids) for o in outputs)
+latencies = [elapsed / len(prompts) * 1000] * len(prompts)  # approx
+
+print(f"Batch size   : {len(prompts)}")
+print(f"Total time   : {elapsed:.2f}s")
+print(f"Throughput   : {total_tokens/elapsed:.0f} tok/s")
+print(f"Avg latency  : {elapsed/len(prompts)*1000:.0f} ms/req")
+print(f"Cost est.    : ${total_tokens/1e6 * 0.20:.4f} (at $0.20/1M tok)")
+</code></pre>
+</div>
+</div>
+
 <div class="section-block" id="child-pages">
 <div class="section-marker">06 — Explore</div>
 <h2>Related Topics</h2>

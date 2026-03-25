@@ -692,6 +692,117 @@ def build_training_dataset(raw_dir: str, output_path: str) -&gt; DatasetDict:
 <div class="tool-name">Ray Data</div>
 <div class="tool-category">Distributed Processing</div>
 <div class="tool-desc">Distributed data processing. Map, shuffle, groupby at scale across clusters.</div>
+
+<div class="example-box">
+<div class="example-label">Python · Ingestion pipeline with schema validation and deduplication</div>
+<pre><code class="language-python">from dataclasses import dataclass, field
+from typing import Iterator
+import hashlib, json, logging
+
+@dataclass
+class Document:
+    source: str
+    content: str
+    metadata: dict = field(default_factory=dict)
+    content_hash: str = ""
+
+    def __post_init__(self):
+        self.content_hash = hashlib.sha256(
+            self.content.encode()
+        ).hexdigest()[:16]
+
+class IngestionPipeline:
+    def __init__(self, validators=None, transformers=None):
+        self.validators = validators or []
+        self.transformers = transformers or []
+        self.seen_hashes: set = set()
+        self.stats = {"processed": 0, "dropped": 0, "duplicates": 0, "errors": 0}
+
+    def run(self, documents: Iterator[dict]) -> Iterator[Document]:
+        for raw in documents:
+            try:
+                doc = Document(**raw)
+                # Deduplicate by content hash
+                if doc.content_hash in self.seen_hashes:
+                    self.stats["duplicates"] += 1
+                    continue
+                self.seen_hashes.add(doc.content_hash)
+                # Validate (e.g. min length, language check)
+                if not all(v(doc) for v in self.validators):
+                    self.stats["dropped"] += 1
+                    continue
+                # Transform (normalize whitespace, strip HTML, etc.)
+                for t in self.transformers:
+                    doc = t(doc)
+                self.stats["processed"] += 1
+                yield doc
+            except Exception as e:
+                logging.warning(f"Ingestion error on {raw.get('source','?')}: {e}")
+                self.stats["errors"] += 1
+
+# Usage
+pipeline = IngestionPipeline(
+    validators=[lambda d: len(d.content) > 50],
+    transformers=[lambda d: Document(d.source, d.content.strip(), d.metadata)]
+)
+docs = list(pipeline.run(raw_records))
+print(pipeline.stats)
+# {"processed": 842, "dropped": 12, "duplicates": 38, "errors": 2}
+</code></pre>
+
+<div class="example-box">
+<div class="example-label">Python · DVC data versioning and dataset lineage tracking</div>
+<pre><code class="language-python">import subprocess, json
+from pathlib import Path
+
+# One-time repo setup:
+# $ dvc init && git commit -m "init dvc"
+# $ dvc remote add -d s3remote s3://my-bucket/dvc-cache
+
+def snapshot_dataset(dataset_path: str, message: str) -> dict:
+    """Track a dataset file with DVC and record lineage metadata."""
+    # Add file to DVC (creates .dvc sidecar)
+    subprocess.run(["dvc", "add", dataset_path], check=True)
+
+    # Read the generated .dvc file for the content hash
+    dvc_file = dataset_path + ".dvc"
+    dvc_content = Path(dvc_file).read_text()
+    md5 = ""
+    for line in dvc_content.splitlines():
+        if "md5:" in line:
+            md5 = line.split("md5:")[1].strip()
+
+    meta = {
+        "path": dataset_path,
+        "message": message,
+        "md5": md5,
+        "row_count": sum(1 for _ in open(dataset_path))
+    }
+    # Append to lineage log
+    Path("data/lineage.jsonl").open("a").write(json.dumps(meta) + "
+")
+
+    # Stage .dvc file and commit
+    subprocess.run(["git", "add", dvc_file, ".gitignore"], check=True)
+    subprocess.run(["git", "commit", "-m", f"data: {message}"], check=True)
+    subprocess.run(["dvc", "push"], check=True)  # upload to remote
+    return meta
+
+def restore_version(git_commit: str, dataset_path: str):
+    """Restore a specific dataset version by git commit hash."""
+    subprocess.run(["git", "checkout", git_commit, "--",
+                    dataset_path + ".dvc"], check=True)
+    subprocess.run(["dvc", "checkout", dataset_path], check=True)
+    print(f"Restored {dataset_path} to commit {git_commit[:8]}")
+
+# Example
+meta = snapshot_dataset("data/train.jsonl", "v2 — added 5k synthetic examples")
+print(meta)
+</code></pre>
+</div>
+
+</div>
+
 </div>
 </div>
 </div>

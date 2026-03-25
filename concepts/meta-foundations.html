@@ -478,6 +478,58 @@
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Architecture insight:</strong> Transformers are "just" stacked attention and feedforward layers with good scaling properties. The secret sauce is: (1) attention (learns relevance), (2) depth (many layers), (3) scale (huge models), (4) data (massive training sets). No silver bullets.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Minimal transformer block in PyTorch</div>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, d_model: int, n_heads: int):
+        super().__init__()
+        assert d_model % n_heads == 0
+        self.d_k = d_model // n_heads
+        self.n_heads = n_heads
+        self.qkv = nn.Linear(d_model, 3 * d_model)
+        self.out = nn.Linear(d_model, d_model)
+
+    def forward(self, x, mask=None):
+        B, T, C = x.shape
+        qkv = self.qkv(x).reshape(B, T, 3, self.n_heads, self.d_k)
+        Q, K, V = qkv.permute(2, 0, 3, 1, 4)  # each: (B, heads, T, d_k)
+        scores = Q @ K.transpose(-2, -1) / self.d_k ** 0.5
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, float('-inf'))
+        weights = F.softmax(scores, dim=-1)
+        out = (weights @ V).transpose(1, 2).reshape(B, T, C)
+        return self.out(out)
+
+class TransformerBlock(nn.Module):
+    def __init__(self, d_model: int, n_heads: int, ff_mult: int = 4):
+        super().__init__()
+        self.attn = MultiHeadAttention(d_model, n_heads)
+        self.ff = nn.Sequential(
+            nn.Linear(d_model, d_model * ff_mult),
+            nn.GELU(),
+            nn.Linear(d_model * ff_mult, d_model)
+        )
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+
+    def forward(self, x):
+        x = x + self.attn(self.norm1(x))   # residual + attention
+        x = x + self.ff(self.norm2(x))     # residual + FFN
+        return x
+
+# Test: 2-layer mini transformer
+block = TransformerBlock(d_model=256, n_heads=8)
+x = torch.randn(2, 16, 256)   # batch=2, seq=16, d=256
+out = block(x)
+print(f"Input shape: {x.shape} → Output: {out.shape}")  # same shape
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 5. LEARNING PATH ── -->
@@ -498,6 +550,20 @@
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Learning by doing:</strong> Theory without code is useless. Theory with code is powerful. At each stage, build something, break it, fix it, understand why.</span>
+
+<table>
+<thead><tr><th>Week</th><th>Topic</th><th>Key Concepts</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Linear Algebra</td><td>Vectors, matrices, dot product, eigenvalues</td><td>10h</td></tr>
+<tr><td>2</td><td>Probability &amp; Statistics</td><td>Distributions, Bayes, MLE, entropy, KL divergence</td><td>10h</td></tr>
+<tr><td>3</td><td>Calculus for ML</td><td>Gradients, chain rule, partial derivatives, Jacobians</td><td>8h</td></tr>
+<tr><td>4</td><td>Classical ML</td><td>Regression, classification, cross-validation, bias-variance</td><td>12h</td></tr>
+<tr><td>5–6</td><td>Deep Learning</td><td>Backprop, CNNs, RNNs, optimizers, regularization</td><td>20h</td></tr>
+<tr><td>7–8</td><td>Transformers</td><td>Attention, positional encoding, BERT/GPT architecture</td><td>20h</td></tr>
+<tr><td>9+</td><td>LLM Engineering</td><td>RAG, fine-tuning, RLHF, evaluation, deployment</td><td>Ongoing</td></tr>
+</tbody>
+</table>
+
 </div>
 </div>
 <!-- ── 6. MINIMAL MATH ── -->
@@ -539,6 +605,52 @@
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Professional secret:</strong> Most ML engineers don't memorize the math. They understand the intuition and consult the formulas when needed. Focus on intuition first, derivations later (if ever).</span>
+
+<div class="example-box">
+<div class="example-label">Python · Core math operations that underpin every LLM (NumPy)</div>
+<pre><code class="language-python">import numpy as np
+
+# 1. Cosine similarity — used in embedding search
+a = np.array([1.0, 2.0, 3.0])
+b = np.array([4.0, 5.0, 6.0])
+cos_sim = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+print(f"Cosine similarity: {cos_sim:.4f}")   # 0.9746
+
+# 2. Softmax — converts logits to probability distribution
+def softmax(x):
+    e = np.exp(x - x.max())  # subtract max for numerical stability
+    return e / e.sum()
+
+logits = np.array([2.0, 1.0, 0.1])
+probs = softmax(logits)
+print(f"Softmax: {probs.round(3)}")  # [0.659, 0.242, 0.099]
+
+# 3. Scaled dot-product attention (single head)
+def attention(Q, K, V):
+    d_k = Q.shape[-1]
+    scores = Q @ K.T / np.sqrt(d_k)  # scale prevents vanishing gradients
+    weights = softmax(scores)         # each row sums to 1.0
+    return weights @ V
+
+seq_len, d_model = 8, 32
+Q = np.random.randn(seq_len, d_model)
+K = np.random.randn(seq_len, d_model)
+V = np.random.randn(seq_len, d_model)
+output = attention(Q, K, V)  # shape: (8, 32)
+print(f"Attention output shape: {output.shape}")
+
+# 4. Cross-entropy loss — used in language model training
+def cross_entropy(logits, target_idx):
+    probs = softmax(logits)
+    return -np.log(probs[target_idx] + 1e-9)
+
+vocab_size = 50000
+logits = np.random.randn(vocab_size)
+loss = cross_entropy(logits, target_idx=42)
+print(f"Cross-entropy loss: {loss:.4f}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── FOUNDATIONS CLUSTER ── -->

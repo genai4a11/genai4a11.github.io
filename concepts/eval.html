@@ -669,6 +669,50 @@ def evaluate(answer_fn) -&gt; dict:
 <li><strong>2:</strong> Mostly unsupported; mostly hallucinated</li>
 <li><strong>1:</strong> Completely hallucinated; no grounding</li>
 </ul>
+
+<div class="example-box">
+<div class="example-label">Python · LLM-as-judge with structured output scoring</div>
+<pre><code class="language-python">from pydantic import BaseModel, Field
+from openai import OpenAI
+
+client = OpenAI()
+
+class JudgmentResult(BaseModel):
+    score: int = Field(ge=1, le=5, description="Quality score 1 (poor) to 5 (excellent)")
+    reasoning: str = Field(description="One-sentence explanation of the score")
+    passes_bar: bool = Field(description="True if score >= 3 (acceptable quality)")
+
+def judge_response(question: str, response: str, criteria: str) -> JudgmentResult:
+    system = f"""You are a calibrated evaluator. Use these criteria:
+{criteria}
+Score 1=wrong/harmful, 2=poor, 3=acceptable, 4=good, 5=excellent.
+Be consistent: the same response quality should always get the same score."""
+
+    result = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user",   "content": f"Question: {question}
+
+Response:
+{response}"}
+        ],
+        response_format=JudgmentResult,
+        temperature=0.0
+    )
+    return result.choices[0].message.parsed
+
+# Example
+j = judge_response(
+    question="Explain what RAG is in 2 sentences.",
+    response="RAG combines retrieval of relevant documents with LLM generation. It reduces hallucinations by grounding the model in external knowledge.",
+    criteria="1. Factual accuracy  2. Completeness  3. Appropriate length"
+)
+print(f"Score: {j.score}/5 | Pass: {j.passes_bar}")
+print(f"Reason: {j.reasoning}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <div class="callout green">
@@ -735,6 +779,64 @@ def evaluate(answer_fn) -&gt; dict:
 <p>Set up alerts for: (1) Judge score drops &gt;5% day-over-day, (2) Retrieval precision drops below baseline, (3) Error rate spikes, (4) Latency increases &gt;30%. When an alert fires, compare with recent code changes and revert if needed.</p>
 </div>
 <!-- ── 6. CHILD PAGES ── -->
+
+<div class="section-block" id="continuous-eval">
+<div class="section-marker">06 — Continuous</div>
+<h2>Continuous Evaluation Pipeline</h2>
+<p>Single-run evaluations are not enough. Production AI systems need continuous evaluation: every model update, prompt change, or retrieval schema change should trigger an automated eval run that catches regressions before they reach users.</p>
+<p>A practical pipeline: nightly eval job against a frozen golden set → LLM-as-judge scoring on sampled live traffic → alert on score drop &gt;5% → human review queue for flagged outputs. Gate model promotions on eval passage in CI/CD. The golden set should cover both typical cases and known hard cases — edge cases that previously caused production incidents are especially valuable.</p>
+<div class="example-box">
+<div class="example-label">Python · Nightly eval job with regression gate</div>
+<pre><code class="language-python">import json, statistics, sys
+from openai import OpenAI
+
+client = OpenAI()
+
+def llm_score(question: str, expected: str, actual: str) -> float:
+    """LLM-as-judge: returns 0.0–1.0."""
+    prompt = f"""Rate how well the response answers the question compared to the expected answer.
+Question: {question}
+Expected: {expected}
+Actual: {actual}
+Reply with a single number 0-10 only."""
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=5, temperature=0.0
+    ).choices[0].message.content.strip()
+    try:
+        return float(resp) / 10.0
+    except ValueError:
+        return 0.0
+
+def run_eval(golden_path: str, model: str, threshold: float = 0.80) -> dict:
+    golden = [json.loads(l) for l in open(golden_path)]
+    scores = []
+    failures = []
+
+    for item in golden:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": item["input"]}]
+        ).choices[0].message.content
+        score = llm_score(item["input"], item["expected"], response)
+        scores.append(score)
+        if score < 0.6:
+            failures.append({"input": item["input"], "score": score, "response": response})
+
+    avg = statistics.mean(scores)
+    result = {"score": avg, "n": len(golden), "failures": failures, "passed": avg >= threshold}
+    print(f"Eval: n={len(golden)} avg={avg:.3f} failures={len(failures)} → {'PASS' if result['passed'] else 'FAIL'}")
+    return result
+
+# Run and gate on result
+result = run_eval("golden_set.jsonl", "gpt-4o", threshold=0.80)
+if not result["passed"]:
+    sys.exit(f"Eval regression: {result['score']:.3f} < 0.80")
+</code></pre>
+</div>
+</div>
+
 <div class="section-block" id="child-pages">
 <div class="section-marker">06 — Explore</div>
 <h2>Related Topics</h2>

@@ -531,9 +531,139 @@ print(review_code(sample))</code></pre>
 <div class="callout rose">
 <span class="callout-icon">⚠️</span>
 <span><strong>AI is a multiplier:</strong> Good developers become 2-4x faster. Poor developers write bad code faster. AI amplifies your skills both ways.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Structured prompt template for reliable code generation</div>
+<pre><code class="language-python">from openai import OpenAI
+from string import Template
+
+client = OpenAI()
+
+CODE_GEN_TEMPLATE = Template("""You are an expert $language developer. Rules:
+- Write idiomatic, production-quality $language
+- Include type hints (Python) / TypeScript types (JS/TS)
+- Handle edge cases and invalid inputs explicitly
+- Add a one-line comment only for non-obvious logic
+- Do NOT add print statements, logging, or TODO comments
+
+TASK:
+$task
+
+INTEGRATION CONTEXT (code this must work with):
+```$language
+$context
+```
+
+Return ONLY the implementation. No explanation. No markdown code fences.
+""")
+
+def generate_code(task: str, language: str = "python",
+                  context: str = "# No existing context") -> str:
+    prompt = CODE_GEN_TEMPLATE.substitute(
+        language=language, task=task, context=context
+    )
+    return client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2   # low = more deterministic code
+    ).choices[0].message.content
+
+# Example
+code = generate_code(
+    task="Implement `chunk(lst, n)` — split list into batches of size n",
+    language="python",
+    context="# Used in batch processing pipeline, n is always >= 1"
+)
+print(code)
+</code></pre>
+
+<div class="example-box">
+<div class="example-label">Shell + Python · Cursor workflow with custom AI rules file</div>
+<pre><code class="language-bash"># .cursorrules — project-level AI instructions (place in repo root)
+cat > .cursorrules << 'EOF'
+You are an expert Python developer working on a FastAPI application.
+- Use Python 3.12+ type hints everywhere
+- Prefer Pydantic v2 models for all request/response schemas
+- Write pytest tests for every public function
+- Use async/await for all I/O operations
+- Follow the existing pattern: service layer calls repository layer
+- Never use global state; inject dependencies via FastAPI Depends()
+EOF
+
+# Cursor reads this file and applies it to all AI completions in the project
+# Open Cursor: Ctrl+Shift+P → "Cursor: Open AI Chat"
+
+# Similarly for GitHub Copilot — add to .github/copilot-instructions.md
+mkdir -p .github
+cat > .github/copilot-instructions.md << 'EOF'
+Project: FastAPI REST API (Python 3.12)
+Always use type hints. Follow existing service/repository pattern.
+Write async functions for database calls. Use Pydantic v2.
+EOF
+</code></pre>
+</div>
+
+</div>
+
 </div>
 </div>
 <!-- ── TOOLS REFERENCE ── -->
+
+<div class="section-block" id="agentic-workflows">
+<div class="section-marker">06 — Agentic</div>
+<h2>Agentic Coding Workflows</h2>
+<p>Modern AI coding tools have moved beyond autocomplete into agentic workflows: multi-step tasks where the AI reads files, writes code, runs tests, inspects output, and iterates until the task is complete. Claude Code, Devin, and similar tools operate in this mode.</p>
+<p>Agentic coding is most effective when the task is well-defined and verifiable — "implement this interface so that these tests pass" is a great agentic task; "improve this codebase" is not. The key enablers are: tight test feedback loops, version control so every change is reversible, and scoped file access so the agent cannot touch unrelated code. The productivity gain is typically 3–10× for bounded, well-specified tasks.</p>
+<div class="example-box">
+<div class="example-label">Python · Agentic TDD loop: implement until tests pass</div>
+<pre><code class="language-python">import subprocess
+from openai import OpenAI
+
+client = OpenAI()
+
+def run_tests(test_file: str) -> tuple[bool, str]:
+    result = subprocess.run(
+        ["python", "-m", "pytest", test_file, "-v", "--tb=short"],
+        capture_output=True, text=True, timeout=60
+    )
+    return result.returncode == 0, result.stdout + result.stderr
+
+def agentic_implement(task: str, impl_file: str, test_file: str,
+                      max_attempts: int = 5) -> str:
+    history = [{"role": "system", "content":
+        "You are an expert Python developer. Write clean, well-typed code. "
+        "Return ONLY the complete Python file — no explanation, no markdown."}]
+
+    test_output = ""
+    for attempt in range(max_attempts):
+        user_msg = task if attempt == 0 else (
+            f"{task}
+
+Attempt {attempt} failed. Pytest output:
+{test_output}
+"
+            "Fix the implementation so all tests pass."
+        )
+        history.append({"role": "user", "content": user_msg})
+
+        code = client.chat.completions.create(
+            model="gpt-4o", messages=history, temperature=0.2
+        ).choices[0].message.content
+        history.append({"role": "assistant", "content": code})
+
+        with open(impl_file, "w") as f: f.write(code)
+        passed, test_output = run_tests(test_file)
+
+        if passed:
+            print(f"✓ Passed on attempt {attempt + 1}")
+            return code
+        print(f"✗ Attempt {attempt + 1} failed")
+
+    raise RuntimeError("Could not produce passing implementation")
+</code></pre>
+</div>
+</div>
+
 <div class="section-block" id="tools-ref">
 <div class="section-marker">06 — Tools &amp; Resources</div>
 <h2>Code Assistant Tools</h2>

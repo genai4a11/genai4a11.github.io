@@ -464,6 +464,49 @@ for epoch in range(10):
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>PyTorch does this automatically:</strong> Call <code>loss.backward()</code> and PyTorch computes all gradients for you. You rarely write backprop by hand.</span>
+
+<div class="example-box">
+<div class="example-label">Python · PyTorch backpropagation traced step-by-step</div>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+
+# Build a simple 2-layer network and trace gradients
+torch.manual_seed(0)
+model = nn.Sequential(
+    nn.Linear(4, 8), nn.ReLU(),
+    nn.Linear(8, 1)
+)
+
+x = torch.randn(3, 4)     # batch of 3, 4 features
+y = torch.tensor([[1.0], [0.0], [1.0]])
+
+# Forward pass — PyTorch builds a computation graph
+pred = model(x)
+loss = nn.functional.binary_cross_entropy_with_logits(pred, y)
+print(f"Loss: {loss.item():.4f}")
+
+# Backward pass — reverse-mode autodiff through the graph
+loss.backward()
+
+# Inspect gradients
+for name, param in model.named_parameters():
+    if param.grad is not None:
+        print(f"{name}: grad_norm={param.grad.norm():.4f}, "
+              f"param_norm={param.data.norm():.4f}")
+
+# Gradient update (what the optimizer does)
+with torch.no_grad():
+    for param in model.parameters():
+        param -= 0.01 * param.grad   # SGD step (lr=0.01)
+        param.grad.zero_()
+
+# Verify loss decreased
+pred2 = model(x)
+loss2 = nn.functional.binary_cross_entropy_with_logits(pred2, y)
+print(f"Loss after one step: {loss2.item():.4f}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 3. OPTIMIZERS ── -->
@@ -490,6 +533,41 @@ for epoch in range(10):
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>AdamW is the modern choice:</strong> Regular Adam has weight decay issues. AdamW fixes this with decoupled weight decay. Use AdamW in new projects.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Compare Adam vs AdamW on a toy regression problem</div>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+
+def train(opt_class, lr=1e-3, weight_decay=0.01, steps=300):
+    torch.manual_seed(42)
+    model = nn.Sequential(
+        nn.Linear(16, 64), nn.ReLU(),
+        nn.Linear(64, 64), nn.ReLU(),
+        nn.Linear(64, 1)
+    )
+    # AdamW decouples weight decay from gradient update
+    # Adam applies weight decay as L2 penalty (incorrect for adaptive methods)
+    opt = opt_class(model.parameters(), lr=lr, weight_decay=weight_decay)
+    X = torch.randn(512, 16); y = torch.randn(512, 1)
+    X_val = torch.randn(128, 16); y_val = torch.randn(128, 1)
+
+    for step in range(steps):
+        loss = nn.functional.mse_loss(model(X), y)
+        opt.zero_grad(); loss.backward(); opt.step()
+
+    val_loss = nn.functional.mse_loss(model(X_val), y_val).item()
+    return val_loss
+
+adam_loss  = train(torch.optim.Adam)
+adamw_loss = train(torch.optim.AdamW)
+print(f"Adam  val loss: {adam_loss:.4f}")
+print(f"AdamW val loss: {adamw_loss:.4f}")
+# AdamW typically generalises better due to correct weight decay handling
+# Difference is larger with deeper models and longer training
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 4. REGULARIZATION ── -->
@@ -521,6 +599,56 @@ for epoch in range(10):
 </div>
 </div>
 <!-- ── 6. CHILD PAGES ── -->
+
+<div class="section-block" id="practical-training">
+<div class="section-marker">06 — Practice</div>
+<h2>Practical Training Tips</h2>
+<p>Theory covers how training works; practice is knowing which knobs to turn first when things go wrong. In rough priority order: (1) verify your data pipeline before tuning hyperparameters; (2) monitor gradient norms — exploding or vanishing gradients diagnose most training failures early; (3) use a learning rate finder; (4) enable mixed-precision by default to halve memory use; (5) checkpoint frequently so crashes don't waste GPU hours.</p>
+<p>Common failure modes: loss stays flat (learning rate too low or silent data bug), loss explodes (learning rate too high or missing gradient clipping), validation loss diverges early (overfitting — regularize or reduce model size), NaN loss after stable start (numerical instability — enable anomaly detection and check for zero-length inputs).</p>
+<div class="example-box">
+<div class="example-label">Python · Training loop with gradient clipping, AMP, and diagnostics</div>
+<pre><code class="language-python">import torch
+import torch.nn as nn
+from torch.optim import AdamW
+from torch.optim.lr_scheduler import CosineAnnealingLR
+
+model = MyModel().cuda()
+optimizer = AdamW(model.parameters(), lr=3e-4, weight_decay=0.01)
+scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
+scaler = torch.cuda.amp.GradScaler()   # mixed precision scaling
+
+for epoch in range(num_epochs):
+    model.train()
+    for step, batch in enumerate(dataloader):
+        optimizer.zero_grad()
+
+        # Mixed precision forward pass
+        with torch.autocast(device_type="cuda", dtype=torch.float16):
+            outputs = model(**batch)
+            loss = outputs.loss
+
+        # Backward with gradient scaling
+        scaler.scale(loss).backward()
+
+        # Gradient clipping — prevents exploding gradients
+        scaler.unscale_(optimizer)
+        grad_norm = torch.nn.utils.clip_grad_norm_(
+            model.parameters(), max_norm=1.0
+        )
+
+        # Diagnose: warn if gradients are unusually large
+        if grad_norm > 5.0:
+            print(f"E{epoch} S{step}: large grad norm {grad_norm:.2f}")
+
+        scaler.step(optimizer)
+        scaler.update()
+
+    scheduler.step()
+    print(f"Epoch {epoch}: loss={loss.item():.4f}")
+</code></pre>
+</div>
+</div>
+
 <div class="section-block" id="child-pages">
 <div class="section-marker">06 — Related Topics</div>
 <h2>Child Pages</h2>

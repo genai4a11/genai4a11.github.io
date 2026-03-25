@@ -510,6 +510,18 @@
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Decision rule:</strong> Build if it's core to your competitive advantage. Buy if it's a commodity. Most companies should buy RAG and use their own prompting/evaluation.</span>
+
+<table>
+<thead><tr><th>Approach</th><th>Best For</th><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td><strong>Managed API</strong> (OpenAI, Anthropic)</td><td>Prototyping, variable load</td><td>Zero infra, latest models, fast to ship</td><td>Per-token cost at scale, data leaves your boundary</td></tr>
+<tr><td><strong>Open model + cloud GPU</strong></td><td>Cost-sensitive, medium volume</td><td>Predictable cost, data stays in VPC</td><td>Ops overhead, GPU reservation needed</td></tr>
+<tr><td><strong>Fine-tuned model</strong></td><td>Domain-specific tasks</td><td>Best task performance, smaller model possible</td><td>Training cost, eval overhead, drift risk</td></tr>
+<tr><td><strong>Framework (LangChain)</strong></td><td>Complex pipelines, RAG, agents</td><td>Batteries included, large community</td><td>Abstraction leaks, harder to debug</td></tr>
+<tr><td><strong>Custom pipeline</strong></td><td>High performance, unusual needs</td><td>Full control, minimal overhead</td><td>Highest build cost, must build retries, observability</td></tr>
+</tbody>
+</table>
+
 </div>
 </div>
 <!-- ── 5. FRAMEWORKS ── -->
@@ -646,6 +658,47 @@ def answer_question(user_question: str) -&gt; str:
 <div class="callout blue">
 <span class="callout-icon">💡</span>
 <span><strong>Integration principle:</strong> Each block solves one problem. RAG solves "where is the data?", agents solve "what steps?", prompting solves "how to reason?". Combine them in order of simplicity, adding complexity only when needed.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Complete RAG pipeline using LlamaIndex</div>
+<pre><code class="language-python">from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.llms.openai import OpenAI
+from llama_index.core import Settings
+
+# Global settings
+Settings.llm = OpenAI(model="gpt-4o-mini", temperature=0.0)
+Settings.chunk_size = 512
+Settings.chunk_overlap = 64
+
+# 1. Load documents
+documents = SimpleDirectoryReader("./docs").load_data()
+
+# 2. Parse into chunks
+parser = SentenceSplitter()
+nodes = parser.get_nodes_from_documents(documents)
+print(f"Parsed {len(documents)} docs into {len(nodes)} chunks")
+
+# 3. Build vector index (embeddings computed here)
+index = VectorStoreIndex(nodes, show_progress=True)
+
+# 4. Query
+engine = index.as_query_engine(similarity_top_k=5)
+response = engine.query(
+    "What are the key trade-offs between RAG and fine-tuning?"
+)
+print(response)
+
+# 5. Persist index for reuse (avoids re-embedding on restart)
+index.storage_context.persist("./index_store")
+
+# Reload later:
+# from llama_index.core import StorageContext, load_index_from_storage
+# storage_ctx = StorageContext.from_defaults(persist_dir="./index_store")
+# index = load_index_from_storage(storage_ctx)
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── CHILD CLUSTERS ── -->

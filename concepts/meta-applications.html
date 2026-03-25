@@ -519,6 +519,65 @@
 <div class="callout amber">
 <span class="callout-icon">⚠️</span>
 <span><strong>RAG debugging:</strong> Build three things in parallel: the retriever (measure recall/precision), the prompt (measure BLEU/exact match), and the evaluation set (measure end-to-end). Most RAG failures are retriever failures, not LLM failures.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Production-ready RAG with ChromaDB and OpenAI</div>
+<pre><code class="language-python">from openai import OpenAI
+import chromadb
+
+client = OpenAI()
+chroma = chromadb.PersistentClient("./chroma_db")
+collection = chroma.get_or_create_collection(
+    "docs", metadata={"hnsw:space": "cosine"}
+)
+
+def embed(texts: list[str]) -> list[list[float]]:
+    resp = client.embeddings.create(
+        model="text-embedding-3-small", input=texts
+    )
+    return [r.embedding for r in resp.data]
+
+def index_documents(docs: list[dict]):
+    """Index documents. Each doc: {id, content, metadata}."""
+    batch_size = 100
+    for i in range(0, len(docs), batch_size):
+        batch = docs[i:i+batch_size]
+        collection.add(
+            ids=[d["id"] for d in batch],
+            embeddings=embed([d["content"] for d in batch]),
+            documents=[d["content"] for d in batch],
+            metadatas=[d.get("metadata", {}) for d in batch]
+        )
+
+def rag_query(question: str, top_k: int = 5) -> str:
+    # 1. Retrieve
+    results = collection.query(
+        query_embeddings=embed([question]),
+        n_results=top_k
+    )
+    context = "
+
+---
+
+".join(results["documents"][0])
+
+    # 2. Generate grounded answer
+    return client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content":
+                "Answer using ONLY the provided context. "
+                "If the answer isn't there, say 'I don't have that information.'"},
+            {"role": "user", "content":
+                f"Context:
+{context}
+
+Question: {question}"}
+        ]
+    ).choices[0].message.content
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 4. CODE ASSISTANTS ── -->
@@ -551,6 +610,51 @@
 <div class="callout green">
 <span class="callout-icon">✓</span>
 <span><strong>Best practice:</strong> Use Instructor library (Python) or similar to enforce schema. Define schema in code, not prose. Test on diverse examples. Always validate output before using it downstream.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Structured output extraction with Pydantic + OpenAI</div>
+<pre><code class="language-python">from pydantic import BaseModel, Field
+from typing import Optional
+from openai import OpenAI
+
+client = OpenAI()
+
+class JobPosting(BaseModel):
+    title: str
+    company: str
+    salary_min: Optional[int] = Field(None, description="Min salary USD")
+    salary_max: Optional[int] = Field(None, description="Max salary USD")
+    remote: bool
+    required_skills: list[str]
+    years_experience: Optional[int] = None
+
+def extract_job(raw_text: str) -> JobPosting:
+    result = client.beta.chat.completions.parse(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content":
+                "Extract structured data from the job posting. "
+                "Be precise about salary ranges and skill requirements."},
+            {"role": "user", "content": raw_text}
+        ],
+        response_format=JobPosting,
+        temperature=0.0
+    )
+    return result.choices[0].message.parsed
+
+# Example
+raw = """
+Senior ML Engineer at Acme Corp. Fully remote. 
+Compensation: $160,000–$200,000. Requires 5+ years Python experience, 
+strong PyTorch background, and experience with distributed training.
+"""
+job = extract_job(raw)
+print(f"{job.title} @ {job.company}")
+print(f"Salary: ${job.salary_min:,}–${job.salary_max:,} | Remote: {job.remote}")
+print(f"Skills: {', '.join(job.required_skills)}")
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── 6. COMMON PITFALLS ── -->
@@ -571,6 +675,61 @@
 <div class="callout rose">
 <span class="callout-icon">⚠️</span>
 <span><strong>The production reality:</strong> 70% of GenAI problems aren't algorithmic — they're operational. Latency, cost, monitoring, error handling, and data freshness matter more than model size. Plan for ops early.</span>
+
+<div class="example-box">
+<div class="example-label">Python · Tool-calling agent loop (OpenAI function calling)</div>
+<pre><code class="language-python">import json
+from openai import OpenAI
+
+client = OpenAI()
+
+TOOLS = [
+    {"type": "function", "function": {
+        "name": "search_docs",
+        "description": "Search internal documentation",
+        "parameters": {"type": "object",
+                       "properties": {"query": {"type": "string"}},
+                       "required": ["query"]}
+    }},
+    {"type": "function", "function": {
+        "name": "create_ticket",
+        "description": "Create a support ticket",
+        "parameters": {"type": "object",
+                       "properties": {"title": {"type": "string"},
+                                      "priority": {"type": "string",
+                                                   "enum": ["low","medium","high"]}},
+                       "required": ["title", "priority"]}
+    }}
+]
+
+def dispatch(name: str, args: dict) -> str:
+    if name == "search_docs":
+        return f"[Docs for '{args['query']}': See https://docs.example.com]"
+    if name == "create_ticket":
+        return f"[Ticket created: #{hash(args['title']) % 9999} — {args['title']}]"
+    return "Unknown tool"
+
+def run_agent(task: str) -> str:
+    messages = [{"role": "user", "content": task}]
+    for _ in range(10):   # max turns
+        resp = client.chat.completions.create(
+            model="gpt-4o", messages=messages, tools=TOOLS
+        )
+        msg = resp.choices[0].message
+        messages.append(msg)
+        if not msg.tool_calls:
+            return msg.content  # final answer
+        for call in msg.tool_calls:
+            result = dispatch(call.function.name,
+                              json.loads(call.function.arguments))
+            messages.append({"role": "tool",
+                              "tool_call_id": call.id, "content": result})
+    return "Max turns reached"
+
+print(run_agent("Search for RAG documentation and create a high-priority ticket to review it."))
+</code></pre>
+</div>
+
 </div>
 </div>
 <!-- ── CHILD CLUSTERS ── -->
