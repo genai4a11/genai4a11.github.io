@@ -8066,7 +8066,7 @@ print(f'Document tokens: {num_tokens}, fits in window: {num_tokens < max_positio
 chunk_size = min(2048, max_position_embeddings)
 chunks = [document[i:i+chunk_size] for i in range(0, len(document), chunk_size)]
 print(f'Split document into {len(chunks)} chunks of size {chunk_size}')`,tip:'Context limits vary widely: → Mistral 7B node (32k), → Llama 3.1 node (128k), GPT-4o (128k), Claude 3.5 (200k).\n\n"Lost in the middle"[1]: models recall information near the start and end of context better than the middle—structure prompts accordingly.\n\nFor multi-document tasks, consider → RAG node chunking or hierarchical summarization rather than stuffing everything into context.',refs:[{label:'[1] Lost in the Middle — How Language Models Use Long Contexts (Liu et al., 2023)',url:'https://arxiv.org/abs/2307.03172'}]},
-scaling_laws:{use:'Scaling laws (Kaplan, Chinchilla) show power-law relationships between model size, data, compute, and loss—guide training budget allocation.',diag:`
+scaling_laws:{use:'Scaling laws (Kaplan[1], Chinchilla[2]) show power-law relationships between model size, data, compute, and loss—guide how to allocate a training budget.',diag:`
   Chinchilla scaling laws (Hoffmann et al. 2022):
 
   Optimal compute allocation:
@@ -8099,8 +8099,8 @@ plt.ylabel('Loss')
 plt.legend()
 plt.grid(alpha=0.3)
 plt.savefig('scaling_law.png', dpi=150)
-print('Chinchilla law: loss decreases as N^-0.07 for fixed D, D^-0.16 for fixed N')`,tip:'Kaplan et al. (2020): loss ∝ N^-0.074 (diminishing returns on scale).\n\nChinchilla (2022): optimal is N ≈ D (equal compute to params and data).\n\nUse scaling laws to estimate required compute/data for your target model quality.',refs:[{label:'Scaling Laws for Neural Language Models (Kaplan et al.)',url:'https://arxiv.org/abs/2001.08361'},{label:'Training Compute-Optimal LLMs (Chinchilla)',url:'https://arxiv.org/abs/2203.15556'},{label:'Scaling laws in practice',url:'https://huggingface.co/blog/large-language-models-training'}]},
-moe:{use:'Mixture of Experts (MoE) uses sparse, top-k routing—Mixtral activates only 2 of 8 experts per token, achieving efficiency with dense-model quality.',diag:`
+print('Chinchilla law: loss decreases as N^-0.07 for fixed D, D^-0.16 for fixed N')`,tip:'Kaplan[1] (2020): loss ∝ N^-0.074—diminishing returns; bigger models help but need proportionally more data.\n\nChinchilla[2] (2022): optimal is 20 tokens per parameter—GPT-3 was undertrained; → Llama 3.1 node deliberately overtrained for cheap inference.\n\nUse scaling laws before training: estimate required compute and data for a target loss, not after.',refs:[{label:'[1] Scaling Laws for Neural Language Models (Kaplan et al., 2020)',url:'https://arxiv.org/abs/2001.08361'},{label:'[2] Training Compute-Optimal Large Language Models — Chinchilla (Hoffmann et al., 2022)',url:'https://arxiv.org/abs/2203.15556'}]},
+moe:{use:'Mixture of Experts (MoE[1]) uses sparse top-k routing—Mixtral[2] activates only 2 of 8 experts per token, achieving near-dense quality at a fraction of the compute.',diag:`
   Mixture of Experts (MoE) architecture:
 
   Dense model: EVERY token uses ALL FFN parameters
@@ -8151,7 +8151,7 @@ for i in range(top_k):
     expert_idx = top_k_indices[:, i]
     for batch_idx, expert_id in enumerate(expert_idx):
         outputs[batch_idx] += experts[expert_id](x[batch_idx:batch_idx+1]) * top_k_vals[batch_idx, i].softmax(0)
-print(f'MoE output shape: {outputs.shape}')`,tip:'MoE trades density for sparsity: fewer active params per forward, more total params.\n\nTop-2 routing in Mixtral means each token uses 2/8 experts → 1/4 the compute.\n\nLoad balancing (auxiliary loss) prevents all tokens routing to same expert.',refs:[{label:'Outrageously Large Neural Networks for Efficient Conditional Computation',url:'https://arxiv.org/abs/1701.06538'},{label:'Mixtral paper (Jiang et al.)',url:'https://arxiv.org/abs/2401.04088'},{label:'MoE explained (blog)',url:'https://huggingface.co/blog/moe'}]},
+print(f'MoE output shape: {outputs.shape}')`,tip:'MoE[1] trades density for sparsity: total params are large, but each forward pass activates only top-k expert weights—VRAM and FLOPs scale with active params, not total.\n\nMixtral[2] 8×7B: 56B total but only 13B active per token—inference cost matches a 13B dense model with 50B+ quality.\n\nLoad-balancing loss (auxiliary term in training) prevents the router collapsing to always selecting the same experts.',refs:[{label:'[1] Outrageously Large Neural Networks — Switch to Conditional Computation (Shazeer et al., 2017)',url:'https://arxiv.org/abs/1701.06538'},{label:'[2] Mixtral of Experts (Jiang et al., 2024)',url:'https://arxiv.org/abs/2401.04088'}]},
 foundations:{use:'Mathematical foundations (linear algebra, calculus, probability) and core ML concepts underpins every GenAI model and training algorithm.',diag:`
   GenAI foundations map — which concepts build on which:
 
