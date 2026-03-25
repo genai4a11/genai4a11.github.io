@@ -271,6 +271,29 @@ for r in results:
 <p><strong>Re-chunking after document updates</strong>: When a source document is updated, you need to re-chunk and re-embed the entire document. There's no "partial update" for chunks — track document version hashes to detect changes and trigger re-ingestion.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Fixed-Size Chunking Parameter Tradeoffs</h2>
+<p>Fixed-size chunking divides documents into segments of a specified number of characters or tokens, with an optional overlap between consecutive chunks. It is the simplest and most widely used chunking strategy due to its predictability, computational efficiency, and compatibility with any document type. The primary design decisions are chunk size and overlap amount.</p>
+<table>
+<thead><tr><th>Chunk Size</th><th>Overlap</th><th>Retrieval Precision</th><th>Context per Chunk</th><th>Index Size</th></tr></thead>
+<tbody>
+<tr><td>256 tokens</td><td>0</td><td>High (focused)</td><td>Low</td><td>Large</td></tr>
+<tr><td>512 tokens</td><td>50</td><td>Good</td><td>Moderate</td><td>Medium</td></tr>
+<tr><td>1024 tokens</td><td>100</td><td>Moderate</td><td>Good</td><td>Medium</td></tr>
+<tr><td>2048 tokens</td><td>200</td><td>Lower (diluted)</td><td>High</td><td>Small</td></tr>
+</tbody>
+</table>
+<p>Chunk overlap prevents information loss at chunk boundaries. Without overlap, a sentence that spans the boundary between two chunks gets split, with the first half embedded in one chunk and the second half in the next. Neither chunk's embedding accurately represents the split sentence. Adding overlap ensures that boundary content appears in at least one complete chunk. However, overlap increases storage and index size proportionally, so the overlap should be large enough to capture typical sentence and clause lengths (50–100 tokens) without being so large that it duplicates significant content between chunks.</p>
+<p>Chunking at the token level versus character level produces different behaviors across languages. Character-based chunking with a limit of 500 characters produces very different chunk sizes for English (about 100–125 tokens) versus Chinese or Japanese (about 250–350 tokens due to higher information density per character). Token-based chunking with an explicit tokenizer produces consistent semantic density across languages but requires running the tokenizer at ingestion time, adding a preprocessing step that character-based chunking avoids.</p>
+
+<p>Recursive character text splitting improves on naive fixed-size chunking by respecting the natural structural hierarchy of documents. Instead of splitting on a fixed character count, recursive splitting attempts to divide at the highest-level separator available — paragraph breaks first, then sentence boundaries, then word boundaries, then characters as a last resort. This produces chunks that are bounded in size but respect document structure, avoiding the worst cases of fixed-size splitting where a single sentence gets fragmented across chunk boundaries.</p>
+
+<p>Metadata preservation during chunking is often more important than the chunking strategy itself for production RAG systems. Each chunk should carry source URL or file path, section heading, page number, and any relevant document-level metadata (author, date, document type). This metadata enables post-retrieval filtering — returning only chunks from documents published after a specific date, or only from documents matching a certain category — and powers citations that link LLM answers back to specific source locations in the original documents.</p>
+
+<p>Incremental chunking for document update pipelines re-processes only modified or newly added documents rather than re-chunking the entire corpus on each update. Maintaining a hash of each source document in the chunk metadata enables efficient change detection: if the document hash matches the stored hash, no re-chunking is needed; if it differs, the old chunks are deleted and the document is re-chunked and re-embedded. This incremental approach reduces embedding API costs and index update latency for document corpora with frequent partial updates.</p>
+
+<p>Evaluating chunking strategy quality requires measuring retrieval precision and recall on a representative question set before committing to a production configuration. A common evaluation protocol generates 50–100 question-answer pairs from the document corpus, retrieves the top-K chunks for each question, and checks whether the chunk containing the answer appears in the retrieved set. Comparing multiple chunking configurations on this evaluation set provides empirical evidence for configuration decisions that would otherwise be made by intuition or convention.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

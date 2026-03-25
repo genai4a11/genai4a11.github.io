@@ -268,6 +268,29 @@ calibration_data = [
 <p><strong>Not suitable for fine-tuning</strong>: GPTQ-quantised weights can't be fine-tuned directly (gradients don't flow through integer weights). For fine-tuning, use QLoRA with bitsandbytes instead.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>GPTQ vs. Other Post-Training Quantization Methods</h2>
+<p>GPTQ (Generative Pre-Trained Quantization) applies an optimal second-order weight quantization algorithm that minimizes the reconstruction error of each layer's output rather than independently quantizing each weight. By accounting for the interactions between weights during quantization, GPTQ achieves significantly better model quality at 4-bit precision compared to simpler round-to-nearest approaches.</p>
+<table>
+<thead><tr><th>Method</th><th>Algorithm</th><th>Quality at 4-bit</th><th>Quantization Speed</th><th>Inference Backend</th></tr></thead>
+<tbody>
+<tr><td>GPTQ</td><td>Second-order (Hessian)</td><td>Very good</td><td>Slow (~hours)</td><td>AutoGPTQ, ExLlama</td></tr>
+<tr><td>AWQ</td><td>Activation-aware</td><td>Very good</td><td>Medium (~30 min)</td><td>AutoAWQ, vLLM</td></tr>
+<tr><td>GGUF Q4_K_M</td><td>K-quants (grouped)</td><td>Good</td><td>Fast</td><td>llama.cpp</td></tr>
+<tr><td>bitsandbytes NF4</td><td>NF4 per-block</td><td>Good</td><td>Fast (on-the-fly)</td><td>Transformers (BnB)</td></tr>
+</tbody>
+</table>
+<p>GPTQ requires a small calibration dataset of representative text during quantization. The algorithm uses this dataset to compute per-layer Hessian matrices that characterize how sensitive each weight is to quantization error, then applies a greedy block-wise quantization that compensates for errors introduced in earlier weights when quantizing later weights. The calibration data significantly affects quality for domain-specific models — quantizing a code model with general text calibration data produces noticeably worse results than using code-specific calibration examples.</p>
+<p>ExLlamaV2 is the most performant inference backend for GPTQ-quantized models, implementing custom CUDA kernels for 4-bit matrix multiplication that achieve throughput competitive with FP16 inference at a fraction of the VRAM requirement. For 70B models that would require 4–5 A100s in FP16, ExLlamaV2 with GPTQ quantization enables serving on 2 consumer-grade GPUs. This makes GPTQ + ExLlamaV2 one of the most cost-effective stacks for self-hosting large open-weight models.</p>
+
+<p>GPTQ quantization quality is sensitive to the order in which weights are quantized. The algorithm processes weights in a sequence determined by the columns of each weight matrix, greedily finding the quantization of each weight that minimizes the reconstruction error of the entire layer output given the already-quantized earlier weights. This sequential dependency means GPTQ cannot trivially be parallelized across weight dimensions, contributing to its longer quantization time compared to per-block methods like bitsandbytes NF4.</p>
+
+<p>Group size is an important GPTQ hyperparameter controlling the granularity of the scale factors. A group size of 128 means that every 128 weights share one floating-point scale constant, providing moderate compression. Smaller group sizes (32) improve quantization quality at the cost of more scale storage overhead; the default group size of 128 represents the best practical trade-off for most models. For extreme compression requirements (3-bit quantization), smaller group sizes become more important because the per-group error budget is tighter.</p>
+
+<p>Activation reordering is a GPTQ enhancement that rearranges the columns of weight matrices before quantization to group similar-magnitude weights together. Grouping weights by magnitude reduces the quantization error within each group, since the scale factor more accurately represents a narrow range of similar values than a mixed range. Models quantized with activation reordering achieve noticeably better perplexity at 4-bit and lower precisions, with the reordering metadata stored in the quantized model file and applied transparently during inference.</p>
+
+<p>Verifying GPTQ quantization quality before deployment is straightforward: compute perplexity on a held-out text sample using both the FP16 original and the quantized model, then calculate the perplexity increase ratio. A well-quantized 4-bit model typically shows a perplexity increase of 5–15% versus FP16 for general text. Increases above 20% indicate quantization problems worth investigating — common causes include misconfigured group size, incompatible model architecture features, or poor calibration data. Task-specific evaluation on downstream benchmarks provides complementary signal to the perplexity metric.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

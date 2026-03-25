@@ -320,6 +320,29 @@ theme = gr.themes.Soft().set(
 <p><strong>Large file uploads</strong>: Gradio's file upload component has a default 100MB limit. Increase via: <code>gr.File(max_size=500)</code>. For very large files, stream them directly rather than uploading through Gradio's UI.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Gradio Interface Types Compared</h2>
+<p>Gradio provides multiple interface paradigms for wrapping machine learning models and LLM pipelines as interactive web demos. Each interface type is optimized for a different input/output modality and deployment scenario, from quick function prototyping to complex multi-turn conversational applications.</p>
+<table>
+<thead><tr><th>Interface Type</th><th>Input/Output</th><th>Best For</th><th>Key Feature</th></tr></thead>
+<tbody>
+<tr><td>gr.Interface</td><td>Any → Any</td><td>Simple functions</td><td>Auto-generates UI from type hints</td></tr>
+<tr><td>gr.ChatInterface</td><td>Text → Text</td><td>Chatbots</td><td>Built-in conversation history</td></tr>
+<tr><td>gr.Blocks</td><td>Flexible</td><td>Complex multi-component UIs</td><td>Full layout control</td></tr>
+<tr><td>gr.TabbedInterface</td><td>Any → Any</td><td>Multi-model comparisons</td><td>Tab-based navigation</td></tr>
+</tbody>
+</table>
+<p>Gradio Blocks is the most powerful and flexible interface type, allowing precise control over layout, component placement, and event handling. Unlike the simpler Interface class that automatically lays out inputs and outputs, Blocks uses a context manager pattern where components are explicitly placed in rows and columns. Event handlers connect components to Python functions with flexible input/output routing — one button click can trigger a sequence of function calls, feeding output from one step as input to the next.</p>
+<p>The streaming support in Gradio ChatInterface uses Python generators to yield partial responses as they arrive from the LLM API, providing a typing-indicator experience rather than waiting for the full response before displaying anything. This is implemented by yielding strings inside the chat function; Gradio handles the incremental UI updates via WebSocket without requiring any frontend code changes. Streaming significantly improves perceived responsiveness for long-form generation tasks.</p>
+
+<p>Gradio's authentication system supports both simple username/password auth and OAuth-based login for Spaces deployments. For internal tools, the auth parameter accepts a list of (username, password) tuples, protecting the app behind a login screen with a single configuration line. For production applications deployed on HuggingFace Spaces, OAuth integration allows users to log in with their HuggingFace account, and the application can access the authenticated user's identity to implement per-user rate limiting, personalization, or access control.</p>
+
+<p>Custom CSS and JavaScript can be injected into Gradio applications to extend the default styling and add client-side behavior. The css parameter on Blocks accepts a CSS string that overrides or extends the default Gradio styles, enabling brand-consistent styling, custom font loading, and layout adjustments. The js parameter accepts a JavaScript string that executes on page load, enabling custom analytics, keyboard shortcuts, or integration with browser APIs that are not natively supported by Gradio components.</p>
+
+<p>Gradio's queue system is critical for production LLM deployments where inference is slow and multiple users may be interacting simultaneously. Without the queue, concurrent requests can overwhelm the Python process and cause timeouts. With queue() enabled, requests are serialized and processed one at a time (or in configurable concurrency batches), with users receiving real-time status updates showing their position in the queue. For streaming responses, the queue allows multiple users to receive their streamed tokens concurrently without blocking each other.</p>
+
+<p>Gradio's flagging feature allows users to mark responses that seem incorrect or problematic during a demo session. Flagged examples are saved to a local CSV file (or a configurable backend) with the input, output, and optional user comment. For LLM evaluation workflows, this creates a lightweight human feedback collection mechanism that accumulates real-world failure cases during beta testing, which can then be used as negative examples in fine-tuning or as seed inputs for adversarial evaluation datasets.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

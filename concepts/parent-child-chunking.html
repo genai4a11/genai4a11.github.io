@@ -275,6 +275,27 @@ for r in results:
 <p><strong>Merging threshold</strong>: The auto-merging threshold in LlamaIndex (ratio of children retrieved before upgrading to parent) needs tuning per use case. Too aggressive = always returning full documents; too conservative = never merging, losing the hierarchy benefit. Start at 0.3 and adjust based on context waste metrics.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Parent-Child Chunking vs. Other Strategies</h2>
+<p>Parent-child chunking creates two levels of document segmentation: small child chunks that are indexed for retrieval precision, and larger parent chunks that are returned to the LLM for answer generation. When a query retrieves relevant child chunks, the system fetches their parent document segments, providing broader context to the language model than the small retrieved chunks alone would supply.</p>
+<table>
+<thead><tr><th>Strategy</th><th>Indexed Unit</th><th>Returned to LLM</th><th>Retrieval Precision</th><th>Context Quality</th></tr></thead>
+<tbody>
+<tr><td>Fixed-size chunking</td><td>Same chunk</td><td>Same chunk</td><td>Moderate</td><td>May miss context</td></tr>
+<tr><td>Parent-child</td><td>Child (small)</td><td>Parent (large)</td><td>High</td><td>Full context preserved</td></tr>
+<tr><td>Sentence window</td><td>Sentence</td><td>Sentence ± N</td><td>Very high</td><td>Good local context</td></tr>
+<tr><td>Full document</td><td>Document summary</td><td>Full document</td><td>Low</td><td>Excellent but noisy</td></tr>
+</tbody>
+</table>
+<p>The key insight behind parent-child chunking is that the optimal chunk size for embedding-based retrieval differs from the optimal chunk size for LLM reading. Embeddings encode dense semantic summaries — shorter chunks produce embeddings that more precisely represent a single concept, making retrieval more accurate. But LLMs benefit from seeing complete paragraphs, sections, or document spans that provide full reasoning context. Parent-child chunking decouples these two requirements by maintaining separate chunk sizes for each phase of the pipeline.</p>
+<p>Implementation requires maintaining a parent-child mapping in the document store or vector database metadata. When child chunks are retrieved, a post-retrieval step looks up each child's parent ID and fetches the corresponding parent chunk from the document store. If multiple child chunks share the same parent, the parent is only fetched once and deduplicated before inclusion in the LLM context window. This deduplication step is important for preventing the same parent chunk from appearing multiple times and consuming excess context tokens.</p>
+
+<p>The optimal ratio between child and parent chunk sizes depends on the document structure. For technical documentation with long, detail-dense paragraphs, a child-to-parent ratio of 1:4 (e.g., 128 tokens child / 512 tokens parent) works well. For conversational or narrative content with shorter, context-dependent sentences, a tighter ratio of 1:2 better preserves the flow of meaning. Testing retrieval precision at multiple ratio configurations on a representative document sample is more reliable than applying a universal default ratio across all document types.</p>
+
+<p>Hierarchical parent-child structures can extend beyond two levels for very long or structured documents. A three-level hierarchy — sentence → paragraph → section — enables the retrieval system to return exactly the right amount of context for each query type. Short factual queries benefit from sentence-level precision; complex analytical queries benefit from paragraph or section context. The SmallToLarge retrieval pattern starts with the smallest chunk and progressively expands to the parent if the retrieved context is insufficient for generating a confident answer.</p>
+
+<p>Storage considerations for parent-child chunking require maintaining the original parent documents alongside the child chunk index. Each child chunk's metadata must include its parent identifier and optionally the byte offsets within the parent document for efficient extraction. Vector databases like Chroma and Qdrant support metadata filtering that can accelerate parent lookup by tenant or document type. For large-scale deployments processing millions of documents, storing parent chunks in a separate high-performance key-value store (Redis, DynamoDB) rather than the vector database reduces the operational complexity of the retrieval pipeline.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

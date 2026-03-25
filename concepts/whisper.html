@@ -304,6 +304,30 @@ async def transcribe(file: UploadFile):
 <p><strong>GPU memory</strong>: large-v3 needs ~10GB VRAM. For &lt;8GB GPUs, use medium (5GB) or small (2GB). On CPU, transcription is ~15–50× slower than real-time — only practical for offline batch processing.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Whisper Model Size and Use Case Matching</h2>
+<p>OpenAI Whisper's model family spans five sizes from tiny (39M parameters) to large-v3 (1.5B parameters), each offering different trade-offs between transcription accuracy, language support, and inference speed. Selecting the right size for a use case avoids both over-engineering (using large on short English clips) and under-engineering (using tiny on accented multilingual audio).</p>
+<table>
+<thead><tr><th>Model</th><th>Parameters</th><th>English WER</th><th>Multilingual</th><th>RTF (CPU)</th></tr></thead>
+<tbody>
+<tr><td>tiny</td><td>39M</td><td>~5.7%</td><td>Basic</td><td>~32×</td></tr>
+<tr><td>base</td><td>74M</td><td>~4.3%</td><td>Good</td><td>~16×</td></tr>
+<tr><td>small</td><td>244M</td><td>~3.4%</td><td>Very good</td><td>~6×</td></tr>
+<tr><td>medium</td><td>769M</td><td>~3.0%</td><td>Excellent</td><td>~2×</td></tr>
+<tr><td>large-v3</td><td>1550M</td><td>~2.7%</td><td>Best</td><td>~1×</td></tr>
+</tbody>
+</table>
+<p>Faster-Whisper and WhisperX are optimized inference implementations that achieve 4–8× speed improvements over the original Whisper implementation through CTranslate2 backend optimization, batched audio processing, and word-level timestamp alignment. For production transcription pipelines processing hours of audio, these optimizations reduce infrastructure costs dramatically. WhisperX additionally provides accurate word-level timestamps by aligning Whisper's transcription with a forced alignment model, enabling precise subtitle generation and speaker diarization integration.</p>
+<p>Whisper's preprocessing pipeline converts raw audio to 80-channel log-mel spectrograms computed over 30-second windows, regardless of the actual audio content in each window. For short audio clips under 30 seconds, zero-padding fills the remaining window. This fixed 30-second window design means that a 5-second utterance consumes the same compute as a full 30-second segment — an inefficiency that faster-whisper addresses by detecting voice activity and only processing segments that contain speech, skipping silent padding entirely.</p>
+
+<p>Whisper's language identification capability runs on the first 30-second window of audio and outputs a probability distribution over 99 supported languages. For multilingual transcription pipelines, enabling automatic language detection eliminates the need to route audio to language-specific models and allows the same Whisper model to handle mixed-language content. The language detection decision is made per-30-second segment, so the model can switch languages mid-transcript for content where speakers alternate between languages.</p>
+
+<p>Hallucination in Whisper transcription is a known failure mode that manifests as plausible-sounding but incorrect words inserted into otherwise silent or very quiet audio segments. This occurs because Whisper was trained on noisy internet data and learned to fill silence with contextually plausible phrases rather than producing empty transcripts. Voice activity detection (VAD) preprocessing — filtering out segments below an energy threshold before feeding to Whisper — significantly reduces hallucination by preventing the model from transcribing background noise and silence as speech.</p>
+
+<p>Batch transcription throughput scales almost linearly with batch size on GPU, making offline transcription pipelines dramatically faster than processing audio files sequentially. The limiting factor is GPU memory, which constrains how many audio segments can be processed simultaneously. For the medium Whisper model, batch sizes of 8–16 on a single A10G GPU achieve near-full GPU utilization. Dynamic batching that groups audio segments of similar length minimizes padding waste and maximizes throughput for heterogeneous audio files.</p>
+
+<p>Temperature sampling in Whisper transcription controls how the model handles uncertain phonemes. At temperature 0, Whisper always selects the most probable token at each step, which is fast but occasionally produces confident wrong transcriptions. At higher temperatures, the model explores alternative transcriptions more aggressively, enabling the beam search to recover from early wrong guesses. Whisper's default inference pipeline uses temperature fallback: starting at 0 and increasing temperature if the compression ratio or log probability score suggests the transcription may be unreliable.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -328,6 +328,29 @@ pipeline = load_rag_pipeline()  # only runs once per Streamlit server start
 <p><strong>Production limitations</strong>: Streamlit is excellent for demos and internal tools but not ideal for high-traffic production apps (no built-in auth beyond Streamlit Community Cloud's Google OAuth, limited horizontal scaling). For public-facing production apps with 1000+ daily users, consider <a class="concept-link" href="fastapi.html">FastAPI</a> + <a class="concept-link" href="react-prompting.html">React</a> instead.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>Streamlit LLM App Architecture Patterns</h2>
+<p>Streamlit's execution model re-runs the entire script from top to bottom on every user interaction, which requires careful state management for LLM applications. Session state persists data across reruns, enabling conversation history, model configuration, and intermediate results to survive the interaction cycle without expensive recomputation.</p>
+<table>
+<thead><tr><th>Pattern</th><th>Implementation</th><th>Best For</th><th>Pitfall</th></tr></thead>
+<tbody>
+<tr><td>Chat history</td><td>st.session_state.messages list</td><td>Conversational apps</td><td>Unbounded growth → token limit</td></tr>
+<tr><td>Cached model load</td><td>@st.cache_resource</td><td>Local model serving</td><td>Stale model on update</td></tr>
+<tr><td>Streaming output</td><td>st.write_stream(generator)</td><td>Responsive chat UI</td><td>Generator must be consumed once</td></tr>
+<tr><td>Sidebar config</td><td>st.sidebar sliders/selects</td><td>Parameter tuning UIs</td><td>Triggers full rerun on change</td></tr>
+</tbody>
+</table>
+<p>The @st.cache_resource decorator is essential for LLM applications that load models locally. Without caching, the model weights would be loaded from disk and transferred to GPU on every script rerun — which happens on every user interaction. Cache_resource stores the model object across sessions and reruns, ensuring the expensive initialization happens only once per application deployment. The clear function can be called programmatically to reload the model when weights are updated.</p>
+<p>Streamlit's st.write_stream function accepts a generator and displays tokens as they arrive, implementing the streaming chat experience with a single function call. The generator can come from any LLM API that supports streaming — OpenAI, Anthropic, or a local model endpoint. Wrapping the streaming call in a try/except block with a finally clause that appends the completed response to the session state chat history ensures history is persisted even if the stream is interrupted by a network error or user navigation.</p>
+
+<p>Streamlit's multipage app feature organizes complex LLM applications into separate pages, each with its own Python file in the pages/ directory. Navigation between pages is handled automatically by Streamlit's sidebar, and session state persists across page transitions within the same browser session. For LLM applications with distinct functional areas — a chat interface, a document analyzer, a settings panel, an evaluation dashboard — multipage structure keeps each component focused and independently maintainable without the complexity of routing logic.</p>
+
+<p>Database connections in Streamlit LLM apps should use st.cache_resource to avoid creating a new connection pool on every script rerun. The same pattern applies to vector store clients, embedding model instances, and any other resource with significant initialization cost. Cache_resource stores the resource at the singleton level, shared across all user sessions and script reruns. Parameterized resources — different database connections for different user accounts — can use the hash_funcs argument to cache separate instances per unique parameter combination.</p>
+
+<p>Deploying Streamlit applications with Docker enables consistent production environments that match the local development setup exactly. The Dockerfile installs Python dependencies, copies the application code, and configures Streamlit's server settings (headless mode, port, CORS policy) via environment variables. Streamlit Cloud provides managed hosting that deploys directly from GitHub repositories with automatic dependency installation from requirements.txt, supporting both public and private apps with GitHub-based access control.</p>
+
+<p>Streamlit's fragment feature, introduced in recent versions, allows portions of the UI to rerun independently of the full script, reducing unnecessary recomputation. For LLM chat applications, wrapping the chat message display in a fragment ensures that displaying new messages does not retrigger expensive operations like sidebar metric calculations or chart renders that depend on session data unchanged by the new message. Fragments improve perceived performance by reducing the visual flicker and latency of partial UI updates in response to user interactions.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

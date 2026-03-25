@@ -351,6 +351,28 @@ app = orchestrator.compile()
 <p><strong><a class="concept-link" href="streaming.html">Streaming</a> is different from invocation.</strong> <code>app.invoke()</code> returns the final state. <code>app.stream()</code> yields state after each node. For long-running agents, streaming lets you show progress to the user. Always use streaming for user-facing applications.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>LangGraph Node and Edge Patterns</h2>
+<p>LangGraph models LLM workflows as directed graphs where nodes represent computational steps (LLM calls, tool invocations, data transformations) and edges represent the flow of state between steps. Unlike linear chains, LangGraph supports conditional branching, cycles for iterative refinement, and parallel fan-out/fan-in, enabling the construction of stateful agent architectures that cannot be expressed as simple sequential pipelines.</p>
+<table>
+<thead><tr><th>Pattern</th><th>Structure</th><th>Use Case</th><th>Key Mechanism</th></tr></thead>
+<tbody>
+<tr><td>Linear chain</td><td>A → B → C</td><td>Sequential processing</td><td>Fixed edges</td></tr>
+<tr><td>Conditional branch</td><td>A → B or C</td><td>Intent routing</td><td>Conditional edges</td></tr>
+<tr><td>Cycle</td><td>A → B → A</td><td>Iterative refinement</td><td>Loop with termination condition</td></tr>
+<tr><td>Fan-out/fan-in</td><td>A → [B,C] → D</td><td>Parallel tools</td><td>Parallel node execution</td></tr>
+<tr><td>Subgraph</td><td>A → [Graph] → B</td><td>Modular agents</td><td>Nested graph nodes</td></tr>
+</tbody>
+</table>
+<p>LangGraph's state management uses a typed TypedDict as the shared state object that flows through the entire graph. Each node receives the current state and returns a partial update; LangGraph merges updates using reducer functions (append for lists, overwrite for scalar values by default). This explicit state schema makes the data contract between nodes clear and enables the checkpointing system to serialize and restore execution state at any node boundary — the foundation for long-running agent tasks that survive process restarts.</p>
+<p>Conditional edges in LangGraph take a state evaluation function that returns the name of the next node to visit. This allows the graph to implement routing logic based on any aspect of the accumulated state — the content of the most recent tool call result, a counter tracking iteration number, a flag set by a quality evaluation node. The routing function runs after a node completes and determines which branch of the graph to traverse next, enabling dynamic control flow that responds to the intermediate results of the computation.</p>
+
+<p>Checkpointing in LangGraph persists the full execution state after every node transition, enabling long-running agent tasks to be interrupted and resumed without restarting from the beginning. The checkpoint is stored in a configured checkpoint store — SQLite for local development, PostgreSQL or Redis for production deployments. When resuming from a checkpoint, LangGraph restores the exact state at the last saved node, skipping all previously completed steps. This makes LangGraph well-suited for multi-hour research agent tasks that cannot be completed in a single function call within a serverless request timeout.</p>
+
+<p>Human-in-the-loop interrupts in LangGraph use a special interrupt mechanism that pauses graph execution at a designated node and surfaces the current state to an external interface for human review. The execution is serialized to the checkpoint store in an "interrupted" status; when the human provides their response (approval, modification, or rejection), the execution resumes from the interrupted node with the human feedback incorporated into the state. This pattern is implemented without polling — the graph simply waits in the checkpoint store until resumed, making it compatible with asynchronous human review workflows.</p>
+
+<p>Multi-agent architectures in LangGraph use subgraph nodes that encapsulate entire agent graphs as single nodes in a parent graph. The supervisor agent, implemented as the parent graph, routes tasks to specialist subgraphs — a researcher, a writer, a code interpreter — by calling them as nodes. Each subgraph executes fully and returns its result to the supervisor's state. This hierarchical composition allows complex multi-agent systems to be built from independently testable subgraph modules with clear input/output contracts defined by the shared state TypedDict.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -264,6 +264,47 @@ args = TrainingArguments(output_dir="./out", num_train_epochs=3,
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Prefix Tuning vs. Other Parameter-Efficient Methods</h2>
+<p>Prefix tuning prepends a sequence of learnable "virtual tokens" to the input of every transformer layer, conditioning the model's behavior without modifying any of its original weights. Only the prefix parameters are updated during training, keeping the base model frozen and making prefix tuning highly parameter-efficient while allowing task-specific customization through the learned prefix vectors.</p>
+<table>
+<thead><tr><th>Method</th><th>Trainable Params</th><th>Where Modified</th><th>Inference Overhead</th><th>Quality</th></tr></thead>
+<tbody>
+<tr><td>Full fine-tuning</td><td>100%</td><td>All weights</td><td>None</td><td>Highest</td></tr>
+<tr><td>LoRA</td><td>0.1–1%</td><td>Attention projections</td><td>Minimal (merge at deploy)</td><td>Very good</td></tr>
+<tr><td>Prefix tuning</td><td>0.1%</td><td>KV cache prefix</td><td>Extra prefix tokens</td><td>Good</td></tr>
+<tr><td>Prompt tuning</td><td>~0.01%</td><td>Input embeddings only</td><td>Extra tokens</td><td>Moderate</td></tr>
+<tr><td>Adapter layers</td><td>0.5–3%</td><td>Inserted FFN layers</td><td>Adapter forward passes</td><td>Very good</td></tr>
+</tbody>
+</table>
+<p>Prefix tuning's key advantage over prompt tuning is that it conditions every layer of the transformer through the prefix key-value pairs, not just the input embedding layer. Prompt tuning only prepends soft tokens to the input and relies on the frozen transformer to propagate that signal through its layers. The additional conditioning depth of prefix tuning makes it more expressive for complex tasks, though at the cost of slightly more trainable parameters and a constant inference overhead proportional to the prefix length.</p>
+<p>The inference overhead from prefix tokens is a practical consideration for high-throughput deployments. A prefix of length L adds L tokens to every request's KV cache, consuming additional memory and adding a constant latency cost for the attention computation over the prefix. For interactive applications where latency matters, keeping prefix lengths short (8–32 tokens) is important. LoRA has effectively replaced prefix tuning for most use cases because it has no inference overhead when the adapter is merged into the base model weights before deployment.</p>
+
+<div class="example-box">
+<pre><code>from peft import PrefixTuningConfig, get_peft_model, TaskType
+from transformers import AutoModelForSeq2SeqLM
+
+# Load base model
+model = AutoModelForSeq2SeqLM.from_pretrained("t5-large")
+
+# Configure prefix tuning
+config = PrefixTuningConfig(
+    task_type=TaskType.SEQ_2_SEQ_LM,
+    num_virtual_tokens=20,       # prefix length
+    encoder_hidden_size=1024,    # reparameterization hidden size
+    prefix_projection=True       # use MLP reparameterization
+)
+
+# Wrap model: only prefix params are trainable
+model = get_peft_model(model, config)
+model.print_trainable_parameters()
+# trainable params: 3,686,400 || all params: 740,536,320 || ~0.498%</code></pre>
+</div>
+
+<p>Reparameterization is a training stabilization technique used in prefix tuning. Rather than directly optimizing the prefix vectors, the original paper trains a small MLP network that projects a low-dimensional input to the full-dimensional prefix vectors. This reparameterization prevents the prefix vectors from getting stuck in poor local minima during early training by providing a smoother optimization landscape. After training, the MLP is discarded and only the final prefix vectors are stored for inference — there is no runtime cost from reparameterization.</p>
+
+<p>Multi-task learning with prefix tuning uses separate prefix parameters for each task while sharing all base model weights. Given K tasks, only K × prefix_length × d_model parameters are added, regardless of model size. Task selection at inference time simply routes the request through the appropriate prefix. This sharing of base model weights is more memory-efficient than maintaining K separately fine-tuned full models, and avoids catastrophic forgetting of other tasks since the original model weights are never modified during training.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

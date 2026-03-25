@@ -327,6 +327,29 @@ for row in table.rows:
 <p><strong>Privacy</strong>: Images sent to the API are processed by OpenAI's servers. For sensitive documents (medical, financial, legal), review OpenAI's data processing agreement before using vision APIs.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>GPT-4V Capability and Limitation Reference</h2>
+<p>GPT-4V (Vision) extends GPT-4 with the ability to accept images as part of the conversation context, enabling applications that combine visual understanding with language reasoning. The model can analyze photographs, diagrams, charts, screenshots, documents, and handwritten content, integrating visual observations with textual reasoning in a single unified response.</p>
+<table>
+<thead><tr><th>Task Category</th><th>Capability Level</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Object recognition</td><td>Excellent</td><td>Wide object vocabulary</td></tr>
+<tr><td>Chart / graph reading</td><td>Very good</td><td>Occasional numeric errors on dense charts</td></tr>
+<tr><td>OCR / text extraction</td><td>Good</td><td>Degrades on low-res or stylized fonts</td></tr>
+<tr><td>Spatial reasoning</td><td>Moderate</td><td>Left/right confusions on complex scenes</td></tr>
+<tr><td>Face identification</td><td>Refused</td><td>Privacy policy restriction</td></tr>
+<tr><td>Mathematical diagrams</td><td>Good</td><td>Geometry better than abstract algebra</td></tr>
+</tbody>
+</table>
+<p>Image resolution handling in GPT-4V uses a tile-based approach for high-resolution inputs. Images above 512×512 pixels are automatically tiled into 512×512 tiles that are each processed by the vision encoder, with a low-resolution overview image also provided. This tile-based processing allows fine detail analysis of large images but significantly increases token consumption — a 2048×2048 image is processed as 16 tiles plus an overview, consuming approximately 1,700 tokens before the text prompt begins. Resizing images to the minimum resolution needed for the task dramatically reduces cost without quality loss for tasks that don't require fine detail.</p>
+<p>Multi-image inputs in GPT-4V enable comparison, before/after analysis, and document multi-page processing within a single conversation turn. Images are interleaved with text in the message content array, allowing precisely positioned references like "compare the chart on the left with the chart on the right." The total number of images per request is limited by the maximum token budget, so long conversations with many images require careful management of which images remain in the context window versus are evicted to stay within limits.</p>
+
+<p>Structured data extraction from document images is one of the highest-ROI applications of GPT-4V. Invoices, receipts, forms, and tables photographed or scanned as images can be passed directly to GPT-4V with a prompt requesting structured JSON output containing the extracted fields. This eliminates the preprocessing pipeline required by traditional OCR + parsing approaches — no need for a separate OCR service, layout analysis, or field-specific regex patterns. For documents with consistent structure, GPT-4V extraction accuracy often matches or exceeds specialized OCR pipelines while requiring far less engineering effort.</p>
+
+<p>Video understanding with GPT-4V requires frame sampling since the API accepts only static images. Common strategies include uniform sampling (one frame per second or per N seconds), keyframe extraction (selecting frames where scene content changes significantly), and transcript-aligned sampling (selecting frames at timestamps corresponding to key moments in the audio transcription). For most video analysis tasks, 5–20 well-chosen frames capture sufficient visual information while keeping the token cost manageable. Dense sampling of every frame is rarely necessary and quickly exhausts the context window for longer videos.</p>
+
+<p>GPT-4V accessibility applications use visual description to assist users with visual impairments. The model can describe complex images, read text from photos, navigate user interfaces from screenshots, and explain charts and diagrams in natural language. For these accessibility use cases, response format matters significantly — structured descriptions that proceed from the most important information to supporting details serve users better than comprehensive inventories of all visible elements. Few-shot prompting with examples of high-quality image descriptions helps the model adopt an appropriate level of detail and descriptive style for accessibility contexts.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

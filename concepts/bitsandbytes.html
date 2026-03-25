@@ -271,6 +271,29 @@ model.print_trainable_parameters()
 <p><strong>Gradient accumulation with QLoRA</strong>: Use <code>gradient_accumulation_steps &gt; 1</code> to simulate larger batches. With 4-bit base + LoRA, effective batch of 64 is achievable on a single 24GB GPU with accumulation=8 and per_device_batch=8.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>bitsandbytes Quantization Methods</h2>
+<p>The bitsandbytes library provides 8-bit and 4-bit quantization for PyTorch model weights, enabling large models to be loaded and run on GPUs with significantly less VRAM than required for full-precision weights. It integrates directly with HuggingFace Transformers via the load_in_8bit and load_in_4bit flags, making quantized inference accessible with minimal code changes.</p>
+<table>
+<thead><tr><th>Method</th><th>Precision</th><th>VRAM Reduction</th><th>Quality Impact</th><th>Use Case</th></tr></thead>
+<tbody>
+<tr><td>FP16 baseline</td><td>16-bit</td><td>None (reference)</td><td>None</td><td>Standard inference</td></tr>
+<tr><td>LLM.int8()</td><td>8-bit</td><td>~50%</td><td>Minimal</td><td>Inference on consumer GPUs</td></tr>
+<tr><td>NF4 (QLoRA)</td><td>4-bit</td><td>~75%</td><td>Small</td><td>Fine-tuning large models</td></tr>
+<tr><td>FP4</td><td>4-bit</td><td>~75%</td><td>Slightly more than NF4</td><td>Inference only</td></tr>
+</tbody>
+</table>
+<p>The LLM.int8() algorithm uses a mixed-precision decomposition: it identifies outlier feature dimensions in the activation tensors that carry disproportionate magnitude and keeps those in FP16, while quantizing the remaining 99.9% of values to INT8. This decomposition approach avoids the catastrophic quality degradation that occurs with naive INT8 quantization of transformer activations, which are characterized by extreme outlier values that emerge in models above a certain scale threshold (approximately 6B parameters).</p>
+<p>NF4 quantization uses a data type specifically designed for neural network weights. Normal Float 4 (NF4) is constructed by finding the 16 quantization levels that are optimal for normally distributed data — which weight tensors approximately follow after normalization. This makes NF4 more information-efficient than INT4 for neural network weights, explaining why QLoRA fine-tuning with NF4 quantization retains higher quality than naive 4-bit quantization with the same bit budget.</p>
+
+<p>Double quantization, introduced in QLoRA, applies a second level of quantization to the quantization constants themselves. In block-wise quantization, each block of 64 weights shares a floating-point scale constant. These scale constants consume approximately 0.5 bits per weight at 64-block granularity. Double quantization quantizes these scale constants from FP32 to FP8, reducing the overhead from 0.5 bits/weight to approximately 0.127 bits/weight — a significant reduction that further decreases the total memory footprint of 4-bit quantized models.</p>
+
+<p>Page-wise optimizer states in bitsandbytes reduce the memory cost of Adam optimizer states during fine-tuning. Standard Adam maintains FP32 first and second moment estimates for every parameter, consuming 8 bytes per parameter — double the size of FP16 weights. The 8-bit paged Adam optimizer in bitsandbytes quantizes these optimizer states to 8-bit and pages them to CPU RAM when GPU memory is under pressure, allowing fine-tuning of larger models on memory-constrained hardware without gradient accumulation tricks that increase training time.</p>
+
+<p>Mixed-precision inference with bitsandbytes allows the quantization level to vary by layer. The first and last transformer layers — the embedding layer and the language model head — are kept in full precision because they are particularly sensitive to quantization error. Intermediate attention and FFN layers use 8-bit or 4-bit quantization. This layer-wise precision assignment is the default behavior of LLM.int8() and produces better output quality than uniformly quantizing all layers, at minimal additional memory cost since the unquantized boundary layers represent a small fraction of total parameters.</p>
+
+<p>Gradient checkpointing combined with bitsandbytes quantization enables fine-tuning of very large models on limited hardware by trading compute for memory. Without gradient checkpointing, activations from all transformer layers are stored in GPU memory during the forward pass to speed up the backward pass. With checkpointing, only a subset of activations are stored; the rest are recomputed during backpropagation. Combined with 4-bit model weights and 8-bit optimizer states, this combination makes fine-tuning 70B+ parameter models feasible on machines with 2–4 consumer GPUs that would otherwise require an 8-GPU server.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
