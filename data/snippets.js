@@ -8194,66 +8194,99 @@ b = torch.randn(4)
 x = torch.randn(8)
 y = W @ x + b
 print(f'Layer output: {y.shape}')`,tip:'Start with NumPy[1] for array math — it forces you to think about shapes and dimensions, which is 80% of debugging deep learning code.\n\nYou do not need to derive proofs to build good GenAI systems. You need to know what each operation does and when it breaks — that understanding comes from implementing things from scratch once.\n\nCome back to foundations when you hit a wall you cannot explain; the answer is almost always in calculus (why does loss not decrease?) or linear algebra (why are my shapes wrong?).',questions:{leader:['Which foundational gaps in your engineering team create the most risk when GenAI systems behave unexpectedly in production?','What is the minimum foundation knowledge a non-ML hire needs before contributing meaningfully to a GenAI project — and how do you assess it?'],pm:['Which foundation concepts most directly affect product quality — and which are purely implementation concerns your engineers handle?','How do you distinguish a prompt engineering failure from a model knowledge limitation from a fundamental architecture constraint?'],eng:['Where does calculus knowledge save debugging time that stack traces alone cannot?','Which math operations appear so frequently in GenAI code that not recognising them at a glance costs hours of debugging?','When is it worth implementing a concept from scratch vs. using a library — and what do you actually learn from the from-scratch version?']},refs:[{label:'[1] NumPy — fundamental array library for scientific computing in Python',url:'https://numpy.org/doc/stable/'},{label:'[2] Mathematics for Machine Learning (Deisenroth, Faisal, Ong — free textbook)',url:'https://mml-book.github.io/'},{label:'[3] 3Blue1Brown — Essence of Linear Algebra and Neural Networks (video series)',url:'https://www.3blue1brown.com/topics/linear-algebra'}]},
-gemini15:{use:'Gemini 1.5 Pro excels with 1M+ token context for processing long documents, PDFs, videos, and multimodal data in a single API call.',diag:`
+gemini15:{use:'Gemini 1.5 Pro[1] can process up to 1 million tokens in a single call — equivalent to a full codebase, a 700-page book, or an hour of video. Its MoE[2] architecture keeps inference fast despite the huge context. Use it when your task requires reasoning across more data than any other model can hold.\n\nKey library: google-generativeai[3] (pip install google-generativeai)',diag:`
   Gemini 1.5 Pro — 1M+ token context:
 
-  Architecture: Mixture of Experts (MoE)
-  Context: 1M tokens (≈ 1,500 pages / full codebase)
-  Multimodal: text + image + video + audio + code
+  Architecture: Mixture of Experts (→ MoE node)
+  Context: 1,048,576 tokens (≈ 1,500 pages / full codebase)
+  Multimodal input: text · image · video · audio · code
 
-  Key capability: long-context retrieval
-  ┌──────────────────────────────────────┐
-  │  1M token window                     │
-  │  ├── Full 700-page book              │
-  │  ├── 1 hour of video (with audio)    │
-  │  ├── 30,000 lines of code            │
-  │  └── 100+ documents simultaneously  │
-  └──────────────────────────────────────┘
+  What fits in 1M tokens:
+  ┌──────────────────────────────────────────┐
+  │  Full 700-page technical book            │
+  │  1 hour of video with audio transcript   │
+  │  ~30,000 lines of code                   │
+  │  100+ documents simultaneously           │
+  └──────────────────────────────────────────┘
 
-  "Needle in a haystack" performance: near-perfect
-  retrieval of specific facts from 1M token corpus
+  "Needle in a haystack"[4]: near-perfect recall
+  of a single fact hidden anywhere in 1M tokens
 
-  Access: Google AI Studio, Vertex AI, API`,code:`import anthropic
+  Comparison:
+  GPT-4o (→ GPT-4o node): 128K context
+  Claude 3.5 (→ Claude 3.5 Sonnet node): 200K context
+  Gemini 1.5 Pro: 1M context  ← unique strength`,code:`# pip install google-generativeai
+import google.generativeai as genai
 
-client = anthropic.Anthropic()
-response = client.messages.create(
-    model="claude-3-5-sonnet-20241022",
-    max_tokens=1024,
-    messages=[
-        {"role": "user", "content": "Summarize this 100-page document..."}
-    ]
+genai.configure(api_key='YOUR_GOOGLE_API_KEY')
+model = genai.GenerativeModel('gemini-1.5-pro')
+
+# Basic long-context text query
+long_document = open('technical_spec.txt').read()  # e.g. 300 pages
+response = model.generate_content(
+    f'Find all API endpoints in this document:\n\n{long_document}'
 )
-print(response.content[0].text)`,tip:'1M context is overkill for most tasks—start with Claude or GPT-4.\n\nBatch long docs into semantic chunks for better focus.\n\nUse for one-shot end-to-end document analysis, not iterative reasoning.',refs:[{label:"Gemini 1.5 Pro",url:"concepts/gemini15.html"}]},
-o3:{use:'o3/o4-mini models trade latency for correctness via extended thinking; best for hard math, formal proofs, and complex debugging where accuracy matters more than speed.',diag:`
-  OpenAI o3 — extended reasoning model:
+print(response.text)
 
-  Standard LLM (GPT-4o):
-  prompt → single forward pass → answer
-  Latency: ~1–3s, good for routine tasks
-
-  o3 (reasoning model):
-  prompt → internal chain-of-thought search
-          (explores many reasoning paths)
-        → synthesized answer
-  Latency: 30s–5min, best for hard problems
-
-  Reasoning budget:
-  o3-mini:  fast, cheaper  (~1–5s)
-  o3:       medium         (~10–60s)
-  o3 high:  thorough       (~2–10min)
-
-  Best for: competition math, hard coding, PhD-level science
-  ARC-AGI: 87.5% (humans ~85%) — major milestone`,code:`import anthropic
-
-client = anthropic.Anthropic()
-response = client.messages.create(
-    model="claude-3-7-sonnet-20250219",
-    max_tokens=16000,
-    thinking={"type": "enabled", "budget_tokens": 10000},
-    messages=[{"role": "user", "content": "Prove the Collatz conjecture or debug this recursive function..."}]
+# Upload a PDF file (handles binary files natively)
+pdf_file = genai.upload_file('report.pdf', mime_type='application/pdf')
+response = model.generate_content(
+    ['Extract all numerical findings from this report:', pdf_file]
 )
-print(response.content[0].thinking)
-print(response.content[1].text)`,tip:'Budget 10k–20k thinking tokens for hard problems.\n\nCosts ~5x latency of instant models; gated for small orgs.\n\nPerfect for competition math, formal verification, complex refactoring.',refs:[{label:"o3 / o4-mini",url:"concepts/o3.html"}]},
+print(response.text)
+
+# Count tokens before submitting
+token_count = model.count_tokens(long_document)
+print(f'Document uses {token_count.total_tokens:,} tokens of 1M limit')`,tip:'1M context is powerful but expensive — a 1M-token input costs roughly $3.50 USD. For most tasks, → RAG node (chunked retrieval) is cheaper and more focused.\n\nUse Gemini 1.5 Pro for tasks that genuinely require full-document reasoning: cross-referencing many sections, finding contradictions, or extracting structure from unstructured long text.\n\nThe "lost in the middle" problem[4] is less severe at 1M than at 128K — Gemini 1.5 has better long-context recall than most models.',questions:{leader:['When does the cost of a 1M-context call justify eliminating the engineering work of building a → RAG node pipeline?','How do you evaluate whether a long-context model is actually using the full context or ignoring the middle sections?'],pm:['Which product use cases require 1M context — and which just feel like they do but could be solved with smarter retrieval?','What quality metrics distinguish good from poor long-context performance on your specific documents?'],eng:['How do you handle documents that exceed the 1M limit — what splitting strategy preserves the most context?','What is the token cost vs. latency tradeoff between stuffing everything into context vs. retrieval?']},refs:[{label:'[1] Gemini 1.5: Unlocking multimodal understanding across millions of tokens (Google, 2024)',url:'https://arxiv.org/abs/2403.05530'},{label:'[2] MoE — Mixture of Experts (→ MoE node in this map)',url:'concepts/moe.html'},{label:'[3] google-generativeai Python SDK documentation',url:'https://ai.google.dev/api/python/google/generativeai'},{label:'[4] Lost in the Middle — how models recall long-context facts (Liu et al., 2023)',url:'https://arxiv.org/abs/2307.03172'}]},
+o3:{use:'OpenAI o3 / o4-mini[1] are "reasoning models" — instead of a single forward pass, they run an internal chain-of-thought search before answering. The result is dramatically better accuracy on hard math, logic proofs, and complex debugging — at the cost of longer latency (10 seconds to several minutes).\n\nKey library: openai[2] (pip install openai)',diag:`
+  Standard LLM (GPT-4o, → GPT-4o node):
+  prompt ──► single forward pass ──► answer
+  Latency: ~1–3s  ·  good for routine tasks
+
+  Reasoning model (o3 / o4-mini):
+  prompt ──► internal chain-of-thought search ──► synthesized answer
+              (explores many reasoning paths,       Latency: 10s–5min
+               self-corrects before returning)      best for hard problems
+
+  Reasoning effort levels:
+  ┌──────────────┬────────────┬────────────────────────┐
+  │ low          │ ~5–15s     │ quick estimates        │
+  │ medium       │ ~15–60s    │ most production tasks  │
+  │ high         │ ~1–5 min   │ competition math/code  │
+  └──────────────┴────────────┴────────────────────────┘
+
+  ARC-AGI[3] score: o3 = 87.5% (humans ≈ 85%)
+  — first model to match human-level on this benchmark`,code:`from openai import OpenAI
+
+client = OpenAI()  # uses OPENAI_API_KEY env var
+
+# o3: high accuracy, higher latency
+response = client.chat.completions.create(
+    model='o3',
+    reasoning_effort='high',     # 'low' | 'medium' | 'high'
+    messages=[{
+        'role': 'user',
+        'content': (
+            'Find the bug in this recursive function and explain why it occurs:\n\n'
+            'def flatten(lst):\n'
+            '    if not lst: return []\n'
+            '    if isinstance(lst[0], list): return flatten(lst[0]) + flatten(lst[1:])\n'
+            '    return [lst[0]] + flatten(lst)'
+        )
+    }]
+)
+print(response.choices[0].message.content)
+
+# o4-mini: cheaper, faster — good for batching
+response_mini = client.chat.completions.create(
+    model='o4-mini',
+    reasoning_effort='medium',
+    messages=[{'role': 'user', 'content': 'Solve: x^2 - 5x + 6 = 0'}]
+)
+print(response_mini.choices[0].message.content)
+# Check reasoning tokens used (contributes to cost)
+usage = response_mini.usage
+print(f'Reasoning tokens: {usage.completion_tokens_details.reasoning_tokens}')`,tip:'Match reasoning effort to task difficulty: use low/medium for most product features, high only for the hardest problems — the latency and cost difference is 5–10×.\n\nDo not use reasoning models for tasks → GPT-4o node handles well (chat, summarization, straightforward Q&A) — save them for provably hard tasks: formal verification, competition-level coding, multi-step mathematical proofs.\n\no4-mini at medium effort is often the sweet spot: 80% of o3-high accuracy at 20% of the cost.',questions:{leader:['Which parts of your product involve problems hard enough to justify 60-second response times — and which are currently using reasoning models unnecessarily?','How does accuracy-vs-latency tradeoff change your product design — what features become possible when a model can "think" for 2 minutes?'],pm:['How do you set user expectations for a feature that takes 30 seconds vs. 2 seconds — and when does that latency become unacceptable?','What problem categories in your product would measurably improve with o3-level accuracy vs. current GPT-4o performance?'],eng:['How do you implement timeouts and fallback logic for reasoning model calls in production — and what do you do when a 5-minute call times out?','How do reasoning tokens appear in your cost tracking, and how do you set reasoning_effort budgets per task type?']},refs:[{label:'[1] OpenAI o3 and o4-mini model card and documentation',url:'https://platform.openai.com/docs/models/o3'},{label:'[2] OpenAI Python SDK',url:'https://github.com/openai/openai-python'},{label:'[3] ARC-AGI benchmark — Abstraction and Reasoning Corpus (Chollet)',url:'https://arcprize.org/'}]},
 llama3:{use:'Llama 3.1 (open weights, 8B/70B/405B) is fully transparent, fine-tunable, and runs on-prem or via API; strong for coding and instruction-following in regulated orgs.',diag:`
   Llama 3 family architecture:
 
