@@ -265,6 +265,55 @@ print(f"Average MT-Bench score: {sum(scores)/len(scores):.2f}/10")
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>MT-Bench scores in context</h2>
+<p>MT-Bench scores are calibrated against GPT-4 which typically scores 8.9–9.0 on the benchmark. Scores above 8.5 indicate models competitive with GPT-4 on multi-turn instruction following. Scores in the 7.0–8.5 range represent capable assistant models suitable for most production applications. Scores below 6.0 indicate significant deficiencies in instruction following or multi-turn coherence that would impact user experience. The score distribution is not uniform — most frontier models cluster between 8.0 and 9.2, making fine-grained discrimination between top models difficult with MT-Bench alone.</p>
+<table>
+<thead><tr><th>Score range</th><th>Tier</th><th>Example models</th><th>Use case fit</th></tr></thead>
+<tbody>
+<tr><td>9.0+</td><td>Frontier</td><td>GPT-4, Claude 3 Opus</td><td>Complex reasoning, agentic tasks</td></tr>
+<tr><td>8.0–8.9</td><td>Strong</td><td>GPT-3.5-turbo, Claude Haiku</td><td>General assistant, chat</td></tr>
+<tr><td>7.0–7.9</td><td>Capable</td><td>Mistral-7B-Instruct</td><td>Simple tasks, cost-sensitive</td></tr>
+<tr><td>&lt;7.0</td><td>Limited</td><td>Small instruct models</td><td>Narrow, constrained applications</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code>import subprocess, json
+
+# Run MT-Bench eval (requires FastChat installation)
+# pip install fschat[model_worker,llm_judge]
+# python -m fastchat.llm_judge.gen_model_answer #   --model-path your-model --model-id your-model-id
+
+# After generating answers, run the judge:
+# python -m fastchat.llm_judge.gen_judgment #   --judge-model gpt-4 --model-list your-model-id
+
+# Parse results
+with open("data/mt_bench/model_judgment/gpt-4_single.jsonl") as f:
+    scores = [json.loads(l) for l in f]
+
+# Average score per category
+from collections import defaultdict
+by_cat = defaultdict(list)
+for s in scores:
+    by_cat[s["category"]].append(s["score"])
+for cat, vals in sorted(by_cat.items()):
+    print(f"{cat}: {sum(vals)/len(vals):.2f}")</code></pre>
+</div>
+
+<p>MT-Bench's LLM-as-judge methodology introduces a position bias that affects single-model absolute scoring. GPT-4 as a judge tends to prefer the first response in pairwise comparisons and assigns slightly higher scores to verbose responses that use structured formatting. The FastChat MT-Bench implementation applies a position swap correction for pairwise comparisons (evaluating each pair in both orders) but the absolute scoring mode (assigning scores from 1–10) cannot easily correct for the judge's formatting preferences. Teams comparing models with different response styles should normalize MT-Bench scores against the known judge biases or use human evaluation as a validation check for close-scoring model comparisons.</p>
+
+<p>MT-Bench's second-turn questions are specifically designed to test whether models can maintain instruction-following coherence across turns rather than treating each turn independently. Models that answer the first turn correctly but ignore the second-turn constraint (for example, answering in the wrong format after being asked to change formats) receive lower second-turn scores. This second-turn coherence measurement distinguishes models with genuine multi-turn understanding from models that independently handle each message without true conversation state tracking, making MT-Bench a better proxy for production chatbot quality than single-turn benchmarks.</p>
+
+<p>Category-level MT-Bench analysis often reveals specialization patterns that aggregate scores obscure. A model that scores 9.2 on the coding category but 6.8 on the roleplay category is a different deployment fit than a model with 8.0 across all categories, even if their aggregate scores are similar. For teams building specialized applications, running the full MT-Bench evaluation and analyzing category breakdowns before making model selection decisions provides materially better guidance than relying on aggregate scores reported in papers or leaderboards.</p>
+
+<p>MT-Bench's fixed question set of 80 questions across 8 categories means the benchmark is vulnerable to overfitting once model developers are aware of the specific questions. Unlike dynamic benchmarks that sample questions from a distribution, MT-Bench's public questions enable targeted optimization — training on data similar to the specific questions. The LMSys team has noted this limitation and developed dynamic evaluation approaches, but MT-Bench's fixed format remains valuable for historical comparisons and for teams who want reproducible evaluation results without managing a question generation pipeline.</p>
+
+<p>MT-Bench question categories are intentionally diverse to prevent models from gaming the benchmark through narrow task specialization. The eight categories — writing, roleplay, reasoning, math, coding, extraction, STEM, and humanities — were selected to require different capability profiles, making it difficult to achieve high overall scores without broad competence. Teams using MT-Bench for model selection should pay particular attention to the coding and math categories, which show the highest variance between models and are often the most predictive of performance on structured reasoning tasks common in enterprise applications.</p>
+
+<p>MT-Bench's multi-turn evaluation mirrors real chatbot interaction patterns by testing whether models can maintain coherent, relevant responses when conversation builds on previous turns. The second turn in each MT-Bench question is designed to require referencing or modifying the first answer — for example, asking the model to rewrite its explanation at a different level of difficulty, or to apply the same reasoning method to a different example. Models that treat each turn independently rather than tracking conversation state consistently underperform on MT-Bench second turns, making the benchmark an effective discriminator for multi-turn conversation capability.</p>
+
+<p>MT-Bench's multi-turn evaluation mirrors real chatbot interaction patterns by testing whether models can maintain coherent, relevant responses when conversation builds on previous turns. The second turn in each MT-Bench question is designed to require referencing or modifying the first answer — for example, asking the model to rewrite its explanation at a different level of difficulty, or to apply the same reasoning method to a different example. Models that treat each turn independently rather than tracking conversation state consistently underperform on MT-Bench second turns, making the benchmark an effective discriminator for multi-turn conversation capability.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

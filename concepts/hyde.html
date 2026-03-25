@@ -277,6 +277,58 @@ results = hyde_vectorstore.similarity_search("What causes prices to rise?", k=3)
 <p><strong>Multi-hypothesis variant.</strong> Generate 3–5 hypothetical documents and average their embeddings before retrieval. This reduces the variance of any single hallucinated response, often improving recall further.</p>
 </div>
 </div>
+<div class="section-block">
+<h2>HyDE evaluation and when it helps</h2>
+<p>HyDE's effectiveness is highly query-dependent. Queries that are short, underspecified, or phrased differently from how documents are written benefit most from HyDE because the hypothetical document bridges the vocabulary and style gap. Queries that are already phrased in document-like language, or queries for rare facts where the generative model might hallucinate plausible-sounding but incorrect content, may perform worse with HyDE than with direct retrieval. Empirical evaluation on a labeled query-document dataset is necessary before deploying HyDE, as the improvement is not universal.</p>
+
+<h2>HyDE variants and extensions</h2>
+<p>Multi-HyDE generates multiple hypothetical documents per query and averages their embeddings before retrieval, reducing the impact of any single hallucinated document on retrieval quality. Generating 3–5 hypothetical documents and averaging their embeddings produces more robust retrieval than a single hypothetical document, at the cost of 3–5x more generation calls per query. The averaging operation effectively creates an ensemble query embedding that covers more of the relevant document space than any single hypothetical document, improving recall for ambiguous queries that could be answered by multiple types of documents.</p>
+<table>
+<thead><tr><th>Approach</th><th>Latency</th><th>Quality</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>Direct query embedding</td><td>~5ms</td><td>Baseline</td><td>Document-like queries</td></tr>
+<tr><td>HyDE (single)</td><td>+500ms</td><td>Better for short queries</td><td>Underspecified, short queries</td></tr>
+<tr><td>Multi-HyDE (3–5 docs)</td><td>+1500ms</td><td>Most robust</td><td>Ambiguous, diverse queries</td></tr>
+<tr><td>Query expansion + HyDE</td><td>+600ms</td><td>High</td><td>Keyword + semantic gap</td></tr>
+</tbody>
+</table>
+
+<div class="example-box">
+<pre><code>from openai import OpenAI
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+client = OpenAI()
+embedder = SentenceTransformer("BAAI/bge-large-en-v1.5")
+
+def hyde_retrieve(query: str, corpus_embeddings: np.ndarray,
+                  corpus_texts: list, top_k: int = 5) -> list:
+    # Step 1: generate hypothetical document
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content":
+            f"Write a short passage that directly answers: {query}"}],
+        max_tokens=200
+    )
+    hyp_doc = resp.choices[0].message.content
+
+    # Step 2: embed the hypothetical document (not the query)
+    hyp_embedding = embedder.encode([hyp_doc], normalize_embeddings=True)
+
+    # Step 3: retrieve by similarity to hypothetical document
+    scores = corpus_embeddings @ hyp_embedding.T
+    top_idx = np.argsort(scores.flatten())[::-1][:top_k]
+    return [corpus_texts[i] for i in top_idx]</code></pre>
+</div>
+
+<p>HyDE is most effective for queries in domains where short queries are very different in style from the documents that answer them — for instance, a user asking "headache after coffee" where relevant documents discuss "caffeine withdrawal syndrome." The generative step transforms the colloquial query into a passage resembling the style and vocabulary of documents in the corpus, enabling the embedding model to find relevant documents based on passage-to-passage similarity rather than query-to-passage similarity. For queries that already use the vocabulary of the document corpus, HyDE provides little benefit over direct query embedding because the vocabulary gap it addresses does not exist.</p>
+
+<p>HyDE can be combined with reranking in a two-stage pipeline where HyDE retrieves a wider candidate set and a cross-encoder reranker selects the final top-k. Using HyDE with a candidate set of 50–100 documents followed by cross-encoder reranking to top-5 consistently outperforms direct embedding retrieval with the same reranking step on query distributions with high style variation. The HyDE stage improves first-stage recall by increasing the probability that the true relevant document appears in the candidate set, and the reranker provides precision by precisely scoring the candidates against the original query.</p>
+
+<p>HyDE's latency overhead from the generation call can be partially mitigated by using a smaller, faster model for hypothesis generation than for final answer generation. A 70B model used for final answer generation can be paired with a 7B model for HyDE hypothesis generation, since hypothesis quality requirements are lower than final answer quality — the hypothesis only needs to be plausible enough to retrieve the right documents, not necessarily factually correct. Using gpt-4o-mini for hypothesis generation and gpt-4o for final answer synthesis reduces the latency overhead of HyDE by 3–5x compared to using the same model for both steps.</p>
+
+<p>HyDE's sensitivity to hypothesis quality creates an interesting calibration challenge. If the generative model produces hypothetical documents that are stylistically similar to the corpus but factually incorrect, the retrieved passages will be relevant to the topic but may not directly answer the query. Factual correctness of the hypothesis is less important than topical and stylistic similarity to the corpus — the embedding similarity step naturally selects for retrieved documents that match the topic of the hypothesis regardless of whether the hypothesis's specific claims are accurate. This means that even using a smaller, less accurate model for hypothesis generation retains most of HyDE's retrieval benefit.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

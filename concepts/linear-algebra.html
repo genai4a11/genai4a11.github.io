@@ -282,6 +282,32 @@ np.einsum('bi,bj-&gt;bij', A, B)  # Einstein summation — flexible matmul</div>
       </div>
 </div>
 </div>
+<div class="section-block">
+<h2>Gradient descent and backpropagation geometry</h2>
+<p>Gradient descent navigates the loss landscape by computing the gradient — a vector pointing in the direction of steepest loss increase — and stepping in the opposite direction. The learning rate determines step size, and choosing it correctly is critical: too large causes oscillation or divergence, too small causes slow convergence. The Adam optimizer adapts the learning rate per parameter using running averages of gradients and squared gradients, effectively normalizing gradient updates by their historical magnitude to achieve more stable convergence than vanilla gradient descent across the diverse parameter scales found in transformer models.</p>
+
+<h2>Dimensionality and the curse of dimensionality</h2>
+<p>High-dimensional embedding spaces exhibit counter-intuitive geometric properties that affect similarity search. In high dimensions, the ratio of the maximum to minimum pairwise distance between random points converges to 1 as dimensionality increases — meaning that cosine similarity scores cluster near a narrow range, making it harder to distinguish relevant from irrelevant embeddings. This concentration of measure explains why embedding models must be carefully trained to use the embedding space efficiently, and why dimensionality reduction techniques like PCA or UMAP produce 2D visualizations that appear to show clear clustering even when the original high-dimensional space has no such clear structure.</p>
+<table>
+<thead><tr><th>Concept</th><th>Transformer role</th><th>Key insight</th></tr></thead>
+<tbody>
+<tr><td>Matrix multiplication</td><td>Attention computation (QKᵀ)</td><td>Parallelizable — GPU-efficient</td></tr>
+<tr><td>Dot product</td><td>Similarity score in attention</td><td>Scale by √d_k to stabilize gradients</td></tr>
+<tr><td>Softmax normalization</td><td>Attention weight distribution</td><td>Converts scores to probabilities</td></tr>
+<tr><td>Singular value decomposition</td><td>Low-rank approximation (LoRA)</td><td>Compresses weight updates efficiently</td></tr>
+</tbody>
+</table>
+
+<p>Principal component analysis (PCA) applied to LLM activations and attention patterns reveals the internal structure of learned representations. The top principal components of the residual stream across layers capture the most variance in model behavior — often corresponding to interpretable directions like sentiment, topic, or factual content. Mechanistic interpretability research uses PCA and related decompositions to identify "circuits" — subsets of attention heads and MLP neurons that implement specific computations. Understanding these internal structures is increasingly important for model steering and intervention techniques that modify model behavior by adding vectors to the residual stream rather than modifying weights.</p>
+
+<p>Batched matrix multiplication is the core operation that makes transformer inference efficient on modern GPUs. The attention computation for a batch of B sequences, each of length L, with d_k-dimensional keys and queries, computes BL × d_k multiplied by d_k × BL (keys transposed) to produce BL × BL attention scores — a single batched matrix operation that GPUs execute at their peak FLOP throughput. CUDA's cuBLAS library and PyTorch's torch.matmul use highly optimized GEMM (General Matrix Multiply) kernels that achieve close to theoretical peak throughput for these attention-sized matrix products, making matrix multiplication efficiency the dominant factor in transformer inference speed.</p>
+
+<p>Low-rank matrix decomposition underlies LoRA, the most widely used parameter-efficient fine-tuning method. LoRA decomposes the weight update ΔW into two low-rank matrices A (d × r) and B (r × d) where rank r ≪ d. The product BA approximates the full-rank update with only r(d_in + d_out) parameters instead of d_in × d_out, enabling fine-tuning that updates 0.1–1% of the effective parameters compared to full fine-tuning. The mathematical justification is that useful weight updates during fine-tuning are empirically low-rank — they affect a small subspace of the model's representation — making the low-rank approximation a good fit for task-specific adaptation.</p>
+
+<p>Tensor operations in PyTorch follow broadcasting rules inherited from NumPy that enable element-wise operations between tensors of different shapes without explicit replication. Understanding broadcasting is essential for correctly implementing attention score scaling, positional encoding addition, and mask application. The most common broadcasting mistake in attention implementation is applying masks of shape (batch, heads, seq, seq) to attention scores of incompatible shapes — using tensor.shape print statements and the einops library's rearrange function to explicitly track dimension semantics prevents the silent shape errors that cause attention to compute on wrong token pairs.</p>
+
+<p>Rotary Position Encoding (RoPE), used in LLaMA and many other recent models, applies a rotation transformation to the query and key vectors at each attention layer based on absolute token position. The key mathematical insight is that rotating vectors by position-dependent angles produces inner products that naturally decay with relative position distance, implementing position-relative attention without adding explicit position embeddings to the token representations. This algebraic property makes RoPE compatible with key-value cache extension techniques like position interpolation, enabling context length extension by scaling the rotation frequencies.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

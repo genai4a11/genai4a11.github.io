@@ -317,6 +317,32 @@ def kl_divergence(P, Q):
       </div>
 </div>
 </div>
+<div class="section-block">
+<h2>Probability in attention mechanisms</h2>
+<p>The softmax function converts raw attention logits — the dot products between query and key vectors — into a probability distribution over positions. This distribution determines how much each position's value vector contributes to the output representation. The temperature scaling in the softmax (dividing by the square root of key dimension) prevents the distribution from becoming too peaked on a single position when key dimension is large, ensuring that gradient flow during training is not concentrated on the highest-scoring position and that attention can be distributed across multiple relevant positions simultaneously.</p>
+
+<h2>Log-probabilities and token scoring</h2>
+<p>Language models generate log-probabilities for each token in the vocabulary at every position, which are converted to probabilities via the softmax function. Log-probabilities are numerically more stable than raw probabilities because they avoid the floating-point underflow that occurs when multiplying many small probabilities together (as when computing the probability of a long sequence). Sequence-level probability is computed as the sum of token-level log-probabilities, which corresponds to the product of individual token probabilities. This relationship makes perplexity — the exponential of average per-token log-probability — the standard measure of language model quality on a held-out test set.</p>
+<table>
+<thead><tr><th>Concept</th><th>Formula</th><th>LLM application</th></tr></thead>
+<tbody>
+<tr><td>Softmax</td><td>exp(xᵢ) / Σexp(xⱼ)</td><td>Token probability distribution, attention weights</td></tr>
+<tr><td>Cross-entropy loss</td><td>-log P(y|x)</td><td>Training objective for next-token prediction</td></tr>
+<tr><td>Perplexity</td><td>exp(mean(-log P(yᵢ)))</td><td>Evaluation metric; lower = better</td></tr>
+<tr><td>Temperature scaling</td><td>softmax(logits / T)</td><td>Sharpens (T&lt;1) or flattens (T&gt;1) distribution</td></tr>
+</tbody>
+</table>
+
+<p>The multinomial distribution describes how tokens are sampled from a language model's vocabulary distribution at each generation step. At temperature 1.0, the model samples proportionally to the probability of each token. Top-p sampling (nucleus sampling) restricts the sampling distribution to the smallest subset of tokens whose cumulative probability exceeds p, dynamically adjusting the effective vocabulary size based on distribution sharpness. A peaked distribution with one dominant token produces a small nucleus; a flat distribution produces a large nucleus. This adaptive behavior makes top-p sampling more robust to distribution variation across generation steps than fixed top-k sampling.</p>
+
+<p>Calibration — the alignment between a model's stated confidence and actual accuracy — is an important probabilistic property for production LLM applications. A perfectly calibrated model would be correct 80% of the time on questions where it assigns 80% confidence. Most LLMs are overconfident: they assign high probabilities to incorrect answers more often than their accuracy justifies. Calibration error can be measured using Expected Calibration Error (ECE) on a labeled dataset, and mitigated through post-hoc temperature scaling that adjusts the model's logit scale to reduce overconfidence without changing its accuracy.</p>
+
+<p>The relationship between perplexity and downstream task performance is non-linear and task-dependent. Reducing perplexity on a language modeling evaluation set (typically WikiText or C4) through continued pre-training does not guarantee proportional improvement on downstream tasks. Models trained on code-heavy corpora may have higher general-domain perplexity but lower perplexity on coding tasks, making them better code generators despite worse headline perplexity numbers. Task-specific evaluation benchmarks remain necessary alongside perplexity as quality indicators, because optimizing for perplexity alone can degrade performance on under-represented task types.</p>
+
+<p>Beam search decoding uses probability theory to select sequences with higher overall likelihood than greedy decoding. Instead of selecting the most probable token at each step, beam search maintains k candidate sequences (the beam) and expands each by selecting the top tokens, keeping only the k highest-scoring expanded sequences. The beam score is the sum of log-probabilities of all selected tokens. Increasing beam width k improves sequence quality up to a point (typically k=4–8 for summarization) beyond which marginal quality improvements are negligible while compute cost increases linearly with k. Length normalization — dividing the sum of log-probabilities by sequence length — prevents beam search from systematically preferring shorter sequences.</p>
+
+<p>Monte Carlo estimation in LLM evaluation approximates the expected quality of model outputs by averaging over multiple sampled responses to the same prompt. Because LLM outputs are stochastic (different at temperature > 0), single-sample evaluation has high variance — the measured quality of a single response may be unrepresentative of the model's average behavior. Running 10–50 samples per prompt and averaging quality scores provides more reliable quality estimates for noisy metrics, and sampling diverse responses enables better understanding of the model's output distribution, including its worst-case behaviors.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

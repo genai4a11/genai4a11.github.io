@@ -326,6 +326,32 @@ def safe_react_agent(question: str, max_steps: int = 10) -&gt; dict:
 
 
 
+<div class="section-block">
+<h2>ReAct vs alternative agent patterns</h2>
+<p>ReAct's interleaved reasoning-action pattern differs from pure chain-of-thought (reasoning only, no actions) and pure tool-use (actions without explicit reasoning traces). The key advantage of ReAct over tool-use without reasoning is interpretability — the thought trace before each action reveals why the agent chose that action, making debugging significantly easier when the agent makes incorrect tool calls. Compared to AutoGPT-style agents that plan extensively before acting, ReAct's step-by-step reasoning-action alternation allows the agent to update its plan based on actual observation results rather than committing to a full plan upfront.</p>
+<table>
+<thead><tr><th>Pattern</th><th>Reasoning</th><th>Actions</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td>Chain-of-Thought</td><td>Explicit step-by-step</td><td>None</td><td>Mathematical reasoning</td></tr>
+<tr><td>Tool-use only</td><td>Implicit</td><td>Yes</td><td>Simple single-tool tasks</td></tr>
+<tr><td>ReAct</td><td>Explicit per-action</td><td>Yes, interleaved</td><td>Multi-step tool use</td></tr>
+<tr><td>Plan-and-Execute</td><td>Full upfront plan</td><td>Sequential execution</td><td>Well-defined complex tasks</td></tr>
+</tbody>
+</table>
+
+<h2>ReAct failure modes and mitigations</h2>
+<p>The most common ReAct failure mode is reasoning hallucination — the model generates a plausible-looking thought that does not correctly reflect the available information, leading to incorrect tool calls that compound errors across subsequent steps. Mitigation strategies include: limiting reasoning to one inference step per action (preventing long reasoning chains from drifting), requiring the model to quote relevant information from previous observations in its reasoning, and implementing observation validation that flags when the model's stated belief contradicts what was actually observed in previous steps.</p>
+
+<p>Tool design for ReAct agents significantly affects agent reliability. Tools with narrow, well-defined input schemas produce fewer malformed tool calls than tools with flexible or ambiguous parameters. Including parameter validation with informative error messages — rather than silently accepting invalid inputs — helps the agent self-correct when it provides incorrect arguments, because the error message in the observation feeds back to the reasoning step where the model can identify the problem. Each tool should have a single clear purpose; combining multiple actions in one tool increases the probability of partial success states that confuse the agent's subsequent reasoning.</p>
+
+<p>Maximum step limits are a critical safety mechanism for production ReAct agents that prevent runaway loops from consuming unbounded tokens and incurring unlimited costs. Most ReAct frameworks accept a max_iterations or max_steps parameter that terminates the agent after a configurable number of thought-action-observation cycles. Setting this limit requires calibrating against the expected step count distribution for legitimate tasks — too low causes premature termination on complex tasks, too high allows runaway agents to consume excessive resources before stopping. Logging the distribution of step counts in production and setting the limit at the 99th percentile plus buffer provides a data-driven approach to limit calibration.</p>
+
+<p>Prompt engineering for ReAct agents is substantially more complex than for single-turn prompts because the prompt must define the tool interface, reasoning format, and stopping criteria in addition to the task objective. The most reliable ReAct prompts use few-shot examples that demonstrate the exact thought-action-observation format for representative tasks, including examples of successful completion and examples of the agent recognizing when it cannot complete a task and gracefully stopping. Models that have been instruction-tuned for tool use (such as GPT-4 with function calling or Claude with tool use) require less prompt engineering than base models because the tool-use format is part of their instruction tuning.</p>
+
+<p>ReAct agent evaluation requires task-specific success metrics beyond simple completion rate. For information-seeking tasks, precision and recall of the retrieved information relative to a reference answer measures quality. For action-taking tasks, task completion rate and the number of steps taken (efficiency) measure both success and cost. Trajectory evaluation — examining the full thought-action-observation sequence rather than just the final output — reveals systematic reasoning errors that completion metrics miss, such as consistently choosing suboptimal tools or making the same logical error on similar task types. Recording and analyzing agent trajectories in production is essential for identifying improvement opportunities.</p>
+
+<p>Structured output constraints can improve ReAct agent reliability by enforcing a specific JSON format for actions that is parsed programmatically rather than extracted from free text. Having the model output actions as {"tool": "search", "query": "..."} rather than "I will call the search tool with query ..." eliminates the free-text parsing step that introduces errors when the model deviates from the expected format. JSON-mode or function calling interfaces natively support this structured output approach, and models with native function calling support (GPT-4, Claude) produce more reliable structured outputs than models that must be prompted to produce JSON through the system prompt alone.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

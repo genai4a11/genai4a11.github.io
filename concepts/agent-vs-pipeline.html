@@ -235,6 +235,56 @@
 </ul>
 </div>
 </div>
+<div class="section-block">
+<h2>Implementation patterns for each approach</h2>
+<p>Pipeline implementations use deterministic control flow — if/else branching, for loops, function composition — to sequence LLM calls and tool invocations. The predictable execution graph makes pipelines easy to test, debug, and optimize: each step can be unit-tested independently, failures are isolated to specific steps, and latency is predictable because the execution path is fixed. Agent implementations use the LLM itself to determine what to do next, creating dynamic execution graphs that adapt to task requirements but are harder to test comprehensively because all execution paths cannot be enumerated.</p>
+<table>
+<thead><tr><th>Dimension</th><th>Pipeline</th><th>Agent</th></tr></thead>
+<tbody>
+<tr><td>Control flow</td><td>Deterministic (code)</td><td>Dynamic (LLM-decided)</td></tr>
+<tr><td>Testability</td><td>High (unit-testable steps)</td><td>Low (non-deterministic paths)</td></tr>
+<tr><td>Latency</td><td>Predictable</td><td>Variable (unknown steps)</td></tr>
+<tr><td>Cost</td><td>Fixed per run</td><td>Variable (depends on task)</td></tr>
+<tr><td>Failure modes</td><td>Localized, recoverable</td><td>Cascading, harder to diagnose</td></tr>
+</tbody>
+</table>
+<div class="example-box">
+<pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+# Pipeline approach: deterministic steps
+def pipeline_summarize_and_translate(text: str, target_lang: str) -> str:
+    # Step 1: summarize
+    summary = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Summarize in 3 sentences:
+{text}"}]
+    ).choices[0].message.content
+
+    # Step 2: translate (always runs, predictable cost)
+    translated = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": f"Translate to {target_lang}:
+{summary}"}]
+    ).choices[0].message.content
+
+    return translated
+
+# vs Agent approach: LLM decides whether translation is needed
+# (more flexible but unpredictable cost and steps)</code></pre>
+</div>
+
+<p>Monitoring and observability requirements differ substantially between pipelines and agents. Pipeline monitoring logs fixed-step execution traces — step name, input, output, latency, errors — that map naturally to structured logging and distributed tracing systems. Agent monitoring must capture dynamic execution traces of variable length, track tool call sequences that were not predetermined, and identify when agents loop or make unproductive sequences of calls. Specialized agent tracing tools like LangSmith, Langfuse, and Arize Phoenix are designed for this dynamic trace structure, providing visualizations and analysis that general-purpose APM tools don't support.</p>
+
+<p>Cost control is fundamentally different between pipelines and agents. Pipeline costs are deterministic and predictable — the cost per request equals the sum of token costs for each fixed step. Agent costs are variable and potentially unbounded — a misbehaving agent can make hundreds of tool calls before giving up, incurring costs orders of magnitude higher than expected. Budget limits (maximum LLM calls, maximum token spend per request) are essential safety mechanisms for agent deployments, as are circuit breakers that terminate agent loops when no progress is detected after a configurable number of steps.</p>
+
+<p>The decision between pipeline and agent architecture frequently comes down to the variance in the input task structure. If all tasks have the same structure and require the same steps, a pipeline is always more appropriate — it is cheaper, faster, more reliable, and easier to maintain than an agent performing the same deterministic sequence. Agents add value only when task structure genuinely varies and the correct sequence of steps cannot be determined without reasoning about the specific task. Many applications that are initially built as agents can be refactored as pipelines once the actual distribution of task types is understood from production data.</p>
+
+<p>Pipeline composition using function chaining or dataclass-based message passing provides explicit data flow visibility that agents lack. In a pipeline, the output type of each step is the input type of the next step — type annotations and runtime validation can enforce this contract, catching mismatches at development time rather than in production. This strongly-typed data flow is one of the most undervalued advantages of pipelines over agents: the compiler or type checker can verify the entire pipeline's structure before any LLM calls are made, enabling safe refactoring and early error detection that agentic architectures with dynamic tool selection cannot provide.</p>
+
+<p>Hybrid architectures that use pipelines for the predictable outer structure and agents for bounded sub-tasks within that structure often provide the best practical tradeoff. For example, a document analysis pipeline might have fixed steps for document ingestion, chunking, and output formatting, but delegate the core analysis to an agent with a limited set of domain-specific tools. This structure preserves pipeline predictability for the high-level flow while allowing agent flexibility for the analysis step where the reasoning path genuinely varies. Bounding agent execution (max steps, specific tool set, structured output schema) within a pipeline context is the architectural pattern that most often succeeds in production LLM applications.</p>
+</div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
