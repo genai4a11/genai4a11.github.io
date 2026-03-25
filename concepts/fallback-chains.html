@@ -202,6 +202,105 @@ async def call_with_fallback(prompt: str, max_retries: int = 1) -&gt; str:
 <p>Track: fallback_rate per provider, reason (timeout/quality/error), latency delta, and cost delta. Alert on elevated fallback rates — they indicate provider issues or prompt regressions. A 5% fallback rate to the secondary provider might mean the primary is degraded and you should investigate.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Architecture and Error Handling</h2>
+<p>Fallback chains route requests through multiple models or services in priority order, falling back to the next option if one fails. This improves availability and resilience. Structure: Primary (preferred model, cost-optimized, but may fail), Secondary (more expensive, more reliable), Tertiary (guaranteed to respond, possibly degraded quality). Define fallback triggers: timeout > 2 seconds, error rate > 5%, or cost threshold exceeded.</p>
+<div class="example-box"><pre><code>import asyncio
+from typing import Callable, Any
+
+class FallbackChain:
+    def __init__(self, providers: list[dict]):
+        """
+        providers: [
+            {"name": "fast-local", "handler": handler1, "timeout": 1.0},
+            {"name": "api-v1", "handler": handler2, "timeout": 5.0},
+            {"name": "fallback", "handler": handler3, "timeout": 10.0}
+        ]
+        """
+        self.providers = providers
+    
+    async def execute(self, request: Any) -> str:
+        """Execute with fallback logic."""
+        for provider in self.providers:
+            try:
+                result = await asyncio.wait_for(
+                    provider["handler"](request),
+                    timeout=provider["timeout"]
+                )
+                return result
+            except (asyncio.TimeoutError, Exception) as e:
+                print(f"{provider['name']} failed: {e}")
+                continue
+        
+        # All fallbacks exhausted
+        raise Exception("All fallback providers failed")</code></pre></div>
+<p>Production best practices: monitor fallback rates per provider and alert if fallback % exceeds baseline. Log which provider served each request for debugging. Implement circuit breakers: if a provider fails 5 times in a row, temporarily remove it from rotation. Cost management: calculate the blended cost of the fallback chain and optimize weights. Cost = (p1 * cost1) + (p2 * cost2 * fallback_rate) + ...</p>
+<div class="example-box"><pre><code># Production fallback chain with monitoring
+class MonitoredFallbackChain(FallbackChain):
+    def __init__(self, providers, metrics_client=None):
+        super().__init__(providers)
+        self.metrics = metrics_client
+        self.failure_counts = {p["name"]: 0 for p in providers}
+    
+    async def execute_with_monitoring(self, request):
+        for provider in self.providers:
+            provider_name = provider["name"]
+            
+            try:
+                result = await asyncio.wait_for(
+                    provider["handler"](request),
+                    timeout=provider["timeout"]
+                )
+                
+                # Log success
+                self.metrics.increment(f"fallback.{provider_name}.success")
+                self.failure_counts[provider_name] = 0
+                return result
+                
+            except Exception as e:
+                self.failure_counts[provider_name] += 1
+                
+                # Circuit breaker: skip if too many failures
+                if self.failure_counts[provider_name] > 5:
+                    self.metrics.increment(f"fallback.{provider_name}.circuit_open")
+                    continue
+                
+                self.metrics.increment(f"fallback.{provider_name}.failure")
+                continue
+        
+        raise Exception("All fallbacks failed")</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Provider</th><th>Latency</th><th>Cost</th><th>Reliability</th><th>When Used</th></tr>
+<tr><td>Primary (fast-local)</td><td>100ms</td><td>Free</td><td>90%</td><td>Always first</td></tr>
+<tr><td>Secondary (API)</td><td>500ms</td><td>$0.01</td><td>99%</td><td>Primary fails</td></tr>
+<tr><td>Tertiary (fallback)</td><td>2s</td><td>$0.05</td><td>99.9%</td><td>Last resort</td></tr>
+</table>
+</div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+
+<p>Real-world example: Anthropic uses fallback chains for API inference. Primary: fast speculative decoding (predict next token, verify with full model). Secondary: standard decoding (slower but more reliable). Tertiary: cached responses (instant, possibly stale). By combining all three, they achieve <500ms p99 latency while maintaining quality. Speculative decoding succeeds 85% of the time (fast path), falls back to standard decoding 15% of the time (quality path).</p>
+<p>Cost estimation: fallback chains let you model costs accurately. If Provider A succeeds 90% of the time at cost C1, and Provider B succeeds 99% at cost C2, then expected cost = 0.9 * C1 + 0.1 * C2. Optimize the chain by minimizing expected cost subject to latency constraints. Add providers in order of increasing cost until you hit your reliability target. This is better than fixed ordering—data-driven selection based on actual performance.</p>
+<h2>Design Patterns and Best Practices</h2>
+<p>Pattern 1: Cost optimization. Order providers by cost, not quality: fastest-free first, then cheap, then expensive. Only fall back to expensive providers if cheaper ones fail. This minimizes costs while maintaining SLA. Example: local model → cached API → live API inference.</p>
+<p>Pattern 2: Resilience. Order providers by reliability: fast but unreliable first (to minimize latency for majority of requests), then slower but reliable. This gives 99th percentile users a fallback. Example: canary model → stable model → external API.</p>
+<p>Pattern 3: Quality progression. Order providers by quality: fast-approximate first (for latency), then accurate (for quality). Combine results: use fast model to filter, then accurate model to rerank. This achieves the best of both worlds within latency constraints.</p>
+<p>Monitoring: track not just success/failure but also latency, cost, and quality per provider. Alert if fallback rate exceeds baseline (provider degradation), if cost per request increases >10% (budget spike), or if latency p99 exceeds SLA. Use these metrics to adjust ordering, timeouts, and fallback triggers.</p>
+</div>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Advanced Strategies: Hedging and Load Balancing</h2>
+<p>Hedging: instead of sequential fallback, send requests to multiple providers simultaneously, return the first successful response, cancel others. This reduces tail latency: if primary is slow (p95), secondary responds quickly. Downside: higher cost (pay for multiple calls). Hedging is best for expensive operations where reducing latency by 50% is worth 20% cost increase.</p>
+<p>Load balancing: distribute traffic across multiple providers based on capacity and cost. Use weighted round-robin (primary gets 80% of traffic, secondary gets 20%) or dynamic balancing (adjust weights based on success rate and latency). Combine with feature flags: route 5% of traffic to a new provider for testing, gradually increase if quality is good. This minimizes risk of bad provider rollouts while validating quality in production.</p>
+</div>
+
+<p><p>Example: E-commerce search at scale. Primary: in-memory cache of popular queries (instant). Secondary: vector search on product embeddings (500ms). Tertiary: full-text search (2s). Quaternary: manual curation + human review (fallback for edge cases). This chain handles 99% of queries instantly, 0.9% very fast, 0.09% acceptably, and 0.01% with manual review. Cost is optimized: cache hits are free, vector search is cheap, full-text is medium, manual is expensive. This is how Google and Amazon handle search at massive scale.</p></p>
+<p><p>Chain design principles: put fast providers first (minimize latency for majority), cheap providers second (minimize cost for fallbacks), and most reliable last (guarantee quality). Measure actual performance and adjust: if secondary succeeds more often than expected, it should move up in priority. Data-driven chain optimization beats intuition.</p></p>
+<p>Fallback chains provide practical reliability engineering. They enable graceful degradation: quality decreases but doesn't fail. Use liberally in production systems. Monitor and optimize continuously. Cost and latency benefit from careful chain design. This pattern is essential for high-reliability systems at scale.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

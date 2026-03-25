@@ -212,6 +212,44 @@ for round_n in range(n_rounds):
 <p>Evaluate generated datasets with: <a class="concept-link" href="llm-judge.html">LLM-as-judge</a> scoring (GPT-4 rates quality 1–5), task diversity analysis (<a class="concept-link" href="embeddings.html">embedding</a> cluster coverage), difficulty distribution (what fraction requires multi-step reasoning?), and downstream model performance (fine-tune and eval on benchmark). The best signal is always the downstream <a class="concept-link" href="eval.html">evaluation</a> — a beautiful-looking dataset that doesn't improve model performance is worthless.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Best Practices & Common Pitfalls</h2>
+<p>When implementing Self-Instruct or Evol-Instruct, seed diversity is critical. Seeds that are too similar lead to homogeneous outputs; seeds that span multiple task types (classification, generation, QA, reasoning) produce richer datasets. Use topic diversity, task type variation, and complexity gradation when selecting your initial seed pool. Monitor the ROUGE-L deduplication scores — if your similarity threshold is too loose, you'll accumulate near-duplicates that don't add signal to the training set.</p>
+<div class="table-wrap">
+<table>
+<tr><th>Technique</th><th>Seed Size</th><th>Iterations</th><th>Output Quality</th><th>Cost</th></tr>
+<tr><td>Self-Instruct</td><td>175</td><td>4–6</td><td>Good</td><td>Low</td></tr>
+<tr><td>Evol-Instruct</td><td>100–500</td><td>3–5</td><td>Very Good</td><td>Medium</td></tr>
+<tr><td>Orca</td><td>200–1K</td><td>1–2</td><td>Excellent</td><td>High</td></tr>
+<tr><td>WizardCoder</td><td>300–1K</td><td>2–4</td><td>Very Good</td><td>Medium–High</td></tr>
+</table>
+</div>
+<div class="example-box"><pre><code>def deduplicate_instructions(instructions: list[str], threshold: float = 0.7):
+    """Remove near-duplicates using ROUGE-L similarity."""
+    from rouge_score import rouge_scorer
+    scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+    unique = []
+    for inst in instructions:
+        is_dup = False
+        for unique_inst in unique:
+            score = scorer.score(inst, unique_inst)['rougeL'].fmeasure
+            if score > threshold:
+                is_dup = True
+                break
+        if not is_dup:
+            unique.append(inst)
+    return unique</code></pre></div>
+</div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Scaling Considerations</h2>
+<p>Scaling self-instruction beyond a few thousand examples reveals that generation quality often degrades after 5–10 iterations. The model begins to overgeneralize its own patterns, and errors accumulate. To mitigate this: (1) Retrain the generator model on curated subsets periodically, (2) Use an auxiliary LLM-as-judge to score candidates before adding to the pool, (3) Implement diversity filters (e.g., embedding-based clustering) to prevent topic collapse, (4) Combine multiple evolution strategies rather than repeating one method. Large-scale campaigns show that a hybrid approach — starting with Self-Instruct for breadth, then Evol-Instruct for depth — outperforms pure iteration.</p>
+</div>
+
+<div class="section-block"><p><p>The success of self-instruction critically depends on the initial seed quality and diversity. If your 175 seed instructions are all classification tasks, the model will generate thousands of classification variants and never produce generation, summarization, or reasoning tasks. Diversification strategies: (1) stratify seeds by task type (10–15% QA, 10–15% classification, 10–15% generation, etc.), (2) include outliers and edge cases (adversarial inputs, multi-step reasoning), (3) vary instruction complexity (simple and complex seeds produce mixed-difficulty outputs). Teams at scale (Meta, Anthropic) use curriculum learning for seed selection: start with simple, high-confidence instructions, gradually introduce harder ones. This prevents early generations from being too simple or too noisy.</p><p>Iteration dynamics reveal interesting patterns: early iterations (rounds 1–2) produce high-quality outputs because the model stays close to seed patterns; middle iterations (rounds 3–4) inject creativity but accumulate errors; late iterations (rounds 5+) often become brittle. The quality-diversity frontier shows that you can optimize for either but not both: pure diversity maximization (new task types, rare patterns) produces low-quality data; pure quality maximization (conservative filtering) produces homogeneous data. Production pipelines use ensemble approaches: run multiple independent pipelines with different seeds, combine results, and deduplicate. This reduces error accumulation and improves generalization.</p><p>Downstream validation is crucial. After generating a large dataset, always evaluate on a held-out benchmark or via human raters. A 100K-example Self-Instruct dataset that doesn't improve model performance is worthless—worse, it might introduce biases or spurious correlations. Use this as a feedback signal to refine your generation strategy. Some teams found that Orca-style reasoning traces (step-by-step explanations) were necessary for factual accuracy; others found that diverse task types mattered more than explanation quality. These insights are task and model specific—what works for GPT-3.5 fine-tuning might not work for Llama.</p></p></div>
+<div class="section-block"><p><p>Orca's key insight was that reasoning quality matters more than answer correctness alone. When GPT-4 is prompted with "think step by step," it produces detailed explanations of why an answer is correct. Smaller models (Orca-7B, Orca-13B) trained on these explanations learn to mimic not just the output but the reasoning process. This transferred reasoning ability is particularly valuable for complex tasks: the model doesn't just know the answer but understands how to arrive at it. Evaluation shows that Orca significantly outperforms models trained on simple instruction-output pairs, especially on reasoning-heavy benchmarks. The lesson: invest in training data quality. One high-quality Orca example with reasoning traces might be worth 10 simple instruction-output pairs. This principle extends to other domains: coding (include comments explaining the logic), summarization (include key points explaining the summary), translation (include back-translation or quality scores).</p><p>A practical consideration: scaling instruction generation hits diminishing returns. The first 10K examples provide large improvements; the next 100K provide smaller gains per example. At some point, you're better off spending effort on different approaches: finding better base models, tweaking training procedures, or collecting domain-specific data. Some organizations found that 30K high-quality Evol-Instruct examples outperformed 500K Self-Instruct examples. This suggests quality curves are steep. Portfolio approach: generate different types of data (Self-Instruct for breadth, Evol-Instruct for depth, Orca for reasoning) and combine them. This diversity often beats homogeneous scale. In production, monitor the downstream metrics (model performance on benchmarks) and stop generating more data when returns plateau—compute spent on generation isn't spent on training or inference where you get value.</p></p></div>
+<div class="section-block"><p><p>The economics of instruction generation is important. Each call to GPT-4 costs money; generating 100K examples might cost thousands of dollars. At that scale, efficiency matters. Reuse annotations: if you've already generated similar examples, deduplicate before labeling more. Batch generation (generate 100 examples per call) is cheaper than per-example generation. Use cheaper models for initial generation (GPT-3.5), then use GPT-4 only for refinement or filtering. Filtering is crucial: a well-chosen 10K examples beats a poorly chosen 100K. Use LLM-as-judge to score candidates before adding to the dataset. A two-stage pipeline (generate 100K candidates, filter to 10K) is often cheaper and better than a single-stage 10K generation. For production systems, these economics are essential: the cost of data is part of the model development cost, and should be optimized like any other resource.</p></p></div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

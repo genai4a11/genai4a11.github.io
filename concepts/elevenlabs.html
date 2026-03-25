@@ -222,6 +222,95 @@ async def stream_speech(text: str):
 <p>Free tier: 10,000 characters/month. Starter ($5/month): 30,000 characters. Creator ($22/month): 100,000 characters + voice cloning. Pro ($99/month): 500,000 characters + professional cloning. At typical usage (~500 chars/response), $22/month = 200 voice responses. For high-volume production, use the Pay-as-you-go API pricing (~$0.18/1000 chars).</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Voice Synthesis Quality and Custom Voices</h2>
+<p>ElevenLabs TTS produces natural-sounding speech by training on multi-speaker data and using attention mechanisms to model prosody (intonation, stress, pacing). Pre-built voices (Rachel, Adam, etc.) offer variety out-of-box. Custom voice cloning requires 1-3 minutes of clean speech and produces a voice that sounds like the speaker while remaining natural and intelligible across diverse prompts.</p>
+<div class="example-box"><pre><code>import requests
+import base64
+
+def synthesize_speech_with_custom_voice(
+    text, custom_voice_id, stability=0.5, similarity_boost=0.75
+):
+    """Synthesize with a custom cloned voice."""
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{custom_voice_id}/stream"
+    
+    payload = {
+        "text": text,
+        "model_id": "eleven_monolingual_v1",
+        "voice_settings": {
+            "stability": stability,  # 0=variable, 1=consistent
+            "similarity_boost": similarity_boost  # Strength of voice character
+        }
+    }
+    
+    response = requests.post(
+        url,
+        json=payload,
+        headers={"xi-api-key": "YOUR_API_KEY"}
+    )
+    
+    # Stream audio
+    audio_data = response.content
+    with open("output.mp3", "wb") as f:
+        f.write(audio_data)
+    
+    return audio_data</code></pre></div>
+<p>Cost and latency considerations: ElevenLabs charges per character (~$0.30 per 1M chars at standard tier). Streaming provides real-time audio output. Batch processing is cheaper (~$0.10 per 1M chars). For production applications, cache synthesized audio by text hash to avoid re-synthesis. Typical latency: 2-5 seconds for batch, sub-100ms per chunk for streaming.</p>
+<div class="example-box"><pre><code># Production caching strategy for TTS
+import hashlib
+from functools import lru_cache
+
+class TTSCache:
+    def __init__(self, cache_dir="/tmp/tts_cache"):
+        self.cache_dir = cache_dir
+        os.makedirs(cache_dir, exist_ok=True)
+    
+    def get_audio(self, text, voice_id):
+        """Get audio, using cache if available."""
+        text_hash = hashlib.md5(text.encode()).hexdigest()
+        cache_path = f"{self.cache_dir}/{voice_id}_{text_hash}.mp3"
+        
+        if os.path.exists(cache_path):
+            return open(cache_path, "rb").read()
+        
+        # Synthesize and cache
+        audio = synthesize_speech_with_custom_voice(text, voice_id)
+        with open(cache_path, "wb") as f:
+            f.write(audio)
+        
+        return audio</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Voice Type</th><th>Setup Time</th><th>Audio Quality</th><th>Cost</th></tr>
+<tr><td>Pre-built voice</td><td>None</td><td>High</td><td>$0.30/M chars</td></tr>
+<tr><td>Custom voice (1 min)</td><td>1 minute</td><td>High</td><td>$0.30/M chars</td></tr>
+<tr><td>Professional cloning</td><td>5-10 min</td><td>Excellent</td><td>$1000+</td></tr>
+<tr><td>Batch synthesis</td><td>Variable</td><td>High</td><td>$0.10/M chars</td></tr>
+</table>
+</div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+
+<p>Voice characteristics: ElevenLabs voices are parameter-tuned for specific characteristics: Rachel is friendly and upbeat, Adam is professional, Bill is calm and deliberate. These are not just pitch differences—they're trained on diverse speakers and fine-tuned for personality. Custom voice cloning goes further: it captures the specific voice of a person (accent, speech patterns, emotional coloring) and transfers that to new text.</p>
+<p>Integration ecosystem: ElevenLabs provides SDKs for Python, JavaScript, Go, and more. Integrate with chatbots (OpenAI, Anthropic), build podcast automation (feed in transcripts, get audio), or build voice interfaces for accessibility. The API is straightforward: text in → audio out. Scale from 1 request/day to 1M requests/day with the same integration.</p>
+<h2>Prosody Control and Advanced Features</h2>
+<p>Beyond text-to-speech, ElevenLabs offers prosody control: specify emphasis on certain words, control pause length, adjust speech rate, and shape intonation patterns. This is critical for narration (emphasize dramatic moments), customer service (friendly vs. professional tone), and accessibility (ensure clarity for diverse audiences).</p>
+<p>Multi-language support: one voice can speak across 29+ languages while maintaining the same voice character. This is powerful for international applications: train a voice in English, use it for Spanish, French, German without retraining. The model preserves speaker identity across languages.</p>
+<p>Real-time streaming: as you generate text, stream audio immediately without waiting for full synthesis. Ideal for live conversations, customer service bots, and interactive applications. Streaming quality is identical to batch—same neural TTS engine, different latency profile.</p>
+</div>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Building Voice-First Experiences</h2>
+<p>Voice UI design differs from text UI: users expect natural conversational flow, not formal responses. ElevenLabs voices sound natural, reducing the uncanny valley. This enables voice-first products: voice assistants, audiobook narration, conversational AI. The quality bar is high—users tolerate text mistakes (typos, awkward phrasing) but notice voice artifacts (robotic speech, unnatural pauses).</p>
+<p>Multimodal integration: combine ElevenLabs TTS with speech-to-text (Whisper) for full voice conversations. Users speak → transcribed to text → LLM reasons → synthesized to voice. End-to-end latency: 1-2 seconds for most queries, enabling real-time interaction. This is the future of human-computer interfaces for accessibility and user experience.</p>
+</div>
+
+<p><p>Accessibility and inclusivity: high-quality TTS enables accessibility for visually impaired users. Multi-language support enables global reach. Emotion-aware TTS (expressive speech) makes content more engaging. ElevenLabs' focus on naturalness reduces cognitive load—users prefer natural voices and listen longer. This benefits people with cognitive disabilities, non-native speakers, and anyone consuming audio content.</p></p>
+<p><p>Performance metrics: track latency (time to first audio), quality (MOS scores from user studies), and cost per character. For real-time applications, streaming latency matters. For batch, throughput (characters per second) matters. Optimize for your use case: streaming needs <200ms first-chunk latency, batch can optimize for cost.</p></p>
+<p>High-quality speech synthesis enables new experiences. Voice UIs feel natural with good voices. Accessibility improves dramatically. Expect voice-first interfaces to become mainstream as TTS quality improves. This technology shift has broad implications for human-computer interaction and accessibility.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -231,6 +231,64 @@ def validate_batch(df: pd.DataFrame) -&gt; tuple[pd.DataFrame, pd.DataFrame]:
 
 
 
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Implementation Patterns</h2>
+<p>Data contracts can be enforced at multiple layers: at the data source (schema validation), in ETL pipelines (quality gates), at consumption time (type checking), and through monitoring dashboards (SLA tracking). Each layer adds redundancy and catches different failure modes.</p>
+<div class="example-box"><pre><code># Contract enforcement at pipeline entry
+from great_expectations.core.batch import RuntimeBatchRequest
+context = ge.get_context()
+batch_req = RuntimeBatchRequest(
+    datasource_name="my_datasource",
+    data_connector_name="runtime",
+    data_asset_name="user_events",
+    runtime_parameters={"path": "/data/events.parquet"}
+)
+validator = context.get_validator(
+    batch_request=batch_req,
+    expectation_suite_name="user_events_suite"
+)
+validator.validate()</code></pre></div>
+<p>Contract versioning is critical: when you change the contract, old consumers might still expect the old schema. Use semantic versioning: MAJOR for breaking changes (column removal), MINOR for additions (new optional column), PATCH for metadata changes. Require active agreement from consumers before deploying breaking changes.</p>
+<div class="example-box"><pre><code># Contract versioning and migration
+contract_versions = {
+    "v1": {"columns": ["user_id", "event_type"]},
+    "v2": {"columns": ["user_id", "event_type", "timestamp"]},  # MINOR: added timestamp
+    "v3": {"columns": ["user_id", "event_type", "timestamp", "session_id"]}  # MINOR: added session_id
+}
+# Breaking change: removing event_type requires v4 MAJOR bump
+# Plan: 30-day deprecation period, notify all consumers</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Layer</th><th>Responsibility</th><th>Tool Example</th></tr>
+<tr><td>Source</td><td>Schema validation, type enforcement</td><td>Database constraints, Avro schema</td></tr>
+<tr><td>ETL</td><td>Quality assertions, row-level rules</td><td>dbt tests, Soda Core</td></tr>
+<tr><td>Consumption</td><td>Type safety, runtime checks</td><td>Pydantic, TypeScript types</td></tr>
+<tr><td>Monitoring</td><td>SLA compliance, freshness alerts</td><td>Datadog, Prometheus</td></tr>
+</table>
+</div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+
+<p>At scale, data contract enforcement becomes infrastructure. Netflix publishes data contracts as part of their metadata service: every table has a published contract that tools can query. Consumers run contract validators before touching data. When contracts break, the system quarantines data and creates a ticket automatically. This prevents silent data quality issues from propagating downstream. The investment pays off: one broken contract that would have created 2 days of debugging is caught and blocked in seconds.</p>
+<p>Contract versioning strategies: semantic versioning works well (v1.0 → v1.1 for non-breaking, v2.0 for breaking changes). Alternative: immutable contracts (never change existing contracts, create new ones instead). This is simpler operationally but leads to contract sprawl. Hybrid: minimal immutable contracts for critical pipelines, flexible contracts for exploratory data. The key is intentionality: version changes should be deliberate, reviewed, and communicated.</p>
+<h2>Real-world Adoption Patterns</h2>
+<p>Data contracts succeed when teams adopt them incrementally. Start by documenting one critical pipeline: define its output schema, quality rules, and SLA. Make that contract non-negotiable—all consumers use it, all producers respect it. Once that works, expand to adjacent pipelines. GitHub has documented their journey: they went from ad-hoc data changes breaking dozens of downstream systems to zero-friction data evolution through formalized contracts.</p>
+<p>The contracts themselves evolve. Version 1: YAML files in a git repo, manually updated. Version 2: auto-generated from data sources (e.g., dbt models auto-export their contracts). Version 3: runtime enforcement in data pipelines with automatic discovery. Teams at scale (Uber, Airbnb) operate at version 3: contracts are living documents enforced by infra, updated automatically as schemas change, with breaking change detection built-in.</p>
+<p>Common pitfalls: over-specification (contracts that are too strict, requiring constant updates), no enforcement (contracts exist but nobody validates them), and silent failures (broken contracts aren't detected). Solutions: keep contracts minimal (only enforce what matters), automate validation (make it frictionless), and alert visibly (break the build, don't silently log).</p>
+</div>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Breaking and Non-Breaking Changes</h2>
+<p>Breaking changes: removing a column, renaming a column, changing type (string → int), narrowing allowed values (enum ["a","b","c"] → ["a","b"]). These break consumers. Non-breaking changes: adding an optional column, widening allowed values (["a","b"] → ["a","b","c"]), adding a new enum option. Document the matrix clearly. Enforce via CI: reject any pull request that changes a contract in a breaking way without explicit version bump.</p>
+<p>Migration strategy for breaking changes: announce 30-60 days in advance. Create a new contract version (v2.0) alongside the old one (v1.5). Consumers migrate gradually. Set a deprecation date after which v1.5 is no longer supported. On the deprecation date, remove v1.5 and keep only v2.0. Gradual migration prevents production breakage. Immediate switchover is risky—some consumers will miss the deadline.</p>
+</div>
+
+<p><p>Contract testing frameworks: define unit tests for contracts themselves. Test that your validator correctly rejects invalid records (missing required fields, wrong types) and accepts valid ones. Test that schema evolution is handled correctly. Use pytest or similar to ensure contracts stay valid. These tests are as important as code tests—broken contracts are as bad as broken code.</p></p>
+<p><p>Contract documentation: each contract should include examples. Show what valid data looks like. Show edge cases. This makes consumers understand the contract quickly without reading the spec. Auto-generate documentation from contracts: if contracts are YAML, generate readable HTML docs automatically. This ensures docs stay in sync with the actual contract.</p></p>
+<p>Best practices: write simple contracts that focus on what matters. Over-specify and you'll constantly update it. Under-specify and consumers make wrong assumptions. Include schema, quality assertions, SLA, and policy. Evolve intentionally. Distribute systematically. Validate ruthlessly. This discipline prevents silent data corruption in production AI pipelines.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

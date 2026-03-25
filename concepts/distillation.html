@@ -212,6 +212,73 @@ trainer.train()</code></pre>
 <p>1. Identify your highest-volume task (e.g. classification, extraction, summarisation). 2. Generate 50K teacher examples with diversity sampling. 3. Fine-tune a 3B–7B student model with LoRA. 4. A/B test student vs teacher on 5% of live traffic. 5. If quality delta &lt; 5%, fully migrate to student. 6. Use teacher as fallback for low-confidence student outputs.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Temperature and Knowledge Transfer</h2>
+<p>Temperature scaling controls the "softness" of the student predictions. High temperature (T > 1.0) makes the teacher output softer and preserves more information about the relative ordering of wrong answers. Low temperature makes predictions sharper. The optimal temperature depends on the task: NLP tasks often use T=4-8, while computer vision uses T=1-3.</p>
+<div class="example-box"><pre><code>import torch.nn.functional as F
+def knowledge_distillation_loss(
+    student_logits, teacher_logits, labels, T=4.0, alpha=0.5
+):
+    # Soft target loss: teacher guidance
+    soft_loss = F.kl_div(
+        F.log_softmax(student_logits / T, dim=1),
+        F.softmax(teacher_logits / T, dim=1),
+        reduction='batchmean'
+    ) * (T ** 2)
+    
+    # Hard target loss: ground truth
+    hard_loss = F.cross_entropy(student_logits, labels)
+    
+    return alpha * soft_loss + (1 - alpha) * hard_loss</code></pre></div>
+<p>Distillation is particularly effective for large language models where the student can be 5-100x smaller. In practice: a 3B parameter student trained on a 70B teacher can match 60-70% of teacher quality on many benchmarks. The choice of teacher matters: ensemble teachers, domain-specific teachers, or fine-tuned teachers all produce better students than smaller general-purpose teachers.</p>
+<div class="example-box"><pre><code># Ensemble teacher distillation
+teacher_models = [
+    load_model("teacher_v1"),
+    load_model("teacher_v2"),
+    load_model("teacher_v3")
+]
+def ensemble_teacher_logits(inputs):
+    logits_list = [m(inputs) for m in teacher_models]
+    return torch.stack(logits_list).mean(dim=0)
+
+student = StudentModel(hidden_size=512)
+for batch in train_loader:
+    teacher_logits = ensemble_teacher_logits(batch['input'])
+    student_logits = student(batch['input'])
+    loss = knowledge_distillation_loss(
+        student_logits, teacher_logits, batch['labels'], T=8
+    )</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Configuration</th><th>Student Size</th><th>Quality vs Teacher</th><th>Inference Speed</th></tr>
+<tr><td>Light Distillation</td><td>10% of teacher</td><td>70-75%</td><td>10-20x faster</td></tr>
+<tr><td>Medium Distillation</td><td>25% of teacher</td><td>85-90%</td><td>4-8x faster</td></tr>
+<tr><td>Heavy Distillation</td><td>50% of teacher</td><td>95-98%</td><td>2-3x faster</td></tr>
+</table>
+</div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+
+<p>Open-source distillation frameworks: Hugging Face Transformers provides distillation examples for BERT, Llama, and other models. TinyLlama is a fully-distilled 1.1B model that retains 70% of Llama 7B quality through aggressive distillation. DistilBERT is BERT distilled to 40% of parameters with 97% of quality. These models demonstrate that distillation is not just academically interesting—it's a practical tool for production.</p>
+<p>Distillation + quantization: combine distillation with INT8 quantization for 10-50x speedups. A distilled 350M model quantized to INT8 can run inference at 5-10x the speed of a full-size teacher. Acceptable quality drops are 2-5%. This is the strategy behind mobile-optimized models: distill down from a large teacher, quantize aggressively, and deploy on phones. The final model is 50-100MB instead of several GB.</p>
+<h2>Deployment and Production Monitoring</h2>
+<p>Distilled models require slightly different deployment strategies than standard models. The key metric is distillation fidelity: how well does the student match the teacher on held-out data? In production, track both student accuracy and the student-teacher divergence. If divergence increases (student starts disagreeing with teacher), it indicates model drift or distribution shift.</p>
+<p>Continuous distillation: retrain the student on the latest data while keeping the teacher fixed. This avoids the chicken-and-egg problem of updating both simultaneously. Deploy new students every week or month. A/B test students against the baseline teacher to confirm quality gains before full rollout.</p>
+<p>Online distillation: as production queries arrive, use them to refine the student. This is especially valuable for personalization tasks where the teacher (expensive model) can give soft targets for queries it sees. Combine batch distillation (for breadth) with online distillation (for personalized quality).</p>
+</div>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Choosing the Right Teacher and Convergence</h2>
+<p>Not all teachers are equally effective. A large but poorly-trained teacher may not help a student. An ensemble of diverse teachers often outperforms a single large teacher—they provide complementary knowledge. Fine-tune the teacher on your specific domain (e.g., medical domain) before distilling: domain-specific teachers teach domain-specific patterns that generalist teachers miss.</p>
+<p>Convergence analysis: distillation doesn't always converge smoothly. If the student architecture is too small for the problem, it hits a quality ceiling below the teacher. If the student learns too fast (high learning rate), it may overfit to the teacher's mistakes. Hyperparameter tuning is essential: learning rate, temperature, alpha weight. Use a validation set to monitor student-teacher divergence and stop early if the student starts diverging.</p>
+</div>
+
+<p><p>Distillation in production systems: companies like Google, Meta, and Microsoft use distillation for model compression. Google's MobileBERT is distilled for mobile deployment. Microsoft's DistilBERT-MultiLingual handles 104 languages. These are production models used in real applications. Distillation is not just an academic exercise—it's a core technique for making large models deployable.</p></p>
+<p><p>Distillation variants: response-based distillation (match final outputs), feature-based distillation (match intermediate representations), and relation-based distillation (match relationships between samples). Combine them: response-based for overall quality, feature-based for interpretability, relation-based for robustness. Multi-objective distillation often beats single-objective.</p></p>
+<p>Distillation is proven for production. It trades quality for massive speedup. Always validate student meets quality bar before deploying. Use distillation when balancing quality and latency/cost. The technique is mature and widely adopted across industry for model compression.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

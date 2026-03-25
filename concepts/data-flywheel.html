@@ -208,6 +208,84 @@ class TrainingCandidate:
 <p>Track: data collection rate (examples/day), filter pass rate (% meeting quality bar), training data volume per cycle, model quality delta per cycle (end-to-end accuracy improvement), and time-to-improvement (how long from data collection to deployed improvement). A healthy flywheel shows consistent quality improvement of 2–5% per cycle. Stagnation usually means the quality filter is too strict, the review queue is backed up, or user feedback signals are too sparse.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Flywheel Dynamics and Bootstrapping</h2>
+<p>Not all flywheels start with enough momentum. The cold start problem: without production data, the model is weak. Without a weak model, there is no production traffic to generate training data. Solutions include: synthetic data to bootstrap, manual labeling of initial datasets, importing data from adjacent domains, and beta programs with power users who tolerate lower quality in exchange for access.</p>
+<div class="example-box"><pre><code># Cold-start bootstrap strategies
+def bootstrap_flywheel(
+    task, num_synthetic=10000, num_manual_labels=1000
+):
+    # Phase 1: Synthetic data
+    synthetic_data = generate_synthetic_data(task, num_synthetic)
+    model_v1 = train_model(synthetic_data)
+    
+    # Phase 2: Augment with manual labels
+    manual_data = manual_annotation(
+        task, num_samples=num_manual_labels
+    )
+    combined = synthetic_data + manual_data
+    model_v2 = train_model(combined)
+    
+    # Phase 3: Deploy to limited beta
+    beta_users = recruit_beta_users(50)
+    deploy_limited(model_v2, beta_users, capture_data=True)
+    
+    # Now the flywheel can spin: traffic -> data -> improvement
+    return model_v2</code></pre></div>
+<p>The flywheel acceleration phase: once the loop starts spinning, focus on sampling quality over quantity. Not all production data is equally valuable. Capture the cases where the model was uncertain or wrong (active learning). Prioritize annotating these high-value examples. A targeted 500 high-value examples beats 5000 random examples. Track the compounding effect: model accuracy vs. months of flywheel operation.</p>
+<div class="example-box"><pre><code># Acceleration phase: targeted data capture
+def prioritized_capture(model, production_predictions):
+    """Identify high-value examples to label."""
+    high_value = []
+    
+    for pred in production_predictions:
+        uncertainty = entropy(pred.probabilities)
+        # Capture uncertain predictions
+        if uncertainty > threshold_high:
+            high_value.append((pred, "uncertain"))
+        
+        # Capture where model differs from previous version
+        if differs_from_baseline(pred):
+            high_value.append((pred, "changed_behavior"))
+        
+        # Capture rare classes (long tail)
+        if is_rare_class(pred.label):
+            high_value.append((pred, "rare_class"))
+    
+    # Return top K by uncertainty
+    return sorted(high_value, key=lambda x: entropy(x[0]))[:K]</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Phase</th><th>Data Source</th><th>Model Quality</th><th>Timeline</th></tr>
+<tr><td>Cold Start</td><td>Synthetic + manual</td><td>60-70%</td><td>Weeks</td></tr>
+<tr><td>Bootstrap</td><td>Beta user traffic</td><td>70-80%</td><td>1-2 months</td></tr>
+<tr><td>Acceleration</td><td>Prioritized captures</td><td>80-90%</td><td>3-6 months</td></tr>
+<tr><td>Maturity</td><td>Full production loop</td><td>90%+</td><td>6+ months</td></tr>
+</table>
+</div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+
+<p>Data flywheel case studies: Spotify's recommendation system has been running for 10+ years. Early on, they started with content-based recommendations (metadata-driven). As user listening data accumulated, they switched to collaborative filtering. Today, the hybrid model leverages billions of user interactions annually. Each new user adds signal that improves recommendations for everyone. The compounding effect is visible: retention improves 5-10% annually purely from model improvements, not feature additions.</p>
+<p>Negative flywheels exist: bad recommendations → users leave → less data → worse recommendations. Prevent this by monitoring model performance continuously. If accuracy drops (e.g., after a deployment), roll back immediately. Have data quality monitors to catch data corruption early. Have user satisfaction monitors (click-through rate, feedback) to catch quality issues before they compound.</p>
+<h2>Metrics and Growth Curves</h2>
+<p>Track three metrics to monitor your flywheel: model accuracy, production data volume, and user growth. A healthy flywheel shows exponential growth: accuracy doubles every 3 months, data grows 20-30% monthly, users grow 40%+ monthly. If growth flattens, the flywheel is slowing—investigate why.</p>
+<p>Data quality matters more than quantity in the flywheel. Two companies with identical traffic volumes may have vastly different improvement rates depending on data quality. Capture comprehensive feedback: not just final predictions, but also user corrections, refinements, and edge cases. One high-quality labeled example is worth 100 random examples.</p>
+<p>Network effects amplify flywheels: more users → more data → better model → more users. But achieving critical mass is hard. Solutions: seed the flywheel with complementary products (leverage existing user base), free tier to bootstrap volume, partnerships for data (get training data from industry partners), and internal usage to bootstrap.</p>
+</div>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Avoiding Stagnation and Saturation</h2>
+<p>Flywheels eventually saturate: your model approaches the theoretical maximum accuracy for the problem. When saturation hits, growth slows. Escape saturation by expanding into adjacent problems or new domains. YouTube recommendations started with watch history, then added search behavior, then added social signals—each expansion kick-started growth. Netflix did the same: recommendations powered by watch history, then by ratings, then by search patterns.</p>
+<p>Data quality bottlenecks: as volume grows, quality often decreases—more data includes more noise. Combat this by improving labeling quality (use ML to filter high-confidence labels), stratifying data (capture diverse examples), and curriculum learning (train on easy examples first, then hard ones). A well-designed flywheel with quality controls can grow for years without hitting saturation.</p>
+</div>
+
+<p><p>Infrastructure support: build data pipelines that capture everything, not just successful interactions. Capture user corrections ("the model predicted X, but I wanted Y"). Capture refinements (users iteratively improve outputs). These are gold—they're examples where the model was wrong and the human corrected it. Prioritize labeling these over random examples.</p></p>
+<p><p>Feedback loops and A/B testing: don't assume new data always improves the model. Run A/B tests: version with old data vs. version with new data. Measure user satisfaction metrics (engagement, retention, task completion). If new data degrades quality, understand why (distribution shift, noisy labels) and mitigate. Good flywheels have strong feedback loops preventing data quality regression.</p></p>
+<p>Successful flywheels compound indefinitely. Early phases are hardest (cold start is expensive). Once momentum builds, compounding takes over. Invest in cold-start strategies. Once traction is achieved, focus on quality and improvements. Rewards compound exponentially with time and data.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

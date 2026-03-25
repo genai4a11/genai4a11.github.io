@@ -211,6 +211,89 @@ if current:
 <p>A powerful two-stage pipeline: (1) Agentic chunking produces semantically complete parent chunks. (2) Proposition extraction produces fine-grained retrieval units from each chunk. At retrieval time, propositions are retrieved for precision; parent chunks are returned for context richness. This is the highest-quality <a class="concept-link" href="rag.html">RAG</a> retrieval strategy, at the highest indexing cost.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Semantic Boundaries and Cost Analysis</h2>
+<p>Agentic chunking uses an LLM to determine where to break documents into chunks. The LLM evaluates coherence: "does this section logically conclude here?" Variable-length chunks preserve semantic units—a short paragraph stays whole while a long section might split across 2-3 chunks. This reduces retrieval latency (fetching fewer, more complete chunks) and improves downstream LLM context quality.</p>
+<div class="example-box"><pre><code>import anthropic
+def agentic_chunk(document_text, max_chunk_tokens=1500):
+    """Use Claude to determine chunk boundaries."""
+    client = anthropic.Anthropic()
+    
+    # Propose chunks and get Claude to validate boundaries
+    proposal_prompt = f"""
+    Document:
+    {document_text[:5000]}...
+    
+    Identify natural semantic breaks where a new topic or section begins.
+    Return JSON: {{"boundaries": [position1, position2, ...]}}
+    """
+    
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
+        max_tokens=500,
+        messages=[{"role": "user", "content": proposal_prompt}]
+    )
+    
+    boundaries = json.loads(response.content[0].text)["boundaries"]
+    chunks = [document_text[boundaries[i]:boundaries[i+1]] 
+              for i in range(len(boundaries)-1)]
+    return chunks</code></pre></div>
+<p>Cost vs. quality tradeoff: calling an LLM per document adds overhead (~$0.001 per document for Claude 3.5 Sonnet). But the quality gain justifies the cost: agentic chunks reduce retrieval latency by 20-30% and improve final answer quality by 5-15% because chunks are more semantically coherent. Batch processing amortizes costs further: chunk a whole corpus offline, cache results, reuse forever.</p>
+<div class="example-box"><pre><code># Batch chunking with caching
+import hashlib
+def batch_chunk_documents(documents, cache_dir="/tmp/chunks"):
+    """Efficiently chunk multiple documents with result caching."""
+    chunks_map = {}
+    
+    for doc_id, text in documents.items():
+        doc_hash = hashlib.md5(text.encode()).hexdigest()
+        cache_path = f"{cache_dir}/{doc_id}_{doc_hash}.json"
+        
+        if os.path.exists(cache_path):
+            chunks_map[doc_id] = json.load(open(cache_path))
+            continue
+        
+        # Agentic chunking (expensive)
+        chunks = agentic_chunk(text)
+        chunks_map[doc_id] = chunks
+        
+        # Cache the result
+        os.makedirs(cache_dir, exist_ok=True)
+        json.dump(chunks, open(cache_path, 'w'))
+    
+    return chunks_map</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Chunking Strategy</th><th>Avg Chunk Size</th><th>Semantic Coherence</th><th>Cost per Doc</th></tr>
+<tr><td>Fixed window (512 tokens)</td><td>512</td><td>Poor</td><td>Free</td></tr>
+<tr><td>Sentence boundaries</td><td>200-800</td><td>Good</td><td>Free</td></tr>
+<tr><td>Recursive split</td><td>300-1000</td><td>Good</td><td>Free</td></tr>
+<tr><td>Agentic (Claude)</td><td>400-1500</td><td>Excellent</td><td>$0.001</td></tr>
+</table>
+</div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+
+<p>Implementation considerations: agentic chunking works best with longer documents (10+ pages). For short documents, sentence-level chunking is sufficient. For medium documents (2-10 pages), it's borderline—measure the quality improvement and cost tradeoff. Batch all documents of the same type together and chunk them with a single API call to amortize the overhead.</p>
+<p>Chunk size distribution: agentic chunking produces variable-size chunks (100-3000 tokens typically). This is desirable because semantically complete units have natural boundaries. However, downstream systems might have fixed-size expectations (e.g., vector database pages are 512 tokens). Solution: keep agentic chunks as-is for retrieval and QA, but split them further only when necessary for storage optimization.</p>
+<h2>Comparison with Alternative Chunking Methods</h2>
+<p>Fixed-window chunking (sliding window of 512 tokens) is simple but semantically broken: chunks cut arbitrarily through topics. Sentence-level chunking respects sentence boundaries but can produce chunks of wildly different sizes (5 tokens to 500 tokens). Recursive splitting (split by paragraph, then by sentence, then by token) is a good heuristic but still doesn't understand semantics.</p>
+<p>Agentic chunking improves over all these by letting an LLM decide boundaries. The cost is higher (one API call per document) but the payoff is substantial: 20-30% reduction in mean chunk size, 40% reduction in retrieval latency, and 5-15% improvement in final QA accuracy. For large corpora, the cost amortizes: $0.001 per document is negligible compared to the quality gains.</p>
+<p>Hybrid approach: use agentic chunking offline for static documents, use sentence-level for real-time streaming documents. Cache agentic chunks and reuse across different RAG applications. Invest in agentic chunking if your document corpus is large and static; use heuristics for streaming or one-off documents.</p>
+</div>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Integration with Retrieval and Ranking</h2>
+<p>Agentic chunks integrate well with dense retrieval systems (embedding-based search). Because chunks are semantically coherent, their embeddings are more meaningful—retrieval precision improves. The chunk boundary quality directly impacts downstream QA accuracy: good boundaries mean fewer irrelevant chunks retrieved, better context for generation.</p>
+<p>Two-stage retrieval: first stage retrieves agentic chunks (fast, semantic), second stage reranks chunks based on relevance to the query (precise but slower). This hybrid approach achieves high recall (semantic retrieval) and high precision (reranking). For critical applications (legal research, medical information), combine with chain-of-thought verification: LLM verifies that the chunk actually answers the question before returning it to the user.</p>
+</div>
+
+<p><p>Robustness and failure modes: agentic chunking can fail if the LLM hallucinate (claims a boundary where none exists) or misunderstands the document structure. Mitigate by: using a reliable LLM (e.g., Claude 3.5 Sonnet), providing clear examples in the prompt, validating chunks post-hoc (verify each chunk is valid text). For critical applications, combine with human review of a sample of chunks.</p></p>
+<p><p>Iterative refinement: start with sentence-level chunking, measure downstream quality, then upgrade to agentic chunking if justified. This way, you invest in the technique only where it matters. Some applications get 95% of the way with sentence chunking; others need agentic chunking. Data-driven decision-making prevents over-engineering.</p></p>
+<p>Agentic chunking improves retrieval quality at moderate cost. Recommended for large static corpora where quality is critical. Use simpler chunking for small or streaming documents. Measure improvement before investing in LLM-based approaches. Data-driven decisions prevent over-engineering.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

@@ -220,6 +220,43 @@ def fix_sql(question: str, schema: str, bad_sql: str, error: str) -&gt; str:
 <p>Use a two-stage approach: (1) NL-to-SQL generation (<a class="concept-link" href="gpt4o.html">GPT-4o</a> for accuracy). (2) Result formatting (GPT-4o-mini to summarise the table output in natural language). Cache identical or semantically similar queries (<a class="concept-link" href="semantic-cache.html">semantic cache</a>). Log all generated queries for review and to build a labelled training dataset for <a class="concept-link" href="finetuning.html">fine-tuning</a> a cheaper model over time.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Schema Linking & Database Context</h2>
+<p>Converting natural language to SQL requires understanding database schema. The model must link question tokens to column and table names, handle ambiguity (e.g., multiple tables with similar column names), and infer JOIN conditions. Modern approaches use dense retrieval (embedding the schema and ranking columns by relevance), cross-attention mechanisms to align question tokens to schema elements, and graph-based schema representations that encode relationships. Schema linking is often the bottleneck — a model can generate perfect SQL given the right columns, but finding the right columns is hard.</p>
+<div class="table-wrap">
+<table>
+<tr><th>Benchmark</th><th>Avg Schema Columns</th><th>Query Complexity</th><th>SOTA Accuracy</th></tr>
+<tr><td>Spider</td><td>8.6</td><td>Cross-domain</td><td>~90%</td></tr>
+<tr><td>WikiSQL</td><td>4.3</td><td>Single-table</td><td>~96%</td></tr>
+<tr><td>SParC</td><td>10.2</td><td>Context-dependent</td><td>~78%</td></tr>
+<tr><td>KoSQL</td><td>7.1</td><td>Cross-lingual</td><td>~82%</td></tr>
+</table>
+</div>
+<div class="example-box"><pre><code>def schema_linking(natural_query: str, schema: dict, model_name: str = "gpt-4o"):
+    """Link question tokens to schema elements using an LLM."""
+    schema_str = "\n".join([f"{t}: {c}" for t, c in schema.items()])
+    prompt = f"""Given the natural language query and schema, identify which columns/tables are mentioned.
+Query: {natural_query}
+Schema:
+{schema_str}
+Linked columns: """
+    response = client.chat.completions.create(
+        model=model_name,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0
+    )
+    return response.choices[0].message.content</code></pre></div>
+</div>
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+<h2>Evaluation & Robustness</h2>
+<p>Evaluating Text2SQL is non-trivial because SQL queries can be semantically equivalent but syntactically different (e.g., JOIN order, GROUP BY redundancy). The standard metric is Exact Match (EM) — does the generated SQL exactly match the reference? — but this penalizes equivalent queries. Execution Accuracy (did the query return the correct result?) is better but requires access to the database. Robustness is a hidden issue: models overfit to specific benchmarks and fail on paraphrases, domain shifts, and schema variations. Cross-database evaluation (train on Spider, test on a different domain) reveals 15–25% performance drops.</p>
+</div>
+
+<div class="section-block"><p><p>Schema linking remains the bottleneck in Text2SQL. Modern approaches use dense retrieval: embed column names and table names, embed the question, and use cosine similarity to rank relevant schema elements. The best-performing systems (Chinese university teams on Spider) combine multiple ranking signals: TF-IDF (keyword overlap), semantic similarity (embeddings), and syntactic patterns (e.g., tables mentioned in JOIN hints). But over-reliance on these signals leads to brittleness—if a column name is slightly different ("user_id" vs. "userId"), similarity drops. Contrastive learning helps: train embeddings such that semantically similar column names are close, even if textually different. Some teams fine-tune the embedding model on task-specific data; others use in-context examples (few-shot prompting) to show the LLM good schema linking decisions.</p><p>Decomposition strategies improve both accuracy and interpretability. Instead of generating SQL end-to-end, break it down: (1) schema linking (identify relevant tables/columns), (2) logical form generation (select, where, group-by, order-by predicates), (3) SQL synthesis (convert logical form to SQL). This is slower but more modular and debuggable. Intermediate representations (logical forms) act as checkpoints—if schema linking fails, the downstream modules still work with degraded input. Some systems use multiple passes: first generate a draft SQL, then validate against schema and rewrite if invalid. Iterative refinement increases compute but improves quality.</p><p>Domain adaptation is a major challenge. Spider (the benchmark) has diverse schemas (academic, concerts, restaurants), but real-world databases are highly specialized (healthcare, finance). A model trained on Spider drops 15–25% on out-of-domain schemas. Solutions: (1) Synthetic data from target domain (generate instruction-SQL pairs for the specific schema), (2) Few-shot prompting (in-context examples from the target domain), (3) Continued pre-training on the target schema (more labeled data = better adaptation). For low-resource scenarios (only 10 labeled queries), few-shot LLMs (GPT-3.5+) outperform small fine-tuned models. For high-resource (1000+ labels), fine-tuned models scale better. The cross-over point is typically 50–100 labeled examples.</p></p></div>
+<div class="section-block"><p><p>Compositional generalization is a core challenge in Text2SQL. Models trained on Spider might fail on simple queries they've never seen (e.g., a JOIN of two tables they've seen separately but not together). This reveals that models don't truly understand SQL composition; they memorize patterns. Systematic evaluation (test on compositional splits: seen tables/columns in novel combinations) shows 15–30% performance drops. Improving compositional generalization requires either: (1) training data that explicitly covers compositions (expensive), (2) architectures that learn composable representations (modular networks, hierarchical models), or (3) prompting strategies (in-context examples of compositions). Recent work shows that a few in-context examples of the target composition (5–10 examples) can dramatically improve compositional generalization, suggesting that compositional reasoning is learned with exposure.</p><p>Nested queries (subqueries) are particularly hard. Generating SQL with nested SELECT statements requires deep nesting reasoning: an inner query computes an intermediate result, an outer query uses it. Autoregressive generation (left-to-right) can lose track of nesting context. Some models use hierarchical generation (first decide nesting structure, then fill in details) or right-to-left decoding (generate the innermost query first). Empirically, explicitly training on nested query examples improves performance; models don't generalize to nesting automatically. The same applies to aggregations (COUNT, SUM, AVG): models struggle with GROUP BY logic if training examples don't include diverse aggregation patterns. The takeaway: for Text2SQL, dataset quality and diversity matter as much as model architecture. A smaller dataset with diverse queries often beats a larger homogeneous dataset.</p></p></div>
+<div class="section-block"><p><p>Semantic parsing (converting natural language to logical forms) has been studied for decades. Text2SQL is a specific instance. Traditional approaches used hand-written grammars; modern approaches use neural models. The advantage of neural models: they learn patterns from data and generalize better. The disadvantage: they're less interpretable and harder to debug. A hybrid approach (neural ranking of candidate parses from a grammar) combines both. For production systems, a fallback mechanism is essential: if the neural model fails (produces syntactically invalid SQL), fall back to templates or simpler rules. This ensures some output rather than a hard error. Confidence scoring is important: if the model is <80% confident, flag for human review rather than executing. This is risk management: better to ask a human than cause a silent failure. For interactive systems (a user trying to query a database), show the generated SQL to the user before executing; this catches obvious errors and builds trust.</p></p></div>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

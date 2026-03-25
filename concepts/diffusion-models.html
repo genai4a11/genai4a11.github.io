@@ -180,6 +180,94 @@
 <p>Text guidance uses CLIP or T5 text encoders to produce text <a class="concept-link" href="embeddings.html">embeddings</a>. Cross-attention layers in the denoising network attend to these embeddings at each step, steering the output toward the text description. Classifier-Free Guidance (CFG): run the denoiser twice (with and without text), interpolate toward the text-conditioned direction. Higher CFG scale (7–15) → more text adherence but lower diversity.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Sampling and Guidance Techniques</h2>
+<p>Diffusion models generate images through iterative denoising: start with pure noise, gradually denoise over 50-1000 steps. The number of steps controls quality vs. speed: 50 steps is fast but noisy, 1000 steps is high quality but slow. Classifier-free guidance improves adherence to text prompts by steering the denoising process: unconditionally denoise, then denoise conditioned on the text, and blend them with a guidance weight.</p>
+<div class="example-box"><pre><code>import torch
+import torch.nn.functional as F
+def diffusion_sampling_with_guidance(
+    model, text_embedding, num_steps=50, guidance_scale=7.5
+):
+    """Sample from diffusion with classifier-free guidance."""
+    batch_size = text_embedding.shape[0]
+    
+    # Start from noise
+    x_t = torch.randn(batch_size, 3, 512, 512)
+    
+    # Denoising loop
+    for t in range(num_steps - 1, -1, -1):
+        # Predict noise unconditionally
+        noise_uncond = model.predict_noise(x_t, t, text_embedding=None)
+        
+        # Predict noise conditioned on text
+        noise_cond = model.predict_noise(x_t, t, text_embedding)
+        
+        # Blend: steer towards conditioned prediction
+        noise_pred = noise_uncond + guidance_scale * (noise_cond - noise_uncond)
+        
+        # Denoise step
+        alpha = get_alpha_schedule(t)
+        x_t = (x_t - noise_pred) / alpha
+    
+    return x_t</code></pre></div>
+<p>Advanced techniques boost quality further: multi-step refinement (run the diffusion model multiple times with increasing guidance), latent diffusion (diffuse in compressed latent space, 10x faster), and fine-tuned models for specific domains. LoRA fine-tuning on 100-1000 images adapts a pre-trained diffusion model to a specific style or domain, achieving state-of-the-art results with minimal data.</p>
+<div class="example-box"><pre><code># LoRA fine-tuning for domain adaptation
+from peft import get_peft_model, LoraConfig
+
+def finetune_diffusion_lora(
+    base_model, training_images, domain_name="art-style"
+):
+    """Fine-tune diffusion model with LoRA for a specific domain."""
+    lora_config = LoraConfig(
+        r=32,  # LoRA rank
+        lora_alpha=64,
+        target_modules=["to_q", "to_v"],  # Attention layers
+        lora_dropout=0.1
+    )
+    
+    model = get_peft_model(base_model, lora_config)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+    
+    for epoch in range(10):
+        for batch in training_images:
+            loss = model.training_step(batch)
+            loss.backward()
+            optimizer.step()
+    
+    return model</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Technique</th><th>Inference Time</th><th>Quality</th><th>Implementation</th></tr>
+<tr><td>Base diffusion (50 steps)</td><td>5 seconds</td><td>Good</td><td>Simple</td></tr>
+<tr><td>Classifier-free guidance</td><td>5 seconds</td><td>Better</td><td>Moderate</td></tr>
+<tr><td>High-step diffusion (500)</td><td>50 seconds</td><td>Excellent</td><td>Simple</td></tr>
+<tr><td>LoRA fine-tuned</td><td>5 seconds</td><td>Excellent (domain)</td><td>Complex</td></tr>
+<tr><td>Multi-step refinement</td><td>15 seconds</td><td>Outstanding</td><td>Complex</td></tr>
+</table>
+</div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+
+<p>Benchmark results: on COCO captions, modern diffusion models achieve Inception Score > 30 and FID < 3 (excellent quality). Stable Diffusion and DALL-E 3 are state-of-the-art. Text-image alignment is remarkably good: the model understands complex multi-object scenes, spatial relationships, and artistic styles. The main limitation remains rare objects and precise numeric representation (e.g., getting text rendered correctly).</p>
+<p>Safety and bias: diffusion models trained on internet data inherit biases (gender, race, cultural). Mitigation strategies: filter training data to remove harmful content, fine-tune on balanced datasets, and use safety classifiers at generation time to block unsafe outputs. This is an active research area—no perfect solution yet, but practical mitigation reduces problematic outputs by 80-90%.</p>
+<h2>Model Architecture and Training</h2>
+<p>Modern diffusion models use a U-Net architecture with residual connections and attention mechanisms to handle the denoising task. The key innovation is adding time embeddings (which timestep are we at?) and conditioning embeddings (what text prompt are we following?) to the network. This allows a single model to handle all denoising steps and all prompts efficiently.</p>
+<p>Training involves corrupting clean images with noise (forward process) and training the model to predict the noise (reverse process). The loss is simple: MSE between predicted noise and actual noise. Scaling up the dataset to billions of images improved quality dramatically. A 1B-parameter diffusion model trained on 5B image-text pairs from LAION can generate photorealistic images from arbitrary text.</p>
+<p>Speed improvements: distillation (train a fast student diffusion model on a slow teacher) can reduce inference steps from 1000 to 5-10. Latent diffusion (diffuse in a compressed latent space) is 10-20x faster than pixel-space diffusion. Progressive generation (start low-res, progressively increase resolution) balances quality and speed.</p>
+</div>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Comparison with Other Generative Models</h2>
+<p>Diffusion vs. GANs: GANs are fast (one forward pass) but unstable (mode collapse, training challenges). Diffusion is slower (many steps) but stable and high-quality. GANs are also harder to control (less effective at text conditioning). Modern generative models prefer diffusion.</p>
+<p>Diffusion vs. Autoregressive: autoregressive models (like Transformers) generate token-by-token sequentially, left-to-right. Diffusion generates all at once and refines. Diffusion is more parallelizable and handles global coherence better (diffusion "knows" the full image, autoregressive generates locally). For image generation, diffusion dominates. For text generation, autoregressive still leads because text has strong sequential dependencies.</p>
+</div>
+
+<p><p>Industrial applications: image generation is used in e-commerce (generate product images), marketing (generate promotional content), design (generate UI mockups), and entertainment (generate game assets). Text-to-image diffusion has democratized image creation—anyone can generate professional-quality images without design skills. This is a 10-year technology shift compressed into 2-3 years.</p></p>
+<p><p>Edge cases and limitations: current diffusion models struggle with counting (8 fingers on a hand instead of 5), precise text rendering, and consistent object identity across frames. These are hard research problems. For production use, you may need post-processing (human review, AI filters) to catch and fix errors before showing to users. Budget for this when deploying.</p></p>
+<p>Diffusion models revolutionized image generation. They are now the standard for text-to-image and image editing. Technology is mature, fast-improving, widely accessible. Expect rapid deployment in commercial applications and open-source projects. This is a transformative technology for creative fields.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">

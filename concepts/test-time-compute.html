@@ -214,6 +214,85 @@ async def self_consistency(prompt: str, n: int = 10) -&gt; str:
 <p>Best-of-4 with a cheap judge costs ~5× more but gains 15–20% on hard reasoning. Compare to <a class="concept-link" href="finetuning.html">fine-tuning</a>: TTC is <a class="concept-link" href="zero-shot.html">zero-shot</a> deployable, works today, but adds per-request cost. A hybrid: fine-tune for cheap common cases, apply TTC only for flagged hard cases.</p>
 </div>
 </div>
+<div class="section-block" id="s7">
+<div class="section-marker">SECTION 07</div>
+<h2>Scaling Laws and Compute Allocation</h2>
+<p>Test-time compute exhibits clear scaling laws: allocating 2x more samples typically yields diminishing returns of 3-5% quality improvement. The optimal allocation depends on the task: for reasoning tasks (math, code) allocating more samples helps more. For factual recall tasks, extra samples help less. Empirically, using N=10 samples with majority voting recovers 70-80% of what chain-of-thought alone does.</p>
+<div class="example-box"><pre><code>import numpy as np
+def allocate_test_compute(quality_target, latency_budget_ms, task_type):
+    """Allocate samples based on task and constraints."""
+    if task_type == "reasoning":
+        base_samples = 5
+        scaling_factor = 1.5  # Reasoning benefits more from samples
+    else:  # factual/classification
+        base_samples = 3
+        scaling_factor = 1.2
+    
+    max_samples = int(latency_budget_ms / 50)  # 50ms per sample
+    samples = min(base_samples, int(base_samples * scaling_factor))
+    return max(1, min(samples, max_samples))
+
+# Best-of-N vs majority vote tradeoff
+def best_of_N(logits_list):
+    return max(logits_list, key=lambda x: x.max())
+
+def majority_vote(predictions_list):
+    return max(set(predictions_list), key=predictions_list.count)</code></pre></div>
+<p>The choice between best-of-N, majority voting, and fusion methods impacts both quality and latency. Best-of-N is most effective but requires full reranking. Majority voting is simpler and faster. Weighted voting based on model confidence adds only ~5% quality but doubles compute cost. For real-time applications, early stopping (stop sampling when confidence > threshold) achieves 80% of quality gains with 60% fewer samples.</p>
+<div class="example-box"><pre><code># Weighted voting with early stopping
+def adaptive_test_compute(
+    model, input_text, confidence_threshold=0.85,
+    max_samples=10, min_samples=3
+):
+    predictions, confidences = [], []
+    
+    for i in range(max_samples):
+        pred, conf = model.generate_with_confidence(input_text)
+        predictions.append(pred)
+        confidences.append(conf)
+        
+        # Early stopping: if consensus is strong enough, stop
+        if i >= min_samples - 1:
+            weights = np.array(confidences) / sum(confidences)
+            if max(weights) > confidence_threshold:
+                break
+    
+    return np.average(
+        np.array([p.value for p in predictions]),
+        weights=confidences
+    )</code></pre></div>
+<div class="table-wrap">
+<table>
+<tr><th>Method</th><th>Samples Needed</th><th>Quality Gain</th><th>Latency Overhead</th></tr>
+<tr><td>Greedy (1 sample)</td><td>1</td><td>Baseline</td><td>1x</td></tr>
+<tr><td>Best-of-5</td><td>5</td><td>+8-12%</td><td>5x</td></tr>
+<tr><td>Majority Vote (5)</td><td>5</td><td>+6-10%</td><td>3x</td></tr>
+<tr><td>Weighted Voting (5)</td><td>5</td><td>+7-11%</td><td>4x</td></tr>
+<tr><td>Adaptive (early stop)</td><td>3-4 avg</td><td>+5-8%</td><td>2.5x</td></tr>
+</table>
+</div>
+</div>
+
+<div class="section-block" id="s8">
+<div class="section-marker">SECTION 08</div>
+
+<p>OpenAI reports that allocating more test-time compute on difficult examples (via chain-of-thought or Best-of-5) improves o1's performance on AIME from 68% to 94%. Google's AlphaProof uses similar strategies: for hard math problems, expand the search tree (best-of-N sampling) before committing. The cost scales with problem difficulty. Simple questions: 1 sample sufficient. Hard problems: allocate 10-50 samples. This is more efficient than allocating uniform compute across all queries.</p>
+<p>Verifier scaling: train a verifier model to predict when a sampled response is likely correct. Use verification to decide whether to return the first sample or search harder. Efficient: 90% of queries return after 1 sample + verification, 10% trigger full search. Only the uncertain cases incur the cost of test-time compute. This achieves 95% of the quality of full test-time compute at 30% of the cost.</p>
+<h2>When to Use Test-Time Compute</h2>
+<p>Test-time compute is most effective for tasks with clear right/wrong answers: math problems, code generation, knowledge retrieval. For tasks with subjective evaluations (creative writing, design suggestions), extra samples help less because the distribution over quality is wider. For tasks with a single dominant mode (factual recall, simple classification), one sample often suffices.</p>
+<p>Budget constraints drive decisions: mobile devices (latency < 500ms) cannot afford test-time compute. Server-side APIs can allocate 1-5 seconds. Batch processing (overnight jobs) can allocate 30+ seconds. Choose the test-time strategy based on the budget: majority voting for <1 second, best-of-N for 3-5 seconds, iterative search for batch jobs.</p>
+<p>Hybrid strategies maximize quality within constraints: fast primary model + expensive verification on uncertain cases. Spend test-time compute only where confidence is low. This achieves 95% of the quality of full test-time compute at 40% of the cost.</p>
+</div>
+<div class="section-block" id="s9">
+<div class="section-marker">SECTION 09</div>
+<h2>Research Frontiers and Future Directions</h2>
+<p>Scaling test-time compute is an active research frontier. OpenAI's o1 model allocates test-time compute adaptively based on problem difficulty. Google DeepMind's AlphaProof uses tree search for mathematical theorem proving, allocating compute based on proof difficulty. Meta's recent work shows that test-time compute can improve 7B models to match 70B+ models on reasoning tasks—a potential game-changer for efficiency.</p>
+<p>Future directions: learned allocation (train a model to predict optimal compute per query), mixture of test-time strategies (combine search with sampling), and interactive test-time compute (interact with the user for clarification if unsure). Test-time compute is moving from a batch-processing curiosity to a core inference strategy.</p>
+</div>
+
+<p><p>Implementation considerations: test-time compute requires batching infrastructure. For web APIs, you might return faster with N=1 sample and let clients request more samples if needed. For batch processing, allocate uniformly. For interactive systems (chatbots), use adaptive allocation: start with N=1, if confidence is low, run N=5 in parallel. This gives users fast responses for easy questions and more thought for hard questions.</p></p>
+<p><p>Combining with retrieval: in RAG systems, test-time compute helps both at retrieval time (search harder for better documents) and at generation time (generate multiple candidate answers). A state-of-the-art RAG system uses test-time compute at both stages, achieving 15-20% quality improvements over single-pass RAG.</p></p>
+<p>Test-time compute represents fundamental shift in inference strategy. Allocate compute adaptively at test time, improving quality on hard examples. Keep easy examples fast. This trend continues: more test-time, less training-time compute. Future models will be designed around this paradigm.</p>
 <div class="related-concepts">
 <h3 class="rc-heading">Related concepts</h3>
 <div class="rc-grid">
