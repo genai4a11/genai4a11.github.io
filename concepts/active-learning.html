@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Active Learning | GenAI Mindmap</title>
+  <meta name="description" content="A data collection strategy that selects the most informative examples for labelling — reducing annotation cost by 50–80% while achieving the same model performance as random sampling." />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Active Learning" />
+  <meta property="og:description" content="A data collection strategy that selects the most informative examples for labelling — reducing annotation cost by 50–80% while achieving the same model performance as random sampling." />
+  <meta property="og:url" content="https://genai4a11.github.io/concepts/active-learning.html" />
+  <meta property="og:site_name" content="GenAI Mindmap" />
+  <link rel="canonical" href="https://genai4a11.github.io/concepts/active-learning.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Active Learning | GenAI Mindmap",
+  "description": "A data collection strategy that selects the most informative examples for labelling \u2014 reducing annotation cost by 50\u201380% while achieving the same model performance as random sampling.",
+  "url": "https://genai4a11.github.io/concepts/active-learning.html",
+  "dateModified": "2026-03-25T00:53:03.526367",
+  "datePublished": "2025-01-01",
+  "author": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "GenAI Mindmap",
+    "url": "https://genai4a11.github.io",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://genai4a11.github.io/favicon.ico"
+    }
+  },
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://genai4a11.github.io/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Deep Dives",
+        "item": "https://genai4a11.github.io/concepts/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Active Learning | GenAI Mindmap",
+        "item": "https://genai4a11.github.io/concepts/active-learning.html"
+      }
+    ]
+  }
+}
+</script>
+  <style>
+    :root {
+      --accent: #0369a1;
+      --accent-dark: #0284c7;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; line-height:1.6; }
+    nav { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem; background:#1a1f36; border-bottom:1px solid rgba(255,255,255,.1); position:sticky; top:0; z-index:100; }
+    .nav-brand { font-size:1.125rem; font-weight:600; color:white; text-decoration:none; }
+    .nav-brand:hover { color:#22c55e; }
+    .nav-back { font-size:.95rem; color:#a0aec0; text-decoration:none; }
+    .nav-back:hover { color:white; }
+    .hero { background:linear-gradient(135deg,#0369a1 0%,#0284c7 100%); color:white; padding:4rem 2rem; text-align:center; }
+    .hero-tag { display:inline-block; background:rgba(255,255,255,.2); padding:.5rem 1rem; border-radius:999px; font-size:.875rem; font-weight:500; margin-bottom:1rem; }
+    .hero h1 { font-size:3rem; font-weight:700; margin:1rem 0; line-height:1.2; }
+    .hero h1 em { font-style:italic; color:rgba(255,255,255,.85); }
+    .hero-sub { font-size:1.25rem; opacity:.95; max-width:700px; margin:1.5rem auto; }
+    .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem; max-width:700px; margin-left:auto; margin-right:auto; }
+    .stat-num { font-size:1.75rem; font-weight:700; }
+    .stat-label { font-size:.875rem; opacity:.9; }
+    .page-wrap { max-width:1040px; margin:0 auto; padding:3rem 2rem; }
+    .toc-card { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2rem; margin-bottom:3rem; }
+    .toc-card h3 { font-size:1.25rem; margin-bottom:1.5rem; }
+    .toc-list { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    .toc-list li { list-style:none; }
+    .toc-list a { display:block; padding:1rem; border-radius:.5rem; background:var(--bg); border:1px solid var(--border); text-decoration:none; color:var(--text); font-size:.95rem; transition:all .2s; }
+    .toc-list a:hover { background:var(--accent); color:white; border-color:var(--accent); }
+    .toc-list a::before { content:attr(data-num); font-weight:700; color:var(--accent); margin-right:.75rem; display:inline-block; width:24px; height:24px; line-height:24px; background:rgba(79,70,229,.1); border-radius:50%; text-align:center; font-size:.75rem; }
+    .toc-list a:hover::before { background:rgba(255,255,255,.3); color:white; }
+    .section-block { background:var(--bg-white); border:1px solid var(--border); border-radius:1rem; padding:2.5rem; margin-bottom:3rem; }
+    .section-marker { display:inline-block; color:var(--accent); font-size:.75rem; font-weight:700; letter-spacing:.1em; margin-bottom:1rem; }
+    .section-block h2 { font-size:2rem; margin-bottom:1.5rem; }
+    .section-block h3 { font-size:1.25rem; margin:1.5rem 0 .75rem; }
+    .section-block p { margin-bottom:1rem; line-height:1.8; }
+    .section-block ul,.section-block ol { margin-left:1.5rem; margin-bottom:1.5rem; }
+    .section-block li { margin-bottom:.75rem; line-height:1.7; }
+    .example-box { background:var(--code-bg); color:#cbd5e1; padding:1.5rem; border-radius:.5rem; border-left:4px solid var(--accent); margin:1.5rem 0; font-family:'Fira Code',monospace; font-size:.875rem; overflow-x:auto; white-space:pre-wrap; line-height:1.5; }
+    .callout { padding:1.5rem; border-radius:.5rem; margin:1.5rem 0; border-left:4px solid; }
+    .callout.blue { background:#eff6ff; border-left-color:#2563eb; }
+    .callout.amber { background:#fffbeb; border-left-color:#f59e0b; }
+    .callout.green { background:#f0fdf4; border-left-color:#22c55e; }
+    .callout.rose { background:#ffe4e6; border-left-color:#f43f5e; }
+    .callout strong { font-weight:600; }
+    .table-wrap { overflow-x:auto; margin:1.5rem 0; }
+    table { width:100%; border-collapse:collapse; background:var(--bg-white); border:1px solid var(--border); border-radius:.5rem; overflow:hidden; }
+    table th { background:var(--accent); color:white; padding:1rem; text-align:left; font-weight:600; }
+    table td { padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    table tr:last-child td { border-bottom:none; }
+    table tr:hover { background:var(--bg); }
+    strong { color:var(--accent); font-weight:600; }
+    footer { background:var(--bg-white); border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--muted); font-size:.875rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-brand">🧠 GenAI Mindmap</a>
+    <a href="/concepts/data-eng.html" class="nav-back">← Data Engineering</a>
+  </nav>
+
+  <div class="hero">
+    <span class="hero-tag">Data Engineering</span>
+    <h1><em>Active Learning</em></h1>
+    <p class="hero-sub">A data collection strategy that selects the most informative examples for labelling — reducing annotation cost by 50–80% while achieving the same model performance as random sampling.</p>
+    <div class="hero-stats">
+      <div><div class="stat-num">Annotation savings</div><div class="stat-label">50–80%</div></div>
+      <div><div class="stat-num">Strategies</div><div class="stat-label">uncertainty/diversity/query-by-committee</div></div>
+      <div><div class="stat-num">Frameworks</div><div class="stat-label">modAL, small-text, Argilla</div></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="toc-card">
+      <h3>Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#s1" data-num="01">What Is Active Learning?</a></li>
+        <li><a href="#s2" data-num="02">Uncertainty Sampling</a></li>
+        <li><a href="#s3" data-num="03">Diversity Sampling</a></li>
+        <li><a href="#s4" data-num="04">Query by Committee</a></li>
+        <li><a href="#s5" data-num="05">Active Learning Loop</a></li>
+        <li><a href="#s6" data-num="06">When to Use</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="s1">
+      <div class="section-marker">SECTION 01</div>
+('What Is Active Learning?', 'A model trained on 1,000 randomly selected examples performs worse than one trained on 500 intelligently selected examples. Active learning identifies which unlabelled examples would be most informative for the model to learn from — typically the examples the model is currently most uncertain about. By labelling only these examples, you get maximum performance improvement per annotation dollar.')
+    </div>
+
+    <div class="section-block" id="s2">
+      <div class="section-marker">SECTION 02</div>
+('Uncertainty Sampling', 'The simplest strategy: label examples where the current model is least confident. "\n   "For classifiers: select examples where the probability of the most likely class is lowest. "\n   "For sequence models: select examples with the highest token-level entropy.\n\nimport numpy as np\nfrom sklearn.linear_model import LogisticRegression\n\ndef uncertainty_sample(model: LogisticRegression, X_unlabelled: np.ndarray,\n                       n_samples: int = 100) -> list[int]:\n    probs = model.predict_proba(X_unlabelled)\n    # Least confident: max probability closest to 1/n_classes\n    max_probs = np.max(probs, axis=1)\n    # Sort ascending: lowest confidence first\n    uncertainty_order = np.argsort(max_probs)\n    return uncertainty_order[:n_samples].tolist()\n\ndef margin_sampling(model, X_unlabelled, n_samples=100):\n    probs = model.predict_proba(X_unlabelled)\n    sorted_probs = np.sort(probs, axis=1)[:, ::-1]\n    # Margin = difference between top-2 class probabilities\n    margins = sorted_probs[:, 0] - sorted_probs[:, 1]\n    return np.argsort(margins)[:n_samples].tolist()')
+    </div>
+
+    <div class="section-block" id="s3">
+      <div class="section-marker">SECTION 03</div>
+('Diversity Sampling', 'Uncertainty sampling can create redundant batches — if 100 uncertain examples are all very similar, labelling them adds little new information. Diversity sampling selects examples spread across the feature space: cluster the unlabelled pool (k-means), then sample from each cluster. CoreSet selection finds the most representative subset geometrically.')
+    </div>
+
+    <div class="section-block" id="s4">
+      <div class="section-marker">SECTION 04</div>
+('Query by Committee', "Train multiple models with different initialisations or hyperparameters. Label examples where the committee disagrees most (measured by vote entropy or KL divergence between models' predictions). More robust than single-model uncertainty — disagreement is a stronger signal than low confidence from one model.")
+    </div>
+
+    <div class="section-block" id="s5">
+      <div class="section-marker">SECTION 05</div>
+('Active Learning Loop', 'The loop: train → select uncertain examples → label → retrain.\n\nclass ActiveLearningLoop:\n    def __init__(self, model, X_labelled, y_labelled, X_unlabelled):\n        self.model = model\n        self.X_l, self.y_l = list(X_labelled), list(y_labelled)\n        self.X_u = list(X_unlabelled)\n\n    def run(self, n_iterations: int, batch_size: int, annotator_fn):\n        for iteration in range(n_iterations):\n            # Train on current labelled set\n            self.model.fit(self.X_l, self.y_l)\n            # Select most uncertain examples\n            indices = uncertainty_sample(self.model, np.array(self.X_u), batch_size)\n            # Annotate selected examples\n            selected_X = [self.X_u[i] for i in indices]\n            new_labels = annotator_fn(selected_X)\n            # Move from unlabelled to labelled pool\n            for i, label in zip(sorted(indices, reverse=True), new_labels):\n                self.X_l.append(self.X_u.pop(i))\n                self.y_l.append(label)\n            print(f"Iteration {iteration+1}: {len(self.X_l)} labelled examples")')
+    </div>
+
+    <div class="section-block" id="s6">
+      <div class="section-marker">SECTION 06</div>
+('When to Use', 'Active learning is most valuable when: annotation is expensive (expert labellers), the unlabelled pool is large (10K+), and you have budget for 1,000–10,000 labels total. Avoid when: labelling is cheap and fast (crowd annotation <$0.01/sample), you need full coverage (compliance requirements), or the feature space is small enough that random sampling covers it well.')
+    </div>
+  </div>
+
+  <footer>
+    <p>GenAI Mindmap &bull; <a href="/concepts/data-eng.html" style="color:var(--accent)">Data Engineering</a> &bull; Last updated March 2026</p>
+  </footer>
+</body>
+</html>
