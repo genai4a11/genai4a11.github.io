@@ -8152,47 +8152,48 @@ for i in range(top_k):
     for batch_idx, expert_id in enumerate(expert_idx):
         outputs[batch_idx] += experts[expert_id](x[batch_idx:batch_idx+1]) * top_k_vals[batch_idx, i].softmax(0)
 print(f'MoE output shape: {outputs.shape}')`,tip:'MoE[1] trades density for sparsity: total params are large, but each forward pass activates only top-k expert weights—VRAM and FLOPs scale with active params, not total.\n\nMixtral[2] 8×7B: 56B total but only 13B active per token—inference cost matches a 13B dense model with 50B+ quality.\n\nLoad-balancing loss (auxiliary term in training) prevents the router collapsing to always selecting the same experts.',refs:[{label:'[1] Outrageously Large Neural Networks — Switch to Conditional Computation (Shazeer et al., 2017)',url:'https://arxiv.org/abs/1701.06538'},{label:'[2] Mixtral of Experts (Jiang et al., 2024)',url:'https://arxiv.org/abs/2401.04088'}]},
-foundations:{use:'Mathematical foundations (linear algebra, calculus, probability) and core ML concepts underpins every GenAI model and training algorithm.',diag:`
-  GenAI foundations map — which concepts build on which:
+foundations:{use:'Every GenAI model is built on three pillars: linear algebra (matrices, dot products — how attention works), calculus (gradients — how models learn), and probability (distributions, loss functions — how models improve). Without them you can use tools but cannot diagnose why they fail.',diag:`
+  GenAI concepts build on each other:
 
-  Linear Algebra ──► Attention, Embeddings, LoRA
-  Calculus       ──► Backprop, Optimization, Autograd
-  Probability    ──► Sampling, Loss functions, RLHF
+  Linear Algebra ──► Attention, Embeddings, LoRA, GQA
+  Calculus       ──► Backprop, Optimizers, Gradient clipping
+  Probability    ──► Sampling, Temperature, Loss, RLHF
        │
-  Neural Nets ──► Transformer Arch
-       │               │
-  Encoder/Decoder      │
-       │               ▼
-  Pre-training    KV Cache, MoE, GQA
+  Neural Networks ──► Transformer Architecture
+       │                      │
+  Encoder / Decoder      KV Cache, MoE, GQA
        │
-  ┌────┴──────────────────────────────────┐
-  │  Foundation models (Llama, Mistral…)  │
-  │  Fine-tuning (LoRA, QLoRA, DPO)       │
-  │  Inference (vLLM, GGUF, spec dec)     │
-  └───────────────────────────────────────┘
-  Direction: bottom-up understanding; top-down use`,code:`import numpy as np
+  Pre-training ──► Foundation Models (Llama, Mistral, GPT)
+       │
+  ┌────┴──────────────────────────────────────────────┐
+  │  Fine-tuning (→ LoRA node, → QLoRA node, DPO)    │
+  │  Inference   (→ vLLM node, GGUF, Speculative Dec) │
+  │  Deployment  (RAG, Agents, Guardrails)             │
+  └────────────────────────────────────────────────────┘
+
+  Learning path: bottom-up understanding, top-down use`,code:`import numpy as np
 import torch
-# A sampling of foundation concepts
-# 1. Matrix multiplication (linear algebra)
-A = np.array([[1, 2], [3, 4]])
-B = np.array([[5, 6], [7, 8]])
-C = A @ B
-print(f'Matrix mult: {C}')
-# 2. Gradient computation (calculus)
-x = torch.tensor([2.0], requires_grad=True)
-y = x**2
-y.backward()
-print(f'dy/dx at x=2: {x.grad}')
-# 3. Probability distributions
-probs = torch.softmax(torch.tensor([1.0, 2.0, 0.5]), dim=0)
+# 1. Matrix multiplication (linear algebra — core of attention)
+Q = np.array([[1, 0], [0, 1]])
+K = np.array([[2, 3], [4, 5]])
+scores = Q @ K.T                  # dot product: q·k
+print(f'Attention scores (unnorm): {scores}')
+# 2. Softmax + entropy (probability — how models choose tokens)
+logits = torch.tensor([2.0, 1.0, 0.1])
+probs  = torch.softmax(logits, dim=0)
 entropy = -(probs * torch.log(probs)).sum()
-print(f'Entropy of distribution: {entropy}')
-# 4. Basic neural network forward pass
-x = torch.randn(4, 10)
-w = torch.randn(10, 5)
-b = torch.randn(5)
-y = x @ w + b
-print(f'Neural net output shape: {y.shape}')`,tip:'Strong fundamentals accelerate learning of all other GenAI concepts.\n\nLinear algebra + calculus + probability: the "big three" for deep learning.\n\nReinforce with implementations; formulas alone won\'t stick without hands-on code.',refs:[{label:'3Blue1Brown Mathematics of Machine Learning playlist',url:'https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab'},{label:'Mathematics for Machine Learning (book)',url:'https://mml-book.github.io/'},{label:'Fast.ai foundations course',url:'https://course.fast.ai/'}]},
+print(f'Token probs: {probs.numpy().round(2)}, entropy: {entropy:.2f}')
+# 3. Gradient computation (calculus — how models learn)
+x = torch.tensor(3.0, requires_grad=True)
+loss = (x - 1) ** 2              # simple loss: squared error from 1
+loss.backward()
+print(f'Gradient at x=3: {x.grad}')  # 2*(x-1) = 4
+# 4. Simple linear layer (all three combined)
+W = torch.randn(4, 8)
+b = torch.randn(4)
+x = torch.randn(8)
+y = W @ x + b
+print(f'Layer output: {y.shape}')`,tip:'Start with NumPy[1] for array math — it forces you to think about shapes and dimensions, which is 80% of debugging deep learning code.\n\nYou do not need to derive proofs to build good GenAI systems. You need to know what each operation does and when it breaks — that understanding comes from implementing things from scratch once.\n\nCome back to foundations when you hit a wall you cannot explain; the answer is almost always in calculus (why does loss not decrease?) or linear algebra (why are my shapes wrong?).',questions:{leader:['Which foundational gaps in your engineering team create the most risk when GenAI systems behave unexpectedly in production?','What is the minimum foundation knowledge a non-ML hire needs before contributing meaningfully to a GenAI project — and how do you assess it?'],pm:['Which foundation concepts most directly affect product quality — and which are purely implementation concerns your engineers handle?','How do you distinguish a prompt engineering failure from a model knowledge limitation from a fundamental architecture constraint?'],eng:['Where does calculus knowledge save debugging time that stack traces alone cannot?','Which math operations appear so frequently in GenAI code that not recognising them at a glance costs hours of debugging?','When is it worth implementing a concept from scratch vs. using a library — and what do you actually learn from the from-scratch version?']},refs:[{label:'[1] NumPy — fundamental array library for scientific computing in Python',url:'https://numpy.org/doc/stable/'},{label:'[2] Mathematics for Machine Learning (Deisenroth, Faisal, Ong — free textbook)',url:'https://mml-book.github.io/'},{label:'[3] 3Blue1Brown — Essence of Linear Algebra and Neural Networks (video series)',url:'https://www.3blue1brown.com/topics/linear-algebra'}]},
 gemini15:{use:'Gemini 1.5 Pro excels with 1M+ token context for processing long documents, PDFs, videos, and multimodal data in a single API call.',diag:`
   Gemini 1.5 Pro — 1M+ token context:
 
