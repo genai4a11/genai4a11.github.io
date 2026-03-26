@@ -370,6 +370,9 @@ const CONCEPT_PAGES={
   sora:'concepts/sora.html',
   video_diffusion:'concepts/video-diffusion.html',
 };
+// Reverse map: concept page URL → node ID (for in-map navigation from learn pills)
+const CONCEPT_PAGE_TO_NODE={};
+Object.entries(CONCEPT_PAGES).forEach(([nid,url])=>CONCEPT_PAGE_TO_NODE[url]=nid);
 let N=JSON.parse(JSON.stringify(DN)),X=JSON.parse(JSON.stringify(DX)),e=false,s=null;
 function ifs(){const c=document.getElementById('starfield'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;const t=[];for(let i=0;i<100;i++)t.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,v:Math.random()*0.3+0.1});function a(){x.fillStyle='#030a1a';x.fillRect(0,0,c.width,c.height);x.fillStyle='#a78bfa';t.forEach(d=>{d.r+=d.v*0.01;if(d.r>2.5)d.r=0;x.beginPath();x.arc(d.x,d.y,d.r,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight})}
 function hc(cd){
@@ -579,7 +582,7 @@ function sp(d){
   // FURTHER READING
   if(d.refs && d.refs.length){
     const rl=document.getElementById('ps-refs-list');
-    rl.innerHTML=d.refs.map(r=>`<a href="${r.url}?from=${d.id}" target="_blank" class="ref-link">→ ${r.label} ↗</a>`).join('');
+    rl.innerHTML=d.refs.map(r=>{const isExt=r.url.startsWith('http');const href=isExt?r.url:`${r.url}?from=${d.id}`;const tgt=isExt?' target="_blank"':'';return `<a href="${href}"${tgt} class="ref-link">→ ${r.label} ↗</a>`;}).join('');
     document.getElementById('ps-refs').style.display='block';
   } else document.getElementById('ps-refs').style.display='none';
   // KEY QUESTIONS
@@ -597,14 +600,58 @@ function sp(d){
     });
     document.getElementById('ps-questions').style.display='block';
   } else document.getElementById('ps-questions').style.display='none';
-  // WHAT TO LEARN
-  if(d.learn && d.learn.length){
-    const typeIcon={paper:'📄',course:'🎓',video:'▶️',book:'📚',tool:'🔧',blog:'✍️'};
+  // SUB-TOPICS — direct children from graph data (hidden when an ordered learning path covers them)
+  const subNodes=N.filter(n=>n.p===d.id);
+  const stEl=document.getElementById('ps-subtopics-list');
+  if(subNodes.length && !d.learnOrdered){
+    stEl.innerHTML=subNodes.map(n=>`<div class="panel-pill subtopic-pill" data-target="${n.id}" title="${n.desc||n.label}">${n.label} →</div>`).join('');
+    stEl.querySelectorAll('.subtopic-pill').forEach(pill=>pill.addEventListener('click',()=>{const t=N.find(n=>n.id===pill.dataset.target);if(t){sn(t);sp(t);}}));
+    document.getElementById('ps-subtopics').style.display='block';
+  } else document.getElementById('ps-subtopics').style.display='none';
+  // WHAT TO LEARN / LEARNING PATH
+  const ownConceptUrl=CONCEPT_PAGES[d.id]||null;
+  const learnItems=(d.learn||[]).filter(item=>!(item.type==='concept'&&item.url===ownConceptUrl));
+  // Update section title based on whether this is an ordered path
+  document.querySelector('#ps-learn .panel-section-title').textContent=
+    d.learnOrdered?'Learning path':'What to learn';
+  if(learnItems.length){
+    const typeIcon={paper:'📄',course:'🎓',video:'▶️',book:'📚',tool:'🔧',blog:'✍️',concept:'🗺️'};
     const ll=document.getElementById('ps-learn-pills');
-    ll.innerHTML=d.learn.map(item=>{
+    const isOrdered=!!d.learnOrdered;
+    // Concept pills are handled by "Explore sub-topics" unless this is an ordered learning path
+    const conceptItems=isOrdered?learnItems.filter(i=>i.type==='concept'):[];
+    const externalItems=learnItems.filter(i=>i.type!=='concept');
+    const renderItem=(item)=>{
       const icon=typeIcon[item.type]||'🔗';
-      return `<a href="${item.url}" target="_blank" class="ref-link learn-link">${icon} ${item.label} ↗</a>`;
-    }).join('');
+      const isInternal=item.type==='concept';
+      let nodeId=null;
+      if(isInternal){
+        if(item.url.startsWith('#')) nodeId=item.url.slice(1);
+        else nodeId=CONCEPT_PAGE_TO_NODE[item.url]||CONCEPT_PAGE_TO_NODE[item.url.split('?')[0]]||null;
+      }
+      const href=nodeId?'javascript:void(0)':isInternal?`${item.url}?from=${d.id}`:item.url;
+      const target=isInternal?'':' target="_blank"';
+      const nidAttr=nodeId?` data-nid="${nodeId}"`:'';
+      const arrow=isInternal?'→':'↗';
+      return `<a href="${href}"${target}${nidAttr} class="ref-link learn-link">${icon} ${item.label} ${arrow}</a>`;
+    };
+    let html='';
+    if(conceptItems.length){
+      html+=`<div class="learn-path-ordered">${conceptItems.map(renderItem).join('<span class="learn-path-arrow">→</span>')}</div>`;
+    }
+    if(externalItems.length){
+      if(conceptItems.length) html+='<div class="learn-divider"></div>';
+      html+=externalItems.map(renderItem).join('');
+    }
+    ll.innerHTML=html;
+    // Wire up in-map navigation for #nodeId concept links
+    ll.querySelectorAll('[data-nid]').forEach(a=>{
+      a.addEventListener('click',e=>{
+        e.preventDefault();
+        const t=N.find(n=>n.id===a.dataset.nid);
+        if(t){sn(t);sp(t);}
+      });
+    });
     document.getElementById('ps-learn').style.display='block';
   } else document.getElementById('ps-learn').style.display='none';
   // CONNECTED TOPICS — cross-links

@@ -37,7 +37,7 @@ const DN=[
 {id:'meta_governance',label:'Governance',cat:'mc_governance',g:1,meta:true,p:'root',desc:'Quality and safety: evaluation frameworks, benchmarks, red-teaming, and guardrails.'},
 {id:'meta_applications',label:'Applications',cat:'mc_apps',g:1,meta:true,p:'root',desc:'Where it all lands: industry verticals and production GenAI application patterns.'},
 // ── DOMAIN NODES ──────────────────────────────────────────────────────────────
-{id:'foundations',label:'Foundations',cat:'foundations',g:1,p:'meta_foundations',desc:'Linear algebra, calculus, and probability are the bedrock—every attention mechanism, gradient update, and sampling decision traces back to one of these three.'},
+{id:'foundations',label:'Prerequisites',cat:'foundations',g:1,p:'meta_foundations',desc:'Linear algebra, calculus, and probability are the bedrock—every attention mechanism, gradient update, and sampling decision traces back to one of these three.'},
 {id:'math_foundations',label:'Math Foundations',cat:'foundations',g:2,p:'foundations',desc:'Linear algebra, calculus, and probability that underpin all of ML.'},
 {id:'python_ecosystem',label:'Python Ecosystem',cat:'foundations',g:2,p:'foundations',desc:'Scientific computing stack: NumPy, Pandas, Matplotlib.'},
 {id:'pytorch_basics',label:'PyTorch Basics',cat:'foundations',g:2,p:'foundations',desc:'Tensors, autograd, datasets, and training loops.'},
