@@ -7,6 +7,7 @@ What it does:
   3. Injects Prev/Next nav into every concept page
   4. Injects JSON-LD Article schema into every concept page
   5. Injects favicon <link> tags into every concept page
+  6. Injects Related concepts section into concept pages missing one
 
 Usage:
   python3 scripts/build.py
@@ -25,6 +26,7 @@ steps = [
     ('Injecting prev/next navigation',            'gen-nav.py'),
     ('Injecting JSON-LD Article schema',          'gen-jsonld.py'),
     ('Injecting favicon links',                   'gen-favicon.py'),
+    ('Injecting related concepts sections',       'gen-related.py'),
 ]
 
 ok = True
