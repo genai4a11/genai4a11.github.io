@@ -6,6 +6,7 @@ What it does:
   2. Regenerates sitemap.xml from concepts/ folder
   3. Injects Prev/Next nav into every concept page
   4. Injects JSON-LD Article schema into every concept page
+  5. Injects favicon <link> tags into every concept page
 
 Usage:
   python3 scripts/build.py
@@ -23,6 +24,7 @@ steps = [
     ('Building sitemap.xml',                     'gen-sitemap.py'),
     ('Injecting prev/next navigation',            'gen-nav.py'),
     ('Injecting JSON-LD Article schema',          'gen-jsonld.py'),
+    ('Injecting favicon links',                   'gen-favicon.py'),
 ]
 
 ok = True
