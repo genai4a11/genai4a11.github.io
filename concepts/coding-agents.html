@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Coding Agents - GenAI Mindmap</title>
+<meta name="description" content="Coding agents autonomously write, execute, debug, and iterate on code. Learn architectures, sandboxing, and production patterns for AI software engineers."/>
+<meta property="og:title" content="Coding Agents - GenAI Mindmap"/>
+<meta property="og:description" content="Coding agents autonomously write, execute, debug, and iterate on code. Learn architectures, sandboxing, and production patterns for AI software engineers."/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="https://genai4a11.github.io/concepts/coding-agents.html"/>
+<style>
+    :root {
+      --indigo: #4f46e5;
+      --blue: #2563eb;
+      --sky: #38bdf8;
+      --green: #22c55e;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --purple: #a78bfa;
+      --violet: #7c3aed;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: var(--bg-white); border-bottom: 1px solid var(--border); }
+    .nav-brand { font-size: 1.125rem; font-weight: 600; color: var(--text); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-brand:hover { color: var(--indigo); }
+    .nav-back { font-size: 0.95rem; color: var(--muted); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-back:hover { color: var(--text); }
+    .hero { background: linear-gradient(135deg, var(--violet), var(--indigo)); color: white; padding: 4rem 2rem; text-align: center; }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
+    .hero h1 { font-size: 3rem; font-weight: 700; margin: 1rem 0; line-height: 1.2; }
+    .hero h1 em { font-style: italic; color: #fef3c7; }
+    .hero-sub { font-size: 1.25rem; opacity: 0.95; max-width: 700px; margin: 1.5rem auto; }
+    .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .stat-num { font-size: 1.75rem; font-weight: 700; }
+    .stat-label { font-size: 0.875rem; opacity: 0.9; }
+    .page-wrap { max-width: 1040px; margin: 0 auto; padding: 3rem 2rem; }
+    .toc-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-bottom: 3rem; }
+    .toc-card h3 { font-size: 1.25rem; margin-bottom: 1.5rem; color: var(--text); }
+    .toc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .toc-grid a { display: block; padding: 1rem; border-radius: 0.5rem; background: var(--bg); border: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.95rem; transition: all 0.2s; }
+    .toc-grid a:hover { background: var(--indigo); color: white; border-color: var(--indigo); }
+    .toc-grid a::before { content: attr(data-num); font-weight: 700; color: var(--indigo); margin-right: 0.75rem; }
+    .toc-grid a:hover::before { color: white; }
+    .section-block { margin-bottom: 4rem; }
+    .section-marker { display: inline-block; color: var(--indigo); font-size: 0.875rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .section-block h2 { font-size: 2rem; margin-bottom: 1.5rem; color: var(--text); }
+    .section-block p { margin-bottom: 1rem; line-height: 1.7; color: var(--text); }
+    .section-block ul, .section-block ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    .section-block li { margin-bottom: 0.75rem; color: var(--text); }
+    .example-box { background: var(--code-bg); color: #e2e8f0; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid var(--indigo); margin: 1.5rem 0; font-family: 'Monaco', 'Courier New', monospace; font-size: 0.875rem; overflow-y: auto; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; }
+    .callout { padding: 1.5rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid; }
+    .callout-blue { background: rgba(37,99,235,0.05); border-left-color: var(--blue); color: var(--text); }
+    .callout-amber { background: rgba(245,158,11,0.05); border-left-color: var(--amber); color: var(--text); }
+    .callout-green { background: rgba(34,197,94,0.05); border-left-color: var(--green); color: var(--text); }
+    .callout-purple { background: rgba(167,139,250,0.08); border-left-color: var(--purple); color: var(--text); }
+    .concept-link { color: var(--indigo); text-decoration: underline; }
+    .related-concepts { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-top: 3rem; }
+    .rc-heading { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.25rem; color: var(--text); }
+    .rc-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .rc-card { display: inline-block; padding: 0.6rem 1.1rem; border-radius: 0.5rem; border: 2px solid var(--rc-accent, #a78bfa); color: var(--text); text-decoration: none; font-size: 0.95rem; transition: all 0.2s; }
+    .rc-card:hover { background: var(--rc-accent, #a78bfa); color: white; }
+    .concept-nav { display: flex; justify-content: space-between; padding: 2rem; border-top: 1px solid var(--border); }
+    .concept-nav a { color: var(--indigo); text-decoration: none; }
+    footer { background: var(--bg-white); border-top: 1px solid var(--border); text-align: center; padding: 2rem; color: var(--muted); font-size: 0.875rem; }
+</style>
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/><link rel="icon" type="image/x-icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>
+</head>
+<body>
+<nav>
+<a class="nav-brand" href="../map.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../map.html">← Back to map</a>
+</nav>
+<div class="hero">
+<div class="hero-tag">Agents · Building with AI</div>
+<h1>Coding <em>Agents</em></h1>
+<p class="hero-sub">AI agents that autonomously write, run, debug, and iterate on code — from autocomplete to full autonomous software engineers</p>
+<div class="hero-stats">
+<div><div class="stat-num">Write → Run → Fix</div><div class="stat-label">Core Loop</div></div>
+<div><div class="stat-num">Sandboxed</div><div class="stat-label">Execution</div></div>
+<div><div class="stat-num">Tool-Driven</div><div class="stat-label">Architecture</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<div class="toc-grid">
+<a data-num="01" href="#section-1">What Are Coding Agents?</a>
+<a data-num="02" href="#section-2">The Agent Loop</a>
+<a data-num="03" href="#section-3">Sandboxing &amp; Execution</a>
+<a data-num="04" href="#section-4">Tool Design</a>
+<a data-num="05" href="#section-5">Context Management</a>
+<a data-num="06" href="#section-6">Production Patterns</a>
+<a data-num="07" href="#section-7">Evaluation &amp; Safety</a>
+</div>
+</div>
+
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>What Are Coding Agents?</h2>
+<p>A coding agent is an LLM system that autonomously writes, executes, evaluates, and iterates on code to fulfill a high-level goal. Rather than generating a static code block, the agent enters a feedback loop: write code → run it in a sandbox → read the output (stdout, stderr, test results) → patch errors → retry.</p>
+<p>This simple loop is surprisingly powerful. Given "implement a binary search tree with unit tests and get all tests passing," a capable coding agent can independently write the implementation, run pytest, interpret failures, fix edge cases, and produce a passing test suite — without human intervention.</p>
+<p>The spectrum of coding agents ranges from:</p>
+<ul>
+<li><strong>Autocomplete (Copilot-style):</strong> Next-token / next-line prediction. Human always in the loop.</li>
+<li><strong>Inline editing (Cursor, Copilot Chat):</strong> LLM rewrites a selected region of code on instruction. Single-shot, no execution feedback.</li>
+<li><strong>Agent-assisted coding:</strong> LLM writes code, runs it, and reports results. Human approves each change.</li>
+<li><strong>Autonomous coding agents (Devin, SWE-agent):</strong> LLM independently reads issues, writes code, runs tests, opens pull requests. Human reviews the PR.</li>
+</ul>
+<div class="callout callout-blue">
+<strong>Core insight:</strong> The agent loop converts code generation from a one-shot bet into an iterative optimization. The agent doesn't need to be right the first time — it needs to be able to recognize and fix errors.
+</div>
+</div>
+
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>The Agent Loop</h2>
+<p>The fundamental coding agent loop has four components: observe, plan, act, evaluate.</p>
+<div class="example-box">High-level goal (natural language)
+        │
+ ┌──────▼──────────────────────┐
+ │  Coding Agent (LLM)         │
+ │                             │
+ │  1. Plan: break into steps  │
+ │  2. Write code for step N   │
+ │  3. Execute in sandbox      │
+ │  4. Read output / errors    │
+ │  5. Patch & retry if needed │
+ │  6. Advance to step N+1     │
+ └──────┬──────────────────────┘
+        │  Tools
+ ┌──────▼───────────────────┐
+ │  bash / python / pytest  │
+ │  read_file / write_file  │
+ │  git commit / git push   │
+ └──────────────────────────┘</div>
+<p><strong>Planning phase:</strong> Before writing code, strong agents decompose the goal into concrete steps ("create the data model", "write the parser", "add unit tests"). This decomposition prevents the agent from writing large monolithic files that are hard to debug.</p>
+<p><strong>Execution feedback:</strong> The critical enabler is a code execution tool. The agent must be able to call <code>run_python(code)</code> or <code>bash("pytest tests/")</code> and receive actual output. Without execution feedback, the agent is writing in the dark.</p>
+<p><strong>Error handling strategy:</strong> When the agent encounters a failing test or exception, it should: (1) read the full traceback, (2) identify the root cause, (3) write a targeted fix, (4) re-run to verify. Agents that try to fix every error in one large edit often introduce new bugs.</p>
+<div class="callout callout-green">
+<strong>Best practice:</strong> Give the agent a clear success criterion before it starts. "All tests in tests/ must pass" is a better stopping condition than "implement the feature." An objective success signal prevents the agent from stopping prematurely or looping forever.
+</div>
+</div>
+
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Sandboxing &amp; Execution</h2>
+<p>Sandboxing is the most critical safety component of a coding agent. The agent must be able to run arbitrary code during development — but that code must not be able to damage the host system, exfiltrate data, or make unauthorized network calls.</p>
+<p><strong>Sandboxing options (by isolation level):</strong></p>
+<ul>
+<li><strong>subprocess with limits:</strong> <code>subprocess.run</code> with <code>timeout</code>, resource limits via <code>ulimit</code>. Simple but offers minimal isolation. Suitable for trusted scripts.</li>
+<li><strong>Docker containers:</strong> Run code in an ephemeral container with no host mounts, no network (or restricted network), and a read-only filesystem outside the workspace. Strong isolation. Used by SWE-agent and similar systems.</li>
+<li><strong>E2B (e2b.dev):</strong> Managed cloud sandboxes with Python/Node runtimes, persistent across agent steps, and destroyed after the session. Easy to integrate via SDK.</li>
+<li><strong>Modal:</strong> Serverless sandboxes with fine-grained resource control. Good for heavy compute tasks (GPU, long-running jobs).</li>
+<li><strong>Pyodide (browser):</strong> Python in WebAssembly. No server needed. Limited to pure-Python packages. Useful for demos and lightweight agents.</li>
+</ul>
+<div class="example-box"># Minimal sandboxed executor with subprocess
+import subprocess, textwrap
+
+def run_python(code: str, timeout: int = 30) -> str:
+    result = subprocess.run(
+        ["python3", "-c", code],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        # Resource limits on Linux:
+        # preexec_fn=lambda: resource.setrlimit(resource.RLIMIT_AS, (256*1024*1024, -1))
+    )
+    output = result.stdout + result.stderr
+    return output.strip() or "(no output)"
+
+# E2B sandbox (managed, isolated)
+# from e2b_code_interpreter import Sandbox
+# with Sandbox() as sbx:
+#     execution = sbx.run_code("print(2 ** 32)")
+#     print(execution.text)  # "4294967296"</div>
+<div class="callout callout-amber">
+<strong>Security rule:</strong> Never run agent-generated code in the same process or environment as production data, API keys, or customer systems. Always treat agent code as untrusted input from an external source.
+</div>
+</div>
+
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>Tool Design</h2>
+<p>The tools you give a coding agent directly determine what it can accomplish. Too few tools and the agent cannot complete real tasks. Too many and the agent spends tokens figuring out which tool to call. The right set is task-specific, but some tools are nearly universal.</p>
+<p><strong>Core tool set for most coding agents:</strong></p>
+<ul>
+<li><strong>run_python / run_bash:</strong> Execute code, return stdout + stderr. The most important tool.</li>
+<li><strong>read_file(path):</strong> Read a file from the workspace. Essential for understanding existing code.</li>
+<li><strong>write_file(path, content):</strong> Write or overwrite a file. The agent's primary output mechanism.</li>
+<li><strong>list_dir(path):</strong> Explore the repository structure. Helps the agent orient in large codebases.</li>
+<li><strong>run_tests(pattern):</strong> Run pytest or another test runner, return results. Used to verify progress.</li>
+</ul>
+<p><strong>Optional tools for advanced agents:</strong></p>
+<ul>
+<li><strong>git_diff / git_commit / git_push:</strong> Source control integration for PR-creating agents.</li>
+<li><strong>web_search / fetch_url:</strong> Find documentation, Stack Overflow answers, or package APIs.</li>
+<li><strong>install_package(name):</strong> Install dependencies during development. Use with caution.</li>
+<li><strong>code_search(pattern):</strong> Semantic or grep-based search across the codebase. Critical for large repos.</li>
+</ul>
+<div class="example-box">tools = [
+    {
+        "name": "run_python",
+        "description": "Execute Python code in a sandbox. Returns stdout + stderr.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "Python source code to run"}
+            },
+            "required": ["code"]
+        }
+    },
+    {
+        "name": "write_file",
+        "description": "Write content to a file in the workspace.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"},
+                "content": {"type": "string"}
+            },
+            "required": ["path", "content"]
+        }
+    },
+    {
+        "name": "read_file",
+        "description": "Read the contents of a file.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"]
+        }
+    }
+]</div>
+<div class="callout callout-blue">
+<strong>Design principle:</strong> Prefer narrowly scoped tools over a single omnibus bash tool. A dedicated <code>run_tests()</code> tool that only runs the test suite (never arbitrary shell commands) is safer and easier for the agent to use correctly than a raw bash executor.
+</div>
+</div>
+
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>Context Management</h2>
+<p>Large codebases exceed what fits in a context window. A coding agent working on a 50,000-line codebase cannot read every file before acting. Effective context management is the difference between an agent that gets lost and one that navigates a real repository.</p>
+<p><strong>Strategies for fitting codebase context:</strong></p>
+<ul>
+<li><strong>File tree summarization:</strong> Give the agent a compressed view of the repository structure (directory tree + short description of each module) rather than raw file contents.</li>
+<li><strong>Targeted file reading:</strong> Equip the agent with <code>read_file</code> and <code>code_search</code> tools and let it pull exactly what it needs. Agents that are told "read only files relevant to your task" use context far more efficiently.</li>
+<li><strong>Chunked editing:</strong> For large files, show only the relevant section. Provide the agent with a <code>view_range(file, start_line, end_line)</code> tool.</li>
+<li><strong>Conversation compression:</strong> After every N turns, summarize earlier tool outputs (long test runs, verbose logs) into a compact summary. This prevents context overflow in long agent sessions.</li>
+</ul>
+<div class="example-box"># Efficient context strategy: repo map + on-demand reading
+
+def get_repo_map(root_dir: str, max_depth: int = 3) -> str:
+    """Generate a compact tree of the repository."""
+    import os
+    lines = []
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        depth = dirpath.replace(root_dir, '').count(os.sep)
+        if depth > max_depth:
+            continue
+        indent = '  ' * depth
+        lines.append(f"{indent}{os.path.basename(dirpath)}/")
+        sub_indent = '  ' * (depth + 1)
+        for fname in sorted(filenames):
+            if not fname.startswith('.'):
+                lines.append(f"{sub_indent}{fname}")
+    return '\n'.join(lines)
+
+# Pass repo_map in system prompt; let agent call read_file as needed</div>
+</div>
+
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>Production Patterns</h2>
+<p>Deploying coding agents in production requires solving reliability, auditability, and cost control problems that don't appear in demos.</p>
+<p><strong>Human-in-the-loop checkpoints:</strong> Even "autonomous" coding agents benefit from checkpoints. A common pattern is: agent works autonomously on a branch → creates a draft PR → human reviews and approves or requests changes. This combines agent speed with human quality control.</p>
+<p><strong>Task scoping:</strong> Coding agents succeed when tasks are clearly scoped with verifiable success criteria. Tasks like "fix the bug in issue #342 so that the existing test suite passes" are much more reliable than "improve the codebase." The agent needs a signal for when it is done.</p>
+<p><strong>Cost controls:</strong> Long agent sessions are expensive. Set explicit turn limits (e.g. 30 tool calls max), token budgets, and time limits. Add cost tracking to your agent harness. Consider using a fast, cheap model for context setup and a strong model only for the actual coding turns.</p>
+<p><strong>Retry and escalation:</strong> When an agent exceeds its turn limit without succeeding, escalate to a human rather than silently failing. Log the full conversation so a developer can understand what went wrong.</p>
+<div class="example-box">import anthropic, subprocess
+client = anthropic.Anthropic()
+
+def coding_agent(task: str, max_turns: int = 30) -> str:
+    messages = [{"role": "user", "content": task}]
+    tools = [
+        {"name": "run_python", "description": "Run Python code in sandbox.",
+         "input_schema": {"type": "object", "properties": {"code": {"type": "string"}}, "required": ["code"]}}
+    ]
+    for turn in range(max_turns):
+        resp = client.messages.create(
+            model="claude-opus-4-5", max_tokens=4096,
+            tools=tools, messages=messages
+        )
+        messages.append({"role": "assistant", "content": resp.content})
+        if resp.stop_reason == "end_turn":
+            for block in reversed(resp.content):
+                if hasattr(block, "text"):
+                    return block.text
+        tool_results = []
+        for block in resp.content:
+            if block.type == "tool_use" and block.name == "run_python":
+                out = subprocess.run(
+                    ["python3", "-c", block.input["code"]],
+                    capture_output=True, text=True, timeout=30
+                )
+                result = (out.stdout + out.stderr).strip() or "(no output)"
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result
+                })
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+    return f"Agent exceeded {max_turns} turns. Manual review needed."</div>
+</div>
+
+<div class="section-block" id="section-7">
+<div class="section-marker">SECTION 07</div>
+<h2>Evaluation &amp; Safety</h2>
+<p>Evaluating coding agents is harder than evaluating code generation benchmarks because agent performance depends on the full loop: initial code quality, error recovery, and final test pass rate.</p>
+<p><strong>Evaluation metrics:</strong></p>
+<ul>
+<li><strong>Task completion rate:</strong> Percentage of tasks where all acceptance tests pass on the final agent output. The SWE-bench benchmark measures this for real GitHub issues.</li>
+<li><strong>Turns to completion:</strong> How many agent turns are needed? Fewer turns = lower cost and latency.</li>
+<li><strong>Error recovery rate:</strong> Given a task the agent initially fails, what fraction does it recover from with additional turns?</li>
+<li><strong>Code quality:</strong> Does the agent's code pass linting, type checking, and code review criteria beyond just the test suite?</li>
+</ul>
+<p><strong>Safety considerations:</strong></p>
+<ul>
+<li>Always run agent code in an isolated sandbox with no access to production data or credentials.</li>
+<li>Review all git commits before merging to main branches.</li>
+<li>Set network restrictions in the sandbox to prevent data exfiltration.</li>
+<li>Audit agent tool calls for unexpected resource usage (excessive API calls, large file writes).</li>
+</ul>
+<div class="callout callout-amber">
+<strong>SWE-bench context:</strong> SWE-bench (Jimenez et al., 2024) is the standard coding agent benchmark — 2,294 real GitHub issues from popular Python repos. Top agents (2025) solve 40–55% of issues. Human software engineers solve ~86%. The gap is real but narrowing fast.
+</div>
+</div>
+
+</div>
+<footer>
+© 2026 GenAI Mindmap. All concepts serve learning purposes.
+</footer>
+</body>
+</html>

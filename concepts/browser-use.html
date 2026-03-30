@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Browser Use - GenAI Mindmap</title>
+<meta name="description" content="Browser Use agents control web browsers with Playwright to navigate pages, fill forms, and extract data. Learn action grounding, reliability patterns, and production deployment."/>
+<meta property="og:title" content="Browser Use - GenAI Mindmap"/>
+<meta property="og:description" content="LLM agents that control web browsers to navigate pages, fill forms, and extract data — autonomous web automation."/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="https://genai4a11.github.io/concepts/browser-use.html"/>
+<style>
+    :root {
+      --indigo: #4f46e5; --blue: #2563eb; --sky: #38bdf8; --green: #22c55e;
+      --rose: #f43f5e; --amber: #f59e0b; --purple: #a78bfa; --violet: #7c3aed;
+      --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+      --bg: #f8fafc; --bg-white: #ffffff; --code-bg: #1e293b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: var(--bg-white); border-bottom: 1px solid var(--border); }
+    .nav-brand { font-size: 1.125rem; font-weight: 600; color: var(--text); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-brand:hover { color: var(--indigo); }
+    .nav-back { font-size: 0.95rem; color: var(--muted); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-back:hover { color: var(--text); }
+    .hero { background: linear-gradient(135deg, var(--blue), var(--sky)); color: white; padding: 4rem 2rem; text-align: center; }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
+    .hero h1 { font-size: 3rem; font-weight: 700; margin: 1rem 0; line-height: 1.2; }
+    .hero h1 em { font-style: italic; color: #fef3c7; }
+    .hero-sub { font-size: 1.25rem; opacity: 0.95; max-width: 700px; margin: 1.5rem auto; }
+    .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .stat-num { font-size: 1.75rem; font-weight: 700; }
+    .stat-label { font-size: 0.875rem; opacity: 0.9; }
+    .page-wrap { max-width: 1040px; margin: 0 auto; padding: 3rem 2rem; }
+    .toc-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-bottom: 3rem; }
+    .toc-card h3 { font-size: 1.25rem; margin-bottom: 1.5rem; color: var(--text); }
+    .toc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .toc-grid a { display: block; padding: 1rem; border-radius: 0.5rem; background: var(--bg); border: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.95rem; transition: all 0.2s; }
+    .toc-grid a:hover { background: var(--blue); color: white; border-color: var(--blue); }
+    .toc-grid a::before { content: attr(data-num); font-weight: 700; color: var(--blue); margin-right: 0.75rem; }
+    .toc-grid a:hover::before { color: white; }
+    .section-block { margin-bottom: 4rem; }
+    .section-marker { display: inline-block; color: var(--blue); font-size: 0.875rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .section-block h2 { font-size: 2rem; margin-bottom: 1.5rem; color: var(--text); }
+    .section-block p { margin-bottom: 1rem; line-height: 1.7; color: var(--text); }
+    .section-block ul, .section-block ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    .section-block li { margin-bottom: 0.75rem; color: var(--text); }
+    .example-box { background: var(--code-bg); color: #e2e8f0; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid var(--blue); margin: 1.5rem 0; font-family: 'Monaco', 'Courier New', monospace; font-size: 0.875rem; overflow-y: auto; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; }
+    .callout { padding: 1.5rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid; }
+    .callout-blue { background: rgba(37,99,235,0.05); border-left-color: var(--blue); }
+    .callout-amber { background: rgba(245,158,11,0.05); border-left-color: var(--amber); }
+    .callout-green { background: rgba(34,197,94,0.05); border-left-color: var(--green); }
+    .concept-link { color: var(--blue); text-decoration: underline; }
+    footer { background: var(--bg-white); border-top: 1px solid var(--border); text-align: center; padding: 2rem; color: var(--muted); font-size: 0.875rem; }
+</style>
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/><link rel="icon" type="image/x-icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>
+</head>
+<body>
+<nav>
+<a class="nav-brand" href="../map.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../map.html">← Back to map</a>
+</nav>
+<div class="hero">
+<div class="hero-tag">Agents · Tool Use</div>
+<h1>Browser <em>Use</em></h1>
+<p class="hero-sub">LLM agents that control web browsers to navigate pages, fill forms, and extract data — turning any website into an automated tool</p>
+<div class="hero-stats">
+<div><div class="stat-num">Observe → Act</div><div class="stat-label">Core Loop</div></div>
+<div><div class="stat-num">Playwright</div><div class="stat-label">Engine</div></div>
+<div><div class="stat-num">Any Website</div><div class="stat-label">Coverage</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<div class="toc-grid">
+<a data-num="01" href="#section-1">What Is Browser Use?</a>
+<a data-num="02" href="#section-2">How It Works</a>
+<a data-num="03" href="#section-3">Page Representation</a>
+<a data-num="04" href="#section-4">Action Space</a>
+<a data-num="05" href="#section-5">Quickstart Example</a>
+<a data-num="06" href="#section-6">Reliability Patterns</a>
+<a data-num="07" href="#section-7">Production &amp; Safety</a>
+</div>
+</div>
+
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>What Is Browser Use?</h2>
+<p>Browser Use is the capability of an LLM agent to control a real web browser — Chromium, Firefox, or WebKit — through a programmatic automation layer (typically Playwright or Selenium). The agent perceives the current page state, decides what action to take next (click, type, scroll, navigate), executes that action, and observes the resulting new page state. This loop repeats until the goal is achieved.</p>
+<p>The key value proposition: any website becomes a tool without requiring an official API. Browser agents can research competitors, fill out government forms, monitor prices, extract structured data from dynamic JavaScript-rendered pages, automate repetitive web workflows, and interact with internal web tools that lack programmatic interfaces.</p>
+<p><strong>Use cases:</strong></p>
+<ul>
+<li><strong>Web research:</strong> Systematically visit multiple sites to gather and compare information</li>
+<li><strong>Form automation:</strong> Fill and submit multi-step forms (applications, registrations, data entry)</li>
+<li><strong>Data extraction:</strong> Scrape dynamic sites where traditional scrapers fail</li>
+<li><strong>Competitive intelligence:</strong> Monitor pricing, product changes, or job postings</li>
+<li><strong>Internal automation:</strong> Operate legacy web apps that have no API</li>
+</ul>
+<div class="callout callout-blue">
+<strong>Browser Use vs web scraping:</strong> Traditional scrapers use fixed CSS selectors or XPath patterns that break when the page changes. Browser agents understand the page semantically ("find the Add to Cart button") and adapt to layout changes without code updates.
+</div>
+</div>
+
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>How It Works</h2>
+<p>The browser agent loop alternates between observation (what is on the page right now?) and action (what should I do next?).</p>
+<div class="example-box">Goal: "Go to Hacker News and extract the top 5 story titles"
+        │
+ ┌──────▼──────────────────────────────┐
+ │  Browser Agent (LLM)                │
+ │                                     │
+ │  Observe: screenshot / DOM of page  │
+ │  Reason: where are the story titles?│
+ │  Act: extract_content(selector)     │
+ └──────┬──────────────────────────────┘
+        │  action
+ ┌──────▼──────────────────────────┐
+ │  Browser (Playwright)           │
+ │  navigate(url)                  │
+ │  click(element)                 │
+ │  type(element, text)            │
+ │  scroll(direction)              │
+ │  extract_content(selector)      │
+ └──────┬──────────────────────────┘
+        │  new page state
+        └──► back to agent (observe)</div>
+<p>The loop terminates when the agent's reasoning concludes the goal is achieved, a maximum step count is reached, or an error cannot be recovered from.</p>
+<div class="callout callout-green">
+<strong>browser-use library:</strong> The open-source <code>browser-use</code> Python library (github.com/browser-use/browser-use) provides a high-level agent interface on top of Playwright. It handles the observe-act loop, page parsing, and LLM integration. You provide the goal; it handles the rest.
+</div>
+</div>
+
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Page Representation</h2>
+<p>How you represent the page to the LLM is the most important engineering decision in a browser agent. The LLM cannot see the browser directly — it receives a processed view of the page state. Three main representations exist, each with tradeoffs.</p>
+<p><strong>1. Screenshot (vision):</strong> Send a screenshot of the current browser viewport to a multimodal LLM. The model reasons visually about what to click. Pros: works on any page including canvas-heavy UIs. Cons: expensive per step, coordinates can be imprecise, visual context may miss hidden elements.</p>
+<p><strong>2. Accessibility tree (a11y tree):</strong> Parse the browser's accessibility tree — a structured representation of interactive elements (buttons, links, inputs) with their labels and roles. Much more compact than a screenshot and easier for the LLM to reason about. Most production browser agents use this.</p>
+<p><strong>3. Simplified DOM:</strong> Strip the raw HTML to just essential elements (links, buttons, inputs, headings) and their text. Sits between screenshot and full DOM in terms of information density.</p>
+<div class="example-box"># Accessibility tree representation (simplified):
+[1] Link "Y Combinator" (href="/news")
+[2] Link "new" (href="/newest")
+[3] Link "past" (href="/front?day=2026-03-30")
+[4] Span "1."
+[5] Link "Show HN: An open-source coding agent" (href="item?id=...")
+[6] Span "312 points by user42 | 147 comments"
+...
+
+# Agent reasoning: "I can see story [5] with link text. I'll extract [5] through [50]."
+# Agent action: extract_content("[4]-[50]")</div>
+<div class="callout callout-amber">
+<strong>Tradeoff summary:</strong> Use screenshots for visual-heavy pages (maps, charts, canvas apps). Use accessibility trees for standard web pages. Never send the full raw DOM — even a simple page can be 500KB of HTML that overwhelms the context window.
+</div>
+</div>
+
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>Action Space</h2>
+<p>The action space defines what the agent can do. A well-designed action space is expressive enough to handle most web tasks but constrained enough that the agent uses actions correctly.</p>
+<p><strong>Standard browser actions:</strong></p>
+<ul>
+<li><strong>navigate(url):</strong> Go to a URL. Used at the start and when following links.</li>
+<li><strong>click(element_id or selector):</strong> Click a button, link, checkbox, or other clickable element.</li>
+<li><strong>type(element_id, text):</strong> Type text into an input field, textarea, or contenteditable.</li>
+<li><strong>scroll(direction, amount):</strong> Scroll the page to reveal more content.</li>
+<li><strong>extract_content(selector or region):</strong> Extract text content from a portion of the page.</li>
+<li><strong>wait(seconds):</strong> Wait for dynamic content to load before taking the next action.</li>
+<li><strong>go_back():</strong> Navigate back in browser history.</li>
+<li><strong>done(result):</strong> Signal task completion and return the result.</li>
+</ul>
+<div class="callout callout-blue">
+<strong>Stopping action:</strong> Always include a <code>done(result)</code> action. Without it, the agent has no way to signal completion and may loop indefinitely checking if it's done.
+</div>
+</div>
+
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>Quickstart Example</h2>
+<p>Using the <code>browser-use</code> library for a simple research task:</p>
+<div class="example-box"># pip install browser-use playwright langchain-anthropic
+# playwright install chromium
+
+from browser_use import Agent
+from langchain_anthropic import ChatAnthropic
+import asyncio
+
+async def main():
+    llm = ChatAnthropic(model="claude-opus-4-5")
+
+    agent = Agent(
+        task="Go to https://news.ycombinator.com and return "
+             "the titles and URLs of the top 5 stories.",
+        llm=llm,
+        # Optional: use_vision=True for screenshot-based observation
+    )
+
+    result = await agent.run(max_steps=20)
+    print(result.final_result())
+
+asyncio.run(main())</div>
+<p>For custom browser control with direct Playwright:</p>
+<div class="example-box">import anthropic, asyncio
+from playwright.async_api import async_playwright
+
+client = anthropic.Anthropic()
+
+async def get_page_state(page) -> str:
+    # Simplified: get page title + visible links
+    title = await page.title()
+    links = await page.evaluate(
+        "() => Array.from(document.querySelectorAll('a')).slice(0,20)"
+        ".map(a => ({text: a.textContent.trim(), href: a.href}))"
+    )
+    return f"Page: {title}\nLinks: {links}"
+
+async def browse(goal: str):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        await page.goto("https://news.ycombinator.com")
+
+        for _ in range(10):
+            state = await get_page_state(page)
+            resp = client.messages.create(
+                model="claude-opus-4-5",
+                max_tokens=500,
+                messages=[{
+                    "role": "user",
+                    "content": f"Goal: {goal}\n\nPage state:\n{state}\n\nWhat is the result?"
+                }]
+            )
+            print(resp.content[0].text)
+            break  # single pass for demo
+
+asyncio.run(browse("List the top 3 Hacker News stories"))</div>
+</div>
+
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>Reliability Patterns</h2>
+<p>Browser agents frequently encounter failure modes that don't exist in API-based tools. These patterns significantly improve reliability in production.</p>
+<p><strong>Step limiting and loop detection:</strong> Set a hard cap on steps (typically 20–50 for most tasks). Track which pages the agent has visited and actions it has taken. If the agent repeats the same action 3 times without progress, escalate to human review.</p>
+<p><strong>Error recovery:</strong> When an action fails (element not found, page load timeout, CAPTCHA), give the agent explicit recovery options: try an alternative selector, reload the page, or navigate to the home page and restart. Don't silently retry the same failed action.</p>
+<p><strong>Goal verification:</strong> After the agent signals completion, run a verification pass: did the agent actually achieve the goal? For data extraction, validate that the output matches the expected format and isn't empty. For form submission, verify the confirmation page loaded.</p>
+<p><strong>Structured output:</strong> Ask the agent to return results in structured JSON rather than natural language. This makes downstream processing reliable and errors obvious.</p>
+<div class="callout callout-amber">
+<strong>Anti-bot detection:</strong> Most production websites use bot detection (Cloudflare, reCAPTCHA, behavioral fingerprinting). Browser agents are frequently blocked on high-traffic commercial sites. Ensure compliance with the site's terms of service and robots.txt before deploying. CAPTCHAs require human intervention — never attempt to bypass them programmatically.
+</div>
+</div>
+
+<div class="section-block" id="section-7">
+<div class="section-marker">SECTION 07</div>
+<h2>Production &amp; Safety</h2>
+<p>Deploying browser agents in production requires careful attention to security, legal compliance, and operational reliability.</p>
+<p><strong>Security:</strong> Run browsers in isolated Docker containers with no access to the host filesystem or internal network. Use dedicated browser profiles with no saved passwords or payment methods. Never let an agent access URLs or sites outside a predefined allowlist for sensitive workflows.</p>
+<p><strong>Credential safety:</strong> Never inject credentials into the agent's context window. Use a separate credential injection step after the agent has navigated to the login form — don't let the LLM see or handle passwords. Consider a human-in-the-loop step for any action involving financial transactions or account changes.</p>
+<p><strong>Legal compliance:</strong> Respect robots.txt and terms of service. Many sites explicitly prohibit automated access. Competitive scraping of certain data (financial, personal) may have legal implications. Always consult legal before deploying agents that interact with third-party sites at scale.</p>
+<p><strong>Monitoring:</strong> Log every agent step, the page state observed, and the action taken. Set up alerts for high error rates, unusual action patterns, and unexpected navigation to sensitive domains. Implement rate limits to prevent inadvertent denial-of-service on target sites.</p>
+<div class="callout callout-green">
+<strong>Starting point:</strong> Before building a custom browser agent, check if the target site has a public API. APIs are faster, cheaper, more reliable, and legally clearer than browser automation. Use browser agents specifically for cases where no API exists.
+</div>
+</div>
+
+</div>
+
+<div class="related-concepts">
+<h3 class="rc-heading">Related concepts</h3>
+<div class="rc-grid">
+<a class="rc-card" href="function-calling.html" style="--rc-accent:#a78bfa"><span class="rc-label">Function Calling</span></a>
+<a class="rc-card" href="model-context-protocol.html" style="--rc-accent:#a78bfa"><span class="rc-label">Model Context Protocol</span></a>
+<a class="rc-card" href="tool-selection.html" style="--rc-accent:#a78bfa"><span class="rc-label">Tool Selection</span></a>
+<a class="rc-card" href="code-mode.html" style="--rc-accent:#a78bfa"><span class="rc-label">Code Mode</span></a>
+<a class="rc-card" href="agent-skills.html" style="--rc-accent:#a78bfa"><span class="rc-label">Agent Skills</span></a>
+</div>
+</div>
+<footer>
+© 2026 GenAI Mindmap. All concepts serve learning purposes.
+</footer>
+</body>
+</html>

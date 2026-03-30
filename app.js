@@ -82,6 +82,8 @@ const CONCEPT_PAGES={
   red_teaming:'concepts/red-teaming.html',
   tokenization:'concepts/tokenization.html',
   agentic_rag:'concepts/agentic-rag.html',
+  reasoning_rag:'concepts/reasoning-rag.html',
+  agentic_search:'concepts/agentic-search.html',
   llm_judge:'concepts/llm-judge.html',
   langchain:'concepts/langchain.html',
   langgraph:'concepts/langgraph.html',
@@ -183,6 +185,9 @@ const CONCEPT_PAGES={
   plan_execute:'concepts/plan-and-execute.html',
   multi_agent:'concepts/multi-agent.html',
   crewai:'concepts/crewai.html',
+  coding_agents:'concepts/coding-agents.html',
+  browser_use:'concepts/browser-use.html',
+  llm_tree_search:'concepts/llm-tree-search.html',
   autogen:'concepts/autogen.html',
   pydantic_ai:'concepts/pydantic-ai.html',
   // batch 14b — Agents (second wave)

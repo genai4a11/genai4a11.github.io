@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LLM Tree Search - GenAI Mindmap</title>
+<meta name="description" content="LLM Tree Search applies Monte Carlo Tree Search to reasoning — explore multiple paths, score them with a reward model, and backtrack to find optimal solutions for hard problems."/>
+<meta property="og:title" content="LLM Tree Search - GenAI Mindmap"/>
+<meta property="og:description" content="MCTS applied to LLMs: explore and backtrack through reasoning paths to find optimal solutions for hard problems."/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="https://genai4a11.github.io/concepts/llm-tree-search.html"/>
+<style>
+    :root {
+      --indigo: #4f46e5; --blue: #2563eb; --sky: #38bdf8; --green: #22c55e;
+      --rose: #f43f5e; --amber: #f59e0b; --purple: #a78bfa; --violet: #7c3aed;
+      --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+      --bg: #f8fafc; --bg-white: #ffffff; --code-bg: #1e293b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: var(--bg-white); border-bottom: 1px solid var(--border); }
+    .nav-brand { font-size: 1.125rem; font-weight: 600; color: var(--text); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-brand:hover { color: var(--indigo); }
+    .nav-back { font-size: 0.95rem; color: var(--muted); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-back:hover { color: var(--text); }
+    .hero { background: linear-gradient(135deg, #0f172a, #312e81); color: white; padding: 4rem 2rem; text-align: center; }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
+    .hero h1 { font-size: 3rem; font-weight: 700; margin: 1rem 0; line-height: 1.2; }
+    .hero h1 em { font-style: italic; color: #a78bfa; }
+    .hero-sub { font-size: 1.25rem; opacity: 0.9; max-width: 700px; margin: 1.5rem auto; }
+    .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .stat-num { font-size: 1.75rem; font-weight: 700; }
+    .stat-label { font-size: 0.875rem; opacity: 0.85; }
+    .page-wrap { max-width: 1040px; margin: 0 auto; padding: 3rem 2rem; }
+    .toc-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-bottom: 3rem; }
+    .toc-card h3 { font-size: 1.25rem; margin-bottom: 1.5rem; color: var(--text); }
+    .toc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .toc-grid a { display: block; padding: 1rem; border-radius: 0.5rem; background: var(--bg); border: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.95rem; transition: all 0.2s; }
+    .toc-grid a:hover { background: var(--indigo); color: white; border-color: var(--indigo); }
+    .toc-grid a::before { content: attr(data-num); font-weight: 700; color: var(--indigo); margin-right: 0.75rem; }
+    .toc-grid a:hover::before { color: white; }
+    .section-block { margin-bottom: 4rem; }
+    .section-marker { display: inline-block; color: var(--indigo); font-size: 0.875rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .section-block h2 { font-size: 2rem; margin-bottom: 1.5rem; color: var(--text); }
+    .section-block p { margin-bottom: 1rem; line-height: 1.7; color: var(--text); }
+    .section-block ul, .section-block ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    .section-block li { margin-bottom: 0.75rem; color: var(--text); }
+    .example-box { background: var(--code-bg); color: #e2e8f0; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid var(--indigo); margin: 1.5rem 0; font-family: 'Monaco', 'Courier New', monospace; font-size: 0.875rem; overflow-y: auto; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; }
+    .callout { padding: 1.5rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid; }
+    .callout-blue { background: rgba(37,99,235,0.05); border-left-color: var(--blue); }
+    .callout-amber { background: rgba(245,158,11,0.05); border-left-color: var(--amber); }
+    .callout-green { background: rgba(34,197,94,0.05); border-left-color: var(--green); }
+    .callout-purple { background: rgba(124,58,237,0.07); border-left-color: var(--violet); }
+    .concept-link { color: var(--indigo); text-decoration: underline; }
+    footer { background: var(--bg-white); border-top: 1px solid var(--border); text-align: center; padding: 2rem; color: var(--muted); font-size: 0.875rem; }
+</style>
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/><link rel="icon" type="image/x-icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>
+</head>
+<body>
+<nav>
+<a class="nav-brand" href="../map.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../map.html">← Back to map</a>
+</nav>
+<div class="hero">
+<div class="hero-tag">Agents · Planning · Inference-Time Scaling</div>
+<h1>LLM <em>Tree Search</em></h1>
+<p class="hero-sub">Monte Carlo Tree Search applied to LLMs — explore and backtrack through reasoning paths to find optimal solutions for hard problems</p>
+<div class="hero-stats">
+<div><div class="stat-num">Explore + Score</div><div class="stat-label">Core Idea</div></div>
+<div><div class="stat-num">Best-of-N → MCTS</div><div class="stat-label">Complexity Spectrum</div></div>
+<div><div class="stat-num">Compute ↑ = Accuracy ↑</div><div class="stat-label">Key Property</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<div class="toc-grid">
+<a data-num="01" href="#section-1">The Core Idea</a>
+<a data-num="02" href="#section-2">From Best-of-N to MCTS</a>
+<a data-num="03" href="#section-3">Reward Models</a>
+<a data-num="04" href="#section-4">MCTS for LLMs</a>
+<a data-num="05" href="#section-5">Implementation</a>
+<a data-num="06" href="#section-6">When to Use Tree Search</a>
+<a data-num="07" href="#section-7">Inference-Time Scaling</a>
+</div>
+</div>
+
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>The Core Idea</h2>
+<p>Standard LLM inference is greedy: the model generates one token at a time, committing to each choice before seeing what follows. This works well for most tasks but fails on problems where the optimal path requires looking ahead — math competition problems, theorem proving, complex planning, and multi-step code synthesis.</p>
+<p>LLM Tree Search decouples generation from selection. Instead of committing to a single reasoning path, the system <em>expands</em> multiple candidate continuations, <em>scores</em> them using a reward model, and <em>selects</em> the most promising branch to continue. Branches that score poorly are pruned or backtracked from. The result: inference compute is spent exploring the solution space rather than generating along a single (potentially wrong) trajectory.</p>
+<p>This is the same insight behind AlphaGo and AlphaZero — systematic tree search is how you find optimal solutions in large, combinatorial spaces. Applied to LLMs, the "moves" are reasoning steps or tokens, and the "position evaluation" is a reward model that scores how likely a partial chain is to lead to a correct final answer.</p>
+<div class="callout callout-purple">
+<strong>Why this matters:</strong> OpenAI o1/o3 and DeepSeek R1 are believed to use variants of tree search internally during training and/or inference. The dramatic jump in accuracy on hard math and coding benchmarks from o1 to o3 is largely attributed to increased inference-time compute — more search — rather than a larger model.
+</div>
+</div>
+
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>From Best-of-N to MCTS</h2>
+<p>Tree search methods for LLMs exist on a spectrum of complexity and compute cost:</p>
+<p><strong>Best-of-N (BoN):</strong> The simplest form. Generate N independent completions for the same prompt, score each with a reward model, return the best. No backtracking, no branching in the middle. Surprisingly effective — scaling N from 1 to 100 can match a model 10x larger.</p>
+<p><strong>Beam search:</strong> Maintain a beam of K partial completions. At each step, expand each beam member, score all candidates, keep the top K. Better than BoN because it allocates compute to promising prefixes rather than complete sequences. Still no backtracking.</p>
+<p><strong>Greedy best-first search:</strong> Always expand the highest-scored partial path. Efficient but can get stuck in local optima.</p>
+<p><strong>Monte Carlo Tree Search (MCTS):</strong> The full algorithm. Four phases: Selection (use UCB to pick which node to expand), Expansion (sample next steps from the LLM), Simulation (score the leaf), Backpropagation (update all ancestor node values). Handles the exploration-exploitation tradeoff explicitly.</p>
+<div class="example-box">Best-of-N (simplest, most practical):
+
+Generate 5 solutions independently:
+  Solution 1: [chain of thought] ... answer: 42  (ORM score: 0.3)
+  Solution 2: [chain of thought] ... answer: 48  (ORM score: 0.8)  ← pick this
+  Solution 3: [chain of thought] ... answer: 42  (ORM score: 0.4)
+  Solution 4: [chain of thought] ... answer: 51  (ORM score: 0.2)
+  Solution 5: [chain of thought] ... answer: 48  (ORM score: 0.7)
+
+Return solution 2 (highest score).
+
+MCTS (most powerful, most complex):
+
+                root
+               /    \
+         step A     step B    ← PRM scores: 0.6, 0.3
+        /     \
+   step A1   step A2          ← PRM scores: 0.8, 0.2
+      ✓          ✗ (prune)
+
+Expand A1 further; backtrack from A2.
+Return best terminal node.</div>
+<div class="callout callout-green">
+<strong>Start here:</strong> Implement Best-of-N first. It captures ~70% of MCTS accuracy gains with a fraction of the complexity. Add beam search if you have a reliable PRM. Use full MCTS only if you have a well-calibrated process reward model and latency budget to match.
+</div>
+</div>
+
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Reward Models</h2>
+<p>A reward model scores how promising a partial or complete reasoning chain is. It's the "position evaluator" that makes tree search possible. Without reliable scores, search degenerates into random exploration.</p>
+<p><strong>Outcome Reward Model (ORM):</strong> Scores only complete answers. Simple to train — you just need (problem, correct answer) pairs. Best for tasks with clear right/wrong answers. Used in Best-of-N. Limitation: provides no signal until the chain is complete, so can't guide search at intermediate steps.</p>
+<p><strong>Process Reward Model (PRM):</strong> Scores each reasoning step. Allows pruning of bad branches early in the search. Requires step-level annotations in training data — much more expensive to create. OpenAI released PRM800K, a 800K step-level annotated math dataset, to support PRM research.</p>
+<p><strong>LLM-as-judge scorer:</strong> Use a separate LLM call to rate the quality of a partial reasoning chain. No separate training required. Slower and more expensive but surprisingly effective, especially during prototyping. Can prompt for a 0–1 score with reasoning.</p>
+<p><strong>Self-consistency:</strong> Generate many solutions, count answer frequencies, return the majority answer. No explicit reward model needed. Works well for math where wrong paths lead to diverse wrong answers while correct paths converge to the same answer.</p>
+<div class="example-box"># LLM-as-judge PRM example
+import anthropic
+client = anthropic.Anthropic()
+
+def score_reasoning_step(problem: str, steps_so_far: str) -> float:
+    resp = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=10,
+        system=(
+            "You are a math reasoning evaluator. "
+            "Rate how likely the current reasoning chain leads to a correct final answer. "
+            "Respond with ONLY a number between 0.0 and 1.0."
+        ),
+        messages=[{
+            "role": "user",
+            "content": f"Problem: {problem}\n\nReasoning so far:\n{steps_so_far}"
+        }]
+    )
+    try:
+        return float(resp.content[0].text.strip())
+    except ValueError:
+        return 0.5</div>
+</div>
+
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>MCTS for LLMs</h2>
+<p>Full Monte Carlo Tree Search applied to LLM reasoning has four phases that repeat until the compute budget is exhausted.</p>
+<p><strong>Selection:</strong> Starting from the root, traverse the tree by selecting the child node with the highest UCB1 score: <code>value + C * sqrt(ln(parent_visits) / node_visits)</code>. This balances exploitation (nodes with high value) and exploration (nodes with few visits).</p>
+<p><strong>Expansion:</strong> At the selected leaf node, sample one or more next reasoning steps from the LLM. These become new child nodes. The LLM is prompted with the problem and all reasoning steps on the path from root to the leaf.</p>
+<p><strong>Simulation (Rollout):</strong> From the new node, either score it immediately with a PRM or run a quick rollout to a terminal state and score with an ORM.</p>
+<p><strong>Backpropagation:</strong> Update the value and visit count of all nodes on the path from the new node back to the root. This propagates the score upward so future selection can use it.</p>
+<div class="example-box">MCTS pseudocode for LLM reasoning:
+
+tree = Node(state=problem, value=0, visits=0, children=[])
+
+for iteration in range(budget):
+    # 1. Selection
+    node = select_ucb(tree)  # traverse using UCB1
+
+    # 2. Expansion: sample next step from LLM
+    next_steps = llm_expand(node.state, n=3)
+    for step in next_steps:
+        child = Node(state=node.state + step)
+        node.children.append(child)
+
+    # 3. Simulation: score with PRM
+    score = prm_score(child.state)
+
+    # 4. Backpropagation
+    node = child
+    while node is not None:
+        node.value = (node.value * node.visits + score) / (node.visits + 1)
+        node.visits += 1
+        node = node.parent
+
+# Return path to highest-value terminal node</div>
+</div>
+
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>Implementation</h2>
+<p>A practical greedy best-first search implementation using Claude:</p>
+<div class="example-box">import anthropic
+from dataclasses import dataclass, field
+from typing import Optional
+
+client = anthropic.Anthropic()
+
+@dataclass
+class Node:
+    chain: str
+    score: float
+    depth: int
+    children: list = field(default_factory=list)
+    parent: Optional[object] = None
+
+def llm_score(problem: str, chain: str) -> float:
+    resp = client.messages.create(
+        model="claude-haiku-4-5-20251001", max_tokens=5,
+        system="Rate this reasoning chain 0.0-1.0. Reply with number only.",
+        messages=[{"role": "user", "content": f"Problem: {problem}\n\nChain:\n{chain}"}]
+    )
+    try:
+        return float(resp.content[0].text.strip())
+    except ValueError:
+        return 0.5
+
+def expand(problem: str, chain: str, n: int = 3) -> list[str]:
+    resp = client.messages.create(
+        model="claude-opus-4-5", max_tokens=400,
+        system=f"Generate {n} different next reasoning steps, separated by '|||'. Each step should advance toward solving the problem.",
+        messages=[{"role": "user", "content": f"Problem: {problem}\n\nReasoning so far:\n{chain}\n\nNext steps:"}]
+    )
+    return [s.strip() for s in resp.content[0].text.split("|||") if s.strip()]
+
+def tree_search(problem: str, max_depth: int = 4, beam_width: int = 3) -> str:
+    root = Node(chain="", score=1.0, depth=0)
+    beam = [root]
+
+    for depth in range(max_depth):
+        candidates = []
+        for node in beam:
+            steps = expand(problem, node.chain, n=beam_width)
+            for step in steps:
+                new_chain = (node.chain + "\n" + step).strip()
+                score = llm_score(problem, new_chain)
+                child = Node(chain=new_chain, score=score, depth=depth+1, parent=node)
+                node.children.append(child)
+                candidates.append(child)
+        beam = sorted(candidates, key=lambda n: n.score, reverse=True)[:beam_width]
+        print(f"Depth {depth+1}: best score = {beam[0].score:.2f}")
+
+    # Final answer from best leaf
+    best = beam[0]
+    resp = client.messages.create(
+        model="claude-opus-4-5", max_tokens=500,
+        messages=[{"role": "user", "content": f"Problem: {problem}\n\nReasoning:\n{best.chain}\n\nFinal answer:"}]
+    )
+    return resp.content[0].text
+
+if __name__ == "__main__":
+    problem = "A snail climbs 3 feet up a wall during the day and slides back 2 feet at night. The wall is 10 feet tall. How many days to reach the top?"
+    print(tree_search(problem))</div>
+</div>
+
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>When to Use Tree Search</h2>
+<p>Tree search is not universally beneficial — it requires significant compute overhead. Use it when the task characteristics justify the cost.</p>
+<p><strong>Good candidates for tree search:</strong></p>
+<ul>
+<li><strong>Math and formal reasoning:</strong> Competition math (AMC, AIME, IMO), formal proofs, algebraic manipulation. These have clear right/wrong answers and benefit enormously from backtracking.</li>
+<li><strong>Code synthesis for hard problems:</strong> Generating algorithms for competitive programming, implementing complex data structures, or passing a specific failing test suite.</li>
+<li><strong>Multi-step planning:</strong> Tasks where early mistakes cascade into irrecoverable failures — supply chain planning, scheduling, constraint satisfaction.</li>
+<li><strong>Any high-accuracy, latency-tolerant task:</strong> Medical diagnosis, legal analysis, scientific calculations where accuracy matters far more than speed.</li>
+</ul>
+<p><strong>Poor candidates:</strong></p>
+<ul>
+<li>Open-ended generation (essays, summaries, conversations) — no clear scoring function</li>
+<li>Low-latency tasks — tree search adds 3–10x latency</li>
+<li>Simple factual questions — standard retrieval + generation is sufficient</li>
+</ul>
+<div class="callout callout-amber">
+<strong>Cost warning:</strong> MCTS with a branching factor of 3 and depth of 4 requires 3^4 = 81 LLM calls in the worst case (before pruning). With a PRM adding another call per step, tree search can easily cost 100–200x a single inference. Design your scoring budget carefully.
+</div>
+</div>
+
+<div class="section-block" id="section-7">
+<div class="section-marker">SECTION 07</div>
+<h2>Inference-Time Scaling</h2>
+<p>Tree search is a specific mechanism enabling a broader phenomenon: <em>inference-time scaling</em> — the empirical finding that spending more compute at inference time (rather than training time) can substantially improve accuracy, and that these gains follow predictable scaling laws.</p>
+<p>The 2024 paper "Scaling LLM Test-Time Compute Optimally" (Snell et al.) showed that optimal allocation of a fixed compute budget between Best-of-N, beam search, and MCTS depends strongly on problem difficulty and the quality of the available PRM. For easy problems, a single well-calibrated sample is optimal. For hard problems, MCTS with a strong PRM consistently wins.</p>
+<p>A key finding: for a fixed compute budget, a smaller model with tree search can match or exceed a much larger model running greedy inference. This creates a fundamental tradeoff between model size (training cost) and inference search (per-query cost). The right point on this tradeoff depends on query volume and latency requirements.</p>
+<div class="callout callout-blue">
+<strong>Practical implication:</strong> If you have a latency-insensitive batch workload requiring high accuracy (e.g. overnight scientific calculations, due diligence analysis), inference-time tree search on a mid-sized model may be more cost-effective than training or fine-tuning a larger model.
+</div>
+</div>
+
+</div>
+
+<div class="related-concepts">
+<h3 class="rc-heading">Related concepts</h3>
+<div class="rc-grid">
+<a class="rc-card" href="react-agent.html" style="--rc-accent:#a78bfa"><span class="rc-label">ReAct Pattern</span></a>
+<a class="rc-card" href="plan-and-execute.html" style="--rc-accent:#a78bfa"><span class="rc-label">Plan &amp; Execute</span></a>
+<a class="rc-card" href="reflection.html" style="--rc-accent:#a78bfa"><span class="rc-label">Reflection / Critique</span></a>
+<a class="rc-card" href="plano.html" style="--rc-accent:#a78bfa"><span class="rc-label">Plano</span></a>
+<a class="rc-card" href="agentic-reasoning.html" style="--rc-accent:#a78bfa"><span class="rc-label">Agentic Reasoning</span></a>
+</div>
+</div>
+<footer>
+© 2026 GenAI Mindmap. All concepts serve learning purposes.
+</footer>
+</body>
+</html>

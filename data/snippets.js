@@ -723,6 +723,96 @@ crewai:{use:'Multi-agent workflows with role specialization and task delegation.
   Process: sequential | hierarchical (manager LLM routes)`,code:`from crewai import Agent, Task, Crew\nfrom crewai_tools import SerperDevTool\nresearcher = Agent(\n    role='Research Analyst',\n    goal='Find accurate information on AI trends',\n    backstory='Expert at synthesizing complex research',\n    tools=[SerperDevTool()], verbose=True\n)\nwriter = Agent(\n    role='Technical Writer',\n    goal='Write clear summaries of research',\n    backstory='Expert at making AI accessible'\n)\ntask = Task(\n    description='Research and summarize latest LLM benchmarks',\n    agent=researcher, expected_output='3-bullet summary'\n)\ncrew = Crew(agents=[researcher, writer], tasks=[task])\nresult = crew.kickoff()\nprint(result)`,tip:'Use process=Process.hierarchical for complex workflows where a manager agent coordinates.',questions:{leader:['When does a multi-agent crew outperform a single powerful agent for your task?','How do you design agent roles in a crew to minimize duplication and maximize specialization?','What is the failure mode when agents in a crew produce conflicting outputs?'],pm:['Which complex workflows benefit from parallel agent roles (researcher + writer + reviewer)?','How do you measure individual agent contribution vs overall crew output quality?','What is the operational cost of running a multi-agent crew vs a single agent?'],eng:['How do you define agent roles, goals, and backstory in CrewAI to get specialized behavior?','How do you implement sequential vs hierarchical task flow in a CrewAI crew?','How do you add memory and tool access to individual agents in a CrewAI crew?']},learn:[
   {type:'concept',label:"CrewAI",url:"concepts/crewai.html"}
 ],refs:[{label:'CrewAI docs — agents, tasks, crews, flows',url:'https://docs.crewai.com/'},{label:'CrewAI GitHub — multi-agent orchestration framework',url:'https://github.com/crewAIInc/crewAI'},{label:'CrewAI quickstart — build your first multi-agent crew',url:'https://docs.crewai.com/quickstart'}]},
+coding_agents:{use:`Coding agents autonomously write, execute, debug, and iterate on code to fulfill a high-level goal. Rather than generating a static answer, the agent enters a feedback loop: write code, run it in a sandbox, read stdout/stderr, patch errors, and retry until the task succeeds.
+
+The spectrum runs from autocomplete (Copilot-style next-token suggestion) through inline editing (Cursor/Copilot Chat) all the way to fully autonomous software engineers (Devin, SWE-agent) that open issues, create branches, run test suites, and open pull requests.
+
+Key enablers: reliable code execution sandboxes, git tool access, test-runner feedback, and long-context models that can hold an entire codebase.`,diag:`  High-level goal (natural language)
+            │
+     ┌──────▼──────────────────────┐
+     │   Coding Agent (LLM)        │
+     │                             │
+     │  Plan → Write code          │
+     │  ↓                          │
+     │  Execute in sandbox          │
+     │  ↓                          │
+     │  Read output / errors        │
+     │  ↓                          │
+     │  Patch & retry               │
+     └──────┬──────────────────────┘
+            │
+     ┌──────▼───────────────┐
+     │  Tools               │
+     │  bash / pytest / git │
+     └──────────────────────┘`,code:`import anthropic, subprocess, textwrap
+
+client = anthropic.Anthropic()
+
+TOOLS = [
+    {
+        "name": "run_python",
+        "description": "Execute Python code in a sandbox and return stdout + stderr.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "description": "Python source to execute"}
+            },
+            "required": ["code"],
+        },
+    }
+]
+
+def run_python(code: str) -> str:
+    result = subprocess.run(
+        ["python3", "-c", code],
+        capture_output=True, text=True, timeout=30
+    )
+    return (result.stdout + result.stderr).strip() or "(no output)"
+
+def coding_agent(task: str, max_turns: int = 8) -> str:
+    messages = [{"role": "user", "content": task}]
+    for _ in range(max_turns):
+        resp = client.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=4096,
+            tools=TOOLS,
+            messages=messages,
+        )
+        messages.append({"role": "assistant", "content": resp.content})
+        if resp.stop_reason == "end_turn":
+            # Extract last text block
+            for block in reversed(resp.content):
+                if hasattr(block, "text"):
+                    return block.text
+        tool_results = []
+        for block in resp.content:
+            if block.type == "tool_use" and block.name == "run_python":
+                output = run_python(block.input["code"])
+                print(f"[sandbox] {output[:200]}")
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": output,
+                })
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+    return "Max turns reached"
+
+if __name__ == "__main__":
+    result = coding_agent(
+        "Write a Python function that returns the nth Fibonacci number "
+        "using memoization. Test it with n=10."
+    )
+    print(result)`,tip:`Start simple: a coding agent is just a tool-calling loop with run_python or bash as the tool. Add git access only when you need autonomous PR creation.
+
+Sandbox isolation is critical. Never let an agent run arbitrary code in your production environment. Use Docker, E2B, Modal, or subprocess with strict resource limits.
+
+Test-driven coding agents outperform pure-generation agents. Give the agent a failing test and let it write code to make it pass -- this gives a crisp success signal.`,questions:{leader:['Where in our engineering workflow does an autonomous coding agent create the most leverage -- new features, bug fixes, or test writing?','What governance controls do we need before deploying a coding agent that can commit to our main branch?','How do we measure the ROI of coding agents vs traditional developer productivity tools?'],pm:['Which categories of developer tasks are well-suited for coding agents vs tasks that still need a human in the loop?','How do we scope tasks so coding agents succeed reliably rather than spinning in failure loops?','What does a good human-in-the-loop workflow look like for reviewing coding agent output?'],eng:['How do you implement a reliable code execution sandbox that handles timeouts, resource limits, and import restrictions?','What is the right level of tool granularity for a coding agent -- one bash tool vs separate read_file, write_file, run_tests tools?','How do you pass repository context (file tree, relevant files) to the agent without exceeding the context window?']},learn:[
+  {type:'concept',label:'Coding Agents',url:'concepts/coding-agents.html'},
+  {type:'concept',label:'Tool Use',url:'concepts/tool-use.html'},
+  {type:'concept',label:'Agent Frameworks',url:'#agent_frameworks'}
+],refs:[{label:'SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering (Yang et al., 2024)',url:'https://arxiv.org/abs/2405.15793'},{label:'Devin -- Cognition AI autonomous software engineer',url:'https://www.cognition.ai/blog/introducing-devin'},{label:'OpenHands (OpenDevin) -- open-source coding agent platform',url:'https://github.com/All-Hands-AI/OpenHands'}]},
+
 mcp:{use:'Standardizing tool integration across LLM clients (Claude, Cursor, etc.).',diag:`
   MCP (Model Context Protocol) architecture:
 
@@ -738,6 +828,50 @@ mcp:{use:'Standardizing tool integration across LLM clients (Claude, Cursor, etc
   • Prompts   — reusable templates  (named prompt stubs)
 
   Benefit: one server → works with any MCP-compatible host`,code:`# Create an MCP server in Python\n# pip install mcp\nfrom mcp.server.fastmcp import FastMCP\nmcp = FastMCP('My Tools')\n@mcp.tool()\ndef search_database(query: str, limit: int = 10) -> list[dict]:\n    """Search the company database for records.\n    \n    Args:\n        query: The search query\n        limit: Max results to return\n    \"\"\"\n    # Your implementation here\n    return [{'id': 1, 'result': f'Result for: {query}'}]\n@mcp.resource('file://docs/{path}')\ndef read_doc(path: str) -> str:\n    """Read a documentation file.\"\"\"\n    return open(f'./docs/{path}').read()\nif __name__ == '__main__':\n    mcp.run()`,tip:'Start with FastMCP for rapid development. Tools get auto-exposed to any MCP-compatible client.',questions:{leader:['When does adopting MCP for tool integration make sense vs custom function-calling schemas?','How do you secure an MCP server that exposes sensitive internal APIs to an LLM?','What is the migration path from bespoke function calling to MCP-compliant tools?'],pm:['Which tools and data sources should be exposed as MCP servers in your organization?','How do you manage versioning and backwards compatibility of MCP tool schemas over time?','What is the user-visible benefit of MCP integration vs proprietary tool integration?'],eng:['How does MCP\'s transport layer work — SSE vs stdio vs HTTP streaming?','How do you implement an MCP server with FastMCP and expose Python functions as tools?','How do you test an MCP server in isolation before connecting it to a client like Claude?']},learn:[],refs:[{label:'Anthropic MCP specification — protocol overview, transports, server design',url:'https://modelcontextprotocol.io/docs'},{label:'FastMCP GitHub — rapidly build MCP servers in Python',url:'https://github.com/jlowin/fastmcp'},{label:'MCP server registry — community-built MCP servers for common tools',url:'https://github.com/modelcontextprotocol/servers'}]},
+browser_use:{use:`Browser Use agents control a real web browser (via Playwright or Selenium) to navigate pages, click elements, fill forms, and extract data -- just as a human would. The LLM receives a screenshot or DOM representation of the current page, decides the next action, and repeats.
+
+This unlocks any website as a tool without requiring an API. Agents can research competitors, fill out multi-step forms, monitor prices, extract structured data from dynamic pages, and automate repetitive web workflows.
+
+The core challenge is reliable action grounding: mapping the model's abstract intention ("click the Submit button") to the correct DOM element in a noisy, complex page -- especially on sites that change layouts or use CAPTCHAs.`,diag:`  Goal (natural language)
+          │
+   ┌──────▼──────────────────────┐
+   │  Browser Agent (LLM)        │
+   │                             │
+   │  Observe (screenshot / DOM) │
+   │  Reason about next action   │
+   │  Emit action                │
+   └──────┬──────────────────────┘
+          │
+   ┌──────▼────────────────────────┐
+   │  Browser (Playwright)         │
+   │  navigate / click / type /    │
+   │  scroll / extract_content     │
+   └──────┬────────────────────────┘
+          │ new page state
+          └──► back to agent`,code:`# pip install browser-use playwright
+# playwright install chromium
+from browser_use import Agent
+import asyncio
+from langchain_anthropic import ChatAnthropic
+
+async def main():
+    agent = Agent(
+        task="Go to https://news.ycombinator.com and return the top 5 story titles",
+        llm=ChatAnthropic(model="claude-opus-4-5"),
+    )
+    result = await agent.run()
+    print(result)
+
+asyncio.run(main())`,tip:`Give the agent a specific, verifiable goal ("extract the 5 product names and prices from this page into JSON") rather than a vague one. Measurable goals allow the agent to know when it has succeeded.
+
+Set max_steps to prevent infinite loops. Most web tasks complete in 5-20 steps; if you hit 50, the agent is likely stuck.
+
+For production use, run browsers in a sandboxed environment (Docker + no-credential profiles) to prevent accidental credential leakage or account modification.`,questions:{leader:['Which high-volume manual web workflows in our business could be automated with browser agents -- data collection, competitive monitoring, form filing?','What legal and ethical boundaries do we need to enforce when deploying agents that interact with external websites on our behalf?','How do we handle anti-bot detection and terms-of-service compliance in our browser agent deployments?'],pm:['How do we design browser agent tasks to be resumable if the agent gets stuck or the page state changes unexpectedly?','What is the right human-in-the-loop point for browser agents doing high-stakes actions like form submission?','How do we monitor browser agent runs at scale -- what logs and alerts do we need?'],eng:['How do you represent page state to the LLM -- screenshot, accessibility tree, or simplified DOM -- and what are the tradeoffs?','How do you implement reliable element selection when page layouts change or elements are dynamically rendered?','What is the right error recovery strategy when an action fails -- retry, backtrack, or escalate to human?']},learn:[
+  {type:'concept',label:'Browser Use',url:'concepts/browser-use.html'},
+  {type:'concept',label:'Tool Use',url:'concepts/tool-use.html'},
+  {type:'concept',label:'Agentic Search',url:'concepts/agentic-search.html'}
+],refs:[{label:'browser-use: Make websites accessible for AI agents (open-source)',url:'https://github.com/browser-use/browser-use'},{label:'WebArena: A Realistic Web Environment for Building Autonomous Agents (Zhou et al., 2024)',url:'https://arxiv.org/abs/2307.13854'},{label:'Playwright Python docs -- browser automation library',url:'https://playwright.dev/python/docs/intro'}]},
+
 code_mode:{use:'Reducing context window usage when an agent needs many tool operations — let the model write code, not a chain of JSON tool calls.',diag:`  Agent Loop\n       │\n  ┌────▼───────────────────────────┐\n  │  LLM writes code against SDK   │\n  │                                │\n  │  data = sdk.search("Q1 rev")   │\n  │  top  = sdk.filter(            │\n  │    data, lambda r: r > 1_000)  │\n  │  sdk.email(me, summarise(top)) │\n  └────┬───────────────────────────┘\n       │ one sandboxed execution\n  ┌────▼───────────────────────────┐\n  │  Dynamic Worker Loader         │\n  │  (safe isolated environment)   │\n  └────┬───────────────────────────┘\n       │ compact result only\n       └──► back to agent context`,code:`# Code Mode pattern
 # Instead of N separate tool-call round trips, the model writes
 # one code block that composes all operations and returns only
@@ -1601,6 +1735,79 @@ rlhf:{use:'Aligning a base LLM to follow instructions and match human preference
   eng:['How do you implement the PPO training loop for RLHF — what are the actor, critic, reference, and reward models?','How do you prevent reward hacking — what KL penalty or reward clipping strategy keeps the model from optimizing against the reward model?','How do you evaluate alignment quality beyond benchmark scores — what human evaluation protocol do you use?']
 },
 learn:[],refs:[{label:'Learning to summarize from human feedback — original RLHF paper (Stiennon et al., OpenAI 2020)',url:'https://arxiv.org/abs/2009.01325'},{label:'InstructGPT: Training language models to follow instructions with human feedback',url:'https://arxiv.org/abs/2203.02155'},{label:'HuggingFace: Illustrating Reinforcement Learning from Human Feedback (RLHF)',url:'https://huggingface.co/blog/rlhf'},{label:'Constitutional AI: Harmlessness from AI Feedback (Anthropic, 2022)',url:'https://arxiv.org/abs/2212.08073'},{label:'TRL: Transformer Reinforcement Learning library (HuggingFace)',url:'https://github.com/huggingface/trl'}]},
+llm_tree_search:{use:`LLM Tree Search applies Monte Carlo Tree Search (MCTS) and related tree-exploration algorithms to LLM reasoning. Instead of generating a single chain of thought, the system expands multiple candidate reasoning paths, scores them with a process reward model (PRM) or outcome verifier, and backtracks to explore better branches.
+
+This is especially powerful for tasks with a large solution space and clear success criteria -- math competition problems, theorem proving, code synthesis, and complex planning. The key insight: compute spent on search at inference time trades directly for accuracy, allowing smaller models to match much larger ones on hard tasks.
+
+OpenAI's o1/o3 and DeepSeek R1 use variants of this approach internally. You can implement lightweight versions with repeated sampling + best-of-N selection, or full MCTS with a learned value model.`,diag:`               root (problem)
+              /        |         \
+        step A       step B      step C
+        /    \          |
+   step A1  step A2   step B1
+      X       ✓ (score 0.9)
+
+  ✓ = PRM score high -> expand further
+  X = PRM score low  -> prune / backtrack`,code:`import anthropic
+from typing import NamedTuple
+import random
+
+client = anthropic.Anthropic()
+
+class Node(NamedTuple):
+    text: str
+    score: float
+    depth: int
+
+def score_step(problem: str, chain: str) -> float:
+    # Simple outcome-based scorer using LLM-as-judge.
+    resp = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=10,
+        system="Rate how likely this reasoning chain solves the problem. Reply with a number 0.0-1.0 only.",
+        messages=[{"role": "user", "content": f"Problem: {problem}\n\nReasoning so far:\n{chain}"}],
+    )
+    try:
+        return float(resp.content[0].text.strip())
+    except ValueError:
+        return 0.5
+
+def expand_node(problem: str, chain: str, n_branches: int = 3) -> list[str]:
+    # Generate n candidate next reasoning steps.
+    resp = client.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=300,
+        system=f"Generate exactly {n_branches} different next reasoning steps, separated by '|||'.",
+        messages=[{"role": "user", "content": f"Problem: {problem}\n\nReasoning so far:\n{chain}\n\nNext steps:"}],
+    )
+    return resp.content[0].text.split("|||")
+
+def best_of_n_search(problem: str, depth: int = 3, branches: int = 3) -> str:
+    # Greedy best-first tree search.
+    beam = [Node("", 1.0, 0)]
+    for _ in range(depth):
+        candidates = []
+        for node in beam:
+            steps = expand_node(problem, node.text, branches)
+            for step in steps:
+                new_chain = node.text + "\n" + step.strip()
+                score = score_step(problem, new_chain)
+                candidates.append(Node(new_chain, score, node.depth + 1))
+        beam = sorted(candidates, key=lambda n: n.score, reverse=True)[:branches]
+    return beam[0].text
+
+if __name__ == "__main__":
+    problem = "If a train travels 120 km in 1.5 hours, then stops for 30 minutes, then travels 80 km in 1 hour, what is the average speed for the whole journey?"
+    solution = best_of_n_search(problem, depth=3, branches=3)
+    print(solution)`,tip:`Start with Best-of-N (repeated sampling + verifier) before implementing full MCTS. It captures most of the accuracy gain with far less complexity.
+
+A process reward model (PRM) that scores intermediate steps beats an outcome reward model (ORM) for long reasoning chains, because it gives signal before the chain is complete.
+
+Use a fast, cheap model for scoring/pruning and a strong model for expansion. This keeps tree search economically viable.`,questions:{leader:['Which hard analytical problems in our business could benefit from trading inference compute for accuracy -- financial modeling, legal analysis, engineering calculations?','How do we evaluate whether tree search accuracy gains justify the 5-10x inference cost increase?','What is the user experience implication of tree search -- do users see the reasoning process or just the final answer?'],pm:['How do we design tasks with clear enough success criteria to enable automated scoring within the tree search?','What latency budget do we have, and how does that constrain the depth and branching factor of the search?','Which product scenarios require near-perfect accuracy (medical, legal, financial) where tree search is justified?'],eng:['How do you implement a process reward model for scoring intermediate reasoning steps?','What is the tradeoff between breadth-first, depth-first, and MCTS exploration strategies for your task type?','How do you implement efficient batching to run multiple tree branches in parallel and reduce wall-clock latency?']},learn:[
+  {type:'concept',label:'LLM Tree Search',url:'concepts/llm-tree-search.html'},
+  {type:'concept',label:'Agentic Reasoning',url:'concepts/agentic-reasoning.html'},
+  {type:'concept',label:'Agent Planning',url:'#agent_planning'}
+],refs:[{label:'Scaling LLM Test-Time Compute Optimally (Snell et al., 2024)',url:'https://arxiv.org/abs/2408.03314'},{label:'Let's Reward Step by Step: Step-Level Reward Model as the Navigators for Reasoning (Wang et al., 2024)',url:'https://arxiv.org/abs/2310.10080'},{label:'AlphaZero-like tree search for LLMs -- survey of inference-time scaling',url:'https://arxiv.org/abs/2412.17451'}]},
+
 st_memory:{use:'Any multi-turn chatbot or agent that needs to remember what was said earlier in the same session — customer support bots, coding assistants, tutors.',diag:`
   Short-term memory implementation options:
 
@@ -10572,6 +10779,232 @@ tools = [retriever_tool]
 agent = create_openai_tools_agent(llm, tools, prompt)
 result = agent.invoke({"input": "Should we expand to Europe?"})
 print(result["output"])`,tip:'Agent decides: retrieve, rewrite query, or skip retrieval.\n\nBetter for multi-step reasoning than static RAG.\n\nCosts more API calls; use for complex business questions.',questions:{leader:['When should a RAG system decide to retrieve more vs answer from what it already has?','How do you prevent an agentic RAG system from getting stuck in retrieval loops?','What is the cost model for CRAG vs Self-RAG vs a fixed 2-step RAG pipeline?'],pm:['Which user questions genuinely require iterative retrieval and which can use a simple RAG pipeline?','How do you measure agentic RAG quality — correctness, faithfulness, and efficiency of retrieval decisions?','What latency and cost targets do you set for agentic vs standard RAG?'],eng:['How do you implement CRAG\'s retrieval quality grader — what signals indicate a bad retrieval?','How does Self-RAG use special tokens to decide retrieve/no-retrieve at generation time?','How do you limit the maximum retrieval iterations in an agentic RAG loop?']},learn:[],refs:[{label:'CRAG: Corrective Retrieval Augmented Generation — Yan et al. 2024',url:'https://arxiv.org/abs/2401.15884'},{label:'Self-RAG: Learning to Retrieve, Generate, and Critique — Asai et al. 2023',url:'https://arxiv.org/abs/2310.11511'},{label:'LangGraph agentic RAG tutorial — CRAG and Self-RAG implementation',url:'https://langchain-ai.github.io/langgraph/tutorials/rag/langgraph_crag/'}]},
+reasoning_rag:{use:`Reasoning RAG pairs a reasoning-capable model (o1, o3, DeepSeek R1, Claude with extended thinking) with a retrieval pipeline. The model doesn't just read chunks -- it actively plans what to retrieve, decomposes the question into sub-questions, synthesizes across multiple documents, and reflects on whether the gathered evidence is sufficient before answering.
+
+This closes the gap between "the answer is in the context" and "the answer requires connecting evidence across five documents and applying domain knowledge." Standard RAG struggles with multi-hop questions; reasoning RAG solves them by treating retrieval as a tool the model calls iteratively as part of its chain of thought.
+
+The pattern: the model reasons about the question, identifies information gaps, issues targeted retrieval calls, reasons over the results, and iterates until confident -- or explicitly flags uncertainty.`,diag:`  User question
+        │
+  ┌─────▼──────────────────────────────┐
+  │  Reasoning Model (o1 / R1 / Sonnet)│
+  │                                    │
+  │  <think>                           │
+  │   What do I need to answer this?   │
+  │   Sub-question 1: retrieve X       │
+  │   Sub-question 2: retrieve Y       │
+  │  </think>                          │
+  └─────┬──────────────────────────────┘
+        │  retrieval calls (tool use)
+  ┌─────▼──────────┐   ┌──────────────┐
+  │  Vector Store  │   │  Keyword DB  │
+  └─────┬──────────┘   └──────┬───────┘
+        │                     │
+  ┌─────▼─────────────────────▼──────┐
+  │  Retrieved chunks (ranked)       │
+  └─────┬────────────────────────────┘
+        │
+  ┌─────▼──────────────────────────────┐
+  │  Reasoning Model: synthesize       │
+  │  <think>enough evidence? yes/no    │
+  │  </think> -> final answer          │
+  └────────────────────────────────────┘`,code:`import anthropic
+
+client = anthropic.Anthropic()
+
+# Simulated vector store retrieval
+def retrieve(query: str, top_k: int = 3) -> list[dict]:
+    # Replace with your real vector store (Pinecone, Weaviate, etc.)
+    corpus = [
+        {"id": "doc1", "text": "Transformer models use self-attention to relate tokens across the full sequence."},
+        {"id": "doc2", "text": "BERT is pre-trained with masked language modelling and next sentence prediction."},
+        {"id": "doc3", "text": "GPT models are decoder-only and trained with causal language modelling."},
+        {"id": "doc4", "text": "RAG combines a retriever with a generator to ground responses in documents."},
+        {"id": "doc5", "text": "Chain-of-thought prompting improves reasoning on multi-step problems."},
+    ]
+    # Naive keyword match for demo
+    results = [d for d in corpus if any(w in d["text"].lower() for w in query.lower().split())]
+    return results[:top_k] or corpus[:top_k]
+
+TOOLS = [
+    {
+        "name": "retrieve",
+        "description": "Retrieve relevant document chunks from the knowledge base for a given query.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search query to retrieve relevant documents"},
+                "top_k": {"type": "integer", "description": "Number of chunks to return", "default": 3}
+            },
+            "required": ["query"],
+        },
+    }
+]
+
+def reasoning_rag(question: str) -> str:
+    messages = [{"role": "user", "content": question}]
+    system = (
+        "You are a research assistant with access to a knowledge base. "
+        "Use the retrieve tool to find relevant information before answering. "
+        "Think carefully about what sub-questions you need to answer, retrieve for each, "
+        "then synthesize a comprehensive answer."
+    )
+    for _ in range(6):  # max retrieval turns
+        resp = client.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=2048,
+            system=system,
+            tools=TOOLS,
+            messages=messages,
+        )
+        messages.append({"role": "assistant", "content": resp.content})
+        if resp.stop_reason == "end_turn":
+            for block in reversed(resp.content):
+                if hasattr(block, "text"):
+                    return block.text
+            break
+        tool_results = []
+        for block in resp.content:
+            if block.type == "tool_use" and block.name == "retrieve":
+                chunks = retrieve(block.input["query"], block.input.get("top_k", 3))
+                content = "\n".join(f"[{c['id']}] {c['text']}" for c in chunks)
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": content,
+                })
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+    return "Could not complete reasoning."
+
+if __name__ == "__main__":
+    answer = reasoning_rag(
+        "How do BERT and GPT differ in their training objectives and architecture, "
+        "and how does RAG relate to both?"
+    )
+    print(answer)`,tip:`Use extended thinking or a reasoning model (o1/R1) for the orchestration layer -- it excels at planning multi-hop retrieval without needing explicit chain-of-thought prompting.
+
+Give the model a "retrieve" tool rather than pre-stuffing context. This lets the model pull exactly what it needs, reducing noise from irrelevant chunks that harm accuracy.
+
+Add a confidence check: after retrieval, ask the model whether it has enough evidence to answer confidently. If not, allow one more retrieval round rather than hallucinating.`,questions:{leader:['Which business questions require synthesizing information from multiple sources (contracts, reports, databases) and would benefit from reasoning RAG over standard RAG?','How do we evaluate reasoning RAG quality -- what does good multi-hop reasoning look like in our domain?','What is the latency and cost implication of using a reasoning model (o1, R1) as the orchestrator vs a standard model?'],pm:['How do we design our knowledge base so reasoning RAG can navigate it effectively -- chunking strategy, metadata, hierarchical structure?','What user-facing transparency do we provide when the system is doing multi-step reasoning and retrieval?','Which query types in our current RAG deployment give poor results that reasoning RAG would fix?'],eng:['How do you implement the retrieval tool interface so the reasoning model can issue targeted sub-queries effectively?','What chunking and indexing strategy works best for documents that will be retrieved by a reasoning-capable orchestrator?','How do you cache intermediate retrieval results to reduce latency in multi-turn reasoning RAG sessions?']},learn:[
+  {type:'concept',label:'Reasoning RAG',url:'concepts/reasoning-rag.html'},
+  {type:'concept',label:'Agentic RAG',url:'concepts/agentic-rag.html'},
+  {type:'concept',label:'Advanced RAG',url:'#advanced_rag'}
+],refs:[{label:'Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection (Asai et al., 2023)',url:'https://arxiv.org/abs/2310.11511'},{label:'IRCoT: Interleaving Retrieval with Chain-of-Thought Reasoning (Trivedi et al., 2022)',url:'https://arxiv.org/abs/2212.10509'},{label:'DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via RL',url:'https://arxiv.org/abs/2501.12948'}]},
+
+agentic_search:{use:`Agentic Search turns a single-shot query into a multi-step information gathering process. A search agent iteratively formulates queries, evaluates the results, identifies gaps, and reformulates -- continuing until the information need is fully satisfied or a confidence threshold is met.
+
+Unlike standard RAG (one-shot: embed query -> retrieve chunks -> generate), agentic search can follow citation trails, compare conflicting sources, switch between search strategies (semantic vs keyword vs structured), and synthesize a coherent answer from a large, heterogeneous evidence set.
+
+Key applications: deep research assistants (Perplexity Deep Research, ChatGPT Deep Research), competitive intelligence gathering, literature review automation, and any scenario where "I need to know everything relevant about X" is more valuable than "give me the top 3 chunks about X."`,diag:`  Research question
+         │
+  ┌──────▼───────────────────────┐
+  │  Search Agent                │
+  │                              │
+  │  Plan search strategy        │
+  │  ↓                           │
+  │  Query 1 -> evaluate         │
+  │  ↓                           │
+  │  Query 2 (refined) -> eval   │
+  │  ↓                           │
+  │  Query 3 (follow-up) -> eval │
+  │  ↓                           │
+  │  Sufficient? -> synthesize   │
+  └──────┬───────────────────────┘
+         │
+  ┌──────▼─────────────────────────────┐
+  │  Search Tools                      │
+  │  web_search / semantic / keyword / │
+  │  structured_db / citation_follow   │
+  └────────────────────────────────────┘`,code:`import anthropic
+import json
+
+client = anthropic.Anthropic()
+
+# Simulated search tools
+def web_search(query: str) -> str:
+    # Replace with real Tavily/Brave/Serper search API.
+    return f"[Mock results for: {query}] Found 3 relevant articles about {query}."
+
+def read_url(url: str) -> str:
+    # Replace with real content extraction.
+    return f"[Mock content from {url}]: Full article text would appear here."
+
+TOOLS = [
+    {
+        "name": "web_search",
+        "description": "Search the web for current information on a topic. Returns a list of relevant results.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
+        },
+    },
+    {
+        "name": "read_url",
+        "description": "Fetch and read the full content of a specific URL.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"url": {"type": "string"}},
+            "required": ["url"],
+        },
+    },
+]
+
+def agentic_search(research_question: str, max_turns: int = 10) -> str:
+    system = (
+        "You are a deep research agent. Given a research question, iteratively search "
+        "to gather comprehensive information. Use web_search to find relevant sources, "
+        "read_url to get full content from promising links, and continue searching until "
+        "you have enough evidence to write a thorough, well-cited answer. "
+        "When you have enough information, write your final synthesis."
+    )
+    messages = [{"role": "user", "content": f"Research question: {research_question}"}]
+    for turn in range(max_turns):
+        resp = client.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=3000,
+            system=system,
+            tools=TOOLS,
+            messages=messages,
+        )
+        messages.append({"role": "assistant", "content": resp.content})
+        if resp.stop_reason == "end_turn":
+            for block in reversed(resp.content):
+                if hasattr(block, "text"):
+                    return block.text
+            break
+        tool_results = []
+        for block in resp.content:
+            if block.type == "tool_use":
+                if block.name == "web_search":
+                    result = web_search(block.input["query"])
+                elif block.name == "read_url":
+                    result = read_url(block.input["url"])
+                else:
+                    result = "Unknown tool"
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result,
+                })
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+    return "Research incomplete after max turns."
+
+if __name__ == "__main__":
+    result = agentic_search(
+        "What are the key differences between RAG architectures and their tradeoffs for production deployments in 2024?"
+    )
+    print(result)`,tip:`Give the agent explicit stopping criteria: "stop when you have found at least 3 independent sources that agree on the key points" is more reliable than hoping the agent knows when to stop.
+
+Use a fast model for initial query generation and result evaluation, and a strong model only for final synthesis. This dramatically reduces cost for long research tasks.
+
+Track queries already issued to prevent the agent from looping on the same search. A simple set of seen queries is enough.`,questions:{leader:['Which knowledge-intensive workflows in our organization (due diligence, competitive analysis, policy research) are bottlenecked by research time that agentic search could compress?','How do we ensure agentic search results are auditable and cite sources, especially for regulated decisions?','What is the latency budget we can accept for agentic search tasks -- minutes vs hours vs overnight batch?'],pm:['How do we design the user experience for agentic search -- do users see the search process in real time, or just the final synthesis?','What source quality controls do we need -- domain whitelists, recency filters, credibility signals?','How do we handle contradictory search results -- should the agent flag conflicts explicitly or pick the most credible source?'],eng:['How do you implement search deduplication and result caching to prevent redundant API calls in a multi-turn search agent?','What is the right chunking and summarization strategy for read_url content to avoid blowing the context window?','How do you implement a confidence estimator so the agent knows when it has gathered sufficient evidence to stop?']},learn:[
+  {type:'concept',label:'Agentic Search',url:'concepts/agentic-search.html'},
+  {type:'concept',label:'Agentic RAG',url:'concepts/agentic-rag.html'},
+  {type:'concept',label:'Reasoning RAG',url:'concepts/reasoning-rag.html'}
+],refs:[{label:'WebGPT: Browser-assisted question-answering with human feedback (Nakano et al., 2021)',url:'https://arxiv.org/abs/2112.09332'},{label:'Search-in-the-Chain: Towards Accurate, Credible and Traceable Large Language Models for Knowledge-intensive Tasks',url:'https://arxiv.org/abs/2304.14732'},{label:'Tavily -- AI-optimized search API for research agents',url:'https://tavily.com/'}]},
+
 tool_selection:{use:'Tool Selection uses function calling to let the LLM decide which tool to invoke; minimizes hallucination by constraining available actions.',diag:`
   Tool selection in LLM agents:
 

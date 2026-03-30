@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Reasoning RAG - GenAI Mindmap</title>
+<meta name="description" content="Reasoning RAG pairs o1/R1-style reasoning models with retrieval pipelines to plan multi-step retrieval and synthesize answers requiring deep inference across multiple documents."/>
+<meta property="og:title" content="Reasoning RAG - GenAI Mindmap"/>
+<meta property="og:description" content="RAG that uses reasoning models to plan multi-step retrieval and synthesize answers requiring deep inference."/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="https://genai4a11.github.io/concepts/reasoning-rag.html"/>
+<style>
+    :root {
+      --indigo: #4f46e5; --blue: #2563eb; --sky: #38bdf8; --green: #22c55e;
+      --rose: #f43f5e; --amber: #f59e0b; --purple: #a78bfa; --teal: #14b8a6;
+      --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+      --bg: #f8fafc; --bg-white: #ffffff; --code-bg: #1e293b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: var(--bg-white); border-bottom: 1px solid var(--border); }
+    .nav-brand { font-size: 1.125rem; font-weight: 600; color: var(--text); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-brand:hover { color: var(--indigo); }
+    .nav-back { font-size: 0.95rem; color: var(--muted); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-back:hover { color: var(--text); }
+    .hero { background: linear-gradient(135deg, var(--teal), var(--blue)); color: white; padding: 4rem 2rem; text-align: center; }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
+    .hero h1 { font-size: 3rem; font-weight: 700; margin: 1rem 0; line-height: 1.2; }
+    .hero h1 em { font-style: italic; color: #fef3c7; }
+    .hero-sub { font-size: 1.25rem; opacity: 0.95; max-width: 700px; margin: 1.5rem auto; }
+    .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .stat-num { font-size: 1.75rem; font-weight: 700; }
+    .stat-label { font-size: 0.875rem; opacity: 0.9; }
+    .page-wrap { max-width: 1040px; margin: 0 auto; padding: 3rem 2rem; }
+    .toc-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-bottom: 3rem; }
+    .toc-card h3 { font-size: 1.25rem; margin-bottom: 1.5rem; color: var(--text); }
+    .toc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .toc-grid a { display: block; padding: 1rem; border-radius: 0.5rem; background: var(--bg); border: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.95rem; transition: all 0.2s; }
+    .toc-grid a:hover { background: var(--teal); color: white; border-color: var(--teal); }
+    .toc-grid a::before { content: attr(data-num); font-weight: 700; color: var(--teal); margin-right: 0.75rem; }
+    .toc-grid a:hover::before { color: white; }
+    .section-block { margin-bottom: 4rem; }
+    .section-marker { display: inline-block; color: var(--teal); font-size: 0.875rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .section-block h2 { font-size: 2rem; margin-bottom: 1.5rem; color: var(--text); }
+    .section-block p { margin-bottom: 1rem; line-height: 1.7; color: var(--text); }
+    .section-block ul, .section-block ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    .section-block li { margin-bottom: 0.75rem; color: var(--text); }
+    .example-box { background: var(--code-bg); color: #e2e8f0; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid var(--teal); margin: 1.5rem 0; font-family: 'Monaco', 'Courier New', monospace; font-size: 0.875rem; overflow-y: auto; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; }
+    .callout { padding: 1.5rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid; }
+    .callout-blue { background: rgba(37,99,235,0.05); border-left-color: var(--blue); }
+    .callout-amber { background: rgba(245,158,11,0.05); border-left-color: var(--amber); }
+    .callout-green { background: rgba(34,197,94,0.05); border-left-color: var(--green); }
+    .callout-teal { background: rgba(20,184,166,0.06); border-left-color: var(--teal); }
+    .concept-link { color: var(--teal); text-decoration: underline; }
+    footer { background: var(--bg-white); border-top: 1px solid var(--border); text-align: center; padding: 2rem; color: var(--muted); font-size: 0.875rem; }
+</style>
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/><link rel="icon" type="image/x-icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>
+</head>
+<body>
+<nav>
+<a class="nav-brand" href="../map.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../map.html">← Back to map</a>
+</nav>
+<div class="hero">
+<div class="hero-tag">RAG · Advanced · Reasoning</div>
+<h1>Reasoning <em>RAG</em></h1>
+<p class="hero-sub">RAG that uses reasoning models (o1, R1) to plan multi-step retrieval and synthesize answers requiring deep inference across multiple documents</p>
+<div class="hero-stats">
+<div><div class="stat-num">Multi-Hop</div><div class="stat-label">Retrieval</div></div>
+<div><div class="stat-num">Plan → Retrieve → Reason</div><div class="stat-label">Pipeline</div></div>
+<div><div class="stat-num">Deep Synthesis</div><div class="stat-label">Key Capability</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<div class="toc-grid">
+<a data-num="01" href="#section-1">Beyond Standard RAG</a>
+<a data-num="02" href="#section-2">The Reasoning Layer</a>
+<a data-num="03" href="#section-3">Architecture Patterns</a>
+<a data-num="04" href="#section-4">Implementation</a>
+<a data-num="05" href="#section-5">Chunking for Reasoning RAG</a>
+<a data-num="06" href="#section-6">Evaluation</a>
+<a data-num="07" href="#section-7">Cost &amp; Latency</a>
+</div>
+</div>
+
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>Beyond Standard RAG</h2>
+<p>Standard RAG has a fundamental limitation: it treats retrieval as a single-shot lookup. Embed the query, retrieve the top-k chunks, generate an answer. This works well when the answer is explicitly stated in a single chunk. It fails on questions that require connecting evidence across multiple documents, applying domain knowledge not present in any single chunk, or reasoning about relationships between retrieved facts.</p>
+<p>Consider a question like: "Given our Q3 contract terms and the regulatory changes in the March circular, what adjustments do we need to make to our SLA commitments?" Answering this requires finding the relevant Q3 contract clauses, finding the March circular, understanding what changed, mapping the changes to SLA obligations, and synthesizing a recommendation. No single retrieved chunk contains this answer.</p>
+<p>Reasoning RAG solves this by placing a reasoning-capable model (o1, o3-mini, DeepSeek R1, Claude with extended thinking) as the orchestrator. Rather than generating directly from retrieved context, the model first thinks: what sub-questions do I need to answer? What information gaps do I have? It then issues targeted retrieval calls, reasons over the results, and iterates until it has sufficient evidence to synthesize a grounded, accurate answer.</p>
+<div class="callout callout-teal">
+<strong>The key shift:</strong> In standard RAG, retrieval feeds generation. In Reasoning RAG, reasoning guides retrieval. The model decides what to retrieve, not just how to use what was retrieved.
+</div>
+</div>
+
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>The Reasoning Layer</h2>
+<p>The reasoning layer is the component that plans multi-step retrieval. It can be implemented in several ways, each with different tradeoffs:</p>
+<p><strong>o1/o3-mini as orchestrator:</strong> OpenAI's reasoning models are trained with extended chain-of-thought that happens internally before responding. They excel at breaking down complex questions and knowing when they lack information. Use them as the orchestrator that decides what to retrieve; they call a <code>retrieve(query)</code> tool as part of their reasoning. High accuracy, high cost, higher latency.</p>
+<p><strong>DeepSeek R1 / Qwen-QwQ:</strong> Open-weight alternatives to o1 with explicit chain-of-thought (<code>&lt;think&gt;</code> tags). Can be self-hosted for cost control. Competitive with o1-mini on many reasoning benchmarks.</p>
+<p><strong>Claude with extended thinking:</strong> Claude Sonnet with <code>thinking</code> blocks enabled. The model produces visible reasoning steps before responding. Can be prompted to use a retrieve tool within this reasoning phase.</p>
+<p><strong>Standard model + explicit CoT prompt:</strong> The simplest approach: instruct a standard Claude/GPT model to "first plan what you need to retrieve, then retrieve, then answer." Less reliable than true reasoning models but requires no special APIs.</p>
+<div class="example-box">Reasoning RAG flow (conceptual):
+
+User: "What changed between our Q3 and Q4 SLAs and how does the March 2026 regulatory update affect compliance?"
+
+Model thinks (internal):
+  - I need Q3 SLA terms
+  - I need Q4 SLA terms
+  - I need the March 2026 regulatory update
+  - Then I need to map changes to compliance impact
+
+Model calls: retrieve("Q3 SLA terms")        → gets 3 chunks
+Model calls: retrieve("Q4 SLA terms")        → gets 3 chunks
+Model calls: retrieve("March 2026 regulatory update") → gets 2 chunks
+
+Model synthesizes: "Q3 had 99.5% uptime guarantee; Q4 raised this to 99.9%.
+The March 2026 update requires monthly compliance reporting for SLAs above 99.8%.
+Therefore, starting Q4, you are subject to the monthly reporting requirement..."</div>
+</div>
+
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Architecture Patterns</h2>
+<p>Several architecture patterns implement Reasoning RAG, ranging from simple to sophisticated:</p>
+<p><strong>IRCoT (Interleaved Retrieval + Chain of Thought):</strong> The model alternates between generating reasoning steps and retrieving supporting evidence. After each reasoning step, if the model identifies an information gap, it retrieves. This is the most natural pattern for reasoning models with tool use.</p>
+<p><strong>ReAct (Reason + Act):</strong> A general agent framework where the model alternates between Thought (reasoning about what to do), Action (calling a tool — in this case, retrieve), and Observation (reading the retrieved chunks). ReAct was one of the first patterns to show that LLMs could reliably plan multi-step retrieval.</p>
+<p><strong>Self-RAG with reasoning:</strong> The model generates a retrieval decision token first ("do I need to retrieve for this?"), retrieves if needed, then generates a relevance judgment, and finally generates the answer. Adding a reasoning model to this loop improves the accuracy of both the retrieval decision and the relevance judgment.</p>
+<p><strong>Hierarchical retrieval with reasoning:</strong> First retrieve at coarse granularity (documents), use the reasoning model to select which documents are relevant, then retrieve at fine granularity (passages within those documents). Dramatically reduces noise from irrelevant chunks.</p>
+<div class="callout callout-blue">
+<strong>IRCoT is the pragmatic starting point:</strong> Implement retrieval as a tool, give it to a reasoning-capable model, and let the model decide when to call it. This is the simplest implementation of Reasoning RAG and works surprisingly well out of the box.
+</div>
+</div>
+
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>Implementation</h2>
+<p>A complete Reasoning RAG implementation with Claude using the tool use API:</p>
+<div class="example-box">import anthropic
+
+client = anthropic.Anthropic()
+
+# --- Mock vector store (replace with Pinecone, Weaviate, etc.) ---
+CORPUS = [
+    {"id": "q3-sla-1", "text": "Q3 SLA: Uptime guarantee 99.5%. Measured monthly. Credits apply if below 99.0%."},
+    {"id": "q4-sla-1", "text": "Q4 SLA: Uptime guarantee raised to 99.9%. Credits apply if below 99.5%."},
+    {"id": "reg-mar26", "text": "March 2026 regulatory update: SLAs exceeding 99.8% uptime require monthly compliance reports submitted to regulator."},
+    {"id": "transformer-1", "text": "Transformers use self-attention mechanisms to process sequences in parallel."},
+    {"id": "bert-1", "text": "BERT is pre-trained with masked language modeling on bidirectional context."},
+]
+
+def retrieve(query: str, top_k: int = 3) -> list[dict]:
+    # Simple keyword match — replace with semantic search
+    results = [d for d in CORPUS if any(w.lower() in d["text"].lower() for w in query.split())]
+    return results[:top_k] if results else CORPUS[:top_k]
+
+TOOLS = [{
+    "name": "retrieve",
+    "description": (
+        "Retrieve relevant document chunks from the knowledge base. "
+        "Use multiple targeted queries to gather all information needed to answer the question."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Focused search query"},
+            "top_k": {"type": "integer", "default": 3}
+        },
+        "required": ["query"]
+    }
+}]
+
+SYSTEM = """You are a research assistant with access to a knowledge base.
+Before answering, use the retrieve tool to gather all relevant information.
+Think carefully about what sub-questions you need to answer, and retrieve for each one.
+After gathering sufficient evidence, synthesize a comprehensive, grounded answer.
+If you are uncertain about something, say so explicitly."""
+
+def reasoning_rag(question: str, max_turns: int = 8) -> str:
+    messages = [{"role": "user", "content": question}]
+    retrieved_context = []
+
+    for turn in range(max_turns):
+        resp = client.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=2048,
+            system=SYSTEM,
+            tools=TOOLS,
+            messages=messages,
+        )
+        messages.append({"role": "assistant", "content": resp.content})
+
+        if resp.stop_reason == "end_turn":
+            for block in reversed(resp.content):
+                if hasattr(block, "text"):
+                    return block.text
+            break
+
+        tool_results = []
+        for block in resp.content:
+            if block.type == "tool_use" and block.name == "retrieve":
+                chunks = retrieve(block.input["query"], block.input.get("top_k", 3))
+                retrieved_context.extend(chunks)
+                content = "\n".join(f"[{c['id']}] {c['text']}" for c in chunks)
+                print(f"  Retrieved {len(chunks)} chunks for: {block.input['query']}")
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": content or "No relevant documents found."
+                })
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+
+    return "Could not generate a complete answer within the turn budget."
+
+if __name__ == "__main__":
+    answer = reasoning_rag(
+        "What changed between Q3 and Q4 SLAs and how does the March 2026 "
+        "regulatory update affect our compliance obligations?"
+    )
+    print(answer)</div>
+</div>
+
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>Chunking for Reasoning RAG</h2>
+<p>The optimal chunking strategy for Reasoning RAG differs from standard RAG because the reasoning model can issue multiple targeted queries and integrate results across chunks.</p>
+<p><strong>Larger chunks are acceptable:</strong> Standard RAG needs small chunks (200–400 tokens) to fit within the retrieved context window while maintaining density. In Reasoning RAG, the model can pull multiple targeted chunks and reason across them. Larger chunks (500–1000 tokens) that preserve complete ideas reduce the "split document" problem where a single concept is split across multiple chunks that get retrieved separately.</p>
+<p><strong>Rich metadata is critical:</strong> The reasoning model uses metadata to formulate targeted queries. Document date, author, topic tags, document type, and section headers all help the model construct precise retrieval queries like "March 2026 regulatory update" rather than generic semantic queries.</p>
+<p><strong>Hierarchical indexing:</strong> Index at multiple granularities — document level (for coarse filtering), section level (for medium precision), and paragraph level (for fine-grained facts). The reasoning model can navigate this hierarchy, first identifying which documents are relevant, then drilling into specific sections.</p>
+<div class="callout callout-amber">
+<strong>Common mistake:</strong> Using the same chunking strategy for Reasoning RAG as for standard RAG. Standard RAG needs small, dense chunks optimized for single-shot retrieval. Reasoning RAG benefits from larger, coherent chunks with rich metadata because the model is doing the integration work.
+</div>
+</div>
+
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>Evaluation</h2>
+<p>Evaluating Reasoning RAG requires measuring both retrieval quality and reasoning quality — and their interaction.</p>
+<p><strong>Multi-hop accuracy:</strong> Test specifically on questions requiring 2–3 retrieval hops. Standard QA benchmarks (SQuAD, TriviaQA) don't test multi-hop retrieval. Use MuSiQue, HotpotQA, or 2WikiMultiHopQA for multi-hop evaluation.</p>
+<p><strong>Retrieval coverage:</strong> For a given question, what percentage of the "gold" supporting documents does the model actually retrieve? Low coverage → incomplete evidence → hallucinated gaps in the answer. Measure recall@k against manually annotated supporting document sets.</p>
+<p><strong>Faithfulness:</strong> Does each claim in the final answer trace back to a specific retrieved chunk? Use LLM-as-judge to verify that every factual claim in the answer is explicitly supported by retrieved evidence, not inferred from training knowledge.</p>
+<p><strong>Reasoning quality:</strong> For questions with known answers, measure exact match and F1 on the final answer. For complex synthesis questions, use LLM-as-judge with a detailed rubric comparing the answer to a reference answer written by a domain expert.</p>
+</div>
+
+<div class="section-block" id="section-7">
+<div class="section-marker">SECTION 07</div>
+<h2>Cost &amp; Latency</h2>
+<p>Reasoning RAG is substantially more expensive and slower than standard RAG. Understanding the cost structure helps you decide when it's justified and how to control costs.</p>
+<p><strong>Cost drivers:</strong> (1) Reasoning model inference is typically 5–15x more expensive per token than a standard model. (2) Each retrieval round adds latency and context tokens. A 5-hop Reasoning RAG pipeline might use 20,000 input tokens vs 3,000 for standard RAG. (3) The reasoning model's internal chain-of-thought adds output tokens.</p>
+<p><strong>Cost reduction strategies:</strong></p>
+<ul>
+<li><strong>Use a fast model for retrieval planning, strong model for synthesis:</strong> A cheaper model can generate good retrieval queries even if it can't do the final synthesis.</li>
+<li><strong>Cache retrieved chunks:</strong> If multiple users ask related questions, cache embedding lookups and document chunks. The retrieval cost is often larger than the LLM cost for standard documents.</li>
+<li><strong>Limit retrieval rounds:</strong> Set a hard cap (3–5 rounds). Most questions are answered with 2–3 targeted retrievals; additional rounds have diminishing returns.</li>
+<li><strong>Route by complexity:</strong> Use a classifier to route simple questions to standard RAG and only complex multi-hop questions to Reasoning RAG. This keeps average cost manageable.</li>
+</ul>
+<div class="callout callout-green">
+<strong>When it's worth it:</strong> Reasoning RAG typically costs 10–30x more per query than standard RAG. It's justified when: (a) the answer genuinely requires multi-hop reasoning, (b) the cost of an incorrect answer (missed clause, wrong compliance interpretation) exceeds the additional inference cost, or (c) you can demonstrate a clear accuracy improvement on your specific domain.
+</div>
+</div>
+
+</div>
+
+<div class="related-concepts">
+<h3 class="rc-heading">Related concepts</h3>
+<div class="rc-grid">
+<a class="rc-card" href="llamaindex.html" style="--rc-accent:#a78bfa"><span class="rc-label">LlamaIndex</span></a>
+<a class="rc-card" href="graphrag.html" style="--rc-accent:#a78bfa"><span class="rc-label">GraphRAG</span></a>
+<a class="rc-card" href="agentic-rag.html" style="--rc-accent:#a78bfa"><span class="rc-label">Agentic RAG</span></a>
+<a class="rc-card" href="agentic-search.html" style="--rc-accent:#a78bfa"><span class="rc-label">Agentic Search</span></a>
+<a class="rc-card" href="contextual-retrieval.html" style="--rc-accent:#a78bfa"><span class="rc-label">Contextual Retrieval</span></a>
+</div>
+</div>
+<footer>
+© 2026 GenAI Mindmap. All concepts serve learning purposes.
+</footer>
+</body>
+</html>
