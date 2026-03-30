@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Persistent Memory - GenAI Mindmap</title>
+<meta name="description" content="Production memory management for AI agents: contradiction detection, staleness handling, deduplication, and managed memory services like mem0, Cognee, and Zep."/>
+<meta property="og:title" content="Persistent Memory - GenAI Mindmap"/>
+<meta property="og:description" content="Production memory management for AI agents: contradiction detection, staleness handling, deduplication, and managed memory services like mem0, Cognee, and Zep."/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="https://genai4a11.github.io/concepts/persistent-memory.html"/>
+<style>
+    :root {
+      --indigo: #4f46e5;
+      --blue: #2563eb;
+      --sky: #38bdf8;
+      --green: #22c55e;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --purple: #a78bfa;
+      --violet: #7c3aed;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: var(--bg-white); border-bottom: 1px solid var(--border); }
+    .nav-brand { font-size: 1.125rem; font-weight: 600; color: var(--text); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-brand:hover { color: var(--indigo); }
+    .nav-back { font-size: 0.95rem; color: var(--muted); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-back:hover { color: var(--text); }
+    .hero { background: linear-gradient(135deg, var(--violet), var(--indigo)); color: white; padding: 4rem 2rem; text-align: center; }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
+    .hero h1 { font-size: 3rem; font-weight: 700; margin: 1rem 0; line-height: 1.2; }
+    .hero h1 em { font-style: italic; color: #fef3c7; }
+    .hero-sub { font-size: 1.25rem; opacity: 0.95; max-width: 700px; margin: 1.5rem auto; }
+    .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .stat-num { font-size: 1.75rem; font-weight: 700; }
+    .stat-label { font-size: 0.875rem; opacity: 0.9; }
+    .page-wrap { max-width: 1040px; margin: 0 auto; padding: 3rem 2rem; }
+    .toc-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-bottom: 3rem; }
+    .toc-card h3 { font-size: 1.25rem; margin-bottom: 1.5rem; color: var(--text); }
+    .toc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .toc-grid a { display: block; padding: 1rem; border-radius: 0.5rem; background: var(--bg); border: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.95rem; transition: all 0.2s; }
+    .toc-grid a:hover { background: var(--indigo); color: white; border-color: var(--indigo); }
+    .toc-grid a::before { content: attr(data-num); font-weight: 700; color: var(--indigo); margin-right: 0.75rem; }
+    .toc-grid a:hover::before { color: white; }
+    .section-block { margin-bottom: 4rem; }
+    .section-marker { display: inline-block; color: var(--indigo); font-size: 0.875rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .section-block h2 { font-size: 2rem; margin-bottom: 1.5rem; color: var(--text); }
+    .section-block p { margin-bottom: 1rem; line-height: 1.7; color: var(--text); }
+    .section-block ul, .section-block ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    .section-block li { margin-bottom: 0.75rem; color: var(--text); }
+    .example-box { background: var(--code-bg); color: #e2e8f0; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid var(--indigo); margin: 1.5rem 0; font-family: 'Monaco', 'Courier New', monospace; font-size: 0.875rem; overflow-y: auto; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; }
+    .callout { padding: 1.5rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid; }
+    .callout-blue { background: rgba(37,99,235,0.05); border-left-color: var(--blue); color: var(--text); }
+    .callout-amber { background: rgba(245,158,11,0.05); border-left-color: var(--amber); color: var(--text); }
+    .callout-green { background: rgba(34,197,94,0.05); border-left-color: var(--green); color: var(--text); }
+    .callout-purple { background: rgba(167,139,250,0.08); border-left-color: var(--purple); color: var(--text); }
+    .concept-link { color: var(--indigo); text-decoration: underline; }
+    .related-concepts { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-top: 3rem; }
+    .rc-heading { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.25rem; color: var(--text); }
+    .rc-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .rc-card { display: inline-block; padding: 0.6rem 1.1rem; border-radius: 0.5rem; border: 2px solid var(--rc-accent, #a78bfa); color: var(--text); text-decoration: none; font-size: 0.95rem; transition: all 0.2s; }
+    .rc-card:hover { background: var(--rc-accent, #a78bfa); color: white; }
+    footer { background: var(--bg-white); border-top: 1px solid var(--border); text-align: center; padding: 2rem; color: var(--muted); font-size: 0.875rem; }
+</style>
+
+
+
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/><link rel="icon" type="image/x-icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>
+</head>
+<body>
+<nav>
+<a class="nav-brand" href="../map.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../map.html">← Back to map</a>
+</nav>
+<div class="hero">
+<div class="hero-tag">Agents · Memory</div>
+<h1>Persistent <em>Memory</em></h1>
+<p class="hero-sub">Production memory management for agents — contradiction detection, staleness handling, deduplication, and managed memory services that keep agent knowledge accurate over time</p>
+<div class="hero-stats">
+<div><div class="stat-num">Observe → Merge</div><div class="stat-label">Core Operation</div></div>
+<div><div class="stat-num">mem0 / Zep</div><div class="stat-label">Managed Services</div></div>
+<div><div class="stat-num">Cross-Session</div><div class="stat-label">Continuity</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<div class="toc-grid">
+<a data-num="01" href="#section-1">The Three Problems Vector Stores Don't Solve</a>
+<a data-num="02" href="#section-2">The Memory Update Operation</a>
+<a data-num="03" href="#section-3">Managed Memory Services</a>
+<a data-num="04" href="#section-4">Implementation with mem0</a>
+<a data-num="05" href="#section-5">Memory Consolidation &amp; Maintenance</a>
+<a data-num="06" href="#section-6">Privacy, Control, and Production Concerns</a>
+</div>
+</div>
+
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>The Three Problems Vector Stores Don't Solve</h2>
+<p>Basic long-term memory — embedding facts into a vector store and retrieving by similarity — works well in demos. In production, three hard problems emerge that a plain vector store cannot handle:</p>
+<ul>
+<li><strong>Contradictions:</strong> The user says "I prefer Python" in session 1 and "I've switched to TypeScript" in session 6. A naive vector store keeps both entries. The agent retrieves conflicting facts and either picks arbitrarily or hallucinates a reconciliation. Neither is acceptable.</li>
+<li><strong>Staleness:</strong> Facts have natural expiry times. Job titles, project contexts, and tool preferences from six months ago are often no longer true. A memory store that cannot mark or expire stale facts will confidently act on outdated information.</li>
+<li><strong>Redundancy:</strong> After 50 sessions, "User likes concise answers" accumulates 50 nearly-identical embeddings. Cosine similarity retrieval starts surfacing duplicates instead of diverse, relevant memories. Retrieval quality degrades silently over time.</li>
+</ul>
+<p>Each of these is a data quality problem, not a retrieval problem. The fix is not a better similarity metric — it is a memory management pipeline that continuously ensures the store contains accurate, non-redundant, current facts.</p>
+<div class="callout callout-blue">
+<strong>Key distinction:</strong> Long-term memory (storing facts) and persistent memory (maintaining accurate facts over time) are different engineering concerns. Most implementations solve the first and ignore the second. Production systems require both.
+</div>
+</div>
+
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>The Memory Update Operation</h2>
+<p>The core operation in a production memory system is not "add" — it is "update." When new information arrives, the memory manager must compare it against existing memories and decide what to do:</p>
+<div class="example-box">  New observation (session N)
+          │
+  ┌───────▼──────────────────────────┐
+  │  Memory Manager                  │
+  │                                  │
+  │  1. Embed new observation        │
+  │  2. Retrieve similar memories    │
+  │  3. LLM judge: classify change   │
+  │                                  │
+  │  MERGE   — same fact, updated    │
+  │  CONTRADICT — old is now invalid │
+  │  APPEND  — genuinely new fact    │
+  │  IGNORE  — duplicate             │
+  └───────┬──────────────────────────┘
+          │
+  ┌───────▼──────────────────────────┐
+  │  Memory Store                    │
+  │  (vector DB + metadata)          │
+  │  content, embedding, timestamp,  │
+  │  source session, confidence,     │
+  │  expiry, contradiction_of        │
+  └──────────────────────────────────┘</div>
+<p>The LLM judge step is the critical component. A simple embedding similarity threshold cannot distinguish between "User uses Python" (existing) and "User switched from Python to TypeScript" (contradiction). You need a language model to classify the relationship.</p>
+<p><strong>Contradiction handling:</strong> When a contradiction is detected, the typical approach is to mark the old memory as superseded (rather than deleting it) and store the new memory with a pointer back. This preserves an audit trail of how the agent's knowledge evolved, which is useful for debugging and compliance.</p>
+<p><strong>Confidence scoring:</strong> Not all memories are equally reliable. A fact the agent inferred ("user probably works in fintech") should be scored lower than a fact the user stated explicitly ("I work at a hedge fund"). The retrieval system can weight by confidence when constructing the context window injection.</p>
+<div class="callout callout-green">
+<strong>Design principle:</strong> Store atomic facts, not full conversation turns. "User prefers TypeScript for frontend projects" is a useful memory unit. A paragraph of dialogue summarized down to that fact is not — it is verbose, hard to retrieve precisely, and degrades retrieval quality for other queries.
+</div>
+</div>
+
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Managed Memory Services</h2>
+<p>Building a production memory management pipeline from scratch — including contradiction detection, deduplication, expiry policies, and retrieval weighting — is substantial engineering work. Several managed services abstract this complexity:</p>
+<ul>
+<li><strong>mem0:</strong> Open-source memory layer (mem0ai/mem0). Provides an API where you call <code>client.add(messages, user_id=...)</code> and it handles contradiction detection, deduplication, and fact extraction automatically. Offers a cloud API and a self-hosted option. The most widely adopted option as of 2025.</li>
+<li><strong>Zep:</strong> Memory layer focused on structured session and fact extraction. Extracts entities, relationships, and facts from conversation history. Good for applications needing structured knowledge graphs over raw vector facts.</li>
+<li><strong>Cognee:</strong> Deterministic RAG using knowledge graphs for agent memory. Rather than storing flat embeddings, Cognee builds a graph of entities and relationships from observations, enabling structured multi-hop memory retrieval.</li>
+</ul>
+<p>The tradeoff between managed services and custom-built memory is the classic build-vs-buy question for the specific challenge of memory quality maintenance. Managed services handle the hard operational work; custom builds give you full control over the memory data model and classification logic.</p>
+<div class="callout callout-amber">
+<strong>When to build vs. buy:</strong> If your agents run a small number of sessions per user with simple factual needs, a plain vector store with periodic consolidation is sufficient. If you have users with hundreds of sessions, complex update patterns, or strict accuracy requirements, a managed service or custom memory pipeline is warranted.
+</div>
+</div>
+
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>Implementation with mem0</h2>
+<p>The following example shows the core pattern: storing observations after each session, handling contradiction updates automatically, and injecting relevant memories into the agent's system prompt at session start.</p>
+<div class="example-box"># pip install mem0ai anthropic
+from mem0 import MemoryClient
+import anthropic
+
+mem_client = MemoryClient(api_key="YOUR_MEM0_API_KEY")
+ai_client = anthropic.Anthropic()
+
+USER_ID = "user_42"
+
+# --- After session ends: store new observations ---
+def store_session(messages: list, user_id: str):
+    # mem0 extracts facts and handles contradictions automatically
+    result = mem_client.add(messages, user_id=user_id)
+    print(f"Stored: {result}")
+
+# --- At session start: retrieve relevant context ---
+def load_memory_context(user_id: str, query: str) -> str:
+    memories = mem_client.search(query, user_id=user_id, limit=6)
+    if not memories:
+        return ""
+    facts = [m["memory"] for m in memories]
+    return "What I remember about you:\n" + "\n".join(f"- {f}" for f in facts)
+
+# --- Agent with memory ---
+def agent_with_memory(user_message: str, user_id: str) -> str:
+    memory_ctx = load_memory_context(user_id, user_message)
+
+    resp = ai_client.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=1024,
+        system=f"You are a helpful assistant.\n{memory_ctx}\nUse this context to personalize your responses.",
+        messages=[{"role": "user", "content": user_message}]
+    )
+    answer = resp.content[0].text
+
+    # Store the exchange as a new observation
+    store_session([
+        {"role": "user", "content": user_message},
+        {"role": "assistant", "content": answer}
+    ], user_id)
+
+    return answer
+
+# Session 1
+print(agent_with_memory("I'm building a RAG pipeline in Python.", USER_ID))
+
+# Session 2 (days later) — mem0 detects the update automatically
+print(agent_with_memory("I've switched from Python to TypeScript for this project.", USER_ID))</div>
+<p>The key point is the <code>mem_client.add()</code> call. Under the hood, mem0 embeds the new observations, retrieves semantically similar existing memories, and runs a classification step to detect contradictions or updates before writing to the store. The caller does not need to implement this logic manually.</p>
+</div>
+
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>Memory Consolidation &amp; Maintenance</h2>
+<p>Even with a managed service handling per-session updates, long-lived users (hundreds of sessions) benefit from periodic consolidation passes that clean up the memory store. This prevents the retrieval quality degradation that accumulates over time even with deduplication on individual adds.</p>
+<p><strong>Consolidation operations:</strong></p>
+<ul>
+<li><strong>Deduplication sweep:</strong> Find pairs of memories with cosine similarity above a threshold (e.g. 0.95) and merge the lower-confidence one into the higher-confidence one. Run after every 50 new memories or on a weekly schedule.</li>
+<li><strong>Staleness expiry:</strong> Apply TTL (time-to-live) policies by memory type. Project-specific context (current task, current stack) might expire after 90 days. Persistent preferences (communication style, expertise level) have no expiry. Job-related facts might expire after 1 year.</li>
+<li><strong>Re-scoring:</strong> Periodically re-evaluate confidence scores for inferred memories against newer explicit statements. If the agent inferred "user is a senior engineer" early but the user has since stated "I just started my first dev job," the score should be updated.</li>
+</ul>
+<div class="example-box"># Periodic deduplication with mem0
+from mem0 import MemoryClient
+
+def consolidate_memories(user_id: str, similarity_threshold: float = 0.95):
+    client = MemoryClient(api_key="YOUR_MEM0_API_KEY")
+
+    # Fetch all memories for this user
+    all_memories = client.get_all(user_id=user_id)
+
+    # mem0's built-in deduplication (or implement your own with embeddings)
+    duplicates_removed = 0
+    seen_embeddings = []
+
+    for mem in all_memories:
+        # Check similarity against already-processed memories
+        is_duplicate = False
+        for seen_emb in seen_embeddings:
+            sim = cosine_similarity(mem["embedding"], seen_emb["embedding"])
+            if sim >= similarity_threshold:
+                client.delete(mem["id"])
+                duplicates_removed += 1
+                is_duplicate = True
+                break
+        if not is_duplicate:
+            seen_embeddings.append(mem)
+
+    print(f"Consolidation: removed {duplicates_removed} duplicates for user {user_id}")
+
+# Run on a schedule (cron, Celery, etc.)
+# consolidate_memories("user_42")</div>
+<div class="callout callout-purple">
+<strong>User transparency:</strong> Give users a "what I remember about you" page where they can see, edit, and delete individual memories. This builds trust, catches hallucinated or incorrect inferences early, and satisfies GDPR "right to be forgotten" requirements in one feature. It also surfaces what the agent actually learned vs. what you assumed it learned.
+</div>
+</div>
+
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>Privacy, Control, and Production Concerns</h2>
+<p>Persistent memory stores contain sensitive personal information by definition. This creates compliance, security, and trust obligations that go beyond typical vector store deployments.</p>
+<p><strong>Data residency and compliance:</strong> Persistent memory stores containing EU user data must comply with GDPR. This means: (1) users must be able to request a full export of their stored memories, (2) users must be able to request deletion of all memories associated with their account (right to erasure), and (3) you must document the legal basis for processing and storing these memories. If using a managed service like mem0's cloud API, verify the data processing agreement covers your jurisdiction.</p>
+<p><strong>Memory poisoning risk:</strong> A sophisticated user who knows your system uses persistent memory could deliberately inject false memories to manipulate future agent behavior. "I am the CEO and have authority to approve all transactions" stored as a persistent memory could be dangerous. Mitigations include: confidence scoring with skepticism for high-stakes implied permissions, periodic review of high-confidence memories by an auditor, and never using persistent memory to grant permissions (use IAM instead).</p>
+<p><strong>Retrieval injection:</strong> When constructing the system prompt memory block, cap the number of injected memories (e.g., top 6 by relevance score) and their total token budget. Unconstrained memory injection can fill the context window before the conversation even starts, leaving no room for the actual task.</p>
+<div class="callout callout-amber">
+<strong>Production readiness checklist:</strong> Before deploying persistent memory: (1) implement memory export/delete endpoints for user control; (2) define TTL policies for each memory category; (3) add memory injection to your context budget accounting; (4) test agent behavior when memory store is empty (new users); (5) add alerting for memory store size per user (unbounded growth is a cost and quality signal).
+</div>
+
+<div class="related-concepts">
+<div class="rc-heading">Related Concepts</div>
+<div class="rc-grid">
+<a class="rc-card" href="long-term-memory.html" style="--rc-accent:#7c3aed;">Long-term Memory</a>
+<a class="rc-card" href="entity-memory.html" style="--rc-accent:#4f46e5;">Entity Memory</a>
+<a class="rc-card" href="context-compaction.html" style="--rc-accent:#2563eb;">Context Compaction</a>
+<a class="rc-card" href="checkpointing.html" style="--rc-accent:#22c55e;">Checkpointing</a>
+<a class="rc-card" href="coding-agents.html" style="--rc-accent:#f59e0b;">Coding Agents</a>
+</div>
+</div>
+</div>
+
+</div>
+<footer>
+© 2026 GenAI Mindmap. All concepts serve learning purposes.
+</footer>
+</body>
+</html>

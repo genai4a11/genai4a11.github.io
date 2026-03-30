@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Context Compaction - GenAI Mindmap</title>
+<meta name="description" content="Anthropic's server-side context compaction API (2026) enables arbitrarily long agent conversations by automatically summarising older turns without client-side engineering."/>
+<meta property="og:title" content="Context Compaction - GenAI Mindmap"/>
+<meta property="og:description" content="Anthropic's server-side context compaction API (2026) enables arbitrarily long agent conversations by automatically summarising older turns without client-side engineering."/>
+<meta property="og:type" content="article"/>
+<meta property="og:url" content="https://genai4a11.github.io/concepts/context-compaction.html"/>
+<style>
+    :root {
+      --indigo: #4f46e5;
+      --blue: #2563eb;
+      --sky: #38bdf8;
+      --green: #22c55e;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --purple: #a78bfa;
+      --violet: #7c3aed;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+      --bg-white: #ffffff;
+      --code-bg: #1e293b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; background: var(--bg-white); border-bottom: 1px solid var(--border); }
+    .nav-brand { font-size: 1.125rem; font-weight: 600; color: var(--text); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-brand:hover { color: var(--indigo); }
+    .nav-back { font-size: 0.95rem; color: var(--muted); text-decoration: none; display: flex; gap: 0.5rem; align-items: center; }
+    .nav-back:hover { color: var(--text); }
+    .hero { background: linear-gradient(135deg, var(--blue), var(--indigo)); color: white; padding: 4rem 2rem; text-align: center; }
+    .hero-tag { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
+    .hero h1 { font-size: 3rem; font-weight: 700; margin: 1rem 0; line-height: 1.2; }
+    .hero h1 em { font-style: italic; color: #fef3c7; }
+    .hero-sub { font-size: 1.25rem; opacity: 0.95; max-width: 700px; margin: 1.5rem auto; }
+    .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .stat-num { font-size: 1.75rem; font-weight: 700; }
+    .stat-label { font-size: 0.875rem; opacity: 0.9; }
+    .page-wrap { max-width: 1040px; margin: 0 auto; padding: 3rem 2rem; }
+    .toc-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-bottom: 3rem; }
+    .toc-card h3 { font-size: 1.25rem; margin-bottom: 1.5rem; color: var(--text); }
+    .toc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .toc-grid a { display: block; padding: 1rem; border-radius: 0.5rem; background: var(--bg); border: 1px solid var(--border); text-decoration: none; color: var(--text); font-size: 0.95rem; transition: all 0.2s; }
+    .toc-grid a:hover { background: var(--indigo); color: white; border-color: var(--indigo); }
+    .toc-grid a::before { content: attr(data-num); font-weight: 700; color: var(--indigo); margin-right: 0.75rem; }
+    .toc-grid a:hover::before { color: white; }
+    .section-block { margin-bottom: 4rem; }
+    .section-marker { display: inline-block; color: var(--indigo); font-size: 0.875rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .section-block h2 { font-size: 2rem; margin-bottom: 1.5rem; color: var(--text); }
+    .section-block p { margin-bottom: 1rem; line-height: 1.7; color: var(--text); }
+    .section-block ul, .section-block ol { margin-left: 1.5rem; margin-bottom: 1.5rem; }
+    .section-block li { margin-bottom: 0.75rem; color: var(--text); }
+    .example-box { background: var(--code-bg); color: #e2e8f0; padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid var(--indigo); margin: 1.5rem 0; font-family: 'Monaco', 'Courier New', monospace; font-size: 0.875rem; overflow-y: auto; white-space: pre-wrap; overflow-x: auto; line-height: 1.5; }
+    .callout { padding: 1.5rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 4px solid; }
+    .callout-blue { background: rgba(37,99,235,0.05); border-left-color: var(--blue); color: var(--text); }
+    .callout-amber { background: rgba(245,158,11,0.05); border-left-color: var(--amber); color: var(--text); }
+    .callout-green { background: rgba(34,197,94,0.05); border-left-color: var(--green); color: var(--text); }
+    .callout-purple { background: rgba(167,139,250,0.08); border-left-color: var(--purple); color: var(--text); }
+    .concept-link { color: var(--indigo); text-decoration: underline; }
+    .related-concepts { background: var(--bg-white); border: 1px solid var(--border); border-radius: 0.75rem; padding: 2rem; margin-top: 3rem; }
+    .rc-heading { font-size: 1.1rem; font-weight: 600; margin-bottom: 1.25rem; color: var(--text); }
+    .rc-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .rc-card { display: inline-block; padding: 0.6rem 1.1rem; border-radius: 0.5rem; border: 2px solid var(--rc-accent, #a78bfa); color: var(--text); text-decoration: none; font-size: 0.95rem; transition: all 0.2s; }
+    .rc-card:hover { background: var(--rc-accent, #a78bfa); color: white; }
+    footer { background: var(--bg-white); border-top: 1px solid var(--border); text-align: center; padding: 2rem; color: var(--muted); font-size: 0.875rem; }
+</style>
+
+
+
+
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/><link rel="icon" type="image/x-icon" href="/favicon.ico"/><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>
+</head>
+<body>
+<nav>
+<a class="nav-brand" href="../map.html">🧠 GenAI Mindmap</a>
+<a class="nav-back" href="../map.html">← Back to map</a>
+</nav>
+<div class="hero">
+<div class="hero-tag">Agents · Memory · Anthropic</div>
+<h1>Context <em>Compaction</em></h1>
+<p class="hero-sub">Anthropic's server-side summarisation system (2026) that makes agent conversations effectively unlimited — no client-side context management required</p>
+<div class="hero-stats">
+<div><div class="stat-num">Transparent</div><div class="stat-label">Server-Side</div></div>
+<div><div class="stat-num">200+ Turns</div><div class="stat-label">Agent Runs</div></div>
+<div><div class="stat-num">Feb 2026</div><div class="stat-label">API Launch</div></div>
+</div>
+</div>
+<div class="page-wrap">
+<div class="toc-card">
+<h3>Table of Contents</h3>
+<div class="toc-grid">
+<a data-num="01" href="#section-1">What Is Context Compaction?</a>
+<a data-num="02" href="#section-2">How Compaction Works</a>
+<a data-num="03" href="#section-3">Compaction vs. Client-Side Strategies</a>
+<a data-num="04" href="#section-4">Implementation</a>
+<a data-num="05" href="#section-5">What Compaction Preserves (and What It Doesn't)</a>
+<a data-num="06" href="#section-6">Combining Compaction with Checkpointing</a>
+</div>
+</div>
+
+<div class="section-block" id="section-1">
+<div class="section-marker">SECTION 01</div>
+<h2>What Is Context Compaction?</h2>
+<p>Context Compaction is a server-side feature of the Anthropic API (launched February 2026) that allows agent conversations to continue effectively indefinitely. When a conversation approaches the model's context window limit, the API automatically summarises older turns into a compact representation, then continues the conversation using that summary plus the recent uncompressed turns.</p>
+<p>The result is that long-running agents — research agents, coding agents working on large tasks, document processing pipelines — no longer need to implement context management logic client-side. Compaction happens transparently: the agent simply keeps sending messages, and the API handles the window overflow.</p>
+<p>This is a fundamentally different approach from all prior context management techniques, because the summarisation is performed by the same model family that will use the summary. The model is optimised to preserve the information most relevant to coherent continuation of the specific task, not just a generic summary of what was said.</p>
+<div class="callout callout-blue">
+<strong>Why this matters for production agents:</strong> Before compaction, building a long-running agent required non-trivial engineering: detecting when the window was full, deciding what to drop, and writing a summarisation prompt that preserved task state correctly. Compaction eliminates this entire problem class for most agent use cases.
+</div>
+</div>
+
+<div class="section-block" id="section-2">
+<div class="section-marker">SECTION 02</div>
+<h2>How Compaction Works</h2>
+<p>The compaction process operates on the server side, invisibly to the client, using the following flow:</p>
+<div class="example-box">  Long agent conversation (100+ turns)
+               │
+  ┌────────────▼────────────────────────┐
+  │  Approaching context limit          │
+  └────────────┬────────────────────────┘
+               │
+  ┌────────────▼────────────────────────┐
+  │  Compaction API (server-side)       │
+  │                                     │
+  │  Summarise turns 1 .. N-K           │
+  │  Preserve: decisions, facts,        │
+  │  constraints, current task state,   │
+  │  tool call outcomes                 │
+  │                                     │
+  │  Output: compact summary + turns    │
+  │  N-K+1 .. N (recent context raw)    │
+  └────────────┬────────────────────────┘
+               │
+  ┌────────────▼────────────────────────┐
+  │  Model continues with:              │
+  │  [compact summary] + [recent turns] │
+  │  Effectively unlimited conversation │
+  └─────────────────────────────────────┘</div>
+<p>The key design choice is that recent turns are always kept uncompressed. Compaction summarises older history, not the most recent context. This preserves the full fidelity of what is happening right now, while compressing older context that is less immediately relevant.</p>
+<p>Compaction can trigger multiple times over the course of a very long run, progressively compressing older summaries. The model always has access to a full semantic representation of the conversation history; only the token volume is reduced.</p>
+</div>
+
+<div class="section-block" id="section-3">
+<div class="section-marker">SECTION 03</div>
+<h2>Compaction vs. Client-Side Strategies</h2>
+<p>Prior to compaction, engineers used several client-side strategies to handle context limits in long-running agents. Each has significant limitations:</p>
+<ul>
+<li><strong>Sliding window (drop old turns):</strong> Simplest approach — just drop turns beyond a fixed window size. Problem: you lose information permanently and abruptly. The agent forgets everything before the window boundary, which often includes the original task specification or key decisions made early in the run.</li>
+<li><strong>Client-side summarisation:</strong> Detect when the window is getting full, call the model to summarise older turns, then replace those turns with the summary. Works better than dropping, but requires careful prompt engineering, introduces latency, and the summarisation quality depends on how well you wrote the summarisation prompt — not the agent's task-specific understanding of what matters.</li>
+<li><strong>Selective retention:</strong> Manually tag "important" turns to preserve and drop others. Requires domain-specific logic about what matters. Brittle as task patterns change.</li>
+<li><strong>Context compaction (server-side):</strong> The summarisation is done by the same model family that generated the content, optimised to preserve semantic continuity for the specific task. No client-side implementation required. The model's task context informs what gets preserved.</li>
+</ul>
+<div class="callout callout-green">
+<strong>When not to use compaction:</strong> Compaction is not the right tool when you need exact verbatim preservation of specific turns — for example, if your agent later needs to quote or verify exact wording from an earlier message. For those cases, maintain a separate structured log alongside the conversation and read from it explicitly.
+</div>
+</div>
+
+<div class="section-block" id="section-4">
+<div class="section-marker">SECTION 04</div>
+<h2>Implementation</h2>
+<p>Enabling compaction requires only a single addition to your existing API calls: include <code>"context-compaction-2026-02"</code> in the <code>betas</code> array. The rest of your agent loop is unchanged.</p>
+<div class="example-box">import anthropic
+
+client = anthropic.Anthropic()
+
+def long_running_agent(initial_task: str, tools: list, max_turns: int = 200) -> str:
+    # Agent that uses context compaction for arbitrarily long runs.
+    messages = [{"role": "user", "content": initial_task}]
+
+    for turn in range(max_turns):
+        # Enable context compaction with the beta header
+        resp = client.beta.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=4096,
+            tools=tools,
+            messages=messages,
+            betas=["context-compaction-2026-02"],  # &lt;-- the only change needed
+        )
+
+        # Optional: detect compaction events for observability
+        if hasattr(resp, 'usage') and hasattr(resp.usage, 'compacted_tokens'):
+            print(f"  [turn {turn}] Compaction: {resp.usage.compacted_tokens} tokens summarised")
+
+        messages.append({"role": "assistant", "content": resp.content})
+
+        if resp.stop_reason == "end_turn":
+            for block in reversed(resp.content):
+                if hasattr(block, "text"):
+                    return block.text
+            break
+
+        # Tool handling is identical to a non-compacted agent
+        tool_results = []
+        for block in resp.content:
+            if block.type == "tool_use":
+                result = dispatch_tool(block.name, block.input)
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result
+                })
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+
+    return "Agent reached max_turns limit."
+
+def dispatch_tool(name: str, args: dict) -> str:
+    # Your tool dispatch logic
+    return f"[result of {name}]"</div>
+<p>The compaction beta header can be combined with other beta features. If you are already using tool use, extended output, or other beta flags, simply add the compaction beta to the existing list.</p>
+<div class="callout callout-amber">
+<strong>Cost note:</strong> Compaction does consume tokens — the summarisation step is a model call. For most long-running agents, this overhead is negligible compared to the cost of the full agent run. However, if you are running many short agents (under 15 turns each) that rarely hit the context limit, the compaction overhead may not be justified. Enable it selectively based on expected run length.
+</div>
+</div>
+
+<div class="section-block" id="section-5">
+<div class="section-marker">SECTION 05</div>
+<h2>What Compaction Preserves (and What It Doesn't)</h2>
+<p>Understanding the information-preservation guarantees of compaction is critical for designing reliable agents.</p>
+<p><strong>Compaction preserves (semantic level):</strong></p>
+<ul>
+<li>The original task specification and high-level goal</li>
+<li>Key decisions made during the run ("we decided to use PostgreSQL over SQLite because...")</li>
+<li>Constraints and requirements established in earlier turns</li>
+<li>The outcomes of tool calls (what the tool returned, what the agent concluded from it)</li>
+<li>The current state of the task (what is done, what remains)</li>
+</ul>
+<p><strong>Compaction does not preserve (verbatim level):</strong></p>
+<ul>
+<li>Exact wording of earlier messages</li>
+<li>The precise sequence of tool calls (the outcomes are preserved, not the individual call records)</li>
+<li>Intermediate reasoning chains that did not lead to decisions or conclusions</li>
+</ul>
+<p>The practical implication: if your agent needs to know "did I already call tool X on file Y?", do not rely on compaction to preserve that. Maintain a separate structured state dictionary that the agent explicitly updates and reads — for example, a set of processed file paths that gets included in the system prompt. Compaction is for semantic continuity; structured state is for exact bookkeeping.</p>
+<div class="example-box"># Pattern: structured state + compaction
+# The agent maintains explicit state alongside the compacted conversation
+
+import json
+import anthropic
+
+client = anthropic.Anthropic()
+
+def agent_with_state(task: str, files_to_process: list) -> str:
+    # Explicit state that compaction does not need to preserve
+    state = {
+        "processed_files": [],
+        "errors": [],
+        "findings": []
+    }
+
+    system_prompt = f"""You are a code analysis agent.
+Task: {task}
+
+Current state (updated after each file):
+{{state_json}}
+
+Always read the current state before deciding what to do next.
+Update the state after completing each file."""
+
+    messages = [{"role": "user", "content": f"Process these files: {files_to_process}"}]
+
+    for turn in range(100):
+        # Inject fresh state into every system prompt
+        current_system = system_prompt.replace("{state_json}", json.dumps(state, indent=2))
+
+        resp = client.beta.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=4096,
+            system=current_system,
+            messages=messages,
+            betas=["context-compaction-2026-02"],
+        )
+        # ... handle tool calls, update state explicitly ...
+        if resp.stop_reason == "end_turn":
+            break
+
+    return json.dumps(state["findings"], indent=2)</div>
+</div>
+
+<div class="section-block" id="section-6">
+<div class="section-marker">SECTION 06</div>
+<h2>Combining Compaction with Checkpointing</h2>
+<p>Compaction handles one failure mode of long-running agents (hitting the context window limit) but not the other (process failure, API timeout, cost overrun mid-run). For truly robust long-running agents, compaction and checkpointing address complementary problems and should both be used.</p>
+<ul>
+<li><strong>Compaction:</strong> Keeps the agent running indefinitely within a single API session. Handles context overflow transparently. Does not help if the process crashes or you need to pause and resume.</li>
+<li><strong>Checkpointing:</strong> Saves the agent's state periodically so the run can be resumed from the last checkpoint if interrupted. Does not help with context overflow within a single resumed session.</li>
+</ul>
+<p>The combined pattern: checkpoint the structured state (processed files, decisions, results) after every N turns, and enable compaction to handle the context window. If the agent is interrupted, restore from the checkpoint and resume — compaction will handle the new session's context growth just as it handled the previous one.</p>
+<div class="callout callout-purple">
+<strong>The long-running agent reliability stack:</strong> structured state (explicit bookkeeping) + compaction (context continuity) + checkpointing (fault tolerance) + max_turns limit (cost control) + escalation path (human-in-the-loop on failure). Each layer addresses a distinct failure mode. Compaction is a critical new addition to this stack, but it works best alongside the others.
+</div>
+
+<div class="related-concepts">
+<div class="rc-heading">Related Concepts</div>
+<div class="rc-grid">
+<a class="rc-card" href="checkpointing.html" style="--rc-accent:#22c55e;">Checkpointing</a>
+<a class="rc-card" href="persistent-memory.html" style="--rc-accent:#7c3aed;">Persistent Memory</a>
+<a class="rc-card" href="coding-agents.html" style="--rc-accent:#4f46e5;">Coding Agents</a>
+<a class="rc-card" href="long-term-memory.html" style="--rc-accent:#2563eb;">Long-term Memory</a>
+<a class="rc-card" href="context-window.html" style="--rc-accent:#f59e0b;">Context Window</a>
+</div>
+</div>
+</div>
+
+</div>
+<footer>
+© 2026 GenAI Mindmap. All concepts serve learning purposes.
+</footer>
+</body>
+</html>

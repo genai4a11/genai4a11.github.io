@@ -188,6 +188,8 @@ const CONCEPT_PAGES={
   coding_agents:'concepts/coding-agents.html',
   browser_use:'concepts/browser-use.html',
   llm_tree_search:'concepts/llm-tree-search.html',
+  persistent_memory:'concepts/persistent-memory.html',
+  context_compaction:'concepts/context-compaction.html',
   autogen:'concepts/autogen.html',
   pydantic_ai:'concepts/pydantic-ai.html',
   // batch 14b — Agents (second wave)

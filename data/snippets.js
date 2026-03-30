@@ -675,7 +675,7 @@ langchain:{use:'Quickly chain prompts, tools, and retrievers for prototype pipel
   eng:['How do you debug a LangChain chain in production — what LangSmith integration gives you observability?','When should you move from LangChain abstractions to direct API calls — what friction points signal the framework is hurting more than helping?','How do you manage LangChain version pinning — the API changes frequently and breaking changes are common?']
 },
 learn:[],refs:[{label:'LangChain documentation — LCEL (LangChain Expression Language) guide',url:'https://python.langchain.com/docs/concepts/lcel/'},{label:'DeepLearning.AI: LangChain for LLM Application Development (free, 2 hours)',url:'https://www.deeplearning.ai/short-courses/langchain-for-llm-application-development/'},{label:'LangChain blog: best practices for production applications',url:'https://blog.langchain.dev/'},{label:'LangSmith: observability and tracing for LangChain applications',url:'https://smith.langchain.com/'},{label:'Harrison Chase (LangChain): building production LLM applications',url:'https://youtu.be/RoR4XJw8wIc'}]},
-langgraph:{use:'When your agent needs loops, conditionals, and persistent state.',diag:`
+langgraph:{use:'LangGraph is a graph-based agent framework from LangChain that makes control flow explicit. Each node is a computation (LLM call, tool, human review); each edge is a transition rule. Unlike simple chains, LangGraph supports cycles — agents can loop back based on conditions — and persistent checkpointed state, enabling long-running tasks that survive restarts and human-in-the-loop interrupts at any node.',diag:`
   LangGraph state machine:
 
   State = TypedDict (shared across nodes)
@@ -694,14 +694,16 @@ langgraph:{use:'When your agent needs loops, conditionals, and persistent state.
                     └──────► agent (loop)
 
   Each node: reads State, writes updates to State
-  Edges: conditional (functions) or fixed`,code:`from langgraph.graph import StateGraph, END\nfrom typing import TypedDict, Annotated\nimport operator\nclass AgentState(TypedDict):\n    messages: Annotated[list, operator.add]\n    iterations: int\ndef call_llm(state):\n    # call your LLM here\n    return {'messages': ['response'], 'iterations': state['iterations']+1}\ndef should_continue(state):\n    return END if state['iterations'] >= 3 else 'call_llm'\ngraph = StateGraph(AgentState)\ngraph.add_node('call_llm', call_llm)\ngraph.set_entry_point('call_llm')\ngraph.add_conditional_edges('call_llm', should_continue)\napp = graph.compile()\nresult = app.invoke({'messages': [], 'iterations': 0})\nprint(result)`,tip:'Add checkpointers (MemorySaver, SqliteSaver) for resumable agents across sessions.',questions:{
-  leader:['LangGraph enables stateful multi-step agent workflows — what problem does the graph abstraction solve that simple LangChain chains don\'t?','How do you decide between LangGraph and other agent frameworks (CrewAI, AutoGen) for your specific use case?'],
+  Edges: conditional (functions) or fixed`,code:`from langgraph.graph import StateGraph, END\nfrom typing import TypedDict, Annotated\nimport operator\nclass AgentState(TypedDict):\n    messages: Annotated[list, operator.add]\n    iterations: int\ndef call_llm(state):\n    # call your LLM here\n    return {'messages': ['response'], 'iterations': state['iterations']+1}\ndef should_continue(state):\n    return END if state['iterations'] >= 3 else 'call_llm'\ngraph = StateGraph(AgentState)\ngraph.add_node('call_llm', call_llm)\ngraph.set_entry_point('call_llm')\ngraph.add_conditional_edges('call_llm', should_continue)\napp = graph.compile()\nresult = app.invoke({'messages': [], 'iterations': 0})\nprint(result)`,tip:'Always add a step-counter to your state and a conditional edge that routes to END once the counter exceeds a threshold. Without an explicit termination condition, a looping graph will run until it hits the model\'s max tokens or your API rate limit.\n\nUse SqliteSaver (dev) or PostgresSaver (prod) for checkpointing, not MemorySaver. MemorySaver is in-process RAM only -- if your service restarts, all checkpoints are lost and long-running tasks cannot be resumed.\n\nCall app.get_graph().draw_mermaid_png() to visualize your graph as a diagram. Seeing the full state machine makes it immediately obvious if a loop is missing its exit condition or if two nodes are accidentally disconnected.',questions:{
+  leader:['LangGraph enables stateful multi-step agent workflows — what problem does the graph abstraction solve that simple LangChain chains don\'t?','How do you decide between LangGraph and other agent frameworks (CrewAI, AutoGen) for your specific use case?','What governance controls does LangGraph\'s human-in-the-loop interrupt mechanism unlock for high-stakes agent actions?'],
   pm:['What product workflows require the cyclic, stateful execution that LangGraph enables vs simpler sequential chains?','How do you test and validate LangGraph workflows before deployment — what quality bar do you require?'],
   eng:['How do you implement human-in-the-loop interrupts in LangGraph — where do you place breakpoints and how do you handle resumption?','How does LangGraph\'s state persistence work — what checkpointer do you use (memory, SQLite, PostgreSQL) for production?','How do you visualize and debug a LangGraph execution — what does the mermaid diagram reveal about your agent flow?']
 },
 learn:[
-  {type:'concept',label:'',url:''}
-],refs:[{label:'LangGraph documentation — getting started with stateful agent graphs',url:'https://langchain-ai.github.io/langgraph/'},{label:'DeepLearning.AI: AI Agents in LangGraph (short course, free)',url:'https://www.deeplearning.ai/short-courses/ai-agents-in-langgraph/'},{label:'LangChain blog: LangGraph for production agentic workflows',url:'https://blog.langchain.dev/langgraph/'},{label:'ReAct: Synergizing Reasoning and Acting in LLMs — theoretical foundation',url:'https://arxiv.org/abs/2210.03629'},{label:'Harrison Chase: LangGraph deep dive — building reliable agents',url:'https://youtu.be/pbAd8O1Lvm4'},{"label":"LangGraph documentation","url":"https://langchain-ai.github.io/langgraph/"},{"label":"LangChain blog — Why LangGraph","url":"https://blog.langchain.dev/langgraph/"}]},
+  {type:'concept',label:'LangGraph',url:'concepts/langgraph.html'},
+  {type:'concept',label:'Agent Frameworks',url:'concepts/agent-frameworks.html'},
+  {type:'concept',label:'Checkpointing',url:'concepts/checkpointing.html'}
+],refs:[{label:'LangGraph documentation — getting started with stateful agent graphs',url:'https://langchain-ai.github.io/langgraph/'},{label:'DeepLearning.AI: AI Agents in LangGraph (short course, free)',url:'https://www.deeplearning.ai/short-courses/ai-agents-in-langgraph/'},{label:'LangChain blog: Why LangGraph — stateful, controllable agent workflows',url:'https://blog.langchain.dev/langgraph/'},{label:'ReAct: Synergizing Reasoning and Acting in LLMs — theoretical foundation',url:'https://arxiv.org/abs/2210.03629'},{label:'Harrison Chase: LangGraph deep dive — building reliable agents',url:'https://youtu.be/pbAd8O1Lvm4'}]},
 crewai:{use:'Multi-agent workflows with role specialization and task delegation.',diag:`
   CrewAI multi-agent structure:
 
@@ -1706,6 +1708,95 @@ print(result)           # Review object, guaranteed valid
 print(result.sentiment) # Sentiment.positive`,tip:'Outlines is only for self-hosted models — it works by intercepting the logits before sampling, which requires access to the model weights. If you are on a cloud API, use Structured Outputs (OpenAI) or Instructor instead. Outlines shines in production deployments where a single schema violation would crash a downstream pipeline.',questions:{leader:['When does guaranteeing structured output at the decoder level matter more than prompt-based approaches?','How does Outlines\'s FSM approach compare to OpenAI structured outputs for your use case?','What is the operational overhead of self-hosting Outlines vs using a cloud API with JSON mode?'],pm:['Which product features require 100% schema-valid output and would benefit from Outlines?','How do you communicate to users when structured generation fails or the schema is too restrictive?','What is the latency impact of constrained decoding vs standard sampling?'],eng:['How does Outlines build an FSM from a Pydantic schema and mask invalid tokens at each step?','What backends does Outlines support and how do you integrate it with vLLM for serving?','How do you handle optional fields in JSON schema when using constrained decoding?']},learn:[
   {type:'concept',label:"Outlines",url:"concepts/outlines.html"}
 ],refs:[{label:'Outlines GitHub repo — FSM-based structured generation for local models',url:'https://github.com/dottxt-ai/outlines'},{label:'Efficient Guided Generation for LLMs — Willard & Louf 2023 (Outlines paper)',url:'https://arxiv.org/abs/2307.09702'},{label:'Outlines docs — JSON mode, Pydantic, regex, vLLM integration',url:'https://dottxt-ai.github.io/outlines/'}]},
+context_compaction:{use:`Context Compaction is Anthropic's server-side summarisation system (launched February 2026) that allows agent conversations to continue effectively indefinitely without hitting the context window limit. When a conversation approaches the model's context limit, the API automatically summarises older turns, preserving the semantic continuity of the conversation while discarding the raw token volume.
+
+Unlike client-side context management strategies (sliding window, manual summarisation), compaction happens transparently on Anthropic's servers. The model receives a compact representation of prior context that it can reason over just like full context -- but at a fraction of the token cost. This is a fundamentally new primitive for building long-running agents.
+
+The key distinction from existing techniques: client-side window trimming loses information brutally (drop old turns). Client-side summarisation requires engineering effort and often loses nuance. Compaction is done by the same model that will use the summary, preserving the information most relevant to the current task, optimised for coherent continuation.`,diag:`  Long agent conversation (100+ turns)
+               │
+  ┌────────────▼────────────────────────┐
+  │  Approaching context limit          │
+  └────────────┬────────────────────────┘
+               │
+  ┌────────────▼────────────────────────┐
+  │  Compaction API (server-side)       │
+  │                                     │
+  │  Summarise turns 1..N-K             │
+  │  Preserve: decisions, facts,        │
+  │  constraints, current task state    │
+  │                                     │
+  │  Output: compact summary + turns    │
+  │  N-K+1..N (recent context kept raw) │
+  └────────────┬────────────────────────┘
+               │
+  ┌────────────▼────────────────────────┐
+  │  Model continues with:              │
+  │  [compact summary] + [recent turns] │
+  │  Effectively infinite conversation  │
+  └─────────────────────────────────────┘`,code:`import anthropic
+
+client = anthropic.Anthropic()
+
+def long_running_agent(initial_task: str, tools: list, max_turns: int = 200) -> str:
+    # Agent that uses context compaction for arbitrarily long runs.
+    messages = [{"role": "user", "content": initial_task}]
+
+    for turn in range(max_turns):
+        # Enable context compaction via beta header
+        resp = client.beta.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=4096,
+            tools=tools,
+            messages=messages,
+            betas=["context-compaction-2026-02"],  # Enable compaction
+        )
+
+        # Check if compaction occurred (informational)
+        if hasattr(resp, 'usage') and hasattr(resp.usage, 'compacted_tokens'):
+            print(f"  [Compaction: {resp.usage.compacted_tokens} tokens compacted]")
+
+        messages.append({"role": "assistant", "content": resp.content})
+
+        if resp.stop_reason == "end_turn":
+            for block in reversed(resp.content):
+                if hasattr(block, "text"):
+                    return block.text
+            break
+
+        # Handle tool calls normally -- compaction is transparent
+        tool_results = []
+        for block in resp.content:
+            if block.type == "tool_use":
+                result = dispatch_tool(block.name, block.input)
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result
+                })
+        if tool_results:
+            messages.append({"role": "user", "content": tool_results})
+
+    return "Agent completed maximum turns."
+
+def dispatch_tool(name: str, args: dict) -> str:
+    # Your tool dispatch logic here
+    return f"[Tool {name} result placeholder]"
+
+# Example: long research or coding agent that can run for hundreds of turns
+result = long_running_agent(
+    "Perform a comprehensive audit of our Python codebase and generate a tech debt report.",
+    tools=[]  # Add your tools here
+)
+print(result)`,tip:`Enable compaction for any agent expected to run more than 20-30 turns. The cost overhead is minimal compared to the alternative of manual context management or hitting hard token limits mid-task.
+
+Compaction preserves semantic content, not exact wording. If your agent relies on exact string matching against earlier turns (e.g. "did I already call tool X?"), maintain a separate structured log of tool calls and decisions rather than relying on compaction to preserve them verbatim.
+
+Combine with checkpointing for truly robust long-running agents: compaction handles context limits, checkpointing handles failures and restarts. Neither replaces the other.`,questions:{leader:['Which long-running workflows in our business (multi-hour research, audit, data processing agents) are constrained by context limits today?','Does using server-side compaction create any data residency or confidentiality concerns given that Anthropic processes the conversation history?','How does context compaction affect the latency and cost profile of our longest-running agent tasks?'],pm:['Which user-facing workflows currently fail or degrade because agents hit context limits mid-task?','Should we expose compaction as a visible feature to users (e.g. "I compressed our conversation to continue") or keep it completely transparent?','How do we test that compaction preserves the key information our agents need -- task state, constraints, decisions made?'],eng:['How do you verify that compaction preserved the task-critical information your agent needs after a compaction event?','What is the right approach for state that must survive compaction exactly (e.g. a list of files already processed) -- separate state store vs. structured summary prompts?','How does compaction interact with tool use history -- does the model retain awareness of tool calls that occurred before compaction?']},learn:[
+  {type:'concept',label:'Context Compaction',url:'concepts/context-compaction.html'},
+  {type:'concept',label:'Conversation Buffer',url:'#st_memory'},
+  {type:'concept',label:'Checkpointing',url:'concepts/checkpointing.html'}
+],refs:[{label:'Anthropic: Context Compaction -- server-side summarisation for long agent runs',url:'https://docs.anthropic.com/en/docs/agents/context-compaction'},{label:'Anthropic Changelog: Context Compaction API (February 2026)',url:'https://docs.anthropic.com/en/release-notes/api'},{label:'Managing context window in long agent loops (Anthropic cookbook)',url:'https://github.com/anthropics/anthropic-cookbook'}]},
+
 lt_memory:{use:'Letting agents remember facts across sessions or long multi-turn conversations.',diag:`  Turn 1 ──► remember("User likes Python")\n  Turn 2 ──► remember("User builds RAG pipelines")\n  Turn 3 ──► remember("User prefers async code")\n                         │\n                         ▼  (stored as embeddings)\n              ┌─────────────────────┐\n              │    Vector Store     │\n              │  (ChromaDB / Redis) │\n              └──────────┬──────────┘\n                         │\n  New query ──► embed ──► similarity search\n                         │\n                         ▼\n              Top-K relevant memories\n                         │\n                         ▼\n              Injected into system prompt`,code:`import chromadb\nfrom openai import OpenAI\nimport uuid\n\nclient = OpenAI()\ndb = chromadb.PersistentClient(path="./memory_db")\ncollection = db.get_or_create_collection("agent_memory")\n\ndef embed(text: str) -> list[float]:\n    resp = client.embeddings.create(\n        model="text-embedding-3-small", input=[text]\n    )\n    return resp.data[0].embedding\n\ndef remember(fact: str):\n    """Store a fact in long-term memory."""\n    collection.add(\n        ids=[str(uuid.uuid4())],\n        embeddings=[embed(fact)],\n        documents=[fact]\n    )\n\ndef recall(query: str, k: int = 3) -> list[str]:\n    """Retrieve the most relevant past memories."""\n    results = collection.query(\n        query_embeddings=[embed(query)], n_results=k\n    )\n    return results["documents"][0]\n\ndef chat_with_memory(user_msg: str) -> str:\n    memories = recall(user_msg)\n    context = "\\n".join(memories)\n    resp = client.chat.completions.create(\n        model="gpt-4o-mini",\n        messages=[\n            {"role": "system",\n             "content": f"Relevant memories:\\n{context}"},\n            {"role": "user", "content": user_msg}\n        ]\n    )\n    return resp.choices[0].message.content\n\nremember("User stack is Python + FastAPI + PostgreSQL")\nremember("User prefers async patterns and type hints")\nprint(chat_with_memory("What database should I use for this project?"))`,tip:'Store one fact per memory entry, not one full conversation turn — retrieval precision is much better with granular entries.',questions:{leader:['How do you decide what is worth remembering in long-term memory vs discarding?','How do you prevent long-term memory from accumulating contradictory or stale facts?','What is the privacy and compliance strategy for storing user-specific long-term memories?'],pm:['Which product features require cross-session memory to deliver meaningful personalization?','How do you give users visibility into and control over what the agent remembers about them?','How do you measure whether long-term memory improves task success rate across sessions?'],eng:['How do you decide to write a new memory — after every session, after key events, or continuously?','How do you retrieve relevant memories for the current conversation context efficiently?','How do you handle conflicting memories — when the user corrects a previously stored fact?']},learn:[
   {type:'concept',label:"Long Term Memory",url:"concepts/long-term-memory.html"}
 ],refs:[{label:'MemGPT: Towards LLMs as Operating Systems — Packer et al. 2023',url:'https://arxiv.org/abs/2310.08560'},{label:'LangChain memory types — window, summary, entity, long-term',url:'https://python.langchain.com/docs/how_to/chatbots_memory/'},{label:'mem0 — personalized memory layer for AI agents',url:'https://github.com/mem0ai/mem0'}]},
@@ -1806,7 +1897,7 @@ Use a fast, cheap model for scoring/pruning and a strong model for expansion. Th
   {type:'concept',label:'LLM Tree Search',url:'concepts/llm-tree-search.html'},
   {type:'concept',label:'Agentic Reasoning',url:'concepts/agentic-reasoning.html'},
   {type:'concept',label:'Agent Planning',url:'#agent_planning'}
-],refs:[{label:'Scaling LLM Test-Time Compute Optimally (Snell et al., 2024)',url:'https://arxiv.org/abs/2408.03314'},{label:'Let's Reward Step by Step: Step-Level Reward Model as the Navigators for Reasoning (Wang et al., 2024)',url:'https://arxiv.org/abs/2310.10080'},{label:'AlphaZero-like tree search for LLMs -- survey of inference-time scaling',url:'https://arxiv.org/abs/2412.17451'}]},
+],refs:[{label:'Scaling LLM Test-Time Compute Optimally (Snell et al., 2024)',url:'https://arxiv.org/abs/2408.03314'},{label:'Let\'s Reward Step by Step: Step-Level Reward Model as the Navigators for Reasoning (Wang et al., 2024)',url:'https://arxiv.org/abs/2310.10080'},{label:'AlphaZero-like tree search for LLMs -- survey of inference-time scaling',url:'https://arxiv.org/abs/2412.17451'}]},
 
 st_memory:{use:'Any multi-turn chatbot or agent that needs to remember what was said earlier in the same session — customer support bots, coding assistants, tutors.',diag:`
   Short-term memory implementation options:
@@ -2888,6 +2979,98 @@ annotation_tools:{use:'Building labeled datasets for fine-tuning, eval sets, or 
   Final labeled dataset`,code:`# Label Studio — open-source annotation UI\n# pip install label-studio\n# label-studio start  (runs on localhost:8080)\n\n# Programmatic API to upload tasks and pull annotations:\nimport requests\n\nLS_URL = "http://localhost:8080"\nAPI_KEY = "your-label-studio-key"\nHEADERS = {"Authorization": f"Token {API_KEY}"}\n\ndef upload_tasks(project_id: int, texts: list[str]):\n    """Upload raw texts as annotation tasks."""\n    tasks = [{"data": {"text": t}} for t in texts]\n    resp = requests.post(\n        f"{LS_URL}/api/projects/{project_id}/import",\n        json=tasks, headers=HEADERS\n    )\n    resp.raise_for_status()\n    print(f"Uploaded {len(tasks)} tasks")\n\ndef export_annotations(project_id: int) -> list[dict]:\n    """Download completed annotations as JSON."""\n    resp = requests.get(\n        f"{LS_URL}/api/projects/{project_id}/export?exportType=JSON",\n        headers=HEADERS\n    )\n    resp.raise_for_status()\n    return resp.json()\n\n# Export and convert to fine-tuning format\nannotations = export_annotations(project_id=1)\ntraining_data = []\nfor ann in annotations:\n    if ann.get("annotations"):\n        label = ann["annotations"][0]["result"][0]["value"]["choices"][0]\n        training_data.append({\n            "instruction": ann["data"]["text"],\n            "label": label\n        })\nprint(f"Labeled examples ready: {len(training_data)}")`,tip:'Label Studio is free and self-hosted. Argilla is better for NLP/LLM eval tasks with built-in disagreement metrics. Use Scale AI for high-volume production labeling.',questions:{leader:['What annotation format (instruction-following, preference pairs, reward scores) does your fine-tuning approach require?','How do you ensure annotation consistency across multiple annotators?','How do you sample examples to annotate from production logs for maximum impact?'],pm:['What is your annotation throughput target and cost per example for your labeling budget?','How do you quality-check annotator work and handle disagreements?','What annotator instructions and rubrics do you provide to ensure consistent quality?'],eng:['How do you set up Label Studio or Argilla for LLM output annotation?','How do you compute inter-annotator agreement for preference labeling tasks?','How do you export annotations from your labeling tool in the format your fine-tuning library expects?']},learn:[
   {type:'concept',label:"Annotation Tools",url:"concepts/annotation-tools.html"}
 ],refs:[{label:'Label Studio docs — data labeling for NLP, text, and LLM annotation',url:'https://labelstud.io/guide/'},{label:'Argilla docs — open-source annotation platform for LLM fine-tuning',url:'https://docs.argilla.io/'},{label:'Scale AI annotation guide — best practices for LLM training data',url:'https://scale.com/blog'}]},
+persistent_memory:{use:`Long-term memory that accumulates facts across sessions is only useful if it stays accurate over time. Production memory systems face three hard problems standard vector stores don't solve:
+
+1. **Contradictions** -- the user says "I prefer Python" in session 1 and "I've switched to TypeScript" in session 6. A naive vector store keeps both; the agent retrieves conflicting facts.
+2. **Staleness** -- facts from six months ago (job title, project context, preferences) may no longer be true.
+3. **Redundancy** -- 50 sessions of "User likes concise answers" accumulates 50 nearly-identical embeddings. Retrieval noise increases over time.
+
+Dedicated memory management services (mem0, Cognee, Zep) address all three with pipelines that continuously consolidate, update, and expire memories. The core operation is a "memory update" that compares new observations against existing memories and merges, contradicts, or appends as appropriate.`,diag:`  New observation (session N)
+          │
+  ┌───────▼──────────────────────────┐
+  │  Memory Manager                  │
+  │                                  │
+  │  Retrieve: similar memories      │
+  │  Compare: new vs existing        │
+  │  Decide:                         │
+  │   - MERGE (same fact, updated)   │
+  │   - CONTRADICT (old now invalid) │
+  │   - APPEND (genuinely new)       │
+  │   - IGNORE (duplicate)           │
+  └───────┬──────────────────────────┘
+          │
+  ┌───────▼──────────────────────────┐
+  │  Memory Store                    │
+  │  (vector DB + metadata)          │
+  │  facts, scores, timestamps,      │
+  │  source sessions, expiry         │
+  └──────────────────────────────────┘`,code:`# pip install mem0ai
+from mem0 import MemoryClient
+
+client = MemoryClient(api_key="YOUR_MEM0_API_KEY")
+
+USER_ID = "user_deepak"
+
+# --- Session 1: Store observations ---
+messages_s1 = [
+    {"role": "user", "content": "I'm building a RAG pipeline in Python."},
+    {"role": "assistant", "content": "Great! What embedding model are you planning to use?"},
+    {"role": "user", "content": "Probably OpenAI text-embedding-3-small. I prefer async patterns."},
+]
+result = client.add(messages_s1, user_id=USER_ID)
+print("Stored memories:", result)
+
+# --- Session 3: Update with contradiction ---
+messages_s3 = [
+    {"role": "user", "content": "Actually, I've switched from Python to TypeScript for this project."},
+]
+client.add(messages_s3, user_id=USER_ID)
+# mem0 automatically detects the Python -> TypeScript contradiction and updates
+
+# --- Retrieval: at start of any new session ---
+def load_memory_context(user_id: str, query: str) -> str:
+    memories = client.search(query, user_id=user_id, limit=5)
+    if not memories:
+        return ""
+    facts = [m["memory"] for m in memories]
+    return "What I remember about you:
+" + "
+".join(f"- {f}" for f in facts)
+
+# --- Use in agent system prompt ---
+import anthropic
+
+def agent_with_memory(user_message: str, user_id: str) -> str:
+    memory_ctx = load_memory_context(user_id, user_message)
+    client_ai = anthropic.Anthropic()
+    resp = client_ai.messages.create(
+        model="claude-opus-4-5",
+        max_tokens=1024,
+        system=f"You are a helpful assistant with memory of past conversations.
+{memory_ctx}
+
+Use this context to personalize your responses.",
+        messages=[{"role": "user", "content": user_message}]
+    )
+    # Optionally store new observations after each exchange
+    new_exchange = [
+        {"role": "user", "content": user_message},
+        {"role": "assistant", "content": resp.content[0].text}
+    ]
+    client.add(new_exchange, user_id=user_id)
+    return resp.content[0].text
+
+answer = agent_with_memory("What database should I use for my project?", USER_ID)
+print(answer)`,tip:`Store atomic facts, not full conversation turns. "User prefers TypeScript for frontend projects" is a useful memory unit. "User said: I actually I've been thinking about switching to TypeScript because..." is not -- it's verbose, hard to retrieve precisely, and mixes observations with context.
+
+Run a consolidation pass periodically. After N sessions, scan all memories for a given user, deduplicate near-duplicates (cosine similarity > 0.95), and expire facts older than your staleness threshold. This prevents retrieval quality from degrading over time.
+
+Give users visibility and control. Show users a "what I remember about you" page and let them delete or edit memories. This builds trust and prevents the agent from confidently acting on outdated information.`,questions:{leader:['What is the business case for cross-session agent memory in our product -- personalization, context continuity, or reduced re-onboarding friction?','What is our liability if the agent acts on a stale or incorrect persistent memory in a high-stakes context?','How do we handle cross-region data residency and right-to-be-forgotten requests for user memory stores?'],pm:['Which user journeys in our product break down because the agent has no memory of past sessions?','How do we give users meaningful control over their persistent memory without overwhelming them with complexity?','What is the minimum viable memory that materially improves user satisfaction without requiring a full memory architecture?'],eng:['How do you implement contradiction detection when adding new memories -- embedding similarity + LLM judge, or rule-based?','What is the right granularity for memory entries -- per utterance, per session, per task?','How do you implement a TTL (time-to-live) policy for memories, and how does it vary by memory type (preferences vs. project context)?']},learn:[
+  {type:'concept',label:'Persistent Memory',url:'concepts/persistent-memory.html'},
+  {type:'concept',label:'Long-term Memory',url:'concepts/long-term-memory.html'},
+  {type:'concept',label:'Entity Memory',url:'#entity_memory'}
+],refs:[{label:'mem0: The Memory Layer for AI Agents -- open-source managed memory',url:'https://github.com/mem0ai/mem0'},{label:'Cognee: Deterministic RAG with knowledge graphs for agent memory',url:'https://github.com/topoteretes/cognee'},{label:'MemGPT: Towards LLMs as Operating Systems (Packer et al., 2023)',url:'https://arxiv.org/abs/2310.08560'}]},
+
 entity_memory:{use:'When your agent interacts with users who mention real-world things — names, companies, products, locations — and you want the agent to build up a profile on each one across the conversation.',diag:`
   Entity memory tracking:
 
