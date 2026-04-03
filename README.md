@@ -111,6 +111,21 @@ This project is licensed under the [MIT License](LICENSE) — free to use, share
 
 ---
 
+## Clap / Like Widget
+
+Each page includes a **LikeBtn** clap widget so visitors can indicate what they find useful. Aggregated counts per page are stored on [LikeBtn.com](https://likebtn.com).
+
+The widget is loaded via `assets/js/clap.js`, which:
+- Injects a `<span class="likebtn-wrapper">` into any `[data-clap]` placeholder element.
+- Uses `window.location.pathname` as a stable per-page identifier.
+- Loads the LikeBtn script only once per page.
+
+To **disable** the widget on a specific page, remove the `<div data-clap ...></div>` element and the `<script src="/assets/js/clap.js"></script>` tag from that page.
+
+To **remove** it from the entire site, delete `assets/js/clap.js` and remove all `data-clap` placeholders and the script tags referencing `clap.js`.
+
+---
+
 ## Built by
 
 [Deepak Mehta](https://www.linkedin.com/in/deepakmehta79) — built as a personal learning resource, open to the community.
