@@ -24,16 +24,18 @@
       if (host.dataset.clapMounted) return;
       host.dataset.clapMounted = '1';
 
-      host.innerHTML =
-        '<span class="likebtn-wrapper"' +
-        ' data-identifier="' + identifier.replace(/"/g, '') + '"' +
-        ' data-i18n_like="Clap"' +
-        ' data-i18n_unlike="Unclap"' +
-        ' data-icon_l="hrt6"' +
-        ' data-icon_u="hrt6"' +
-        ' data-label_c="true"' +
-        ' data-show_like_label="false">' +
-        '</span>';
+      var span = document.createElement('span');
+      span.className = 'likebtn-wrapper';
+      span.setAttribute('data-identifier', identifier);
+      span.setAttribute('data-i18n_like', 'Clap');
+      span.setAttribute('data-i18n_unlike', 'Unclap');
+      span.setAttribute('data-icon_l', 'hrt6');
+      span.setAttribute('data-icon_u', 'hrt6');
+      span.setAttribute('data-label_c', 'true');
+      span.setAttribute('data-show_like_label', 'false');
+
+      while (host.firstChild) host.removeChild(host.firstChild);
+      host.appendChild(span);
     });
 
     loadLikeBtnScriptOnce();
