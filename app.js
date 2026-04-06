@@ -1,4 +1,20 @@
 DN.forEach(n=>{if(RICH[n.id])Object.assign(n,RICH[n.id])});
+// Welcome overlay — shown on first visit, auto-demo after dismiss
+(function(){
+  var overlay = document.getElementById('welcome-overlay');
+  if (!overlay) return;
+  var seen = false;
+  try { seen = !!localStorage.getItem('gmwelcome'); } catch(e) {}
+  if (seen) { overlay.style.display = 'none'; return; }
+  var btn = document.getElementById('welcome-start');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 0.4s';
+    setTimeout(function() { overlay.style.display = 'none'; }, 450);
+    try { localStorage.setItem('gmwelcome', '1'); } catch(e) {}
+  });
+})();
 // ── CONCEPT PAGES — node ID → relative URL ──────────────────────────────────
 const CONCEPT_PAGES={
   peft_methods:'concepts/peft-methods.html',
@@ -784,22 +800,6 @@ document.getElementById('panel-share').addEventListener('click',()=>{
   setTimeout(tryOpen,800);
 })();
 
-// Welcome overlay — shown on first visit, auto-demo after dismiss
-(function(){
-  var overlay = document.getElementById('welcome-overlay');
-  if (!overlay) return;
-  var seen = false;
-  try { seen = !!localStorage.getItem('gmwelcome'); } catch(e) {}
-  if (seen) { overlay.style.display = 'none'; return; }
-  var btn = document.getElementById('welcome-start');
-  if (!btn) return;
-  btn.addEventListener('click', function() {
-    overlay.style.opacity = '0';
-    overlay.style.transition = 'opacity 0.4s';
-    setTimeout(function() { overlay.style.display = 'none'; }, 450);
-    try { localStorage.setItem('gmwelcome', '1'); } catch(e) {}
-  });
-})();
 // Onboarding hint bar — stays until user explicitly dismisses or clicks a node
 (function(){
   const bar=document.getElementById('hint-bar');
